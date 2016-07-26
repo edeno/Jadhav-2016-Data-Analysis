@@ -1,0 +1,6 @@
+name: Rothschild-Data-Analysis
+dependencies:
+    - python=3
+    - anaconda
+
+# start python environment by typing 'source activate Rothschild-Data-Analysis'
