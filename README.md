@@ -55,7 +55,7 @@ Data is in the Matlab format (\*.mat files). The following describes the main da
                         - descrip - riptet? sometimes blank
                         - area - brain area
 #### Spike Information ####
-    - Name: {*animal*}spikes{*day*}
+    - Name: {*animal*}spikes{*day*}.mat
     - Description: Gives the spike times and other relevant information at those spike times
     - Format:
         - 1 x {*Number of days*} Matlab-cell
@@ -81,7 +81,7 @@ Data is in the Matlab format (\*.mat files). The following describes the main da
                         - tag - brain area (sort of)
                     - cmperpixiel - centimeters per pixel?
 #### EEG information (aka LFP Information) ####
-    - Name: {*animal*}eeg{*day*}-{*epoch*}-{*tetrode*}
+    - Name: {*animal*}eeg{*day*}-{*epoch*}-{*tetrode*}.mat
     - Description: Gives the LFP for a given tetrode
     - Format:
         - 1 x {*Number of epochs*} Matlab-cell
