@@ -5,7 +5,8 @@ Data is from:
 
 ### Raw Data Format
 Data is in the Matlab format (\*.mat files)
-- **animal information**
+
+#### Animal Information ####
     - Name: animaldef.m
     - Function that maps *animal names* to *directories*
 #### Task Information
