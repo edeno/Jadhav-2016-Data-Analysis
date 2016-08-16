@@ -1,5 +1,5 @@
 '''
-Functions for accessing data in the Frank lab
+Functions for accessing data in the Frank lab format
 '''
 
 import os
