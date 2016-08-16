@@ -1,3 +1,7 @@
+'''
+Functions for accessing data in the Frank lab
+'''
+
 import os
 import sys
 import scipy.io
