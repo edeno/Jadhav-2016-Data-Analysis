@@ -2,5 +2,6 @@ name: Rothschild-Data-Analysis
 dependencies:
     - python=3
     - anaconda
+    - seaborn
 
 # start python environment by typing 'source activate Rothschild-Data-Analysis'
