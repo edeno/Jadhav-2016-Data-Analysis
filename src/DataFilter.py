@@ -8,13 +8,12 @@ import scipy.io
 
 
 def get_data_filename(animal, day, file_type):
-    '''
-    Returns the Matlab file name assuming it is in the Raw Data directory.
+    '''Returns the Matlab file name assuming it is in the Raw Data directory.
     File type is a string that refers to the various data structure names
     (DIO, tasks, linpos) Animal is a named tuple. Day is an integer giving the
     recording session day.
     '''
-    data_dir = '{working_dir}/Raw-Data/'.format(working_dir=os.getcwd())
+    data_dir = '{working_dir}/Raw-Data/'.format(working_dir=os.path.abspath(os.path.pardir))
     return '{data_dir}/{animal.directory}/{animal.short_name}{file_type}{day:02d}.mat'.format(
         data_dir=data_dir,
         animal=animal,
@@ -23,8 +22,7 @@ def get_data_filename(animal, day, file_type):
 
 
 def get_epoch(animal, days, epoch_type='', environment=''):
-    '''
-    Returns a list of two-element tuples (day, epoch index) that
+    '''Returns a list of two-element tuples (day, epoch index) that
     can access the data structure within each Matlab file. Epoch type
     is the task for that epoch (sleep, run, etc.) and environment is
     the type of maze the animal is in (if any). If no epoch type or
@@ -42,9 +40,9 @@ def get_epoch(animal, days, epoch_type='', environment=''):
                                if epoch['type'] == epoch_type or
                                epoch_type == '']
             epoch_index += [(day, ind) for ind, epoch in filtered_epochs
-                    if ('environment' in epoch.dtype.names and
-                    epoch['environment'] == environment) or
-                    environment == '']
+                            if ('environment' in epoch.dtype.names and
+                            epoch['environment'] == environment) or
+                            environment == '']
         except IOError as err:
             print('I/O error({0}): {1}'.format(err.errno, err.strerror))
             sys.exit()
@@ -53,8 +51,7 @@ def get_epoch(animal, days, epoch_type='', environment=''):
 
 
 def get_var(animal, day, file_type, variable, epoch_type='', environment=''):
-    '''
-    Returns a filtered list containing the data structures corresponding to the
+    '''Returns a filtered list containing the data structures corresponding to the
     animal, day, file_type, epoch specified.
     '''
     epoch = get_epoch(animal, day, epoch_type=epoch_type, environment=environment)
@@ -63,8 +60,7 @@ def get_var(animal, day, file_type, variable, epoch_type='', environment=''):
 
 
 def get_DIO_var(animal, day, dio_var, epoch_type='', environment=''):
-    '''
-    Returns a list of lists given a DIO variable (pulsetimes, timesincelast,
+    '''Returns a list of lists given a DIO variable (pulsetimes, timesincelast,
     pulselength, and pulseind) with a length corresponding to the number of
     epochs (first level) and the number of active pins (second level)
     '''
@@ -76,8 +72,7 @@ def get_DIO_var(animal, day, dio_var, epoch_type='', environment=''):
 
 
 def get_pos_var(animal, day, pos_var, epoch_type='', environment=''):
-    '''
-    Returns a list of lists given a pos variable (time, x, y, dir, vel, x-sm,
+    '''Returns a list of lists given a pos variable (time, x, y, dir, vel, x-sm,
     y-sm, dir-sm, and vel-sm) with a length corresponding to the number of
     epochs (first level)
     '''
@@ -86,3 +81,6 @@ def get_pos_var(animal, day, pos_var, epoch_type='', environment=''):
     epoch_pos = get_var(animal, day, 'pos', 'pos', epoch_type=epoch_type, environment=environment)
     return [pos['data'][0, 0][:, field_ind]
             for pos in epoch_pos]
+
+if __name__ == '__main__':
+    sys.exit()
