@@ -51,35 +51,39 @@ def get_epoch(animal, days, epoch_type='', environment=''):
     return epoch_index
 
 
-def get_var(animal, day, file_type, variable, epoch_type='', environment=''):
+def get_var(animal, days, file_type, variable, epoch_type='', environment=''):
     '''Returns a filtered list containing the data structures corresponding to the
     animal, day, file_type, epoch specified.
     '''
-    epoch = get_epoch(animal, day, epoch_type=epoch_type, environment=environment)
-    file = scipy.io.loadmat(get_data_filename(animal, day, file_type))
-    return [file[variable][0, day - 1][0, ind] for day, ind in epoch]
+    if isinstance(days, int):
+        days = [days]
+    epoch = get_epoch(animal, days, epoch_type=epoch_type, environment=environment)
+    files = {day: scipy.io.loadmat(get_data_filename(animal, day, file_type))
+             for day in days}
+    return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch]
 
 
-def get_DIO_var(animal, day, dio_var, epoch_type='', environment=''):
+def get_DIO_var(animal, days, dio_var, epoch_type='', environment=''):
     '''Returns a list of lists given a DIO variable (pulsetimes, timesincelast,
     pulselength, and pulseind) with a length corresponding to the number of
     epochs (first level) and the number of active pins (second level)
     '''
-    epoch_pins = get_var(animal, day, 'DIO', 'DIO', epoch_type=epoch_type, environment=environment)
-    return [pin[0][dio_var]
+    epoch_pins = get_var(animal, days, 'DIO', 'DIO', epoch_type=epoch_type, environment=environment)
+    return [
+            [pin[0][dio_var] for pin in pins.T
+             if pin[0].dtype.names is not None]
             for pins in epoch_pins
-            for pin in pins.swapaxes(0, 1)
-            if pin[0].dtype.names is not None]
+            ]
 
 
-def get_pos_var(animal, day, pos_var, epoch_type='', environment=''):
-    '''Returns a list of lists given a pos variable (time, x, y, dir, vel, x-sm,
-    y-sm, dir-sm, and vel-sm) with a length corresponding to the number of
+def get_pos_var(animal, days, pos_var, epoch_type='', environment=''):
+    '''Returns a list of position variable (time, x, y, dir, vel, x-sm,
+    y-sm, dir-sm, and vel-sm) arrays with a length corresponding to the number of
     epochs (first level)
     '''
     field_names = ['time', 'x', 'y', 'dir', 'vel', 'x-sm', 'y-sm', 'dir-sm', 'vel-sm']
     field_ind = [field_names.index(var) for var in pos_var]
-    epoch_pos = get_var(animal, day, 'pos', 'pos', epoch_type=epoch_type, environment=environment)
+    epoch_pos = get_var(animal, days, 'pos', 'pos', epoch_type=epoch_type, environment=environment)
     return [pos['data'][0, 0][:, field_ind]
             for pos in epoch_pos]
 
