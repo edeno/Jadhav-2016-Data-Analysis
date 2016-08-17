@@ -22,11 +22,12 @@ def get_data_filename(animal, day, file_type):
 
 
 def get_epoch(animal, days, epoch_type='', environment=''):
-    '''Returns a list of two-element tuples (day, epoch index) that
+    '''Returns a list of three-element tuples (animal, day, epoch index) that
     can access the data structure within each Matlab file. Epoch type
     is the task for that epoch (sleep, run, etc.) and environment is
     the type of maze the animal is in (if any). If no epoch type or
-    environment is given, returns all epoch types and environments
+    environment is given, returns all epoch types and environments.
+    Days can be either a single integer day or a list of days.
     '''
     epoch_index = list()
 
@@ -39,7 +40,7 @@ def get_epoch(animal, days, epoch_type='', environment=''):
             filtered_epochs = [(ind, epoch) for ind, epoch in enumerate(task_file['task'][0, day-1][0])
                                if epoch['type'] == epoch_type or
                                epoch_type == '']
-            epoch_index += [(day, ind) for ind, epoch in filtered_epochs
+            epoch_index += [(animal, day, ind) for ind, epoch in filtered_epochs
                             if ('environment' in epoch.dtype.names and
                             epoch['environment'] == environment) or
                             environment == '']
