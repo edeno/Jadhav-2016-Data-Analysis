@@ -1,7 +1,17 @@
+# Data Folders
 /Raw-Data
 /Processed-Data
-*.ipynb_checkpoints
+
+# IPython NB Checkpoints
+.ipynb_checkpoints/
+
+# Distribution / packaging
+*.egg
+*.egg-info
 
 # Byte-compiled / optimized / DLL files
 /__pycache__
 *.py[cod]
+
+# Unit test / coverage reports
+.cache
