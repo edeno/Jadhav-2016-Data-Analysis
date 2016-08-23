@@ -39,35 +39,25 @@ mock_data_struct[2] = ('typeTest2', 'environTest2')
 mock_data_struct[3] = ('typeTest1', 'environTest2')
 mock_data_struct[4] = ('typeTest1', 'environTest1')
 
-mock_cell_array = {'task': np.array([[[], [mock_data_struct], []]])}
+mock_cell_array = {'task': np.array([[[], [mock_data_struct], [mock_data_struct]]])}
 
 
 @patch('scipy.io.loadmat')
-def test_get_epochs_single_day(mock_loadmat):
+@pytest.mark.parametrize("days, epoch_type, environment, expected_length", [
+    (2, '', '', 5),
+    (2, 'typeTest1', '', 4),
+    (2, 'typeTest2', '', 1),
+    (2, 'typeTest1', 'environTest1', 2),
+    (2, 'typeTest1', 'environTest2', 2),
+    (2, 'typeTest2', 'environTest1', 0),
+    (2, 'typeTest2', 'environTest3', 0),
+    (2, '', 'environTest2', 3),
+    ([2, 3], '', '', 10),
+    ([2, 3], 'typeTest1', '', 8),
+])
+def test_get_epochs(mock_loadmat, days, epoch_type, environment, expected_length):
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
     animal = Animal(directory='test_dir', short_name='Test')
-    days = 2
     mock_loadmat.return_value = mock_cell_array
 
-    assert len(df.get_epochs(animal, days, epoch_type='', environment='')) == 5
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest1', environment='')) == 4
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest2', environment='')) == 1
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest1', environment='environTest1')) == 2
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest1', environment='environTest2')) == 2
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest2', environment='environTest1')) == 0
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest2', environment='environTest3')) == 0
-    assert len(df.get_epochs(animal, days, epoch_type='', environment='environTest2')) == 3
-
-
-mock_cell_array2 = {'task': np.array([[[], [mock_data_struct], [mock_data_struct]]])}
-
-
-@patch('scipy.io.loadmat')
-def test_get_epochs_multiple_days(mock_loadmat):
-    Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
-    animal = Animal(directory='test_dir', short_name='Test')
-    days = [2, 3]
-    mock_loadmat.return_value = mock_cell_array2
-
-    assert len(df.get_epochs(animal, days, epoch_type='', environment='')) == 10
-    assert len(df.get_epochs(animal, days, epoch_type='typeTest1', environment='')) == 8
+    assert len(df.get_epochs(animal, days, epoch_type=epoch_type, environment=environment)) == expected_length
