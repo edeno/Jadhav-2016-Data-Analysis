@@ -39,7 +39,12 @@ mock_data_struct[2] = ('typeTest2', 'environTest2')
 mock_data_struct[3] = ('typeTest1', 'environTest2')
 mock_data_struct[4] = ('typeTest1', 'environTest1')
 
-mock_cell_array = {'task': np.array([[[], [mock_data_struct], [mock_data_struct]]])}
+mock_cell_array = {'task': np.array([[
+                               [],
+                               [mock_data_struct],
+                               [mock_data_struct]
+                           ]])
+                   }
 
 
 @patch('scipy.io.loadmat')
