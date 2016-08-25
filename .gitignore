@@ -1,38 +1,19 @@
+# Data Folders
 /Raw-Data
 /Processed-Data
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-
-# C extensions
-*.so
+# IPython NB Checkpoints
+.ipynb_checkpoints/
 
 # Distribution / packaging
-bin/
-build/
-develop-eggs/
-dist/
-eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
 *.egg
+*.egg-info
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# Byte-compiled / optimized / DLL files
+/__pycache__
+*.py[cod]
 
 # Unit test / coverage reports
-.tox/
-.coverage
 .cache
-nosetests.xml
-coverage.xml
 
-# Translations
-*.mo
+notebooks/.ipynb_checkpoints/*.ipynb
