@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Functions for accessing data in the Frank lab format
 '''
