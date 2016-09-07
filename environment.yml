@@ -1,7 +1,10 @@
 name: Rothschild-Data-Analysis
+channels:
+    - conda-forge
 dependencies:
     - python=3
     - anaconda
     - seaborn
+    - nitime
 
 # start python environment by typing 'source activate Rothschild-Data-Analysis'
