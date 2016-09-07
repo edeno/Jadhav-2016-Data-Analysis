@@ -60,7 +60,7 @@ Data is in the Matlab format (.mat files). The following describes the main data
 
 #### Spike Information ####
 - **Name**: {*animal*}spikes{*day*}.mat
-- **Description**: Gives the spike times and other relevant information at those spike times
+- **Description**: Gives the spike times and other relevant information at spike times.
 - **Format**:
     - 1 x {*Number of days*} Matlab-cell
         - 1 x {*Number of epochs*} Matlab-cell
@@ -69,7 +69,7 @@ Data is in the Matlab format (.mat files). The following describes the main data
                     - data: Matlab-array of data described by fields
                     - descript
                     - fields: fields of data array
-                        - time: time of spike
+                        - time: time of spike event in seconds
                         - x: x-position of animal at spike
                         - y: y-position of animal at spike
                         - dir: head direction at spike
@@ -81,23 +81,23 @@ Data is in the Matlab format (.mat files). The following describes the main data
                         - dir-sm: ???
                     - depth
                     - spikewidth
-                    - timerange
+                    - timerange - in 100 µsec units
                     - tag - brain area (sort of)
                 - cmperpixiel - centimeters per pixel?
 
 #### EEG information (aka LFP Information) ####
 - **Name**: {*animal*}eeg{*day*}-{*epoch*}-{*tetrode*}.mat
-- **Description**: Gives the LFP for a given tetrode
+- **Description**: Gives the LFP for a given tetrode.
 - **Format**:
     - 1 x {*Number of epochs*} Matlab-cell
         - 1 x {*Number of tetrodes*} Matlab-cell
             - EEG Matlab-structure
-                - descript
+                - descript - timestamps in hrs:min:sec
                 - fields - fields of data array
-                - starttime
-                - samprate
-                - data
-                - depth
+                - starttime - in seconds
+                - samprate - sampling rate
+                - data - data array
+                - depth - depth of electrode
 
 #### EEG ground information (aka LFP Ground Information) ####
 - **Name**: {*animal*}eeggrnd{*day*}-{*epoch*}-{*tetrode*}.mat
@@ -106,16 +106,16 @@ Data is in the Matlab format (.mat files). The following describes the main data
     - 1 x {*Number of epochs*} Matlab-cell
         - 1 x {*Number of tetrodes*} Matlab-cell
             - EEG Matlab-structure
-                - data
-                - starttime
-                - samprate
-                - depth
-                - fields
-                - descript
+                - descript - timestamps in hrs:min:sec
+                - fields - fields of data array
+                - starttime - in seconds
+                - samprate - sampling rate
+                - data - data array
+                - depth - depth of electrode
 
 #### Position Information ####
 - **Name**: {*animal*}pos{*day*}.mat
-- **Description**: Position of animal on track. Derived from the rawpos data structures
+- **Description**: Position of animal on track. Derived from the rawpos data structures. Timestamps are in seconds.
 - **Format**:
     - 1 x {*Number of days*}
         - 1 x {*Number of epochs*}
@@ -124,7 +124,7 @@ Data is in the Matlab format (.mat files). The following describes the main data
                 - descript: description of the data in the position structure
                 - fields: labels for the data array
                 - data: array with field labels
-                    - time: time in session
+                    - time: time in session in seconds
                     - x: x-position of animal
                     - y: y-position of animal
                     - dir: head-direction of animal
@@ -138,7 +138,7 @@ Data is in the Matlab format (.mat files). The following describes the main data
 
 #### Digital Input Output Information ####
 - **Name**: {*animal*}DIO{*day*}.mat
-- **Description**: The *DIO* cell gives arrival/departure times at the end of each arm of the maze (as indicated by the IR motion sensors at the end of the wells) and the start/stop times for the output trigger to the reward pump
+- **Description**: The *DIO* cell gives arrival/departure times at the end of each arm of the maze (as indicated by the IR motion sensors at the end of the wells) and the start/stop times for the output trigger to the reward pump. Timestamps are in 100 µsec units.
 - **Format**:
     - 1 x {*Number of days*}
         - 1 x {*Number of epochs*}
