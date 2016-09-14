@@ -1,12 +1,16 @@
+import os
 import scipy.io
 import scipy.fftpack
 import scipy.signal
 import scipy.ndimage
+import scipy.io
 import numpy as np
-import nitime.algorithms as tsa
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.patches as patches
 import spectral
+import data_filter as df
+
+
 def _equiripple_bandpass(lowcut, highcut, sampling_frequency, transition_width=10, num_taps=318):
 
     edges = [0,
@@ -76,3 +80,89 @@ def get_ripple_zscore_multitaper(lfp, sampling_frequency, frequency_resolution=1
     return (pd.concat(dataframes, axis=1)
               .set_index('time')
               .assign(ripple_indicator=lambda x: x.ripple_zscore >= zscore_threshold))
+
+
+def _get_series_start_end_times(series):
+    ''' Returns a two element tuple of the start of the segment
+    and the end of the segment. The input series must be a boolean
+    pandas series where the index is time.
+    '''
+    is_start_time = (~series.shift(1).fillna(False)) & series
+    start_times = series.index[is_start_time]
+
+    is_end_time = series & (~series.shift(-1).fillna(False))
+    end_times = series.index[is_end_time]
+
+    # Handle case of the indicator starting or ending above threshold.
+    # Remove these cases from the list
+    if len(start_times) != len(end_times):
+        if end_times[0] > start_times[0]:
+            end_times = end_times[1:]
+        else:
+            start_times = start_times[:-1]
+
+    return start_times, end_times
+
+
+def segment_boolean_series(series, minimum_duration=0.015):
+    ''' Returns a list of tuples where each tuple contains the
+    start time of segement and end time of segment. It takes
+    a boolean pandas series as input where the index is time.
+
+    '''
+    start_times, end_times = _get_series_start_end_times(series)
+
+    return [(start_time, end_time)
+            for start_time, end_time in zip(start_times, end_times)
+            if end_time >= (start_time + minimum_duration)]
+def _find_containing_interval(interval_candidates, target_interval):
+    '''Returns the interval that contains the target interval out of a list of
+    interval candidates. This is accomplished by finding the closest start time
+    out of the candidate intervals, since we already know that one interval candidate
+    contains the target interval (the segements above 0 contain the segments above
+    the threshold)'''
+    candidate_start_times = np.asarray(interval_candidates)[:, 0]
+    closest_start_ind = np.max((candidate_start_times - target_interval[0] <= 0).nonzero())
+    return interval_candidates[closest_start_ind]
+
+
+def extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments):
+    ''' Returns a list of tuples that extend the
+    boundaries of the segments by the ripple threshold (i.e ripple z-score > 3)
+    to the boundaries of a containing interval defined by when the z-score
+    crosses the mean.
+    '''
+    segments = [_find_containing_interval(ripple_above_mean_segments, segment)
+            for segment in ripple_above_threshold_segments]
+    return list(set(segments))  # remove duplicate segments
+
+
+def get_segments_frank(lfp_dataframe, sampling_frequency, zscore_threshold=3, sigma=0.004,
+                       minimum_duration=0.015):
+    ''' Returns a list of tuples that correspond to the
+    start and end of the ripple using the method of Loren Frank's lab.
+    '''
+    ripple_frank_df = get_ripple_zscore_frank(lfp_dataframe,
+                                              sampling_frequency,
+                                              zscore_threshold=zscore_threshold,
+                                              sigma=sigma)
+    ripple_above_mean_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_mean,
+                                                        minimum_duration=minimum_duration)
+    ripple_above_threshold_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_threshold,
+                                                             minimum_duration=minimum_duration)
+    return extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments)
+
+
+def get_segments_multitaper(lfp_dataframe, sampling_frequency, zscore_threshold=3,
+                            minimum_duration=0.015):
+    ''' Returns a list of tuples that correspond to the start and end of the ripple using the
+    zscore of a taper at 200 Hz to extract the ripples.
+    '''
+    ripple_frank_df = get_ripple_zscore_multitaper(lfp_dataframe,
+                                                   sampling_frequency,
+                                                   zscore_threshold=zscore_threshold)
+    ripple_above_mean_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_mean,
+                                                        minimum_duration=minimum_duration)
+    ripple_above_threshold_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_threshold,
+                                                             minimum_duration=minimum_duration)
+    return extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments)
