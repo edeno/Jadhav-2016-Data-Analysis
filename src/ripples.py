@@ -58,7 +58,8 @@ def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_thresho
     dataframes = [pd.DataFrame({'ripple_zscore': _zscore(smoothed_envelope)}), lfp.reset_index()]
     return (pd.concat(dataframes, axis=1)
             .set_index('time')
-            .assign(ripple_indicator=lambda x: x.ripple_zscore >= zscore_threshold))
+            .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
+            .assign(is_above_ripple_mean=lambda x: x.ripple_zscore >= 0))
 
 
 def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_product=1,
