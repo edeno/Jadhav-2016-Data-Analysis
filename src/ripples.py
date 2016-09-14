@@ -7,27 +7,32 @@ import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
 import pandas as pd
 import spectral
+def _equiripple_bandpass(lowcut, highcut, sampling_frequency, transition_width=10, num_taps=318):
+
+    edges = [0,
+             lowcut - transition_width,
+             lowcut, highcut,
+             highcut + transition_width,
+             0.5 * sampling_frequency]
+
+    b = scipy.signal.remez(num_taps, edges, [0, 1, 0], Hz=sampling_frequency)
+    return b, 1
 
 
-def _butter_bandpass(lowcut, highcut, sampling_frequency, order=5):
-    ''' Returns the coefficients for a butterworth bandpass filter. Code from:
-    http://stackoverflow.com/questions/12093594/how-to-implement-band-pass-butterworth-filter-with-
-    scipy-signal-butter
+def get_ripplefilter_kernel():
+    ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
+    bandpass with 40 db roll off and 10 Hz sidebands.
     '''
-    nyq = 0.5 * sampling_frequency
-    low = lowcut / nyq
-    high = highcut / nyq
-    b, a = scipy.signal.butter(order, [low, high], btype='band')
-    return b, a
+    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
+    ripplefilter = scipy.io.loadmat('{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
+    return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
-def _butter_bandpass_filter(data, lowcut, highcut, sampling_frequency, order=5):
-    ''' Returns a bandpass filtered signal ('data') between lowcut and highcut. Code from:
-    http://stackoverflow.com/questions/12093594/how-to-implement-band-pass-butterworth-filter-with-
-    scipy-signal-butter
+def _bandpass_filter(data):
+    ''' Returns a bandpass filtered signal ('data') between lowcut and highcut
     '''
-    b, a = _butter_bandpass(lowcut, highcut, sampling_frequency, order=order)
-    return scipy.signal.lfilter(b, a, data)
+    filter_numerator, filter_denominator = get_ripplefilter_kernel()
+    return scipy.signal.filtfilt(filter_numerator, filter_denominator, data)
 
 
 def _zscore(x):
@@ -41,8 +46,7 @@ def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_thresho
     score for the lfp according to Karlsson, M.P., Frank, L.M., 2009. Awake replay of remote
     experiences in the hippocampus. Nature Neuroscience 12, 913–918. doi:10.1038/nn.2344
     '''
-    filtered_data = _butter_bandpass_filter(lfp['electric_potential'], 150, 250,
-                                            sampling_frequency, order=10)
+    filtered_data = _bandpass_filter(lfp['electric_potential'])
     filtered_data_envelope = abs(scipy.signal.hilbert(filtered_data))
     smoothed_envelope = scipy.ndimage.filters.gaussian_filter1d(filtered_data_envelope,
                                                                 sigma * sampling_frequency,
