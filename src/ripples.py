@@ -150,6 +150,18 @@ def segment_boolean_series(series, minimum_duration=0.015):
     return [(start_time, end_time)
             for start_time, end_time in zip(start_times, end_times)
             if end_time >= (start_time + minimum_duration)]
+
+
+def create_box(segment, y_low=-5, height=10, alpha=0.3, color='grey'):
+    ''' Convenience function for marking ripple times on a figure. Returns a patches rectangle
+    object.
+    '''
+    return patches.Rectangle((segment[0], y_low),
+                             segment[1] - segment[0],
+                             height,
+                             alpha=alpha, color=color)
+
+
 def _find_containing_interval(interval_candidates, target_interval):
     '''Returns the interval that contains the target interval out of a list of
     interval candidates. This is accomplished by finding the closest start time
