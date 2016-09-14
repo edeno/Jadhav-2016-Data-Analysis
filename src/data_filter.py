@@ -296,5 +296,14 @@ def make_tetrode_dataframe(animals):
             }
 
 
+def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
+    ''' Convenience function for filtering a list by the criterion of a pandas series
+    Returns a list.
+    '''
+    is_in_list = list(pandas_boolean_series)
+    if len(list_to_filter) != len(is_in_list):
+        raise ValueError('list to filter must be the same length as the pandas series')
+    return [list_element for list_element, is_in_list in zip(list_to_filter, is_in_list) if is_in_list]
+
 if __name__ == '__main__':
     sys.exit()
