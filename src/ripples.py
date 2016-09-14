@@ -201,3 +201,19 @@ def get_segments_multitaper(lfp_dataframe, sampling_frequency, zscore_threshold=
     ripple_above_threshold_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_threshold,
                                                              minimum_duration=minimum_duration)
     return extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments)
+
+
+def get_multitaper_ripples_dataframe(tetrode_index, animals, sampling_frequency,
+                                     zscore_threshold=3, minimum_duration=0.015):
+    ''' Given a tetrode index (animal, day, epoch, tetrode #), returns a pandas dataframe
+    with the pre-computed ripples using multitapers labeled according to the ripple number.
+    Non-ripple times are marked as NaN.
+    '''
+    lfp_dataframe = df._get_LFP_dataframe(tetrode_index, animals)
+    segments = get_segments_multitaper(lfp_dataframe, sampling_frequency,
+                                       zscore_threshold=zscore_threshold,
+                                       minimum_duration=minimum_duration)
+    ripple_times = [(ind + 1, start_time, end_time)
+                    for ind, (start_time, end_time) in enumerate(segments)]
+    return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
+            .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
