@@ -61,25 +61,26 @@ def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_thresho
             .assign(ripple_indicator=lambda x: x.ripple_zscore >= zscore_threshold))
 
 
-def get_ripple_zscore_multitaper(lfp, sampling_frequency, frequency_resolution=100,
-                                 time_window_duration=0.020, zscore_threshold=3):
+def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_product=1,
+                                 time_window_duration=0.020, zscore_threshold=3,
+                                 time_window_step=0.004):
     ''' Returns a pandas dataframe containing the original lfp and the ripple-band (150-250 Hz)
     score for the lfp using a tapered power signal centered at 200 Hz. Frequency resolution is
     100 Hz and time resolution is 20 milliseconds by default.
     '''
-    time_window_step = time_window_duration / 2
-
     spectrogram = spectral.get_spectrogram_dataframe(lfp,
-                                                     frequency_resolution=frequency_resolution,
+                                                     time_halfbandwidth_product=time_halfbandwidth_product,
                                                      time_window_duration=time_window_duration,
                                                      sampling_frequency=sampling_frequency,
-                                                     time_window_step=time_window_step)
-    is_200_Hz = spectrogram.frequency == 200
-    dataframes = [pd.DataFrame({'ripple_zscore': _zscore(spectrogram.loc[is_200_Hz, 'power'])}),
-                  lfp.reset_index()]
-    return (pd.concat(dataframes, axis=1)
-              .set_index('time')
-              .assign(ripple_indicator=lambda x: x.ripple_zscore >= zscore_threshold))
+                                                     time_window_step=time_window_step,
+                                                     desired_frequencies=[150, 250])
+    is_200_Hz = spectrogram.frequency == 187.5
+    return (spectrogram.loc[is_200_Hz, :].drop('frequency', axis=1)
+                                         .set_index('time').assign(ripple_zscore=lambda x: _zscore(x.power))
+                                         .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
+                                         .assign(is_above_ripple_mean=lambda x: x.ripple_zscore >= 0).sort_index())
+
+
 def _get_computed_ripple_times(tetrode_tuple, animals):
     ''' Returns a list of tuples for a given tetrode in the format
     (ripple_number, start_index, end_index). The indexes are relative
