@@ -42,31 +42,34 @@ def plot_session(data, plotting_function):
             pass
 
 
-def make_timefrequency_dataframe(lfp_data_frame, time_window_duration, time_window_step, frequency_resolution, sampling_frequency):
+def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_window_step,
+                                     sampling_frequency, desired_frequencies=None,
+                                     time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
+                                     tapers=None):
     ''' Generator function that returns a power spectral density data frame for each time window
     '''
     time_window_start = 0
     number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
     number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
 
-    while time_window_start + number_points_time_window < len(lfp_data_frame):
+    while time_window_start + number_points_time_window < len(lfp_dataframe):
         try:
             time_window_end = time_window_start + number_points_time_window
-            windowed_data_frame = lfp_data_frame.iloc[time_window_start:time_window_end, :]
-            centered_signal = (windowed_data_frame['electric_potential'] -
-                               windowed_data_frame['electric_potential'].mean())
-            frequencies, power_spectral_density, _ = tsa.multi_taper_psd(centered_signal,
-                                                                         BW=frequency_resolution,
-                                                                         Fs=sampling_frequency,
-                                                                         adaptive=False,
-                                                                         jackknife=False
-                                                                         )
-            centered_time = (lfp_data_frame.index.values[time_window_start] +
+            windowed_dataframe = lfp_dataframe.iloc[time_window_start:time_window_end, :]
+            centered_signal = np.array(windowed_dataframe['electric_potential'] -
+                                       windowed_dataframe['electric_potential'].mean())
+            power_spectral_density, frequencies = multitaper_power_spectral_density(centered_signal,
+                                                                                    sampling_frequency,
+                                                                                    desired_frequencies=desired_frequencies,
+                                                                                    time_halfbandwidth_product=time_halfbandwidth_product,
+                                                                                    number_of_tapers=number_of_tapers,
+                                                                                    pad=pad,
+                                                                                    tapers=tapers)
+            centered_time = (lfp_dataframe.index.values[time_window_start] +
                              (time_window_duration / 2))
-            centered_time = np.round(centered_time, decimals=4)
 
             yield (pd.DataFrame({'power': power_spectral_density,
-                                'frequency': np.round(frequencies, decimals=3)}
+                                 'frequency': np.round(frequencies, decimals=3)}
                                 )
                    .assign(time=centered_time)
                    )
@@ -76,36 +79,200 @@ def make_timefrequency_dataframe(lfp_data_frame, time_window_duration, time_wind
             pass
 
 
-def get_spectrogram_dataframe(lfp_data_frame,
+def get_spectrogram_dataframe(lfp_dataframe,
                               sampling_frequency=1000,
-                              frequency_resolution=2,
                               time_window_duration=1,
-                              time_window_step=0):
+                              time_window_step=None,
+                              desired_frequencies=None,
+                              time_halfbandwidth_product=3,
+                              number_of_tapers=None,
+                              pad=0,
+                              tapers=None):
     ''' Returns a pandas dataframe with the information for a spectrogram.
     Sampling frequency and frequency resolution inputs are given in Hertz.
     Time window duration and steps are given in seconds.
     '''
-    if time_window_step == 0:
+    if time_window_step is None:
         time_window_step = time_window_duration
     return pd.concat(
-            (time_window for time_window in make_timefrequency_dataframe(lfp_data_frame,
-                                                                         time_window_duration,
-                                                                         time_window_step,
-                                                                         frequency_resolution,
-                                                                         sampling_frequency))
+            (time_window for time_window in make_windowed_spectrum_dataframe(lfp_dataframe,
+                                                                             time_window_duration,
+                                                                             time_window_step,
+                                                                             sampling_frequency,
+                                                                             desired_frequencies=desired_frequencies,
+                                                                             time_halfbandwidth_product=time_halfbandwidth_product,
+                                                                             number_of_tapers=number_of_tapers,
+                                                                             pad=pad,
+                                                                             tapers=tapers))
             )
 
 
 def _get_time_freq_from_spectrogram(spectrogram_dataframe):
-    return (np.unique(spectrogram_dataframe['time']), np.unique(spectrogram_dataframe['frequency']))
+    return (np.unique(spectrogram_dataframe['time']),
+            np.unique(spectrogram_dataframe['frequency']))
+
 
 def plot_spectrogram(spectrogram_dataframe, axis_handle):
     time, freq = _get_time_freq_from_spectrogram(spectrogram_dataframe)
     mesh = axis_handle.pcolormesh(time, freq, spectrogram_dataframe.pivot('frequency', 'time', 'power'),
                                   cmap='viridis',
-                                  shading='gouraud')
+                                  shading='gouraud',
+                                  vmin=spectrogram_dataframe.power.quantile(q=0.05),
+                                  vmax=spectrogram_dataframe.power.quantile(q=0.95))
     axis_handle.set_ylabel('Frequency (Hz)')
     axis_handle.set_xlabel('Time (seconds)')
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
+
+
+def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequencies=None):
+    ''' Returns the frequencies and frequency index. Desired frequencies is a two element
+    tuple that defines the range of frequencies returned. If unset, all frequencies from 0
+    to the Nyquist (sampling_frequency / 2) are returned.
+    '''
+    if desired_frequencies is None:
+        desired_frequencies = [0, sampling_frequency / 2]
+    frequency_step = sampling_frequency / number_of_fft_samples
+    frequencies = np.arange(0, sampling_frequency + frequency_step, frequency_step)
+    frequencies = frequencies[:number_of_fft_samples]
+    frequency_ind = np.where((desired_frequencies[0] <= frequencies) &
+                             (frequencies <= desired_frequencies[1]))[0]
+    return frequencies[frequency_ind], frequency_ind
+
+
+def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_product,
+                number_of_tapers):
+    ''' Returns the Discrete prolate spheroidal sequences (tapers) for multi-taper
+    spectral analysis.
+    '''
+    tapers, _ = tsa.spectral.dpss_windows(time_series_length,
+                                          time_halfbandwidth_product,
+                                          number_of_tapers)
+    return tapers * np.sqrt(sampling_frequency)
+
+
+def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
+    ''' Projects the data on the tapers and returns the discrete Fourier transform
+    '''
+    return scipy.fftpack.fft(tapers * data, n=number_of_fft_samples, axis=-1) / sampling_frequency
+
+
+def _nextpower2(n):
+    """Return the next integral power of two greater than the given number.
+    Specifically, return m such that
+        m >= n
+        m == 2**x
+    where x is an integer.
+    This is useful for ensuring fast FFT sizes.
+    """
+    return int(2 ** np.ceil(np.log2(n)))
+
+
+def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
+                        time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
+                        tapers=None):
+    ''' Returns complex spectrum in the form: tapers x frequencies
+    '''
+    if number_of_tapers is None:
+        number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
+    if pad is None:
+        pad = -1
+    time_series_length = data.shape[0]
+    number_of_fft_samples = max(_nextpower2(time_series_length) + pad, time_series_length)
+
+    frequencies, freq_ind = _get_frequencies(sampling_frequency, number_of_fft_samples,
+                                             desired_frequencies=desired_frequencies)
+    if tapers is None:
+        tapers = _get_tapers(time_series_length, sampling_frequency,
+                             time_halfbandwidth_product, number_of_tapers)
+    complex_spectrum = _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency)
+    return complex_spectrum, frequencies, freq_ind
+
+
+def _cross_spectrum(complex_spectrum1, complex_spectrum2):
+    '''Returns the cross-spectrum between two spectra'''
+    cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
+    return np.mean(cross_spectrum, axis=0).squeeze()
+
+
+def multitaper_power_spectral_density(data, sampling_frequency, desired_frequencies=None,
+                                      time_halfbandwidth_product=3, number_of_tapers=None,
+                                      pad=0, tapers=None):
+    ''' Returns the multi-taper power spectral density of a time series
+    '''
+    complex_spectrum, frequencies, freq_ind = multitaper_spectrum(data, sampling_frequency,
+                                                                  desired_frequencies=desired_frequencies,
+                                                                  time_halfbandwidth_product=time_halfbandwidth_product,
+                                                                  number_of_tapers=number_of_tapers,
+                                                                  tapers=tapers,
+                                                                  pad=pad)
+    psd = np.real(_cross_spectrum(complex_spectrum[:, freq_ind], complex_spectrum[:, freq_ind]))
+    return psd, frequencies
+
+
+def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=None,
+                         time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
+                         tapers=None):
+    ''' Returns the multi-taper coherency of two time series
+    '''
+    complex_spectrum1, frequencies, freq_ind = multitaper_spectrum(data1, sampling_frequency,
+                                                                   desired_frequencies=desired_frequencies,
+                                                                   time_halfbandwidth_product=time_halfbandwidth_product,
+                                                                   number_of_tapers=number_of_tapers,
+                                                                   tapers=tapers)
+    complex_spectrum2, _, _ = multitaper_spectrum(data2, sampling_frequency,
+                                                  desired_frequencies=desired_frequencies,
+                                                  time_halfbandwidth_product=time_halfbandwidth_product,
+                                                  number_of_tapers=number_of_tapers,
+                                                  tapers=tapers)
+    cross_spectrum = _cross_spectrum(complex_spectrum1[:, freq_ind], complex_spectrum2[:, freq_ind])
+    spectrum1 = _cross_spectrum(complex_spectrum1[:, freq_ind], complex_spectrum1[:, freq_ind])
+    spectrum2 = _cross_spectrum(complex_spectrum2[:, freq_ind], complex_spectrum2[:, freq_ind])
+
+    coherency = cross_spectrum / np.sqrt(spectrum1 * spectrum2)
+    return np.real(np.abs(coherency)), np.angle(coherency), frequencies, np.real(spectrum1), np.real(spectrum2)
+
+
+def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_window_duration,
+                                      time_window_step, sampling_frequency,
+                                      desired_frequencies=None, time_halfbandwidth_product=3,
+                                      number_of_tapers=None, pad=0):
+    ''' Generator function that returns a coherency dataframe for each time window
+    '''
+    time_window_start = 0
+    number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
+    number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
+
+    while time_window_start + number_points_time_window < len(lfp_dataframe1):
+        try:
+            time_window_end = time_window_start + number_points_time_window
+            windowed_dataframe1 = lfp_dataframe1.iloc[time_window_start:time_window_end, :]
+            windowed_dataframe2 = lfp_dataframe2.iloc[time_window_start:time_window_end, :]
+            centered_signal1 = np.array(windowed_dataframe1['electric_potential'] -
+                                        windowed_dataframe1['electric_potential'].mean())
+            centered_signal2 = np.array(windowed_dataframe2['electric_potential'] -
+                                        windowed_dataframe2['electric_potential'].mean())
+            coherence_magnitude, coherence_angle, frequencies, psd1, psd2 = \
+                multitaper_coherency(centered_signal1,
+                                     centered_signal2,
+                                     sampling_frequency,
+                                     desired_frequencies=desired_frequencies,
+                                     time_halfbandwidth_product=time_halfbandwidth_product,
+                                     number_of_tapers=number_of_tapers,
+                                     pad=pad)
+            centered_time = (lfp_dataframe1.index.values[time_window_start] +
+                             (time_window_duration / 2))
+
+            yield (pd.DataFrame({'frequency': np.round(frequencies, decimals=3),
+                                 'coherence_magnitude': coherence_magnitude,
+                                 'coherence_angle': coherence_angle,
+                                 'power_spectrum1': psd1,
+                                 'power_spectrum2': psd2
+                                 })
+                   .assign(time=centered_time)
+                   )
+            time_window_start += number_points_time_step
+        except ValueError:
+            # Not enough data points
+            pass
