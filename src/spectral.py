@@ -112,13 +112,13 @@ def _get_time_freq_from_spectrogram(spectrogram_dataframe):
             np.unique(spectrogram_dataframe['frequency']))
 
 
-def plot_spectrogram(spectrogram_dataframe, axis_handle):
+def plot_spectrogram(spectrogram_dataframe, axis_handle, spectrum_name='power', cmap='viridis'):
     time, freq = _get_time_freq_from_spectrogram(spectrogram_dataframe)
-    mesh = axis_handle.pcolormesh(time, freq, spectrogram_dataframe.pivot('frequency', 'time', 'power'),
-                                  cmap='viridis',
+    mesh = axis_handle.pcolormesh(time, freq, spectrogram_dataframe.pivot('frequency', 'time', spectrum_name),
+                                  cmap=cmap,
                                   shading='gouraud',
-                                  vmin=spectrogram_dataframe.power.quantile(q=0.05),
-                                  vmax=spectrogram_dataframe.power.quantile(q=0.95))
+                                  vmin=spectrogram_dataframe[spectrum_name].quantile(q=0.05),
+                                  vmax=spectrogram_dataframe[spectrum_name].quantile(q=0.95))
     axis_handle.set_ylabel('Frequency (Hz)')
     axis_handle.set_xlabel('Time (seconds)')
     axis_handle.set_xlim([time.min(), time.max()])
