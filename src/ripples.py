@@ -183,7 +183,7 @@ def extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_
     crosses the mean.
     '''
     segments = [_find_containing_interval(ripple_above_mean_segments, segment)
-            for segment in ripple_above_threshold_segments]
+                for segment in ripple_above_threshold_segments]
     return list(set(segments))  # remove duplicate segments
 
 
