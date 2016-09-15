@@ -133,8 +133,7 @@ def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequenc
     '''
     if desired_frequencies is None:
         desired_frequencies = [0, sampling_frequency / 2]
-    frequency_step = sampling_frequency / number_of_fft_samples
-    frequencies = np.arange(0, sampling_frequency + frequency_step, frequency_step)
+    frequencies = np.linspace(0, sampling_frequency, num=number_of_fft_samples)
     frequencies = frequencies[:number_of_fft_samples]
     frequency_ind = np.where((desired_frequencies[0] <= frequencies) &
                              (frequencies <= desired_frequencies[1]))[0]
