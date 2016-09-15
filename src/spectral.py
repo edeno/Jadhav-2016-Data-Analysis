@@ -240,7 +240,7 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
     spectrum2 = _cross_spectrum(complex_spectrum2[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
 
     coherency = cross_spectrum / np.sqrt(spectrum1 * spectrum2)
-    return np.real(np.abs(coherency)), np.angle(coherency), frequencies, np.real(spectrum1), np.real(spectrum2)
+    return np.abs(coherency), np.angle(coherency), frequencies, np.real(spectrum1), np.real(spectrum2)
 
 
 def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_window_duration,
