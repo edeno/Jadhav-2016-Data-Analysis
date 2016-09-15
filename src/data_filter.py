@@ -182,7 +182,7 @@ def _get_LFP_dataframe(tetrode_index, animals):
     '''
     lfp_file = scipy.io.loadmat(get_LFP_filename(tetrode_index, animals))
     lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-    lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0],
+    lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0][0],
                              lfp_data['data'][0, 0].size,
                              lfp_data['samprate'][0, 0])
     data_dict = {'time': lfp_time,
@@ -201,9 +201,10 @@ def get_LFP_data(tetrode_index, animals):
 def _get_LFP_time(start_time, number_samples, sampling_rate):
     ''' Returns an array of time stamps
     '''
+    sampling_rate = int(np.round(sampling_rate))
     end_time = start_time + (number_samples / sampling_rate)
-    return np.round(np.arange(start_time, end_time, (1 / sampling_rate)),
-                    decimals=4)
+
+    return np.linspace(start_time, end_time, number_samples)
 
 
 def get_neuron_info(animal):

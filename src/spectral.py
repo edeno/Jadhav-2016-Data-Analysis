@@ -69,7 +69,7 @@ def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_w
                              (time_window_duration / 2))
 
             yield (pd.DataFrame({'power': power_spectral_density,
-                                 'frequency': np.round(frequencies, decimals=3)}
+                                 'frequency': frequencies}
                                 )
                    .assign(time=centered_time)
                    )
@@ -264,7 +264,7 @@ def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_windo
             centered_time = (lfp_dataframe1.index.values[time_window_start] +
                              (time_window_duration / 2))
 
-            yield (pd.DataFrame({'frequency': np.round(frequencies, decimals=3),
+            yield (pd.DataFrame({'frequency': frequencies,
                                  'coherence_magnitude': coherence_magnitude,
                                  'coherence_angle': coherence_angle,
                                  'power_spectrum1': psd1,
