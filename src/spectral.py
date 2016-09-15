@@ -65,8 +65,8 @@ def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_w
                                                                                     number_of_tapers=number_of_tapers,
                                                                                     pad=pad,
                                                                                     tapers=tapers)
-            centered_time = (lfp_dataframe.index.values[time_window_start] +
-                             (time_window_duration / 2))
+            centered_time = lfp_dataframe.index.values[time_window_start] + \
+                (time_window_duration / 2)
 
             yield (pd.DataFrame({'power': power_spectral_density,
                                  'frequency': frequencies}
