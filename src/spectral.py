@@ -148,13 +148,18 @@ def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_produ
     tapers, _ = tsa.spectral.dpss_windows(time_series_length,
                                           time_halfbandwidth_product,
                                           number_of_tapers)
-    return tapers * np.sqrt(sampling_frequency)
+    return tapers.T * np.sqrt(sampling_frequency)
 
 
 def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
     ''' Projects the data on the tapers and returns the discrete Fourier transform
     '''
-    return scipy.fftpack.fft(tapers * data, n=number_of_fft_samples, axis=-1) / sampling_frequency
+    try:
+        projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
+    except IndexError:
+        # There are no trials
+        projected_data = data[:, np.newaxis, np.newaxis] * tapers[:, :, np.newaxis]
+    return scipy.fftpack.fft(projected_data, n=number_of_fft_samples, axis=0) / sampling_frequency
 
 
 def _nextpower2(n):
@@ -192,7 +197,7 @@ def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
     '''Returns the cross-spectrum between two spectra'''
     cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
-    return np.mean(cross_spectrum, axis=0).squeeze()
+    return np.mean(cross_spectrum, axis=(1, 2)).squeeze()
 
 
 def multitaper_power_spectral_density(data, sampling_frequency, desired_frequencies=None,
@@ -206,7 +211,7 @@ def multitaper_power_spectral_density(data, sampling_frequency, desired_frequenc
                                                                   number_of_tapers=number_of_tapers,
                                                                   tapers=tapers,
                                                                   pad=pad)
-    psd = np.real(_cross_spectrum(complex_spectrum[:, freq_ind], complex_spectrum[:, freq_ind]))
+    psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :], complex_spectrum[freq_ind, :, :]))
     return psd, frequencies
 
 
@@ -224,10 +229,11 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
                                                   desired_frequencies=desired_frequencies,
                                                   time_halfbandwidth_product=time_halfbandwidth_product,
                                                   number_of_tapers=number_of_tapers,
-                                                  tapers=tapers)
-    cross_spectrum = _cross_spectrum(complex_spectrum1[:, freq_ind], complex_spectrum2[:, freq_ind])
-    spectrum1 = _cross_spectrum(complex_spectrum1[:, freq_ind], complex_spectrum1[:, freq_ind])
-    spectrum2 = _cross_spectrum(complex_spectrum2[:, freq_ind], complex_spectrum2[:, freq_ind])
+                                                  tapers=tapers,
+                                                  pad=pad)
+    cross_spectrum = _cross_spectrum(complex_spectrum1[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
+    spectrum1 = _cross_spectrum(complex_spectrum1[freq_ind, :, :], complex_spectrum1[freq_ind, :, :])
+    spectrum2 = _cross_spectrum(complex_spectrum2[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
 
     coherency = cross_spectrum / np.sqrt(spectrum1 * spectrum2)
     return np.real(np.abs(coherency)), np.angle(coherency), frequencies, np.real(spectrum1), np.real(spectrum2)
