@@ -153,6 +153,7 @@ def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_produ
 
 def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
     ''' Projects the data on the tapers and returns the discrete Fourier transform
+    (frequencies x trials x tapers)
     '''
     try:
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
@@ -176,7 +177,7 @@ def _nextpower2(n):
 def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
                         time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
                         tapers=None):
-    ''' Returns complex spectrum in the form: tapers x frequencies
+    ''' Returns complex spectrum (frequencies x trials x tapers)
     '''
     if number_of_tapers is None:
         number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
@@ -219,6 +220,8 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
                          time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
                          tapers=None):
     ''' Returns the multi-taper coherency of two time series
+    data1 (time x trials)
+    data2 (time x trials)
     '''
     complex_spectrum1, frequencies, freq_ind = multitaper_spectrum(data1, sampling_frequency,
                                                                    desired_frequencies=desired_frequencies,
