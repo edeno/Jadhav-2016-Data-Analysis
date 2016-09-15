@@ -74,8 +74,9 @@ def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_pro
                                                      time_window_duration=time_window_duration,
                                                      sampling_frequency=sampling_frequency,
                                                      time_window_step=time_window_step,
-                                                     desired_frequencies=[150, 250])
-    is_200_Hz = spectrogram.frequency == 187.5
+                                                     desired_frequencies=[150, 250],
+                                                     pad=None)
+    is_200_Hz = spectrogram.frequency == 200
     return (spectrogram.loc[is_200_Hz, :].drop('frequency', axis=1)
                                          .set_index('time').assign(ripple_zscore=lambda x: _zscore(x.power))
                                          .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
