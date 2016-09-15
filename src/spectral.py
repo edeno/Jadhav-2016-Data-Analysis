@@ -317,3 +317,21 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
                      )
 
 
+def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):
+    time, freq = _get_time_freq_from_spectrogram(coherogram_dataframe)
+    mesh = axis_handle.pcolormesh(time, freq, coherogram_dataframe.pivot('frequency', 'time', 'coherence_magnitude'),
+                                  cmap=cmap,
+                                  shading='gouraud',
+                                  vmin=vmin,
+                                  vmax=vmax)
+    axis_handle.set_ylabel('Frequency (Hz)')
+    axis_handle.set_xlabel('Time (seconds)')
+    axis_handle.set_xlim([time.min(), time.max()])
+    axis_handle.set_ylim([freq.min(), freq.max()])
+    return mesh
+
+
+def coherence_title(tetrode_indices, cur_tetrode_info):
+    return '{tetrode1} - {tetrode2}' \
+                .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
+                        tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
