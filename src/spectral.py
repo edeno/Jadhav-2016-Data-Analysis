@@ -227,7 +227,8 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
                                                                    desired_frequencies=desired_frequencies,
                                                                    time_halfbandwidth_product=time_halfbandwidth_product,
                                                                    number_of_tapers=number_of_tapers,
-                                                                   tapers=tapers)
+                                                                   tapers=tapers,
+                                                                   pad=pad)
     complex_spectrum2, _, _ = multitaper_spectrum(data2, sampling_frequency,
                                                   desired_frequencies=desired_frequencies,
                                                   time_halfbandwidth_product=time_halfbandwidth_product,
@@ -245,7 +246,7 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
 def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_window_duration,
                                       time_window_step, sampling_frequency,
                                       desired_frequencies=None, time_halfbandwidth_product=3,
-                                      number_of_tapers=None, pad=0):
+                                      number_of_tapers=None, pad=0, tapers=None):
     ''' Generator function that returns a coherency dataframe for each time window
     '''
     time_window_start = 0
