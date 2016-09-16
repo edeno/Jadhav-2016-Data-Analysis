@@ -152,7 +152,7 @@ def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_produ
 
 def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
     ''' Projects the data on the tapers and returns the discrete Fourier transform
-    (frequencies x trials x tapers)
+    (frequencies x trials x tapers) with len(frequencies) = number of fft samples
     '''
     try:
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
@@ -195,7 +195,8 @@ def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
 
 
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
-    '''Returns the cross-spectrum between two spectra'''
+    '''Returns the average cross-spectrum between two spectra. Averages over the 2nd and 3rd
+    dimension'''
     cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
     return np.mean(cross_spectrum, axis=(1, 2)).squeeze()
 
@@ -211,7 +212,9 @@ def multitaper_power_spectral_density(data, sampling_frequency, desired_frequenc
                                                                   number_of_tapers=number_of_tapers,
                                                                   tapers=tapers,
                                                                   pad=pad)
-    psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :], complex_spectrum[freq_ind, :, :]))
+    psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
+                                  complex_spectrum[freq_ind, :, :])
+                  )
     return psd, frequencies
 
 
