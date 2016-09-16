@@ -159,7 +159,7 @@ def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
     except IndexError:
         # There are no trials
         projected_data = data[:, np.newaxis, np.newaxis] * tapers[:, :, np.newaxis]
-    return scipy.fftpack.fft(projected_data, n=number_of_fft_samples, axis=0) / sampling_frequency
+    return scipy.fftpack.rfft(projected_data, n=number_of_fft_samples, axis=0) / sampling_frequency
 
 
 def _nextpower2(n):
