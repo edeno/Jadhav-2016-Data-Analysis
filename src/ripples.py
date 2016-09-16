@@ -129,15 +129,7 @@ def _get_series_start_end_times(series):
     start_times = series.index[is_start_time].get_values()
 
     is_end_time = series & (~series.shift(-1).fillna(False))
-    end_times = series.index[is_end_time]
-
-    # Handle case of the indicator starting or ending above threshold.
-    # Remove these cases from the list
-    if len(start_times) != len(end_times):
-        if end_times[0] > start_times[0]:
-            end_times = end_times[1:]
-        else:
-            start_times = start_times[:-1]
+    end_times = series.index[is_end_time].get_values()
 
     return start_times, end_times
 
