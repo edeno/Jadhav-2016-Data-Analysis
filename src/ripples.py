@@ -7,8 +7,8 @@ import scipy.io
 import numpy as np
 import pandas as pd
 import matplotlib.patches as patches
-import spectral
-import data_filter as df
+import src.spectral as spectral
+import src.data_filter as df
 
 
 def _equiripple_bandpass(lowcut, highcut, sampling_frequency, transition_width=10, num_taps=318):
