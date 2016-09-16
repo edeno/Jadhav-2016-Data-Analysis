@@ -142,7 +142,7 @@ def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequenc
 def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_product,
                 number_of_tapers):
     ''' Returns the Discrete prolate spheroidal sequences (tapers) for multi-taper
-    spectral analysis.
+    spectral analysis (time series length x tapers).
     '''
     tapers, _ = tsa.spectral.dpss_windows(time_series_length,
                                           time_halfbandwidth_product,
