@@ -126,7 +126,7 @@ def _get_series_start_end_times(series):
     pandas series where the index is time.
     '''
     is_start_time = (~series.shift(1).fillna(False)) & series
-    start_times = series.index[is_start_time]
+    start_times = series.index[is_start_time].get_values()
 
     is_end_time = series & (~series.shift(-1).fillna(False))
     end_times = series.index[is_end_time]
