@@ -121,9 +121,9 @@ def get_computed_ripples_dataframe(tetrode_index, animals):
 
 
 def _get_series_start_end_times(series):
-    ''' Returns a two element tuple of the start of the segment
-    and the end of the segment. The input series must be a boolean
-    pandas series where the index is time.
+    ''' Returns a two element tuple with of the start of the segment and the end of the segment.
+    Each element is an numpy array, The input series must be a boolean pandas series where the
+    index is time.
     '''
     is_start_time = (~series.shift(1).fillna(False)) & series
     start_times = series.index[is_start_time].get_values()
