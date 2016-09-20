@@ -303,16 +303,16 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
     if time_window_step is None:
         time_window_step = time_window_duration
     return pd.concat(
-                    (time_window for time_window in make_windowed_coherency_dataframe(lfp_dataframe1,
-                                                                                      lfp_dataframe2,
-                                                                                      time_window_duration,
-                                                                                      time_window_step,
-                                                                                      sampling_frequency,
-                                                                                      desired_frequencies=desired_frequencies,
-                                                                                      time_halfbandwidth_product=time_halfbandwidth_product,
-                                                                                      number_of_tapers=number_of_tapers,
-                                                                                      pad=pad,
-                                                                                      tapers=tapers)
+                    (time_window for time_window in
+                     make_windowed_coherency_dataframe([lfp_dataframe1, lfp_dataframe2],
+                                                       time_window_duration,
+                                                       time_window_step,
+                                                       sampling_frequency,
+                                                       desired_frequencies=desired_frequencies,
+                                                       time_halfbandwidth_product=time_halfbandwidth_product,
+                                                       number_of_tapers=number_of_tapers,
+                                                       pad=pad,
+                                                       tapers=tapers)
                      )
                      )
 
