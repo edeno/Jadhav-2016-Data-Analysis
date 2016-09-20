@@ -7,6 +7,7 @@ import scipy.io
 import numpy as np
 import pandas as pd
 import matplotlib.patches as patches
+import tqdm
 import src.spectral as spectral
 import src.data_filter as df
 
@@ -224,3 +225,71 @@ def get_multitaper_ripples_dataframe(tetrode_index, animals, sampling_frequency,
                     for ind, (start_time, end_time) in enumerate(segments)]
     return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
             .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
+
+
+def merge_ranges(ranges):
+    """
+    Merge overlapping and adjacent ranges and yield the merged ranges
+    in order. The argument must be an iterable of pairs (start, stop).
+
+    >>> list(merge_ranges([(5,7), (3,5), (-1,3)]))
+    [(-1, 7)]
+    >>> list(merge_ranges([(5,6), (3,4), (1,2)]))
+    [(1, 2), (3, 4), (5, 6)]
+    >>> list(merge_ranges([]))
+    []
+    from: http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
+    """
+    ranges = iter(sorted(ranges))
+    current_start, current_stop = next(ranges)
+    for start, stop in ranges:
+        if start > current_stop:
+            # Gap between segments: output current segment and start a new one.
+            yield current_start, current_stop
+            current_start, current_stop = start, stop
+        else:
+            # Segments adjacent or overlapping: merge.
+            current_stop = max(current_stop, stop)
+    yield current_start, current_stop
+
+
+def get_windowed_dataframe(dataframe, segments, window_offset):
+    segments = iter(segments)
+    for segment_start, _ in segments:
+        yield (dataframe.loc[segment_start + window_offset[0]:segment_start + window_offset[1], :]
+                        .reset_index()
+                        .drop('time', axis=1))
+
+
+def reshape_to_segments(dataframes, segments, window_offset, sampling_frequency):
+    if isinstance(window_offset, float):
+        window_offset = [-window_offset, window_offset]
+    num_time_steps = int((window_offset[1] - window_offset[0]) * sampling_frequency) - 1
+    time = np.linspace(window_offset[0], window_offset[1], num=num_time_steps)
+    for dataframe in tqdm.tqdm_notebook(dataframes, desc='lfp_segments'):
+        yield (pd.concat(list(get_windowed_dataframe(dataframe, segments, window_offset)), axis=1)
+                  .assign(time=time).set_index('time'))
+
+
+def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_threshold=2,
+                        minimum_duration=0.015, speed_threshold=4):
+
+    tetrode_info = df.make_tetrode_dataframe(animals)
+    tetrode_index = df.get_dataframe_index(tetrode_info[epoch_index])
+    lfp_data = df.get_LFP_data(tetrode_index, animals)
+    CA1_lfp = df.filter_list_by_pandas_series(lfp_data, tetrode_info[epoch_index].area == 'CA1')
+    segments_multitaper = [get_segments_multitaper(lfp, sampling_frequency, zscore_threshold=2,
+                                                   minimum_duration=0.015)
+                           for lfp in tqdm.tqdm_notebook(CA1_lfp, desc='segments_multitaper')]
+    merged_segments = list(merge_ranges([seg for tetrode in segments_multitaper
+                                         for seg in tetrode]))
+
+    position_dataframe = df.get_position_dataframe(epoch_index, animals)[0]
+    interpolated_position = (pd.concat([lfp_data[0], position_dataframe])
+                                .sort_index()
+                                .interpolate(method='linear')
+                                .reindex(lfp_data[0].index))
+
+    average_speed = np.array([interpolated_position.loc[segment_start:segment_end, :].smoothed_speed.mean()
+                     for segment_start, segment_end in merged_segments])
+    return [merged_segments[i] for i in np.where(average_speed <= speed_threshold)[0]]
