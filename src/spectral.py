@@ -55,21 +55,8 @@ def make_windowed_spectrum_dataframe(lfp_dataframes, time_window_duration, time_
     while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
             time_window_end = time_window_start + number_points_time_window
-            windowed_dataframe = lfp_dataframe.iloc[time_window_start:time_window_end, :]
-            centered_signal = np.array(windowed_dataframe['electric_potential'] -
-                                       windowed_dataframe['electric_potential'].mean())
-            power_spectral_density, frequencies = multitaper_power_spectral_density(centered_signal,
-                                                                                    sampling_frequency,
-                                                                                    desired_frequencies=desired_frequencies,
-                                                                                    time_halfbandwidth_product=time_halfbandwidth_product,
-                                                                                    number_of_tapers=number_of_tapers,
-                                                                                    pad=pad,
-                                                                                    tapers=tapers)
-            centered_time = lfp_dataframe.index.values[time_window_start] + \
-                (time_window_duration / 2)
+            windowed_arrays = _get_window_array(lfp_dataframes, time_window_start, time_window_end)
 
-            yield (pd.DataFrame({'power': power_spectral_density,
-                                 'frequency': frequencies}
             yield (pd.DataFrame(multitaper_power_spectral_density(windowed_arrays,
                                                                   sampling_frequency,
                                                                   tapers=tapers,
@@ -266,22 +253,7 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
     while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
             time_window_end = time_window_start + number_points_time_window
-            windowed_dataframe1 = lfp_dataframe1.iloc[time_window_start:time_window_end, :]
-            windowed_dataframe2 = lfp_dataframe2.iloc[time_window_start:time_window_end, :]
-            centered_signal1 = np.array(windowed_dataframe1['electric_potential'] -
-                                        windowed_dataframe1['electric_potential'].mean())
-            centered_signal2 = np.array(windowed_dataframe2['electric_potential'] -
-                                        windowed_dataframe2['electric_potential'].mean())
-            coherence_magnitude, coherence_angle, frequencies, psd1, psd2 = \
-                multitaper_coherency(centered_signal1,
-                                     centered_signal2,
-                                     sampling_frequency,
-                                     desired_frequencies=desired_frequencies,
-                                     time_halfbandwidth_product=time_halfbandwidth_product,
-                                     number_of_tapers=number_of_tapers,
-                                     pad=pad)
-            centered_time = (lfp_dataframe1.index.values[time_window_start] +
-                             (time_window_duration / 2))
+            windowed_arrays = _get_window_array(lfp_dataframes, time_window_start, time_window_end)
 
             yield (pd.DataFrame(multitaper_coherency(windowed_arrays,
                                 sampling_frequency,
@@ -296,6 +268,26 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
         except ValueError:
             # Not enough data points
             pass
+
+
+def _window(dataframe, time_window_start, time_window_end):
+    return dataframe.iloc[time_window_start:time_window_end]
+
+
+def _center(series):
+    return series - series.mean()
+
+
+def _get_window_array(lfp_dataframes, time_window_start, time_window_end):
+    window_array = [np.array(_center(_window(lfp, time_window_start, time_window_end)))
+                    for lfp in lfp_dataframes]
+    if len(window_array) == 1:
+        window_array = window_array[0]
+    return window_array
+
+
+def _get_window_center(dataframe, time_window_start, time_window_duration):
+    return dataframe.index[time_window_start] + (time_window_duration / 2)
 
 
 def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
