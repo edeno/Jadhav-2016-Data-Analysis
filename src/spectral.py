@@ -42,7 +42,7 @@ def plot_session(data, plotting_function):
             pass
 
 
-def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_window_step,
+def make_windowed_spectrum_dataframe(lfp_dataframes, time_window_duration, time_window_step,
                                      sampling_frequency, desired_frequencies=None,
                                      time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
                                      tapers=None):
@@ -52,7 +52,7 @@ def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_w
     number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
     number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
 
-    while time_window_start + number_points_time_window < len(lfp_dataframe):
+    while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
             time_window_end = time_window_start + number_points_time_window
             windowed_dataframe = lfp_dataframe.iloc[time_window_start:time_window_end, :]
@@ -98,7 +98,7 @@ def get_spectrogram_dataframe(lfp_dataframe,
     if time_window_step is None:
         time_window_step = time_window_duration
     return pd.concat(
-            (time_window for time_window in make_windowed_spectrum_dataframe(lfp_dataframe,
+            (time_window for time_window in make_windowed_spectrum_dataframe([lfp_dataframe],
                                                                              time_window_duration,
                                                                              time_window_step,
                                                                              sampling_frequency,
@@ -221,20 +221,20 @@ def multitaper_power_spectral_density(data, sampling_frequency, desired_frequenc
             }
 
 
-def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=None,
+def multitaper_coherency(data, sampling_frequency, desired_frequencies=None,
                          time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
                          tapers=None):
     ''' Returns the multi-taper coherency of two time series
     data1 (time x trials)
     data2 (time x trials)
     '''
-    complex_spectrum1, frequencies, freq_ind = multitaper_spectrum(data1, sampling_frequency,
+    complex_spectrum1, frequencies, freq_ind = multitaper_spectrum(data[0], sampling_frequency,
                                                                    desired_frequencies=desired_frequencies,
                                                                    time_halfbandwidth_product=time_halfbandwidth_product,
                                                                    number_of_tapers=number_of_tapers,
                                                                    tapers=tapers,
                                                                    pad=pad)
-    complex_spectrum2, _, _ = multitaper_spectrum(data2, sampling_frequency,
+    complex_spectrum2, _, _ = multitaper_spectrum(data[0], sampling_frequency,
                                                   desired_frequencies=desired_frequencies,
                                                   time_halfbandwidth_product=time_halfbandwidth_product,
                                                   number_of_tapers=number_of_tapers,
@@ -253,7 +253,7 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
             }
 
 
-def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_window_duration,
+def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
                                       time_window_step, sampling_frequency,
                                       desired_frequencies=None, time_halfbandwidth_product=3,
                                       number_of_tapers=None, pad=0, tapers=None):
@@ -263,7 +263,7 @@ def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_windo
     number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
     number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
 
-    while time_window_start + number_points_time_window < len(lfp_dataframe1):
+    while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
             time_window_end = time_window_start + number_points_time_window
             windowed_dataframe1 = lfp_dataframe1.iloc[time_window_start:time_window_end, :]
