@@ -1,16 +1,16 @@
-### Data Description
+### Data Description ###
 
 Data is from:
 > Jadhav, S. P., Rothschild, G., Roumis, D. K. & Frank, L. M. Coordinated Excitation and Inhibition of Prefrontal Ensembles during Awake Hippocampal Sharp-Wave Ripple Events. Neuron 90, 113–127 (2016).
 
-### Raw Data Format
+### Raw Data Format ###
 Data is in the Matlab format (.mat files). The following describes the main data structures contained in the raw data.
 
 #### Animal Information ####
 - **Name**: animaldef.m
 - **Description**: Function that maps *animal names* to *directories*
 
-#### Task Information
+#### Task Information ####
 - **Name**: {*animal*}task{*day*}.mat
 - **Description**: Defines the different task epochs for a single experimental session
 - **Format**:
@@ -22,8 +22,8 @@ Data is in the Matlab format (.mat files). The following describes the main data
                 - Environment: type of running track
                     -  lin: linear track
                     -  wtr1: w-track
-                    -  postsleep
-                    -  presleep
+                    -  postsleep: after sleeping
+                    -  presleep: before sleeping
 
 #### Cell Information (aka Neuron Information) ####
 - **Name**: {*animal*}cellinfo.mat
@@ -34,9 +34,9 @@ Data is in the Matlab format (.mat files). The following describes the main data
             - 1 x {*Number of tetrodes*} Matlab-cell
                 - 1 x {*Number of cells*} Matlab-cell
                     - Cell Matlab-structure
-                        - spikewidth
-                        - meanrate
-                        - numspikes
+                        - spikewidth: width of spike (units?)
+                        - meanrate: mean rate of spikes (Hz)
+                        - numspikes: number of spikes
                         - csi
                         - propbursts
                         - tag
@@ -76,11 +76,11 @@ Data is in the Matlab format (.mat files). The following describes the main data
                         - not_used: ???
                         - amplitude: amplitude of highest variance channel
                         - posindex: ???
-                        - x-sm: ???
-                        - y-sm: ???
-                        - dir-sm: ???
-                    - depth
-                    - spikewidth
+                        - x-sm: smoothed x-position of animal at spike
+                        - y-sm: smoothed y-position of animal at spike
+                        - dir-sm: smoothed head direction at spike
+                    - depth: depth of electrode (units?)
+                    - spikewidth: width of spike (units?)
                     - timerange - in 100 µsec units
                     - tag - brain area (sort of)
                 - cmperpixiel - centimeters per pixel?
@@ -95,8 +95,8 @@ Data is in the Matlab format (.mat files). The following describes the main data
                 - descript - timestamps in hrs:min:sec
                 - fields - fields of data array
                 - starttime - in seconds
-                - samprate - sampling rate
-                - data - data array
+                - samprate - sampling rate in Hz
+                - data - data array with columns corresponding to fields
                 - depth - depth of electrode
 
 #### EEG ground information (aka LFP Ground Information) ####
@@ -109,7 +109,7 @@ Data is in the Matlab format (.mat files). The following describes the main data
                 - descript - timestamps in hrs:min:sec
                 - fields - fields of data array
                 - starttime - in seconds
-                - samprate - sampling rate
+                - samprate - sampling rate in Hz
                 - data - data array
                 - depth - depth of electrode
 
@@ -125,11 +125,15 @@ Data is in the Matlab format (.mat files). The following describes the main data
                 - fields: labels for the data array
                 - data: array with field labels
                     - time: time in session in seconds
-                    - x: x-position of animal
-                    - y: y-position of animal
+                    - x: x-position of animal (cm)
+                    - y: y-position of animal (cm)
                     - dir: head-direction of animal
                     - vel: velocity of animal (cm / s)
-                - cmperpixel: - frames per second of ccd camera
+                    - x-sm: smoothed x-position of animal (cm)
+                    - y-sm: smoothed y-position of animal (cm)
+                    - dir-sm: smoothed head-direction of animal
+                    - vel-sm: smoothed velocity of animal (cm / s)
+                - cmperpixel: - centimeters per pixel, scales the ccd camera pixels to centimeters
 
 #### Linearized Position Information ####
 - **Name**: {*animal*}linpos{*day*}.mat
