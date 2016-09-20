@@ -81,18 +81,26 @@ def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
             ]
 
 
-def get_position_variables(animal, days, pos_var, epoch_type='', environment=''):
-    '''Returns a list of position variable (time, x, y, dir, vel, x-sm,
-    y-sm, dir-sm, and vel-sm) arrays with a length corresponding to the number of
-    epochs (first level)
+def get_position_dataframe(epoch_index, animals):
+    '''Returns a list of position dataframes with a length corresponding to the number of
+    epochs in the epoch index -- either a tuple or a list of tuples with the format
+    (animal, day, epoch_number)
     '''
-    field_names = ['time', 'x', 'y', 'dir', 'vel', 'x-sm', 'y-sm', 'dir-sm', 'vel-sm']
-    field_ind = [field_names.index(var) for var in pos_var]
-    epoch_pos = get_data_structure(animal, days, 'pos', 'pos',
-                                   epoch_type=epoch_type,
-                                   environment=environment)
-    return [pos['data'][0, 0][:, field_ind]
-            for pos in epoch_pos]
+    try:
+        epoch_data = [get_data_structure(animals[animal], day, 'pos', 'pos')[epoch - 1]['data'][0, 0]
+                      for animal, day, epoch in epoch_index]
+        return [_convert_position_array_to_dataframe(epoch_array) for epoch_array in epoch_data]
+    except ValueError:
+        animal, day, epoch = epoch_index
+        epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[epoch - 1]['data'][0, 0]
+        return _convert_position_array_to_dataframe(epoch_data)
+
+
+def _convert_position_array_to_dataframe(array):
+    column_names = ['time', 'x_position', 'y_position', 'head_direction',
+                    'speed', 'smoothed_x_position', 'smoothed_y_position',
+                    'smoothed_head_direction', 'smoothed_speed']
+    return pd.DataFrame(array, columns=column_names).set_index('time')
 
 
 def find_closest_ind(search_array, target):
