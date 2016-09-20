@@ -163,14 +163,10 @@ def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
 
 
 def _nextpower2(n):
-    """Return the next integral power of two greater than the given number.
-    Specifically, return m such that
-        m >= n
-        m == 2**x
-    where x is an integer.
+    """Return the next integer power of two greater than the given number.
     This is useful for ensuring fast FFT sizes.
     """
-    return int(2 ** np.ceil(np.log2(n)))
+    return int(np.ceil(np.log2(n)))
 
 
 def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
@@ -187,6 +183,8 @@ def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
 
     frequencies, freq_ind = _get_frequencies(sampling_frequency, number_of_fft_samples,
                                              desired_frequencies=desired_frequencies)
+        number_of_fft_samples = max(2 ** (_nextpower2(time_series_length) + pad),
+                                    time_series_length)
     if tapers is None:
         tapers = _get_tapers(time_series_length, sampling_frequency,
                              time_halfbandwidth_product, number_of_tapers)
