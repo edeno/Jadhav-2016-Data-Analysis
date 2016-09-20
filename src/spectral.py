@@ -70,6 +70,9 @@ def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_w
 
             yield (pd.DataFrame({'power': power_spectral_density,
                                  'frequency': frequencies}
+            yield (pd.DataFrame(multitaper_power_spectral_density(windowed_arrays,
+                                                                  sampling_frequency,
+                                                                  tapers=tapers,
                                 )
                    .assign(time=centered_time)
                    )
@@ -213,7 +216,9 @@ def multitaper_power_spectral_density(data, sampling_frequency, desired_frequenc
     psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
                                   complex_spectrum[freq_ind, :, :])
                   )
-    return psd, frequencies
+    return {'power': psd,
+            'frequency': frequencies
+            }
 
 
 def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=None,
@@ -240,7 +245,12 @@ def multitaper_coherency(data1, data2, sampling_frequency, desired_frequencies=N
     spectrum2 = _cross_spectrum(complex_spectrum2[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
 
     coherency = cross_spectrum / np.sqrt(spectrum1 * spectrum2)
-    return np.abs(coherency), np.angle(coherency), frequencies, np.real(spectrum1), np.real(spectrum2)
+    return {'frequency': frequencies,
+            'coherence_magnitude': np.abs(coherency),
+            'coherence_angle': np.angle(coherency),
+            'power_spectrum1': np.real(spectrum1),
+            'power_spectrum2': np.real(spectrum2)
+            }
 
 
 def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_window_duration,
@@ -273,13 +283,14 @@ def make_windowed_coherency_dataframe(lfp_dataframe1, lfp_dataframe2, time_windo
             centered_time = (lfp_dataframe1.index.values[time_window_start] +
                              (time_window_duration / 2))
 
-            yield (pd.DataFrame({'frequency': frequencies,
-                                 'coherence_magnitude': coherence_magnitude,
-                                 'coherence_angle': coherence_angle,
-                                 'power_spectrum1': psd1,
-                                 'power_spectrum2': psd2
-                                 })
-                   .assign(time=centered_time)
+            yield (pd.DataFrame(multitaper_coherency(windowed_arrays,
+                                sampling_frequency,
+                                desired_frequencies=desired_frequencies,
+                                time_halfbandwidth_product=time_halfbandwidth_product,
+                                number_of_tapers=number_of_tapers,
+                                pad=pad))
+                   .assign(time=_get_window_center(lfp_dataframes[0], time_window_start,
+                                                   time_window_duration))
                    )
             time_window_start += number_points_time_step
         except ValueError:
