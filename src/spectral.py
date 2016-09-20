@@ -76,7 +76,7 @@ def make_windowed_spectrum_dataframe(lfp_dataframe, time_window_duration, time_w
             time_window_start += number_points_time_step
         except ValueError:
             # Not enough data points
-            pass
+            raise StopIteration
 
 
 def get_spectrogram_dataframe(lfp_dataframe,
