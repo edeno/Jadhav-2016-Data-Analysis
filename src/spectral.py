@@ -51,7 +51,6 @@ def make_windowed_spectrum_dataframe(lfp_dataframes, time_window_duration, time_
     ''' Generator function that returns a power spectral density data frame for each time window
     '''
     time_window_start = 0
-    number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
 
     while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
