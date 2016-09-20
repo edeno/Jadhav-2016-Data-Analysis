@@ -55,9 +55,9 @@ def test_multitaper_fft_shape(time_series_length, number_of_tapers, data, number
 
 
 @pytest.mark.parametrize("test_number, expected_number", [
-    (3, 4),
-    (17, 32),
-    (1, 1),
+    (3, 2),
+    (17, 5),
+    (1, 0),
 ])
 def test_nextpower2(test_number, expected_number):
     assert spectral._nextpower2(test_number) == expected_number
