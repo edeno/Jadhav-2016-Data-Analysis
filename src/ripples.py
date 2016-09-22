@@ -102,10 +102,17 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
     timestamps of each ripple labeled according to the ripple number. Non-ripple times are marked
     as NaN.
     '''
-    index_dataframe = dataframe.drop(dataframe.columns, axis=1)
+    try:
+        index_dataframe = dataframe.drop(dataframe.columns, axis=1)
+    except AttributeError:
+        index_dataframe = dataframe[0].drop(dataframe[0].columns, axis=1)
     ripple_dataframe = (pd.concat([index_dataframe.loc[start_time:end_time].assign(ripple_number=number)
                                    for number, start_time, end_time in ripple_times]))
-    return pd.concat([dataframe, ripple_dataframe], axis=1, join_axes=[dataframe.index])
+    try:
+        ripple_dataframe = pd.concat([dataframe, ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
+    except TypeError:
+        ripple_dataframe = pd.concat([pd.concat(dataframe, axis=1), ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
+    return ripple_dataframe
 
 
 def get_computed_ripples_dataframe(tetrode_index, animals):
