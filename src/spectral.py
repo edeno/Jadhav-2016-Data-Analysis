@@ -291,7 +291,7 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
 
 
 def _window(dataframe, time_window_start, time_window_end):
-    return dataframe.iloc[time_window_start:time_window_end]
+    return dataframe.iloc[time_window_start:time_window_end].electric_potential.values
 
 
 def _center(x):
@@ -299,7 +299,7 @@ def _center(x):
 
 
 def _get_window_array(lfp_dataframes, time_window_start, time_window_end):
-    window_array = [np.array(_center(_window(lfp, time_window_start, time_window_end)))
+    window_array = [_center(_window(lfp, time_window_start, time_window_end))
                     for lfp in lfp_dataframes]
     if len(window_array) == 1:
         window_array = window_array[0]
