@@ -283,8 +283,9 @@ def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_thresho
     tetrode_index = df.get_dataframe_index(tetrode_info[epoch_index])
     lfp_data = df.get_LFP_data(tetrode_index, animals)
     CA1_lfp = df.filter_list_by_pandas_series(lfp_data, tetrode_info[epoch_index].area == 'CA1')
-    segments_multitaper = [get_segments_multitaper(lfp, sampling_frequency, zscore_threshold=2,
-                                                   minimum_duration=0.015)
+    segments_multitaper = [get_segments_multitaper(lfp, sampling_frequency,
+                                                   zscore_threshold=zscore_threshold,
+                                                   minimum_duration=minimum_duration)
                            for lfp in tqdm.tqdm_notebook(CA1_lfp, desc='segments_multitaper')]
     merged_segments = list(merge_ranges([seg for tetrode in segments_multitaper
                                          for seg in tetrode]))
