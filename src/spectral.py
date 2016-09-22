@@ -227,9 +227,10 @@ def multitaper_power_spectral_density(data, sampling_frequency, tapers=None,
             }
 
 
-def multitaper_coherency(data, sampling_frequency, desired_frequencies=None,
+def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None,
                          time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
-                         tapers=None):
+                         tapers=None, frequencies=None, freq_ind=None,
+                         number_of_fft_samples=None):
     ''' Returns the multi-taper coherency of two time series
     data1 (time x trials)
     data2 (time x trials)
