@@ -235,6 +235,20 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
     data1 (time x trials)
     data2 (time x trials)
     '''
+    if number_of_tapers is None:
+        number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
+    if pad is None:
+        pad = -1
+    time_series_length = data[0].shape[0]
+    if number_of_fft_samples is None:
+        number_of_fft_samples = max(2 ** (_nextpower2(time_series_length) + pad),
+                                    time_series_length)
+    if frequencies is None:
+        frequencies, freq_ind = _get_frequencies(sampling_frequency, number_of_fft_samples,
+                                                 desired_frequencies=desired_frequencies)
+    if tapers is None:
+        tapers = _get_tapers(time_series_length, sampling_frequency,
+                             time_halfbandwidth_product, number_of_tapers)
     complex_spectra = [_multitaper_fft(tapers, datum, number_of_fft_samples, sampling_frequency)
                        for datum in data]
     cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
