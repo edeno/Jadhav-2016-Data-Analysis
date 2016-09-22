@@ -79,6 +79,7 @@ def test_multitaper_spectrum_shape(number_of_tapers, data, time_halfbandwidth_pr
                                                                            number_of_tapers=number_of_tapers,
                                                                            pad=pad)
     assert np.all(complex_spectrum.shape == expected_spectrum_shape)
+    assert complex_spectrum.dtype == 'complex'
     assert np.all(freq_ind.shape == expected_freq_shape)
 
 
