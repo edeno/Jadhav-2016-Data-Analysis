@@ -235,28 +235,20 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
     data1 (time x trials)
     data2 (time x trials)
     '''
-    complex_spectrum1, frequencies, freq_ind = multitaper_spectrum(data[0], sampling_frequency,
-                                                                   desired_frequencies=desired_frequencies,
-                                                                   time_halfbandwidth_product=time_halfbandwidth_product,
-                                                                   number_of_tapers=number_of_tapers,
-                                                                   tapers=tapers,
-                                                                   pad=pad)
-    complex_spectrum2, _, _ = multitaper_spectrum(data[0], sampling_frequency,
-                                                  desired_frequencies=desired_frequencies,
-                                                  time_halfbandwidth_product=time_halfbandwidth_product,
-                                                  number_of_tapers=number_of_tapers,
-                                                  tapers=tapers,
-                                                  pad=pad)
-    cross_spectrum = _cross_spectrum(complex_spectrum1[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
-    spectrum1 = _cross_spectrum(complex_spectrum1[freq_ind, :, :], complex_spectrum1[freq_ind, :, :])
-    spectrum2 = _cross_spectrum(complex_spectrum2[freq_ind, :, :], complex_spectrum2[freq_ind, :, :])
+    complex_spectra = [_multitaper_fft(tapers, datum, number_of_fft_samples, sampling_frequency)
+                       for datum in data]
+    cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
+                                     complex_spectra[1][freq_ind, :, :])
+    spectrum = [_cross_spectrum(complex_spectrum[freq_ind, :, :],
+                                complex_spectrum[freq_ind, :, :])
+                for complex_spectrum in complex_spectra]
 
-    coherency = cross_spectrum / np.sqrt(spectrum1 * spectrum2)
+    coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
     return {'frequency': frequencies,
             'coherence_magnitude': np.abs(coherency),
             'coherence_angle': np.angle(coherency),
-            'power_spectrum1': np.real(spectrum1),
-            'power_spectrum2': np.real(spectrum2)
+            'power_spectrum1': np.real(spectrum[0]),
+            'power_spectrum2': np.real(spectrum[1])
             }
 
 
