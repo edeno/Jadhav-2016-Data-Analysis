@@ -269,7 +269,10 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
 def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
                                       time_window_step, sampling_frequency,
                                       desired_frequencies=None, time_halfbandwidth_product=3,
-                                      number_of_tapers=None, pad=0, tapers=None):
+                                      number_of_tapers=None, pad=0, tapers=None,
+                                      number_points_time_window=None, frequencies=None,
+                                      freq_ind=None, number_of_fft_samples=None,
+                                      number_points_time_step=None):
     ''' Generator function that returns a coherency dataframe for each time window
     '''
     time_window_start = 0
@@ -282,11 +285,12 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
             windowed_arrays = _get_window_array(lfp_dataframes, time_window_start, time_window_end)
 
             yield (pd.DataFrame(multitaper_coherency(windowed_arrays,
-                                sampling_frequency,
-                                desired_frequencies=desired_frequencies,
-                                time_halfbandwidth_product=time_halfbandwidth_product,
-                                number_of_tapers=number_of_tapers,
-                                pad=pad))
+                                                     sampling_frequency=sampling_frequency,
+                                                     tapers=tapers,
+                                                     frequencies=frequencies,
+                                                     freq_ind=freq_ind,
+                                                     number_of_fft_samples=number_of_fft_samples)
+                                )
                    .assign(time=_get_window_center(lfp_dataframes[0], time_window_start,
                                                    time_window_duration))
                    )
@@ -341,9 +345,12 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
                                                        time_halfbandwidth_product=time_halfbandwidth_product,
                                                        number_of_tapers=number_of_tapers,
                                                        pad=pad,
-                                                       tapers=tapers)
-                     )
-                     )
+                                                       tapers=tapers,
+                                                       frequencies=frequencies,
+                                                       freq_ind=freq_ind,
+                                                       number_of_fft_samples=number_of_fft_samples,
+                                                       number_points_time_step=number_points_time_step,
+                                                       number_points_time_window=number_points_time_window)))
 
 
 def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):
