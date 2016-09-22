@@ -297,7 +297,7 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
             time_window_start += number_points_time_step
         except ValueError:
             # Not enough data points
-            pass
+            raise StopIteration
 
 
 def _window(dataframe, time_window_start, time_window_end):
