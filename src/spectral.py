@@ -176,7 +176,7 @@ def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
 
 
 def _nextpower2(n):
-    """Return the next integer power of two greater than the given number.
+    """Return the next integer exponent of two greater than the given number.
     This is useful for ensuring fast FFT sizes.
     """
     return int(np.ceil(np.log2(n)))
