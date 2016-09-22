@@ -260,7 +260,7 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
     coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
     return {'frequency': frequencies,
             'coherence_magnitude': np.abs(coherency),
-            'coherence_angle': np.angle(coherency),
+            'coherence_phase': np.angle(coherency),
             'power_spectrum1': np.real(spectrum[0]),
             'power_spectrum2': np.real(spectrum[1])
             }
