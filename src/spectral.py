@@ -276,8 +276,6 @@ def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
     ''' Generator function that returns a coherency dataframe for each time window
     '''
     time_window_start = 0
-    number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
-    number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
 
     while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
         try:
