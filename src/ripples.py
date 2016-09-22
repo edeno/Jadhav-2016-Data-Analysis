@@ -264,11 +264,9 @@ def get_windowed_dataframe(dataframe, segments, window_offset):
 def reshape_to_segments(dataframes, segments, window_offset, sampling_frequency):
     if isinstance(window_offset, float):
         window_offset = [-window_offset, window_offset]
-    num_time_steps = int((window_offset[1] - window_offset[0]) * sampling_frequency) - 1
-    time = np.linspace(window_offset[0], window_offset[1], num=num_time_steps)
     for dataframe in tqdm.tqdm_notebook(dataframes, desc='lfp_segments'):
         yield (pd.concat(list(get_windowed_dataframe(dataframe, segments, window_offset)), axis=1)
-                  .assign(time=time).set_index('time'))
+                  .assign(time=lambda x: np.linspace(window_offset[0], window_offset[1], num=len(x.index))).set_index('time'))
 
 
 def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_threshold=2,
