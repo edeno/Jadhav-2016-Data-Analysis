@@ -335,9 +335,20 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
     '''
     if time_window_step is None:
         time_window_step = time_window_duration
-    return pd.concat(
-                    (time_window for time_window in
-                     make_windowed_coherency_dataframe([lfp_dataframe1, lfp_dataframe2],
+    if tapers is None:
+        if number_of_tapers is None:
+            number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
+        number_points_time_window = int(np.fix(time_window_duration * sampling_frequency))
+        tapers = _get_tapers(number_points_time_window, sampling_frequency,
+                             time_halfbandwidth_product, number_of_tapers)
+    if pad is None:
+        pad = -1
+    number_of_fft_samples = max(2 ** (_nextpower2(number_points_time_window) + pad),
+                                number_points_time_window)
+    frequencies, freq_ind = _get_frequencies(sampling_frequency, number_of_fft_samples,
+                                             desired_frequencies=desired_frequencies)
+    number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
+    return pd.concat(list(make_windowed_coherency_dataframe([lfp_dataframe1, lfp_dataframe2],
                                                        time_window_duration,
                                                        time_window_step,
                                                        sampling_frequency,
