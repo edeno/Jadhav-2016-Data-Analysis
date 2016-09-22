@@ -92,10 +92,8 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     '''
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
     ripples_data = df.get_data_structure(animals[animal], day, 'ripples', 'ripples')
-    start_end = zip(ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
+    return zip(ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
                     ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
-    return [(ripple_ind + 1, start_time, end_time)
-            for ripple_ind, (start_time, end_time) in enumerate(start_end)]
 
 
 def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
@@ -116,6 +114,8 @@ def get_computed_ripples_dataframe(tetrode_index, animals):
     Non-ripple times are marked as NaN.
     '''
     ripple_times = _get_computed_ripple_times(tetrode_index, animals)
+    [(ripple_ind + 1, start_time, end_time) for ripple_ind, (start_time, end_time)
+     in enumerate(ripple_times)]
     lfp_dataframe = df._get_LFP_dataframe(tetrode_index, animals)
     return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
             .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
