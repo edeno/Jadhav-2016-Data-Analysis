@@ -347,19 +347,19 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
                                              desired_frequencies=desired_frequencies)
     number_points_time_step = int(np.fix(time_window_step * sampling_frequency))
     return pd.concat(list(make_windowed_coherency_dataframe([lfp_dataframe1, lfp_dataframe2],
-                                                       time_window_duration,
-                                                       time_window_step,
-                                                       sampling_frequency,
-                                                       desired_frequencies=desired_frequencies,
-                                                       time_halfbandwidth_product=time_halfbandwidth_product,
-                                                       number_of_tapers=number_of_tapers,
-                                                       pad=pad,
-                                                       tapers=tapers,
-                                                       frequencies=frequencies,
-                                                       freq_ind=freq_ind,
-                                                       number_of_fft_samples=number_of_fft_samples,
-                                                       number_points_time_step=number_points_time_step,
-                                                       number_points_time_window=number_points_time_window)))
+                                                            time_window_duration,
+                                                            time_window_step,
+                                                            sampling_frequency,
+                                                            desired_frequencies=desired_frequencies,
+                                                            time_halfbandwidth_product=time_halfbandwidth_product,
+                                                            number_of_tapers=number_of_tapers,
+                                                            pad=pad,
+                                                            tapers=tapers,
+                                                            frequencies=frequencies,
+                                                            freq_ind=freq_ind,
+                                                            number_of_fft_samples=number_of_fft_samples,
+                                                            number_points_time_step=number_points_time_step,
+                                                            number_points_time_window=number_points_time_window)))
 
 
 def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):

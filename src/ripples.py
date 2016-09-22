@@ -93,7 +93,7 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
     ripples_data = df.get_data_structure(animals[animal], day, 'ripples', 'ripples')
     return zip(ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
-                    ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
+               ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
 
 
 def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
@@ -273,7 +273,7 @@ def reshape_to_segments(dataframes, segments, window_offset, sampling_frequency)
         window_offset = [-window_offset, window_offset]
     for dataframe in tqdm.tqdm_notebook(dataframes, desc='lfp_segments'):
         yield (pd.concat(list(get_windowed_dataframe(dataframe, segments, window_offset)), axis=1)
-                  .assign(time=lambda x: np.linspace(window_offset[0], window_offset[1], num=len(x.index))).set_index('time'))
+               .assign(time=lambda x: np.linspace(window_offset[0], window_offset[1], num=len(x.index))).set_index('time'))
 
 
 def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_threshold=2,
@@ -292,10 +292,10 @@ def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_thresho
 
     position_dataframe = df.get_position_dataframe(epoch_index, animals)[0]
     interpolated_position = (pd.concat([lfp_data[0], position_dataframe])
-                                .sort_index()
-                                .interpolate(method='linear')
-                                .reindex(lfp_data[0].index))
+                             .sort_index()
+                             .interpolate(method='linear')
+                             .reindex(lfp_data[0].index))
 
-    average_speed = np.array([interpolated_position.loc[segment_start:segment_end, :].smoothed_speed.mean()
-                     for segment_start, segment_end in merged_segments])
+    average_speed = [interpolated_position.loc[segment_start:segment_end, :].smoothed_speed.mean().values
+                     for segment_start, segment_end in merged_segments]
     return [merged_segments[i] for i in np.where(average_speed <= speed_threshold)[0]]
