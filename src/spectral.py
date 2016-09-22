@@ -210,7 +210,7 @@ def _cross_spectrum(complex_spectrum1, complex_spectrum2):
     '''Returns the average cross-spectrum between two spectra. Averages over the 2nd and 3rd
     dimension'''
     cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
-    return np.mean(cross_spectrum, axis=(1, 2)).squeeze()
+    return np.nanmean(cross_spectrum, axis=(1, 2)).squeeze()
 
 
 def multitaper_power_spectral_density(data, sampling_frequency, tapers=None,
@@ -293,8 +293,8 @@ def _window(dataframe, time_window_start, time_window_end):
     return dataframe.iloc[time_window_start:time_window_end]
 
 
-def _center(series):
-    return series - series.mean()
+def _center(x):
+    return x - np.nanmean(x, axis=0)
 
 
 def _get_window_array(lfp_dataframes, time_window_start, time_window_end):
