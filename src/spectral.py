@@ -394,6 +394,10 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
                     time_units='seconds', frequency_units='Hz'):
     if axis_handle is None:
         axis_handle = plt.gca()
+    time, freq = _get_unique_time_freq(coherogram_dataframe)
+    data2D = coherogram_dataframe.reset_index().pivot(
+        'frequency', 'time', 'coherence_magnitude')
+    mesh = axis_handle.pcolormesh(time, freq, data2D,
                                   cmap=cmap,
                                   shading='gouraud',
                                   vmin=vmin,
