@@ -150,7 +150,8 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind
     '''
     Given an epoch data structure, return a cleaned up DataFrame
     '''
-    tetrode_dict_list = [_convert_to_dict(tetrode) for tetrode in tetrodes_in_epoch[0][0]]
+    tetrode_dict_list = [_convert_to_dict(
+        tetrode) for tetrode in tetrodes_in_epoch[0][0]]
     return (pd.DataFrame(tetrode_dict_list)
               .assign(numcells=lambda x: x['numcells'].astype(int))  # convert numcells to integer type
               .assign(depth=lambda x: x['depth'].astype(int))  # convert depth to integer type
@@ -186,8 +187,7 @@ def get_dataframe_index(data_frame):
     ''' Converts pandas dataframe to a list of tuples corresponding to
     the dataframe multi-index
     '''
-    index = list(data_frame.index.get_values())
-    return index
+    return list(data_frame.index.get_values())
 
 
 def _get_LFP_dataframe(tetrode_index, animals):
@@ -294,8 +294,7 @@ def make_epochs_dataframe(animals, days):
             .set_index(['animal', 'day', 'epoch_ind'])
             .sort_index()
             .assign(environment=lambda x: pd.Categorical(x['environment']))
-            .assign(type=lambda x: pd.Categorical(x['type']))
-            )
+            .assign(type=lambda x: pd.Categorical(x['type'])))
 
 
 def make_tetrode_dataframe(animals):
