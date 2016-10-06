@@ -366,5 +366,5 @@ def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3,
 
 def coherence_title(tetrode_indices, cur_tetrode_info):
     return '{tetrode1} - {tetrode2}' \
-                .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
-                        tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
+        .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
+                tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
