@@ -224,7 +224,8 @@ def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequenc
     '''
     if desired_frequencies is None:
         desired_frequencies = [0, sampling_frequency / 2]
-    frequencies = np.linspace(0, sampling_frequency, num=number_of_fft_samples+1)
+    frequencies = np.linspace(0, sampling_frequency,
+                              num=number_of_fft_samples + 1)
     frequency_ind = np.where((desired_frequencies[0] <= frequencies) &
                              (frequencies <= desired_frequencies[1]))[0]
     return frequencies[frequency_ind], frequency_ind
@@ -249,7 +250,8 @@ def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
     except IndexError:
         # There are no trials
-        projected_data = data[:, np.newaxis, np.newaxis] * tapers[:, :, np.newaxis]
+        projected_data = data[:, np.newaxis,
+                              np.newaxis] * tapers[:, :, np.newaxis]
     return scipy.fftpack.fft(projected_data, n=number_of_fft_samples, axis=0) / sampling_frequency
 
 
