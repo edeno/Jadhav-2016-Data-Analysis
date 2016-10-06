@@ -73,13 +73,14 @@ def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_pro
     score for the lfp using a tapered power signal centered at 200 Hz. Frequency resolution is
     100 Hz and time resolution is 20 milliseconds by default.
     '''
-    spectrogram = spectral.get_spectrogram_dataframe(lfp,
-                                                     time_halfbandwidth_product=time_halfbandwidth_product,
-                                                     time_window_duration=time_window_duration,
-                                                     sampling_frequency=sampling_frequency,
-                                                     time_window_step=time_window_step,
-                                                     desired_frequencies=[150, 250],
-                                                     pad=None)
+    spectrogram = spectral.multitaper_spectrogram(
+        lfp,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        time_window_duration=time_window_duration,
+        sampling_frequency=sampling_frequency,
+        time_window_step=time_window_step,
+        desired_frequencies=[150, 250],
+        pad=None)
     is_200_Hz = spectrogram.frequency == 200
     return (spectrogram.loc[is_200_Hz, :].drop('frequency', axis=1)
                                          .set_index('time').assign(ripple_zscore=lambda x: _zscore(x.power))
