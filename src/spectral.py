@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import functools
+import inspect
 import scipy.io
 import scipy.fftpack
 import scipy.signal
@@ -7,6 +9,35 @@ import numpy as np
 import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
 import pandas as pd
+import ripples
+
+
+def convert_pandas(func):
+    is_time = 'time' in inspect.signature(func).parameters.keys()
+
+    @functools.wraps(func)
+    def wrapper(data, *args, **kwargs):
+        if isinstance(data, pd.DataFrame):
+            if is_time:
+                try:
+                    time = data.reset_index('time').time.values
+                    kwargs['time'] = time
+                except AttributeError:
+                    raise AttributeError(
+                        'No time column or index provided in dataframe')
+            data = data.values
+        elif isinstance(data, list) and isinstance(data[0], pd.DataFrame):
+            if is_time:
+                try:
+                    time = data[0].reset_index('time').time.values
+                    kwargs['time'] = time
+                except AttributeError:
+                    raise AttributeError(
+                        'No time column or index provided in dataframe')
+            data = [datum.values for datum in data]
+
+        return func(data, *args, **kwargs)
+    return wrapper
 
 
 def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
@@ -55,6 +86,7 @@ def _make_sliding_window_dataframe(func, data, time_window_duration, time_window
             raise StopIteration
 
 
+@convert_pandas
 def multitaper_spectrogram(data,
                            sampling_frequency=1000,
                            time_halfbandwidth_product=3,
@@ -213,9 +245,17 @@ def _cross_spectrum(complex_spectrum1, complex_spectrum2):
     return np.nanmean(cross_spectrum, axis=(1, 2)).squeeze()
 
 
-def multitaper_power_spectral_density(data, sampling_frequency, tapers=None,
-                                      frequencies=None, freq_ind=None,
-                                      number_of_fft_samples=None):
+@convert_pandas
+def multitaper_power_spectral_density(data,
+                                      sampling_frequency=1000,
+                                      time_halfbandwidth_product=3,
+                                      pad=0,
+                                      tapers=None,
+                                      frequencies=None,
+                                      freq_ind=None,
+                                      number_of_fft_samples=None,
+                                      number_of_tapers=None,
+                                      desired_frequencies=None):
     ''' Returns the multi-taper power spectral density of a time series
     '''
     tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
@@ -277,6 +317,7 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
 
 
 
+@convert_pandas
 def multitaper_coherogram(data,
                           sampling_frequency=1000,
                           time_window_duration=1,
