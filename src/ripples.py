@@ -28,8 +28,10 @@ def get_ripplefilter_kernel():
     ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
     bandpass with 40 db roll off and 10 Hz sidebands.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
-    ripplefilter = scipy.io.loadmat('{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
+    ripplefilter = scipy.io.loadmat(
+        '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
@@ -56,7 +58,8 @@ def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_thresho
     smoothed_envelope = scipy.ndimage.filters.gaussian_filter1d(filtered_data_envelope,
                                                                 sigma * sampling_frequency,
                                                                 truncate=8)
-    dataframes = [pd.DataFrame({'ripple_zscore': _zscore(smoothed_envelope)}), lfp.reset_index()]
+    dataframes = [pd.DataFrame(
+        {'ripple_zscore': _zscore(smoothed_envelope)}), lfp.reset_index()]
     return (pd.concat(dataframes, axis=1)
             .set_index('time')
             .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
@@ -91,7 +94,8 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     data structure and calculated according to the Frank Lab criterion.
     '''
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    ripples_data = df.get_data_structure(animals[animal], day, 'ripples', 'ripples')
+    ripples_data = df.get_data_structure(
+        animals[animal], day, 'ripples', 'ripples')
     return zip(ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
                ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
 
@@ -109,9 +113,11 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
     ripple_dataframe = (pd.concat([index_dataframe.loc[start_time:end_time].assign(ripple_number=number)
                                    for number, start_time, end_time in ripple_times]))
     try:
-        ripple_dataframe = pd.concat([dataframe, ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
+        ripple_dataframe = pd.concat([dataframe, ripple_dataframe], axis=1, join_axes=[
+                                     index_dataframe.index])
     except TypeError:
-        ripple_dataframe = pd.concat([pd.concat(dataframe, axis=1), ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
+        ripple_dataframe = pd.concat([pd.concat(
+            dataframe, axis=1), ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
     return ripple_dataframe
 
 
@@ -172,7 +178,8 @@ def _find_containing_interval(interval_candidates, target_interval):
     contains the target interval (the segements above 0 contain the segments above
     the threshold)'''
     candidate_start_times = np.asarray(interval_candidates)[:, 0]
-    closest_start_ind = np.max((candidate_start_times - target_interval[0] <= 0).nonzero())
+    closest_start_ind = np.max(
+        (candidate_start_times - target_interval[0] <= 0).nonzero())
     return interval_candidates[closest_start_ind]
 
 
@@ -282,7 +289,8 @@ def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_thresho
     tetrode_info = df.make_tetrode_dataframe(animals)
     tetrode_index = df.get_dataframe_index(tetrode_info[epoch_index])
     lfp_data = df.get_LFP_data(tetrode_index, animals)
-    CA1_lfp = df.filter_list_by_pandas_series(lfp_data, tetrode_info[epoch_index].area == 'CA1')
+    CA1_lfp = df.filter_list_by_pandas_series(
+        lfp_data, tetrode_info[epoch_index].area == 'CA1')
     segments_multitaper = [get_segments_multitaper(lfp, sampling_frequency,
                                                    zscore_threshold=zscore_threshold,
                                                    minimum_duration=minimum_duration)

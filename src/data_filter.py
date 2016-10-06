@@ -16,7 +16,8 @@ def get_data_filename(animal, day, file_type):
     (DIO, tasks, linpos) Animal is a named tuple. Day is an integer giving the
     recording session day.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
     return '{data_dir}/{animal.directory}/{animal.short_name}{file_type}{day:02d}.mat'.format(
         data_dir=data_dir,
         animal=animal,
@@ -39,13 +40,14 @@ def get_epochs(animal, days, epoch_type='', environment=''):
 
     for day in days:
         try:
-            task_file = scipy.io.loadmat(get_data_filename(animal, day, 'task'))
+            task_file = scipy.io.loadmat(
+                get_data_filename(animal, day, 'task'))
             filtered_epochs = [(ind, epoch) for ind, epoch in enumerate(task_file['task'][0, - 1][0])
                                if epoch['type'] == epoch_type or
                                epoch_type == '']
             epoch_index += [(animal, day, ind) for ind, epoch in filtered_epochs
                             if ('environment' in epoch.dtype.names and
-                            epoch['environment'] == environment) or
+                                epoch['environment'] == environment) or
                             environment == '']
         except IOError as err:
             print('I/O error({0}): {1}'.format(err.errno, err.strerror))
@@ -60,7 +62,8 @@ def get_data_structure(animal, days, file_type, variable, epoch_type='', environ
     '''
     if isinstance(days, int):
         days = [days]
-    epoch = get_epochs(animal, days, epoch_type=epoch_type, environment=environment)
+    epoch = get_epochs(animal, days, epoch_type=epoch_type,
+                       environment=environment)
     files = {day: scipy.io.loadmat(get_data_filename(animal, day, file_type))
              for day in days}
     return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch]
@@ -75,10 +78,10 @@ def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
                                     epoch_type=epoch_type,
                                     environment=environment)
     return [
-            [pin[0][dio_var][0][0] for pin in pins.T
-             if pin[0].dtype.names is not None]
-            for pins in epoch_pins
-            ]
+        [pin[0][dio_var][0][0] for pin in pins.T
+         if pin[0].dtype.names is not None]
+        for pins in epoch_pins
+    ]
 
 
 def get_position_dataframe(epoch_index, animals):
@@ -92,7 +95,8 @@ def get_position_dataframe(epoch_index, animals):
         return [_convert_position_array_to_dataframe(epoch_array) for epoch_array in epoch_data]
     except ValueError:
         animal, day, epoch = epoch_index
-        epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[epoch - 1]['data'][0, 0]
+        epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
+            epoch - 1]['data'][0, 0]
         return _convert_position_array_to_dataframe(epoch_data)
 
 
@@ -130,7 +134,8 @@ def get_LFP_filename(tetrode_tuple, animals):
     ''' Given an index tuple (animal, day, epoch, tetrode_number) and the animals dictionary
     return a file name for the tetrode file LFP
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
     return '{data_dir}/{animal.directory}/EEG/{animal.short_name}eeg{day:02d}-{epoch}-{tetrode_number:02d}.mat'.format(
         data_dir=data_dir,
@@ -162,7 +167,8 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind
 def get_tetrode_info(animal):
     '''Returns the Matlab tetrodeinfo file name assuming it is in the Raw Data directory.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
     return '{data_dir}/{animal.directory}/{animal.short_name}tetinfo.mat'.format(
         data_dir=data_dir,
         animal=animal)
@@ -218,7 +224,8 @@ def _get_LFP_time(start_time, number_samples, sampling_rate):
 def get_neuron_info(animal):
     '''Returns the Matlab tetrodeinfo file name assuming it is in the Raw Data directory.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(working_dir=os.path.abspath(os.path.pardir))
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
     return '{data_dir}/{animal.directory}/{animal.short_name}cellinfo.mat'.format(
         data_dir=data_dir,
         animal=animal)
@@ -235,7 +242,8 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind)
                     'FStag', 'ripmodtag3', 'runripmodtag3', 'ripmodtype3', 'runripmodtype3',
                     'tag', 'typetag', 'runripmodtype2', 'tag2', 'ripmodtype2', 'descrip']
 
-    NEURON_INDEX = ['animal', 'day', 'epoch_ind', 'tetrode_number', 'neuron_number']
+    NEURON_INDEX = ['animal', 'day', 'epoch_ind',
+                    'tetrode_number', 'neuron_number']
 
     neuron_dict_list = [_add_to_dict(_convert_to_dict(neuron), tetrode_ind, neuron_ind)
                         for tetrode_ind, tetrode in enumerate(tetrodes_in_epoch[0][0])
@@ -298,7 +306,8 @@ def make_tetrode_dataframe(animals):
 
     # Make a dictionary with (animal, day, epoch_ind) as the keys
     return {(animal, day_ind + 1, epoch_ind + 1):
-            convert_tetrode_epoch_to_dataframe(epoch, animal, day_ind + 1, epoch_ind + 1)
+            convert_tetrode_epoch_to_dataframe(
+                epoch, animal, day_ind + 1, epoch_ind + 1)
             for info, animal in tetrode_data
             for day_ind, day in enumerate(info['tetinfo'].T)
             for epoch_ind, epoch in enumerate(day[0].T)
@@ -311,8 +320,10 @@ def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
     '''
     is_in_list = list(pandas_boolean_series)
     if len(list_to_filter) != len(is_in_list):
-        raise ValueError('list to filter must be the same length as the pandas series')
-    return [list_element for list_element, is_in_list in zip(list_to_filter, is_in_list) if is_in_list]
+        raise ValueError(
+            'list to filter must be the same length as the pandas series')
+    return [list_element for list_element, is_in_list in zip(list_to_filter, is_in_list)
+            if is_in_list]
 
 if __name__ == '__main__':
     sys.exit()
