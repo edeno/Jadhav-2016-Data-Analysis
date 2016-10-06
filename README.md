@@ -154,3 +154,30 @@ Data is in the Matlab format (.mat files). The following describes the main data
                     - timesincelast: time since last activation
                     - pulselength: duration of activation
                     - pulseind: index of pulse
+
+#### Beginning Processed Ripples ####
+- **Name**: {*animal*}ripples{*day*}-{epoch}-{tetrode}.mat
+- **Description**: First processing step in the ripple identification process. Contains the ripples after the bandpass filtering on a single tetrode
+- **Format**:
+
+#### Intermediate Processed Ripples  ####
+- **Name**: {*animal*}ripples{*day*}.mat
+- **Description**: Intermediate processing step in the ripple identification process. Contains the ripples after the bandpass filtering, z-scoring, thresholding and segmenting the ripple on a single tetrode
+- **Format**:
+    - 1 x {*Number of days*} Matlab-cell
+        - 1 x {*Number of epochs*} Matlab-cell
+            - 1 x {*Number of tetrodes*} Matlab-cell
+                - startind: index of the start time of each ripple
+                - endind: index of the end time of each ripple
+                - midind: index of of the midpoint time of each ripple
+                - startime: start time of the ripple
+                - endtime: end time of the ripple
+                - midtime: mid-point time of the ripple
+                ...
+
+#### Candidate Ripples ####
+- **Name**: {*animal*}candripples{*day*}.mat
+- **Description**: Final processing step in the ripple identification process. Contains the ripples after combining tetrodes
+- **Format**:
+    - 1 x {*Number of days*} Matlab-cell
+        - 1 x {*Number of epochs*} Matlab-cell
