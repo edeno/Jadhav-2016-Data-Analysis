@@ -274,9 +274,9 @@ def multitaper_power_spectral_density(data,
     psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
                                   complex_spectrum[freq_ind, :, :])
                   )
-    return {'power': psd,
-            'frequency': frequencies
-            }
+    return pd.DataFrame({'power': psd,
+                         'frequency': frequencies
+                         }).set_index('frequency')
 
 
 @convert_pandas
@@ -305,14 +305,12 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
                 for complex_spectrum in complex_spectra]
 
     coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
-    return {'frequency': frequencies,
-            'coherence_magnitude': np.abs(coherency),
-            'coherence_phase': np.angle(coherency),
-            'power_spectrum1': np.real(spectrum[0]),
-            'power_spectrum2': np.real(spectrum[1])
-            }
-
-
+    return pd.DataFrame({'frequency': frequencies,
+                         'coherence_magnitude': np.abs(coherency),
+                         'coherence_phase': np.angle(coherency),
+                         'power_spectrum1': np.real(spectrum[0]),
+                         'power_spectrum2': np.real(spectrum[1])
+                         }).set_index('frequency')
 
 
 
