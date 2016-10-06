@@ -392,6 +392,8 @@ def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3,
         freq_ind=freq_ind,
         number_of_fft_samples=number_of_fft_samples,
     ))).sort_index()
+    if axis_handle is None:
+        axis_handle = plt.gca()
                                   cmap=cmap,
                                   shading='gouraud',
                                   vmin=vmin,
