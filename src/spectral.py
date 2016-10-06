@@ -9,18 +9,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def plot_spectrum_nitime(data_frame, sampling_frequency, axis_handle):
-    ''' Plots the spectrum of a pandas dataframe containing the LFP time domain
-    signal ('electric_potential') using the nitime package. Spectrum is computed
-    using the fft and a rectangular window.
-    '''
-    centered_signal = data_frame['electric_potential'] - data_frame['electric_potential'].mean()
-    frequencies, power_spectral_density = tsa.periodogram(centered_signal,
-                                                          Fs=sampling_frequency,
-                                                          normalize=True)
-    axis_handle.plot(frequencies, power_spectral_density)
-
-
 def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
     ''' Returns a string that identifies the tetrode in a semantic way
     '''
