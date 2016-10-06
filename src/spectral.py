@@ -406,3 +406,73 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
     return '{tetrode1} - {tetrode2}' \
         .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
                 tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
+def normalize_power_by_baseline(dataframe_of_interest, dataframe_baseline):
+    '''Normalizes a coherence or power dataframe by dividing it by a baseline dataframe.
+    The baseline dataframe is assumed to only have a frequency index.'''
+    dropped_baseline = dataframe_baseline.drop(
+        ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
+    dropped_doi = dataframe_of_interest.drop(
+        ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
+    return dropped_doi / dropped_baseline
+
+
+def normalize_coherence_by_baseline(dataframe_of_interest, dataframe_baseline):
+    dropped_baseline = dataframe_baseline.drop(
+        ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
+    dropped_doi = dataframe_of_interest.drop(
+        ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
+    return dropped_doi - dropped_baseline
+
+
+def difference_from_baseline_coherence(lfps, times_of_interest,
+                                       baseline_window=(-0.250, 0),
+                                       window_of_interest=(-0.250, .250),
+                                       sampling_frequency=1000,
+                                       time_window_duration=0.020,
+                                       time_window_step=None,
+                                       desired_frequencies=None,
+                                       time_halfbandwidth_product=3,
+                                       number_of_tapers=None):
+    ''''''
+    baseline_time_halfbandwidth_product = _match_frequency_resolution(
+        time_halfbandwidth_product, time_window_duration, baseline_window)
+    baseline_lfp_segments = list(
+        ripples.reshape_to_segments(lfps, times_of_interest, baseline_window, concat_axis=1))
+    time_of_interest_lfp_segments = list(
+        ripples.reshape_to_segments(lfps, times_of_interest, window_of_interest, concat_axis=1))
+    coherence_baseline = multitaper_coherence(
+        baseline_lfp_segments,
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=baseline_time_halfbandwidth_product)
+    coherogram = multitaper_coherogram(
+        time_of_interest_lfp_segments,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration,
+        time_window_step=time_window_step,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=time_halfbandwidth_product)
+    return _normalize_power_coherence_by_baseline(coherogram, coherence_baseline)
+
+
+def _match_frequency_resolution(time_halfbandwidth_product, time_window_duration, baseline_window):
+    half_bandwidth = time_halfbandwidth_product / time_window_duration
+    baseline_time_halfbandwidth_product = half_bandwidth * \
+        (baseline_window[1] - baseline_window[0])
+    if baseline_time_halfbandwidth_product < 1:
+        raise AttributeError(
+            'Baseline time-halfbandwidth product has to be greater than or equal to 1')
+    else:
+        return baseline_time_halfbandwidth_product
+
+
+def _normalize_power_coherence_by_baseline(dataframe_of_interest, dataframe_baseline):
+    normalized_power = normalize_power_by_baseline(dataframe_of_interest,
+                                                   dataframe_baseline)
+    normalized_coherence = normalize_coherence_by_baseline(dataframe_of_interest,
+                                                           dataframe_baseline)
+    return pd.concat([normalized_coherence, normalized_power], axis=1).sort_index()
+
+
+def frequency_resolution(time_window_duration=None, time_halfbandwidth_product=None):
+    return 2 * time_halfbandwidth_product / time_window_duration
