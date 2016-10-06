@@ -66,7 +66,11 @@ def get_data_structure(animal, days, file_type, variable, epoch_type='', environ
                        environment=environment)
     files = {day: scipy.io.loadmat(get_data_filename(animal, day, file_type))
              for day in days}
-    return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch]
+    try:
+        return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch]
+    except IndexError:
+        # candripples file doesn't have a cell for the last epoch.
+        return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch[:-1]]
 
 
 def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
