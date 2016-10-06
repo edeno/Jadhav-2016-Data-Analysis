@@ -150,6 +150,13 @@ def get_LFP_filename(tetrode_tuple, animals):
     )
 
 
+def _get_tetrode_id(dataframe):
+    return dataframe.animal + \
+        dataframe.day.astype(str) + \
+        dataframe.epoch_ind.astype(str) + \
+        dataframe.tetrode_number.astype(str)
+
+
 def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind):
     '''
     Given an epoch data structure, return a cleaned up DataFrame
@@ -164,7 +171,9 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind
               .assign(day=lambda x: day)
               .assign(epoch_ind=lambda x: epoch_ind)
               .assign(tetrode_number=lambda x: x.index + 1)
-              .set_index(['animal', 'day', 'epoch_ind', 'tetrode_number'])  # set index to identify rows
+              .assign(tetrode_id=_get_tetrode_id)
+            # set index to identify rows
+              .set_index(['animal', 'day', 'epoch_ind', 'tetrode_number'])
               .sort_index()
             )
 
