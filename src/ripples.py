@@ -279,7 +279,7 @@ def get_windowed_dataframe(dataframe, segments, window_offset):
                         .set_index('time'))
 
 
-def reshape_to_segments(dataframes, segments, window_offset, sampling_frequency):
+def reshape_to_segments(dataframes, segments, window_offset, concat_axis=0):
     if isinstance(window_offset, float):
         window_offset = [-window_offset, window_offset]
     segment_label = [(segment_ind + 1, segment_start, segment_end)
@@ -290,6 +290,7 @@ def reshape_to_segments(dataframes, segments, window_offset, sampling_frequency)
                          keys=segment_label,
                          names=['segment_number',
                                 'segment_start', 'segment_end'],
+                         axis=concat_axis)
                .sort_index())
 
 
