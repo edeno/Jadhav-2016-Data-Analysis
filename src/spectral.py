@@ -8,6 +8,7 @@ import scipy.signal
 import numpy as np
 import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import pandas as pd
 import ripples
 
@@ -156,22 +157,6 @@ def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_fre
                              number_of_tapers)
     if pad is None:
         pad = -1
-
-
-def _get_time_freq_from_spectrogram(spectrogram_dataframe):
-    return (np.unique(spectrogram_dataframe['time']),
-            np.unique(spectrogram_dataframe['frequency']))
-
-
-def plot_spectrogram(spectrogram_dataframe, axis_handle, spectrum_name='power', cmap='viridis'):
-    time, freq = _get_time_freq_from_spectrogram(spectrogram_dataframe)
-    mesh = axis_handle.pcolormesh(time, freq, spectrogram_dataframe.pivot('frequency', 'time', spectrum_name),
-                                  cmap=cmap,
-                                  shading='gouraud',
-                                  vmin=spectrogram_dataframe[spectrum_name].quantile(q=0.05),
-                                  vmax=spectrogram_dataframe[spectrum_name].quantile(q=0.95))
-    axis_handle.set_ylabel('Frequency (Hz)')
-    axis_handle.set_xlabel('Time (seconds)')
     if number_of_fft_samples is None:
         next_exponent = _nextpower2(number_of_time_samples)
         number_of_fft_samples = max(
@@ -190,6 +175,43 @@ def _get_window_lengths(time_window_duration, sampling_frequency, time_window_st
         time_window_step = time_window_duration
     time_step_length = int(np.fix(time_window_step * sampling_frequency))
     return time_step_length, time_window_length
+
+
+def _get_unique_time_freq(spectrogram_dataframe):
+    '''Returns the unique time and frequency given a spectrogram dataframe with
+    non-unique time and frequency columns'''
+    return (np.unique(spectrogram_dataframe.reset_index().time.values),
+            np.unique(spectrogram_dataframe.reset_index().frequency.values))
+
+
+def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
+                     spectrum_name='power', cmap='viridis',
+                     time_units='seconds', frequency_units='Hz',
+                     vmin=None, vmax=None, plot_type=None):
+    if axis_handle is None:
+        axis_handle = plt.gca()
+    if vmin is None:
+        vmin = spectrogram_dataframe[spectrum_name].quantile(q=0.05)
+    if vmax is None:
+        vmax = spectrogram_dataframe[spectrum_name].quantile(q=0.95)
+    time, freq = _get_unique_time_freq(spectrogram_dataframe)
+    data2D = spectrogram_dataframe.reset_index().pivot(
+        'frequency', 'time', spectrum_name)
+    if plot_type is None:
+        mesh = axis_handle.pcolormesh(time, freq, data2D,
+                                      cmap=cmap,
+                                      shading='gouraud',
+                                      vmin=vmin,
+                                      vmax=vmax)
+    elif plot_type is 'change':
+        mesh = axis_handle.pcolormesh(time, freq, data2D,
+                                      cmap=cmap,
+                                      shading='gouraud',
+                                      norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+
+    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
+        frequency_units=frequency_units))
+    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
