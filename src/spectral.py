@@ -67,6 +67,20 @@ def get_spectrogram_dataframe(lfp_dataframe,
     ''' Returns a pandas dataframe with the information for a spectrogram.
     Sampling frequency and frequency resolution inputs are given in Hertz.
     Time window duration and steps are given in seconds.
+def multitaper_spectrogram(data,
+                           sampling_frequency=1000,
+                           time_halfbandwidth_product=3,
+                           time_window_duration=1,
+                           pad=0,
+                           time_window_step=None,
+                           desired_frequencies=None,
+                           number_of_tapers=None,
+                           tapers=None,
+                           time=None,
+                           number_of_fft_samples=None):
+    ''' Returns a pandas dataframe with columns time, frequency, power
+
+
     '''
     time_step_length, time_window_length = _get_window_lengths(
         time_window_duration,
@@ -261,8 +275,9 @@ def multitaper_power_spectral_density(data, sampling_frequency, tapers=None,
             }
 
 
-def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None,
-                         time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
+@convert_pandas
+def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_product=3, pad=0,
+                         number_of_tapers=None, desired_frequencies=None,
                          tapers=None, frequencies=None, freq_ind=None,
                          number_of_fft_samples=None):
     ''' Returns the multi-taper coherency of two time series
@@ -298,16 +313,17 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
 
 
 
-def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
-                            sampling_frequency=1000,
-                            time_window_duration=1,
-                            time_window_step=None,
-                            desired_frequencies=None,
-                            time_halfbandwidth_product=3,
-                            number_of_tapers=None,
-                            pad=0,
-                            tapers=None):
-    ''' Returns a pandas dataframe with the information for a spectrogram.
+def multitaper_coherogram(data,
+                          sampling_frequency=1000,
+                          time_window_duration=1,
+                          time_window_step=None,
+                          desired_frequencies=None,
+                          time_halfbandwidth_product=3,
+                          number_of_tapers=None,
+                          pad=0,
+                          tapers=None,
+                          time=None):
+    ''' Returns a pandas dataframe with the information for a coherogram.
     Sampling frequency and frequency resolution inputs are given in Hertz.
     Time window duration and steps are given in seconds.
     '''
