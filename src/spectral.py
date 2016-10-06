@@ -17,17 +17,6 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
                     brain_area=cur_tetrode_info.loc[tetrode_index_tuple, 'area']))
 
 
-def plot_session(data, plotting_function):
-    num_rows = int(np.ceil(len(data) / 7))
-    fig, axis_handles = plt.subplots(num_rows, 7,
-                                     figsize=(21, 9),
-                                     sharex=True,
-                                     sharey=True)
-    for ind, axis_handle in enumerate(axis_handles.flatten()):
-        try:
-            plotting_function(data[ind], axis_handle)
-        except IndexError:
-            pass
 
 
 def make_windowed_spectrum_dataframe(lfp_dataframes, time_window_duration, time_window_step,
