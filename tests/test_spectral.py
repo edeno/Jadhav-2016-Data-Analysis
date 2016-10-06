@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import pandas as pd
 import src.spectral as spectral
 
 
@@ -69,3 +70,42 @@ def test_nextpower2(test_number, expected_number):
 def test_cross_spectrum_shape(complex_spectrum, expected_shape):
     cross_spectrum = spectral._cross_spectrum(complex_spectrum, complex_spectrum)
     assert np.all(cross_spectrum.shape == expected_shape)
+
+
+@pytest.mark.parametrize("num_data, time_window_duration, time_window_step, sampling_frequency", [
+    (1000, 0.1, 0.1, 1000),
+    (1000, 0.1, 0.05, 1000),
+    (1000, 0.1, 0.3, 1000),
+    (1000, 0.1, 0.3, 1500),
+    (1500, 0.1, 0.3, 1500),
+])
+def test_make_sliding_window_dataframe(num_data, time_window_duration,
+                                       time_window_step, sampling_frequency):
+    data = np.ones((num_data, 1))
+    time = np.linspace(0, num_data / sampling_frequency, num=num_data, endpoint=False)
+    time_step_length, time_window_length = spectral._get_window_lengths(
+        time_window_duration,
+        sampling_frequency,
+        time_window_step)
+
+    def test_func(data, **kwargs):
+        return pd.DataFrame(kwargs)
+
+    kwargs = {'test1': [1, 2]}
+    dataframes = list(spectral._make_sliding_window_dataframe(
+        test_func,
+        [data],
+        time_window_duration,
+        time_window_step,
+        time_step_length,
+        time_window_length,
+        time,
+        **kwargs))
+    expected_time_steps = np.arange(time_window_duration / 2, time[-1] + 1/sampling_frequency,
+                                    time_window_step)
+    if time_step_length * (len(expected_time_steps) - 1) + time_window_length > num_data:
+        expected_time_steps = expected_time_steps[:-1]
+
+    assert len(dataframes) == len(expected_time_steps)
+    assert np.all([df.test1.values == [1, 2] for df in dataframes])
+    assert np.all(np.array([df.time.values[0] for df in dataframes]) - expected_time_steps < 1E6)
