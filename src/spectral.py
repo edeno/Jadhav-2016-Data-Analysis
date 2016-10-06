@@ -55,18 +55,6 @@ def _make_sliding_window_dataframe(func, data, time_window_duration, time_window
             raise StopIteration
 
 
-def get_spectrogram_dataframe(lfp_dataframe,
-                              sampling_frequency=1000,
-                              time_window_duration=1,
-                              time_window_step=None,
-                              desired_frequencies=None,
-                              time_halfbandwidth_product=3,
-                              number_of_tapers=None,
-                              pad=0,
-                              tapers=None):
-    ''' Returns a pandas dataframe with the information for a spectrogram.
-    Sampling frequency and frequency resolution inputs are given in Hertz.
-    Time window duration and steps are given in seconds.
 def multitaper_spectrogram(data,
                            sampling_frequency=1000,
                            time_halfbandwidth_product=3,
@@ -216,30 +204,6 @@ def _nextpower2(n):
     This is useful for ensuring fast FFT sizes.
     """
     return int(np.ceil(np.log2(n)))
-
-
-def multitaper_spectrum(data, sampling_frequency, desired_frequencies=None,
-                        time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
-                        tapers=None, number_of_fft_samples=None, frequencies=None,
-                        freq_ind=None):
-    ''' Returns complex spectrum (frequencies x trials x tapers)
-    '''
-    if number_of_tapers is None:
-        number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
-    if pad is None:
-        pad = -1
-    time_series_length = data.shape[0]
-    if number_of_fft_samples is None:
-        number_of_fft_samples = max(2 ** (_nextpower2(time_series_length) + pad),
-                                    time_series_length)
-    if frequencies is None:
-        frequencies, freq_ind = _get_frequencies(sampling_frequency, number_of_fft_samples,
-                                                 desired_frequencies=desired_frequencies)
-    if tapers is None:
-        tapers = _get_tapers(time_series_length, sampling_frequency,
-                             time_halfbandwidth_product, number_of_tapers)
-    complex_spectrum = _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency)
-    return complex_spectrum, frequencies, freq_ind
 
 
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
