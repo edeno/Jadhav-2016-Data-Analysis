@@ -63,26 +63,6 @@ def test_nextpower2(test_number, expected_number):
     assert spectral._nextpower2(test_number) == expected_number
 
 
-@pytest.mark.parametrize("number_of_tapers, data, time_halfbandwidth_product, \
-                          pad, expected_spectrum_shape, expected_freq_shape", [
-    (None, np.random.normal(MEAN, STD_DEV, (23, 1)), 3, 0, (32, 1, 5), (17,)),
-    (None, np.random.normal(MEAN, STD_DEV, (23, 1)), 1, 0, (32, 1, 1), (17,)),
-    (2, np.random.normal(MEAN, STD_DEV, (23, 1)), 1, 0, (32, 1, 2), (17,)),
-    (2, np.random.normal(MEAN, STD_DEV, (23, 2)), 1, 0, (32, 2, 2), (17,)),
-    (2, np.random.normal(MEAN, STD_DEV, (15, 2)), 1, 0, (16, 2, 2), (9,)),
-])
-def test_multitaper_spectrum_shape(number_of_tapers, data, time_halfbandwidth_product, pad,
-                                   expected_spectrum_shape, expected_freq_shape):
-    SAMPLING_FREQUENCY = 1000
-    complex_spectrum, frequencies, freq_ind = spectral.multitaper_spectrum(data, SAMPLING_FREQUENCY,
-                                                                           time_halfbandwidth_product=time_halfbandwidth_product,
-                                                                           number_of_tapers=number_of_tapers,
-                                                                           pad=pad)
-    assert np.all(complex_spectrum.shape == expected_spectrum_shape)
-    assert complex_spectrum.dtype == 'complex'
-    assert np.all(freq_ind.shape == expected_freq_shape)
-
-
 @pytest.mark.parametrize("complex_spectrum, expected_shape", [
     (np.random.normal(MEAN, STD_DEV, (23, 2, 1)), (23,)),
 ])
