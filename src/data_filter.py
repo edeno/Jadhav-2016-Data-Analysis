@@ -238,7 +238,7 @@ def _get_LFP_time(start_time, number_samples, sampling_frequency):
 
 
 def get_neuron_info(animal):
-    '''Returns the Matlab tetrodeinfo file name assuming it is in the Raw Data directory.
+    '''Returns the Matlab cellinfo file name assuming it is in the Raw Data directory.
     '''
     data_dir = '{working_dir}/Raw-Data'.format(
         working_dir=os.path.abspath(os.path.pardir))
