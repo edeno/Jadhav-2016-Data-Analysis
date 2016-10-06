@@ -284,29 +284,24 @@ def _add_to_dict(dictionary, tetrode_ind, neuron_ind):
 
 def make_epochs_dataframe(animals, days):
     # Get all epochs
-    tasks = [(get_data_structure(animals[animal], day, 'task', 'task'), animal)
+    tasks = [(get_data_structure(animals[animal], day, 'task', 'task'), animal, day)
              for animal in animals
              for day in days]
-    epochs = [(epoch, animal) for day, animal in tasks for epoch in day]
+    epochs = [epoch
+              for day_structure, _, _ in tasks
+              for epoch in day_structure]
 
-    # Convert into pandas dataframes
-    task_data = [
-                 {name: epoch[0][name][0][0][0]
-                  for name in epoch[0].dtype.names
-                  if name not in 'linearcoord'}
-                 for epoch in epochs]
-    task_dataframe = pd.DataFrame(task_data)
+    task_dataframe = pd.DataFrame([
+        {name: epoch[name][0][0][0]
+         for name in epoch.dtype.names
+         if name not in 'linearcoord'}
+        for epoch in epochs])
 
-    day_epoch_ind = [{'animal': day[1], 'day': day_ind + 1, 'epoch_ind': epoch_ind + 1}
-                     for day_ind, day in enumerate(tasks)
-                     for epoch_ind, epoch in enumerate(day[0])]
+    index_labels = pd.DataFrame([{'animal': animal, 'day': day, 'epoch_ind': epoch_ind + 1}
+                                 for day_structure, animal, day in tasks
+                                 for epoch_ind, epoch in enumerate(day_structure)])
 
-    day_epoch_dataframe = pd.DataFrame(day_epoch_ind)
-
-    return (pd
-            .concat([day_epoch_dataframe, task_dataframe],
-                    axis=1,
-                    join_axes=[task_dataframe.index])
+    return (pd.concat([index_labels, task_dataframe], axis=1, join_axes=[task_dataframe.index])
             .set_index(['animal', 'day', 'epoch_ind'])
             .sort_index()
             .assign(environment=lambda x: pd.Categorical(x['environment']))
