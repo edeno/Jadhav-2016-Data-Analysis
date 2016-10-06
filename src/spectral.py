@@ -56,8 +56,10 @@ def get_spectrogram_dataframe(lfp_dataframe,
     Sampling frequency and frequency resolution inputs are given in Hertz.
     Time window duration and steps are given in seconds.
     '''
-    if time_window_step is None:
-        time_window_step = time_window_duration
+    time_step_length, time_window_length = _get_window_lengths(
+        time_window_duration,
+        sampling_frequency,
+        time_window_step)
     tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
         number_of_time_samples=time_window_length,
         sampling_frequency=sampling_frequency,
@@ -133,6 +135,15 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle, spectrum_name='power', 
                                                  number_of_fft_samples,
                                                  desired_frequencies=desired_frequencies)
     return tapers, number_of_fft_samples, frequencies, freq_ind
+
+
+def _get_window_lengths(time_window_duration, sampling_frequency, time_window_step):
+    '''Figures out the number of points per time window and step'''
+    time_window_length = int(np.fix(time_window_duration * sampling_frequency))
+    if time_window_step is None:
+        time_window_step = time_window_duration
+    time_step_length = int(np.fix(time_window_step * sampling_frequency))
+    return time_step_length, time_window_length
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
@@ -311,6 +322,10 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
 def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):
     time, freq = _get_time_freq_from_spectrogram(coherogram_dataframe)
     mesh = axis_handle.pcolormesh(time, freq, coherogram_dataframe.pivot('frequency', 'time', 'coherence_magnitude'),
+    time_step_length, time_window_length = _get_window_lengths(
+        time_window_duration,
+        sampling_frequency,
+        time_window_step)
     tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
         number_of_time_samples=time_window_length,
         sampling_frequency=sampling_frequency,
