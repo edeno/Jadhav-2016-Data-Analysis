@@ -344,5 +344,36 @@ def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
     return [list_element for list_element, is_in_list in zip(list_to_filter, is_in_list)
             if is_in_list]
 
+
+def get_spikes_dataframe(neuron_index, animals):
+    animal, day, epoch, tetrode_number, neuron_number = neuron_index
+    neuron_file = scipy.io.loadmat(
+        get_data_filename(animals[animal], day, 'spikes'))
+    try:
+        neuron_data = neuron_file['spikes'][
+            0, -1][0, epoch - 1][0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][:, 0]
+        data_dict = {'time': neuron_data,
+                     'is_spike': 1
+                     }
+    except IndexError:
+        data_dict = {'time': [],
+                     'is_spike': []}
+    return pd.DataFrame(data_dict).set_index('time').sort_index()
+
+
+def make_neuron_dataframe(animals):
+    neuron_file_names = [(get_neuron_info(animals[animal]), animal)
+                         for animal in animals]
+    neuron_data = [(scipy.io.loadmat(file_name[0]), file_name[1])
+                   for file_name in neuron_file_names]
+    return {(animal, day_ind + 1, epoch_ind + 1):
+            convert_neuron_epoch_to_dataframe(
+                epoch, animal, day_ind + 1, epoch_ind + 1)
+            for cellfile, animal in neuron_data
+            for day_ind, day in enumerate(cellfile['cellinfo'].T)
+            for epoch_ind, epoch in enumerate(day[0].T)
+            }
+
+
 if __name__ == '__main__':
     sys.exit()
