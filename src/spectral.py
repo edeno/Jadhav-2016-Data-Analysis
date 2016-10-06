@@ -309,8 +309,8 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
                          tapers=None, frequencies=None, freq_ind=None,
                          number_of_fft_samples=None):
     ''' Returns the multi-taper coherency of two time series
-    data1 (time x trials)
-    data2 (time x trials)
+    data[0] (time x trials)
+    data[1] (time x trials)
     '''
     tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
         number_of_time_samples=data[0].shape[0],
