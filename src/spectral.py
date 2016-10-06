@@ -5,6 +5,7 @@ import inspect
 import scipy.io
 import scipy.fftpack
 import scipy.signal
+import scipy.stats
 import numpy as np
 import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
@@ -397,6 +398,20 @@ def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3,
                                   vmax=vmax)
     axis_handle.set_ylabel('Frequency (Hz)')
     axis_handle.set_xlabel('Time (seconds)')
+def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
+                          vmin=-np.pi, vmax=np.pi, time_units='seconds', frequency_units='Hz'):
+    if axis_handle is None:
+        axis_handle = plt.gca()
+    time, freq = _get_unique_time_freq(coherogram_dataframe)
+    data2D = coherogram_dataframe.pivot('frequency', 'time', 'coherence_phase')
+    mesh = axis_handle.pcolormesh(time, freq, data2D,
+                                  cmap=cmap,
+                                  shading='gouraud',
+                                  vmin=vmin,
+                                  vmax=vmax)
+    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
+        frequency_units=frequency_units))
+    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
@@ -406,6 +421,22 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
     return '{tetrode1} - {tetrode2}' \
         .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
                 tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
+
+
+def group_delay(coherence_dataframe):
+    slope, _, correlation, _, _ = scipy.stats.linregress(
+        coherence_dataframe.reset_index('frequency').frequency,
+        coherence_dataframe.coherence_phase)
+    return pd.DataFrame({'correlation': correlation,
+                         'number_of_points': len(coherence_dataframe.coherence_phase),
+                         'slope': slope,
+                         'delay': slope / 2 * np.pi}, index=[0])
+
+
+def group_delay_over_time(coherogram_dataframe):
+    return coherogram_dataframe.groupby('time').apply(group_delay)
+
+
 def normalize_power_by_baseline(dataframe_of_interest, dataframe_baseline):
     '''Normalizes a coherence or power dataframe by dividing it by a baseline dataframe.
     The baseline dataframe is assumed to only have a frequency index.'''
