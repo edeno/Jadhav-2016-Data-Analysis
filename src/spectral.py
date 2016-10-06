@@ -19,32 +19,25 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
 
 
 
-def make_windowed_spectrum_dataframe(lfp_dataframes, time_window_duration, time_window_step,
-                                     sampling_frequency, desired_frequencies=None,
-                                     time_halfbandwidth_product=3, number_of_tapers=None, pad=0,
-                                     tapers=None, frequencies=None, freq_ind=None,
-                                     number_of_fft_samples=None, number_points_time_step=None,
-                                     number_points_time_window=None):
-    ''' Generator function that returns a power spectral density data frame for each time window
+def _make_sliding_window_dataframe(func, data, time_window_duration, time_window_step,
+                                   time_step_length, time_window_length, time,
+                                   **kwargs):
+    ''' Generator function that returns a transformed dataframe (via func) for each sliding
+    time window.
     '''
-    time_window_start = 0
+    time_window_start_ind = 0
 
-    while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
+    while time_window_start_ind + time_window_length <= len(data[0]):
         try:
-            time_window_end = time_window_start + number_points_time_window
-            windowed_arrays = _get_window_array(lfp_dataframes, time_window_start, time_window_end)
+            time_window_end_ind = time_window_start_ind + time_window_length
+            windowed_arrays = _get_window_array(
+                data, time_window_start_ind, time_window_end_ind)
 
-            yield (pd.DataFrame(multitaper_power_spectral_density(windowed_arrays,
-                                                                  sampling_frequency,
-                                                                  tapers=tapers,
-                                                                  frequencies=frequencies,
-                                                                  freq_ind=freq_ind,
-                                                                  number_of_fft_samples=number_of_fft_samples)
-                                )
-                   .assign(time=_get_window_center(lfp_dataframes[0], time_window_start,
-                                                   time_window_duration))
-                   )
-            time_window_start += number_points_time_step
+            yield (func(windowed_arrays, **kwargs)
+                   .assign(time=_get_window_center(time_window_start_ind, time_window_duration,
+                                                   time))
+                   .set_index('time', append=True))
+            time_window_start_ind += time_step_length
         except ValueError:
             # Not enough data points
             raise StopIteration
@@ -65,6 +58,24 @@ def get_spectrogram_dataframe(lfp_dataframe,
     '''
     if time_window_step is None:
         time_window_step = time_window_duration
+    return pd.concat(list(_make_sliding_window_dataframe(
+        multitaper_power_spectral_density,
+        [data],
+        time_window_duration,
+        time_window_step,
+        time_step_length,
+        time_window_length,
+        time,
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        number_of_tapers=number_of_tapers,
+        pad=pad,
+        tapers=tapers,
+        frequencies=frequencies,
+        freq_ind=freq_ind,
+        number_of_fft_samples=number_of_fft_samples)).sort_index()
+    )
     if tapers is None:
         if number_of_tapers is None:
             number_of_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
@@ -243,36 +254,6 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
             }
 
 
-def make_windowed_coherency_dataframe(lfp_dataframes, time_window_duration,
-                                      time_window_step, sampling_frequency,
-                                      desired_frequencies=None, time_halfbandwidth_product=3,
-                                      number_of_tapers=None, pad=0, tapers=None,
-                                      number_points_time_window=None, frequencies=None,
-                                      freq_ind=None, number_of_fft_samples=None,
-                                      number_points_time_step=None):
-    ''' Generator function that returns a coherency dataframe for each time window
-    '''
-    time_window_start = 0
-
-    while time_window_start + number_points_time_window < len(lfp_dataframes[0]):
-        try:
-            time_window_end = time_window_start + number_points_time_window
-            windowed_arrays = _get_window_array(lfp_dataframes, time_window_start, time_window_end)
-
-            yield (pd.DataFrame(multitaper_coherency(windowed_arrays,
-                                                     sampling_frequency=sampling_frequency,
-                                                     tapers=tapers,
-                                                     frequencies=frequencies,
-                                                     freq_ind=freq_ind,
-                                                     number_of_fft_samples=number_of_fft_samples)
-                                )
-                   .assign(time=_get_window_center(lfp_dataframes[0], time_window_start,
-                                                   time_window_duration))
-                   )
-            time_window_start += number_points_time_step
-        except ValueError:
-            # Not enough data points
-            raise StopIteration
 
 
 def _window(dataframe, time_window_start, time_window_end):
@@ -342,6 +323,24 @@ def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
 def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):
     time, freq = _get_time_freq_from_spectrogram(coherogram_dataframe)
     mesh = axis_handle.pcolormesh(time, freq, coherogram_dataframe.pivot('frequency', 'time', 'coherence_magnitude'),
+    return pd.concat(list(_make_sliding_window_dataframe(
+        multitaper_coherence,
+        data,
+        time_window_duration,
+        time_window_step,
+        time_step_length,
+        time_window_length,
+        time,
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        number_of_tapers=number_of_tapers,
+        pad=pad,
+        tapers=tapers,
+        frequencies=frequencies,
+        freq_ind=freq_ind,
+        number_of_fft_samples=number_of_fft_samples,
+    ))).sort_index()
                                   cmap=cmap,
                                   shading='gouraud',
                                   vmin=vmin,
