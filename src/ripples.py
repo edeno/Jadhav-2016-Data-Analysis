@@ -100,6 +100,16 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
                ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
 
 
+def _get_computed_consensus_ripple_times(epoch_tuple, animals):
+    ''' Returns a list of tuples for a given epoch in the format
+    (start_time, end_time).
+    '''
+    animal, day, epoch_ind = epoch_tuple
+    ripples_data = df.get_data_structure(
+        animals[animal], day, 'candripples', 'candripples')
+    return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
+
+
 def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
     ''' Given a list of ripple time tuples (ripple #, start time, end time) and a dataframe with a
     time index (such as the lfp dataframe), returns a pandas dataframe with a column with the
