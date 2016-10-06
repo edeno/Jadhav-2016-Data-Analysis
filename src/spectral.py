@@ -321,6 +321,7 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
         time_halfbandwidth_product=time_halfbandwidth_product,
         desired_frequencies=desired_frequencies,
         pad=pad)
+    data = [_center_data(datum) for datum in data]
     complex_spectra = [_multitaper_fft(tapers, datum, number_of_fft_samples, sampling_frequency)
                        for datum in data]
     cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
