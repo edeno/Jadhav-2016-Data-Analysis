@@ -228,11 +228,11 @@ def get_LFP_data(tetrode_index, animals):
     return [_get_LFP_dataframe(tetrode, animals) for tetrode in tetrode_index]
 
 
-def _get_LFP_time(start_time, number_samples, sampling_rate):
+def _get_LFP_time(start_time, number_samples, sampling_frequency):
     ''' Returns an array of time stamps
     '''
-    sampling_rate = int(np.round(sampling_rate))
-    end_time = start_time + (number_samples / sampling_rate)
+    sampling_frequency = int(np.round(sampling_frequency))
+    end_time = start_time + (number_samples / sampling_frequency)
 
     return np.linspace(start_time, end_time, number_samples)
 
