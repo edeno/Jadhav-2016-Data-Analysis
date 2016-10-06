@@ -247,6 +247,14 @@ def get_neuron_info(animal):
         animal=animal)
 
 
+def _get_neuron_id(dataframe):
+    return dataframe.animal + \
+        dataframe.day.astype(str) + \
+        dataframe.epoch_ind.astype(str) + \
+        dataframe.tetrode_number.astype(str) + \
+        dataframe.neuron_number.astype(str)
+
+
 def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind):
     '''
     Given an neuron data structure, return a cleaned up DataFrame
@@ -267,10 +275,11 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind)
                         if neuron.size > 0
                         ]
     return (pd.DataFrame(neuron_dict_list)
-              .drop(DROP_COLUMNS, 1, errors='ignore')
-              .assign(animal=lambda x: animal)
-              .assign(day=lambda x: day)
-              .assign(epoch_ind=lambda x: epoch_ind)
+              .drop(DROP_COLUMNS, axis=1, errors='ignore')
+              .assign(animal=animal)
+              .assign(day=day)
+              .assign(epoch_ind=epoch_ind)
+              .assign(neuron_id=_get_neuron_id)
               .set_index(NEURON_INDEX)  # set index to identify rows
               .sort_index()
             )
