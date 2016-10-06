@@ -17,6 +17,18 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
                     brain_area=cur_tetrode_info.loc[tetrode_index_tuple, 'area']))
 
 
+def _center_data(x):
+    '''Returns the mean-centered data array along the first axis'''
+    return x - np.nanmean(x, axis=0)
+
+
+def _get_window_array(data, time_window_start_ind, time_window_end_ind):
+    '''Returns the data for a given start and end index'''
+    window_array = [datum[time_window_start_ind:time_window_end_ind, ...]
+                    for datum in data]
+    if len(window_array) == 1:
+        window_array = window_array[0]
+    return window_array
 
 
 def _make_sliding_window_dataframe(func, data, time_window_duration, time_window_step,
@@ -284,24 +296,6 @@ def multitaper_coherency(data, sampling_frequency=1000, desired_frequencies=None
 
 
 
-def _window(dataframe, time_window_start, time_window_end):
-    return dataframe.iloc[time_window_start:time_window_end].electric_potential.values
-
-
-def _center(x):
-    return x - np.nanmean(x, axis=0)
-
-
-def _get_window_array(lfp_dataframes, time_window_start, time_window_end):
-    window_array = [_center(_window(lfp, time_window_start, time_window_end))
-                    for lfp in lfp_dataframes]
-    if len(window_array) == 1:
-        window_array = window_array[0]
-    return window_array
-
-
-def _get_window_center(dataframe, time_window_start, time_window_duration):
-    return dataframe.index[time_window_start] + (time_window_duration / 2)
 
 
 def get_coherence_dataframe(lfp_dataframe1, lfp_dataframe2,
