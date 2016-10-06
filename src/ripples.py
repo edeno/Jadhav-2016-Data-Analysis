@@ -89,7 +89,7 @@ def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_pro
 
 def _get_computed_ripple_times(tetrode_tuple, animals):
     ''' Returns a list of tuples for a given tetrode in the format
-    (ripple_number, start_index, end_index). The indexes are relative
+    (start_index, end_index). The indexes are relative
     to the trial time for that session. Data is extracted from the ripples
     data structure and calculated according to the Frank Lab criterion.
     '''
