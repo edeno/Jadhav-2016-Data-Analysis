@@ -58,6 +58,16 @@ def get_spectrogram_dataframe(lfp_dataframe,
     '''
     if time_window_step is None:
         time_window_step = time_window_duration
+    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
+        number_of_time_samples=time_window_length,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration,
+        time_window_step=time_window_duration,
+        tapers=tapers,
+        number_of_tapers=number_of_tapers,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        desired_frequencies=desired_frequencies,
+        pad=pad)
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_power_spectral_density,
         [data],
