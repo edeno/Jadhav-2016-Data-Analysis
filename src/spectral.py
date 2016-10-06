@@ -355,11 +355,6 @@ def multitaper_coherogram(data,
     Sampling frequency and frequency resolution inputs are given in Hertz.
     Time window duration and steps are given in seconds.
     '''
-
-
-def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3, vmax=0.7):
-    time, freq = _get_time_freq_from_spectrogram(coherogram_dataframe)
-    mesh = axis_handle.pcolormesh(time, freq, coherogram_dataframe.pivot('frequency', 'time', 'coherence_magnitude'),
     time_step_length, time_window_length = _get_window_lengths(
         time_window_duration,
         sampling_frequency,
@@ -392,14 +387,25 @@ def plot_coherogram(coherogram_dataframe, axis_handle, cmap='viridis', vmin=0.3,
         freq_ind=freq_ind,
         number_of_fft_samples=number_of_fft_samples,
     ))).sort_index()
+
+
+def plot_coherogram(coherogram_dataframe, axis_handle=None,
+                    cmap='viridis', vmin=0.3, vmax=0.7,
+                    time_units='seconds', frequency_units='Hz'):
     if axis_handle is None:
         axis_handle = plt.gca()
                                   cmap=cmap,
                                   shading='gouraud',
                                   vmin=vmin,
                                   vmax=vmax)
-    axis_handle.set_ylabel('Frequency (Hz)')
-    axis_handle.set_xlabel('Time (seconds)')
+    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
+        frequency_units=frequency_units))
+    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
+    axis_handle.set_xlim([time.min(), time.max()])
+    axis_handle.set_ylim([freq.min(), freq.max()])
+    return mesh
+
+
 def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
                           vmin=-np.pi, vmax=np.pi, time_units='seconds', frequency_units='Hz'):
     if axis_handle is None:
