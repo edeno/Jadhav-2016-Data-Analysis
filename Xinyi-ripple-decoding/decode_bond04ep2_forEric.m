@@ -1,4 +1,4 @@
-
+clear variables; clc;
 %%
 %%%%bond04, epoch 2
 load('bond_data/bontask04.mat');
@@ -12,7 +12,7 @@ load('bond_data/bonwellvisits04.mat');
 day=4; epoch=2;
 
 tetrode_number=[1 2 4 5 7 10 11 12 13 14 17 18 19 20 22 23 27 29]; %tetrode index
-a=[];b=[];
+tetrode_index=[];neuron_index=[];
 %a: tetrode index; b: corresponding cell index
 %this is from sorted spikes, we only use this to select replay events with
 %non-zero sorted spikes in it to decode
@@ -27,7 +27,7 @@ for tetrode_ind=1:length(tetrode_number)
             end
         end
     end
-    b=[b b0(find(b0))];a=[a a0(find(a0))];
+    neuron_index=[neuron_index b0(b0 > 0)];tetrode_index=[tetrode_index a0(a0 > 0)];
 end
 
 
@@ -50,22 +50,22 @@ xdel=stateV(2)-stateV(1);
 
 
 %% calculate emipirical movement transition matrix, then Gaussian smoothed
-[sn,state_bin]=histc(lindist,stateV);
+[~,state_bin]=histc(lindist,stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 n=size(stateV,2);
 %by column=departuring
 for s=1:n
-    sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
     if isempty(sp0)==0
         stateM(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
     elseif isempty(sp0)==1
         stateM(:,s)=zeros(1,n);
     end
 end
-K=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
+gaussian=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
-weight=K(sig,dx,dy)/sum(sum(K(sig,dx,dy))); %normalizing weights
+weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
 stateM_gaus=conv2(stateM,weight,'same'); %gaussian smoothed
 stateM_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
 
@@ -78,11 +78,11 @@ ind_I_in=find(trajencode{day}{epoch}.trajstate==2 | trajencode{day}{epoch}.trajs
 n=length(stateV);
 stateM_I_out=zeros(n,n);
 vecLF_seg=vecLF(ind_I_out,:);
-[sn,state_bin]=histc(vecLF_seg(:,2),stateV);
+[~,state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 stateM_seg=zeros(n,n);
 for s=1:n
-    sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
     if isempty(sp0)==0
         stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
     elseif isempty(sp0)==1
@@ -99,10 +99,10 @@ for i=1:n
     end
 end
 %stateM_I1=stateM_I1*diag(1./sum(stateM_I1,1));
-K=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
+gaussian=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
-weight=K(sig,dx,dy)/sum(sum(K(sig,dx,dy))); %normalizing weights
+weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
 stateM_gaus=conv2(stateM_I_out,weight,'same'); %gaussian smoothed
 stateM_I1_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
 
@@ -113,7 +113,7 @@ vecLF_seg=vecLF(ind_I_in,:);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 stateM_seg=zeros(n,n);
 for s=1:n
-    sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
     if isempty(sp0)==0
         stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
     elseif isempty(sp0)==1
@@ -130,10 +130,10 @@ for i=1:n
     end
 end
 %stateM_I0=stateM_I0*diag(1./sum(stateM_I0,1));
-K=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
+gaussian=@(x) exp(-(x.^2+y.^2)/2/sig^2)'; %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
-weight=K(sig,dx,dy)/sum(sum(K(sig,dx,dy))); %normalizing weights
+weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
 stateM_gaus=conv2(stateM_I_in,weight,'same'); %gaussian smoothed
 stateM_I0_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
 
@@ -147,8 +147,8 @@ endT=endT(traj_Ind);
 ripple_seg=[round(startT*1000)-ti(1)-1 round(endT*1000)-ti(1)-1]; %index for ripple segments
 
 clear sptrain2_list;
-for kk=1:size(a,2)
-    j=a(kk);i=b(kk);
+for kk=1:size(tetrode_index,2)
+    j=tetrode_index(kk);i=neuron_index(kk);
     B=spikes{day}{epoch}{j}{i}.data(:,1); %spiking times for tetrode j, cell i
     xi=round(B*1000); %binning spiking times at 1 ms
     [sptrain2,~]=ismember(ti,xi); %sptrain2: spike train binned at 1 ms instead of 33.4ms (sptrain0)
@@ -158,7 +158,7 @@ end
 clear spike_r_all;
 for k=1:size(ripple_seg,1)
     spike_r=[];
-    for kk=1:size(a,2)
+    for kk=1:size(tetrode_index,2)
         sptrain2=sptrain2_list{kk};
         spike_r=[spike_r;sptrain2(ripple_seg(k,1):ripple_seg(k,2))];
     end
