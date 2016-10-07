@@ -282,7 +282,8 @@ def get_windowed_dataframe(dataframe, segments, window_offset):
     segments = iter(segments)
     for segment_start, _ in segments:
         # Handle floating point inconsistencies in the index
-        segment_start_ind = dataframe.index.get_loc(segment_start, method='nearest')
+        segment_start_ind = dataframe.index.get_loc(
+            segment_start, method='nearest')
         segment_start = dataframe.iloc[segment_start_ind].name
         yield (dataframe.loc[segment_start + window_offset[0]:segment_start + window_offset[1], :]
                         .reset_index()
@@ -326,6 +327,9 @@ def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_thresho
                              .interpolate(method='linear')
                              .reindex(lfp_data[0].index))
 
-    average_speed = [interpolated_position.loc[segment_start:segment_end, :].smoothed_speed.mean().values
+    average_speed = [(interpolated_position.loc[segment_start:segment_end, :]
+                      .smoothed_speed
+                      .mean()
+                      .values)
                      for segment_start, segment_end in merged_segments]
     return [merged_segments[i] for i in np.where(average_speed <= speed_threshold)[0]]
