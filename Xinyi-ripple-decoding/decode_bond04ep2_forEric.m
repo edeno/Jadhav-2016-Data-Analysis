@@ -9,23 +9,23 @@ load('bond_data/bonripplescons04.mat');
 load('bond_data/bontrajencode04.mat');
 load('bond_data/bonwellvisits04.mat');
 
-ex=4; ep=2;
+day=4; epoch=2;
 
-ind_t=[1 2 4 5 7 10 11 12 13 14 17 18 19 20 22 23 27 29]; %tetrode index
-a=[];b=[]; 
+tetrode_number=[1 2 4 5 7 10 11 12 13 14 17 18 19 20 22 23 27 29]; %tetrode index
+a=[];b=[];
 %a: tetrode index; b: corresponding cell index
 %this is from sorted spikes, we only use this to select replay events with
 %non-zero sorted spikes in it to decode
-for ind=1:length(ind_t)
-    numC=length(spikes{ex}{ep}{ind_t(ind)});
-    b0=zeros(1,numC);a0=zeros(1,numC);
-    if isempty(spikes{ex}{ep}{ind_t(ind)})==0
-    for i=1:numC
-        if isempty(spikes{ex}{ep}{ind_t(ind)}{i})==0 && isempty(spikes{ex}{ep}{ind_t(ind)}{i}.data)==0
-            b0(i)=i;
-            a0(i)=ind_t(ind);
+for tetrode_ind=1:length(tetrode_number)
+    numNeurons=length(spikes{day}{epoch}{tetrode_number(tetrode_ind)});
+    b0=zeros(1,numNeurons);a0=zeros(1,numNeurons);
+    if isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)})==0
+        for neuron_ind=1:numNeurons
+            if ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}) && ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}.data)
+                b0(neuron_ind)=neuron_ind;
+                a0(neuron_ind)=tetrode_number(tetrode_ind);
+            end
         end
-    end
     end
     b=[b b0(find(b0))];a=[a a0(find(a0))];
 end
@@ -38,12 +38,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% use Loren's linearization
-time=linpos{ex}{ep}.statematrix.time;
-lindist=linpos{ex}{ep}.statematrix.lindist;
+time=linpos{day}{epoch}.statematrix.time;
+lindist=linpos{day}{epoch}.statematrix.lindist;
 vecLF(:,1)=time;vecLF(:,2)=lindist;
 %figure;plot(time,lindist,'.');
 
-A=pos{ex}{ep}.data(:,1); %time stamps for animal's trajectory
+A=pos{day}{epoch}.data(:,1); %time stamps for animal's trajectory
 ti=round(A(1)*1000):1:round(A(end)*1000); %binning time stamps at 1 ms
 stateV=linspace(min(lindist),max(lindist),61);
 xdel=stateV(2)-stateV(1);
@@ -70,8 +70,8 @@ stateM_gaus=conv2(stateM,weight,'same'); %gaussian smoothed
 stateM_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
 
 %%
-ind_I_out=find(trajencode{ex}{ep}.trajstate==1 | trajencode{ex}{ep}.trajstate==3);
-ind_I_in=find(trajencode{ex}{ep}.trajstate==2 | trajencode{ex}{ep}.trajstate==4);
+ind_I_out=find(trajencode{day}{epoch}.trajstate==1 | trajencode{day}{epoch}.trajstate==3);
+ind_I_in=find(trajencode{day}{epoch}.trajstate==2 | trajencode{day}{epoch}.trajstate==4);
 %figure;plot(vecLF(ind_I_out,1),vecLF(ind_I_out,2),'r.',vecLF(ind_I_in,1),vecLF(ind_I_in,2),'b.');
 
 %% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
@@ -81,14 +81,14 @@ vecLF_seg=vecLF(ind_I_out,:);
 [sn,state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 stateM_seg=zeros(n,n);
-    for s=1:n
-        sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-        if isempty(sp0)==0
-            stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
-        elseif isempty(sp0)==1
-            stateM_seg(:,s)=zeros(1,n);
-        end
+for s=1:n
+    sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    if isempty(sp0)==0
+        stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
+    elseif isempty(sp0)==1
+        stateM_seg(:,s)=zeros(1,n);
     end
+end
 stateM_I_out=stateM_I_out+stateM_seg;
 %%%if too many zeros:
 for i=1:n
@@ -112,14 +112,14 @@ vecLF_seg=vecLF(ind_I_in,:);
 [sn,state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 stateM_seg=zeros(n,n);
-    for s=1:n
-        sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-        if isempty(sp0)==0
-            stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
-        elseif isempty(sp0)==1
-            stateM_seg(:,s)=zeros(1,n);
-        end
+for s=1:n
+    sp0=state_disM(find(state_disM(:,1)==s),2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    if isempty(sp0)==0
+        stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
+    elseif isempty(sp0)==1
+        stateM_seg(:,s)=zeros(1,n);
     end
+end
 stateM_I_in=stateM_I_in+stateM_seg;
 %%if too many zeros
 for i=1:n
@@ -139,9 +139,9 @@ stateM_I0_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confi
 
 
 %% calculate ripple starting and end times
-startT=ripplescons{ex}{ep}{1}.starttime;
-endT=ripplescons{ex}{ep}{1}.endtime;
-traj_Ind=find(ripplescons{ex}{ep}{1}.maxthresh>4);
+startT=ripplescons{day}{epoch}{1}.starttime;
+endT=ripplescons{day}{epoch}{1}.endtime;
+traj_Ind=find(ripplescons{day}{epoch}{1}.maxthresh>4);
 startT=startT(traj_Ind);
 endT=endT(traj_Ind);
 ripple_seg=[round(startT*1000)-ti(1)-1 round(endT*1000)-ti(1)-1]; %index for ripple segments
@@ -149,7 +149,7 @@ ripple_seg=[round(startT*1000)-ti(1)-1 round(endT*1000)-ti(1)-1]; %index for rip
 clear sptrain2_list;
 for kk=1:size(a,2)
     j=a(kk);i=b(kk);
-    B=spikes{ex}{ep}{j}{i}.data(:,1); %spiking times for tetrode j, cell i
+    B=spikes{day}{epoch}{j}{i}.data(:,1); %spiking times for tetrode j, cell i
     xi=round(B*1000); %binning spiking times at 1 ms
     [sptrain2,~]=ismember(ti,xi); %sptrain2: spike train binned at 1 ms instead of 33.4ms (sptrain0)
     sptrain2_list{kk}=sptrain2;
@@ -173,7 +173,7 @@ end
 rippleI=find(sumR>0);length(rippleI)
 
 %% prepare kernel density model
-tlin=linpos{ex}{ep}.statematrix.time;
+tlin=linpos{day}{epoch}.statematrix.time;
 
 poslin=vecLF(:,2);
 xs=min(poslin):xdel:max(poslin);
@@ -196,7 +196,7 @@ spikeT_t1=tlin(procInd_t1);
 spike_t1=procInd0_t1';
 [~,rawInd0_t1]=histc(spikeT0_t1,time2_t1);
 markAll_t1(:,1)=procInd1_t1;markAll_t1(:,2:5)=mark0_t1(rawInd0_t1(rawInd0_t1~=0),:);
-ms=min(min(markAll_t1(:,2:5))):mdel:max(max(markAll_t1(:,2:5))); 
+ms=min(min(markAll_t1(:,2:5))):mdel:max(max(markAll_t1(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t1=normpdf(xs'*ones(1,length(spikeT0_t1)),ones(length(xs),1)*xtrain(procInd1_t1),sxker);
@@ -217,7 +217,7 @@ spikeT_t2=tlin(procInd_t2);
 spike_t2=procInd0_t2';
 [~,rawInd0_t2]=histc(spikeT0_t2,time2_t2);
 markAll_t2(:,1)=procInd1_t2;markAll_t2(:,2:5)=mark0_t2(rawInd0_t2(rawInd0_t2~=0),:);
-ms=min(min(markAll_t2(:,2:5))):mdel:max(max(markAll_t2(:,2:5))); 
+ms=min(min(markAll_t2(:,2:5))):mdel:max(max(markAll_t2(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t2=normpdf(xs'*ones(1,length(spikeT0_t2)),ones(length(xs),1)*xtrain(procInd1_t2),sxker);
@@ -238,7 +238,7 @@ spikeT_t4=tlin(procInd_t4);
 spike_t4=procInd0_t4';
 [~,rawInd0_t4]=histc(spikeT0_t4,time2_t4);
 markAll_t4(:,1)=procInd1_t4;markAll_t4(:,2:5)=mark0_t4(rawInd0_t4(rawInd0_t4~=0),:);
-ms=min(min(markAll_t4(:,2:5))):mdel:max(max(markAll_t4(:,2:5))); 
+ms=min(min(markAll_t4(:,2:5))):mdel:max(max(markAll_t4(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t4=normpdf(xs'*ones(1,length(spikeT0_t4)),ones(length(xs),1)*xtrain(procInd1_t4),sxker);
@@ -259,7 +259,7 @@ spikeT_t5=tlin(procInd_t5);
 spike_t5=procInd0_t5';
 [~,rawInd0_t5]=histc(spikeT0_t5,time2_t5);
 markAll_t5(:,1)=procInd1_t5;markAll_t5(:,2:5)=mark0_t5(rawInd0_t5(rawInd0_t5~=0),:);
-ms=min(min(markAll_t5(:,2:5))):mdel:max(max(markAll_t5(:,2:5))); 
+ms=min(min(markAll_t5(:,2:5))):mdel:max(max(markAll_t5(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t5=normpdf(xs'*ones(1,length(spikeT0_t5)),ones(length(xs),1)*xtrain(procInd1_t5),sxker);
@@ -280,7 +280,7 @@ spikeT_t7=tlin(procInd_t7);
 spike_t7=procInd0_t7';
 [~,rawInd0_t7]=histc(spikeT0_t7,time2_t7);
 markAll_t7(:,1)=procInd1_t7;markAll_t7(:,2:5)=mark0_t7(rawInd0_t7(rawInd0_t7~=0),:);
-ms=min(min(markAll_t7(:,2:5))):mdel:max(max(markAll_t7(:,2:5))); 
+ms=min(min(markAll_t7(:,2:5))):mdel:max(max(markAll_t7(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t7=normpdf(xs'*ones(1,length(spikeT0_t7)),ones(length(xs),1)*xtrain(procInd1_t7),sxker);
@@ -301,7 +301,7 @@ spikeT_t10=tlin(procInd_t10);
 spike_t10=procInd0_t10';
 [~,rawInd0_t10]=histc(spikeT0_t10,time2_t10);
 markAll_t10(:,1)=procInd1_t10;markAll_t10(:,2:5)=mark0_t10(rawInd0_t10(rawInd0_t10~=0),:);
-ms=min(min(markAll_t10(:,2:5))):mdel:max(max(markAll_t10(:,2:5))); 
+ms=min(min(markAll_t10(:,2:5))):mdel:max(max(markAll_t10(:,2:5)));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t10=normpdf(xs'*ones(1,length(spikeT0_t10)),ones(length(xs),1)*xtrain(procInd1_t10),sxker);
@@ -622,7 +622,7 @@ end
 tet_sum=tet_ind.*cumsum(tet_ind,1); %row: time point; column: index of spike per tetrode
 
 %% caculate captial LAMBDA (when there is no spike on any tetrode)
-ms=min(mark0(:)):mdel:max(mark0(:)); 
+ms=min(mark0(:)):mdel:max(mark0(:));
 occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum=normpdf(xs'*ones(1,length(time0)),ones(length(xs),1)*xtrain(procInd1),sxker);
@@ -894,382 +894,382 @@ Lint_t29_I_in=Lint_t29_I_in./sum(Lint_t29_I_in);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%     DECODE        %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-velocity=pos{ex}{ep}.data(:,5);
+velocity=pos{day}{epoch}.data(:,5);
 %linVel=linpos{ex}{ep}.statematrix.linearVelocity;
 clear rloc vel;
 for pic=1:length(rippleI)
     rIndV=pic; %5, 12
     rloc_Ind=find(A*1000>ti(ripple_seg(rippleI(rIndV),1))&A*1000<ti(ripple_seg(rippleI(rIndV),2)));
-
+    
     rloc(pic)=vecLF(rloc_Ind(1),2);
     vel(pic)=velocity(rloc_Ind(1),1);
 end
 
-Ind_vel=find(vel<4);length(Ind_vel) 
+Ind_vel=find(vel<4);length(Ind_vel)
 %only decode replay when the running speed < 4cm/sec
 ripplesconsN=traj_Ind(rippleI(Ind_vel));
 
 %% decoder
 clear sumStat;
 for pic=1:length(Ind_vel)
-rIndV=Ind_vel(pic); %5, 12
-
-spike_tim=ripple_seg(rippleI(rIndV),1):ripple_seg(rippleI(rIndV),2); %from 1 to 90000~
-numSteps=length(spike_tim);
-xi=round(time/10);
-
-%%
-dt=1/33.4;spike_r=zeros(18,numSteps);
-n=length(stateV);
-numSteps=size(spike_r,2);
-%P(x0|I);
-Px_I_out=exp(-stateV.^2./(2*(2*xdel)^2));Px_I_out=Px_I_out./sum(Px_I_out);
-Px_I_in=max(Px_I_out)*ones(1,n)-Px_I_out; Px_I_in=Px_I_in./sum(Px_I_in);
-Px_I0=Px_I_out;Px_I1=Px_I_in;Px_I2=Px_I_in;Px_I3=Px_I_out;
-%P(x0)=P(x0|I)P(I);
-postx_I0=0.25*Px_I_out';postx_I1=0.25*Px_I_in';postx_I2=0.25*Px_I_in';postx_I3=0.25*Px_I_out';
-pI0_vec=zeros(numSteps,1);pI1_vec=zeros(numSteps,1);pI2_vec=zeros(numSteps,1);pI3_vec=zeros(numSteps,1);
-postxM_r_I0=zeros(n,numSteps);postxM_r_I1=zeros(n,numSteps);postxM_r_I2=zeros(n,numSteps);postxM_r_I3=zeros(n,numSteps);
-%state transition
-stateM_I_out=stateM_I1_gausnorm;stateM_I_in=stateM_I0_gausnorm;
-stateM_I0=stateM_I_out;stateM_I1=stateM_I_in;stateM_I2=stateM_I_in;stateM_I3=stateM_I_out;
-for t=1:numSteps
-    tt=spike_tim(t);
-    aa=find(xi==ti(tt));
+    rIndV=Ind_vel(pic); %5, 12
     
-    onestep_I0=stateM_I0*postx_I0;
-    onestep_I1=stateM_I1*postx_I1;
-    onestep_I2=stateM_I2*postx_I2;
-    onestep_I3=stateM_I3*postx_I3;    
+    spike_tim=ripple_seg(rippleI(rIndV),1):ripple_seg(rippleI(rIndV),2); %from 1 to 90000~
+    numSteps=length(spike_tim);
+    xi=round(time/10);
     
-    L_I0=ones(n,1);L_I1=ones(n,1);L_I2=ones(n,1);L_I3=ones(n,1);
-
-    if isempty(aa)==1 %if no spike occurs at time t
-        L_I0=exp(-Lint_I_out.*dt);L_I1=exp(-Lint_I_out.*dt);
-        L_I2=exp(-Lint_I_in.*dt);L_I3=exp(-Lint_I_in.*dt);
+    %%
+    dt=1/33.4;spike_r=zeros(18,numSteps);
+    n=length(stateV);
+    numSteps=size(spike_r,2);
+    %P(x0|I);
+    Px_I_out=exp(-stateV.^2./(2*(2*xdel)^2));Px_I_out=Px_I_out./sum(Px_I_out);
+    Px_I_in=max(Px_I_out)*ones(1,n)-Px_I_out; Px_I_in=Px_I_in./sum(Px_I_in);
+    Px_I0=Px_I_out;Px_I1=Px_I_in;Px_I2=Px_I_in;Px_I3=Px_I_out;
+    %P(x0)=P(x0|I)P(I);
+    postx_I0=0.25*Px_I_out';postx_I1=0.25*Px_I_in';postx_I2=0.25*Px_I_in';postx_I3=0.25*Px_I_out';
+    pI0_vec=zeros(numSteps,1);pI1_vec=zeros(numSteps,1);pI2_vec=zeros(numSteps,1);pI3_vec=zeros(numSteps,1);
+    postxM_r_I0=zeros(n,numSteps);postxM_r_I1=zeros(n,numSteps);postxM_r_I2=zeros(n,numSteps);postxM_r_I3=zeros(n,numSteps);
+    %state transition
+    stateM_I_out=stateM_I1_gausnorm;stateM_I_in=stateM_I0_gausnorm;
+    stateM_I0=stateM_I_out;stateM_I1=stateM_I_in;stateM_I2=stateM_I_in;stateM_I3=stateM_I_out;
+    for t=1:numSteps
+        tt=spike_tim(t);
+        aa=find(xi==ti(tt));
         
-    elseif isempty(aa)==0 %if spikes
-
-        l_out=zeros(n,length(aa));
-        for j=1:length(aa)
-            jj=aa(j);
-            tetVec=tet_ind(jj,:);
+        onestep_I0=stateM_I0*postx_I0;
+        onestep_I1=stateM_I1*postx_I1;
+        onestep_I2=stateM_I2*postx_I2;
+        onestep_I3=stateM_I3*postx_I3;
+        
+        L_I0=ones(n,1);L_I1=ones(n,1);L_I2=ones(n,1);L_I3=ones(n,1);
+        
+        if isempty(aa)==1 %if no spike occurs at time t
+            L_I0=exp(-Lint_I_out.*dt);L_I1=exp(-Lint_I_out.*dt);
+            L_I2=exp(-Lint_I_in.*dt);L_I3=exp(-Lint_I_in.*dt);
             
-            if tetVec(1)==1 %tet1
-                spike_r(1,t)=1;
-                i=tet_sum(jj,1);
-                l0=normpdf(markAll_t1(i,2)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,2)',smker).*normpdf(markAll_t1(i,3)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,3)',smker).*normpdf(markAll_t1(i,4)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,4)',smker).*normpdf(markAll_t1(i,5)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,5)',smker);
-                l1=Xnum_t1_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t1_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(2)==1 %tet2
-                spike_r(2,t)=1;
-                i=tet_sum(jj,2);
-                l0=normpdf(markAll_t2(i,2)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,2)',smker).*normpdf(markAll_t2(i,3)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,3)',smker).*normpdf(markAll_t2(i,4)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,4)',smker).*normpdf(markAll_t2(i,5)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,5)',smker);
-                l1=Xnum_t2_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t2_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(3)==1 %tet4
-                spike_r(3,t)=1;
-                i=tet_sum(jj,3);
-                l0=normpdf(markAll_t4(i,2)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,2)',smker).*normpdf(markAll_t4(i,3)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,3)',smker).*normpdf(markAll_t4(i,4)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,4)',smker).*normpdf(markAll_t4(i,5)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,5)',smker);
-                l1=Xnum_t4_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t4_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(4)==1 %tet5
-                spike_r(4,t)=1;
-                i=tet_sum(jj,4);
-                l0=normpdf(markAll_t5(i,2)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,2)',smker).*normpdf(markAll_t5(i,3)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,3)',smker).*normpdf(markAll_t5(i,4)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,4)',smker).*normpdf(markAll_t5(i,5)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,5)',smker);
-                l1=Xnum_t5_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t5_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(5)==1 %tet7
-                spike_r(5,t)=1;
-                i=tet_sum(jj,5);
-                l0=normpdf(markAll_t7(i,2)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,2)',smker).*normpdf(markAll_t7(i,3)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,3)',smker).*normpdf(markAll_t7(i,4)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,4)',smker).*normpdf(markAll_t7(i,5)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,5)',smker);
-                l1=Xnum_t7_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t7_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(6)==1 %tet10
-                spike_r(6,t)=1;
-                i=tet_sum(jj,6);
-                l0=normpdf(markAll_t10(i,2)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,2)',smker).*normpdf(markAll_t10(i,3)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,3)',smker).*normpdf(markAll_t10(i,4)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,4)',smker).*normpdf(markAll_t10(i,5)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,5)',smker);
-                l1=Xnum_t10_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t10_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(7)==1 %tet11
-                spike_r(7,t)=1;
-                i=tet_sum(jj,7);
-                l0=normpdf(markAll_t11(i,2)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,2)',smker).*normpdf(markAll_t11(i,3)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,3)',smker).*normpdf(markAll_t11(i,4)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,4)',smker).*normpdf(markAll_t11(i,5)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,5)',smker);
-                l1=Xnum_t11_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t11_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(8)==1 %tet12
-                spike_r(8,t)=1;
-                i=tet_sum(jj,8);
-                l0=normpdf(markAll_t12(i,2)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,2)',smker).*normpdf(markAll_t12(i,3)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,3)',smker).*normpdf(markAll_t12(i,4)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,4)',smker).*normpdf(markAll_t12(i,5)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,5)',smker);
-                l1=Xnum_t12_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t12_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(9)==1 %tet13
-                spike_r(9,t)=1;
-                i=tet_sum(jj,9);
-                l0=normpdf(markAll_t13(i,2)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,2)',smker).*normpdf(markAll_t13(i,3)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,3)',smker).*normpdf(markAll_t13(i,4)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,4)',smker).*normpdf(markAll_t13(i,5)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,5)',smker);
-                l1=Xnum_t13_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t13_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(10)==1 %tet14
-                spike_r(10,t)=1;
-                i=tet_sum(jj,10);
-                l0=normpdf(markAll_t14(i,2)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,2)',smker).*normpdf(markAll_t14(i,3)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,3)',smker).*normpdf(markAll_t14(i,4)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,4)',smker).*normpdf(markAll_t14(i,5)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,5)',smker);
-                l1=Xnum_t14_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t14_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(11)==1 %tet17
-                spike_r(11,t)=1;
-                i=tet_sum(jj,11);
-                l0=normpdf(markAll_t17(i,2)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,2)',smker).*normpdf(markAll_t17(i,3)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,3)',smker).*normpdf(markAll_t17(i,4)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,4)',smker).*normpdf(markAll_t17(i,5)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,5)',smker);
-                l1=Xnum_t17_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t17_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(12)==1 %tet18
-                spike_r(12,t)=1;
-                i=tet_sum(jj,12);
-                l0=normpdf(markAll_t18(i,2)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,2)',smker).*normpdf(markAll_t18(i,3)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,3)',smker).*normpdf(markAll_t18(i,4)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,4)',smker).*normpdf(markAll_t18(i,5)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,5)',smker);
-                l1=Xnum_t18_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t18_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(13)==1 %tet19
-                spike_r(13,t)=1;
-                i=tet_sum(jj,13);
-                l0=normpdf(markAll_t19(i,2)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,2)',smker).*normpdf(markAll_t19(i,3)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,3)',smker).*normpdf(markAll_t19(i,4)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,4)',smker).*normpdf(markAll_t19(i,5)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,5)',smker);
-                l1=Xnum_t19_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t19_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(14)==1 %tet20
-                spike_r(14,t)=1;
-                i=tet_sum(jj,14);
-                l0=normpdf(markAll_t20(i,2)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,2)',smker).*normpdf(markAll_t20(i,3)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,3)',smker).*normpdf(markAll_t20(i,4)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,4)',smker).*normpdf(markAll_t20(i,5)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,5)',smker);
-                l1=Xnum_t20_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t20_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(15)==1 %tet22
-                spike_r(15,t)=1;
-                i=tet_sum(jj,15);
-                l0=normpdf(markAll_t22(i,2)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,2)',smker).*normpdf(markAll_t22(i,3)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,3)',smker).*normpdf(markAll_t22(i,4)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,4)',smker).*normpdf(markAll_t22(i,5)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,5)',smker);
-                l1=Xnum_t22_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t22_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(16)==1 %tet23
-                spike_r(16,t)=1;
-                i=tet_sum(jj,16);
-                l0=normpdf(markAll_t23(i,2)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,2)',smker).*normpdf(markAll_t23(i,3)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,3)',smker).*normpdf(markAll_t23(i,4)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,4)',smker).*normpdf(markAll_t23(i,5)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,5)',smker);
-                l1=Xnum_t23_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t23_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(17)==1 %tet27
-                spike_r(17,t)=1;
-                i=tet_sum(jj,17);
-                l0=normpdf(markAll_t27(i,2)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,2)',smker).*normpdf(markAll_t27(i,3)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,3)',smker).*normpdf(markAll_t27(i,4)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,4)',smker).*normpdf(markAll_t27(i,5)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,5)',smker);
-                l1=Xnum_t27_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t27_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            elseif tetVec(18)==1 %tet29
-                spike_r(18,t)=1;
-                i=tet_sum(jj,18);
-                l0=normpdf(markAll_t29(i,2)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,2)',smker).*normpdf(markAll_t29(i,3)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,3)',smker).*normpdf(markAll_t29(i,4)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,4)',smker).*normpdf(markAll_t29(i,5)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,5)',smker);
-                l1=Xnum_t29_I_out*l0'./occ_I_out(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t29_I_out.*dt);
-                l2=l2./sum(l2);
-                l_out(:,j)=l2;
-            end
-        end
-        L_out=prod(l_out,2);L_out=L_out./sum(L_out);
+        elseif isempty(aa)==0 %if spikes
+            
+            l_out=zeros(n,length(aa));
+            for j=1:length(aa)
+                jj=aa(j);
+                tetVec=tet_ind(jj,:);
                 
-        l_in=zeros(n,length(aa)); 
-        for j=1:length(aa)
-            jj=aa(j);
-            tetVec=tet_ind(jj,:);
-            
-            if tetVec(1)==1 %tet1
-                spike_r(1,t)=1;
-                i=tet_sum(jj,1);
-                l0=normpdf(markAll_t1(i,2)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,2)',smker).*normpdf(markAll_t1(i,3)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,3)',smker).*normpdf(markAll_t1(i,4)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,4)',smker).*normpdf(markAll_t1(i,5)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,5)',smker);
-                l1=Xnum_t1_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t1_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(2)==1 %tet2
-                spike_r(2,t)=1;
-                i=tet_sum(jj,2);
-                l0=normpdf(markAll_t2(i,2)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,2)',smker).*normpdf(markAll_t2(i,3)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,3)',smker).*normpdf(markAll_t2(i,4)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,4)',smker).*normpdf(markAll_t2(i,5)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,5)',smker);
-                l1=Xnum_t2_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t2_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(3)==1 %tet4
-                spike_r(3,t)=1;
-                i=tet_sum(jj,3);
-                l0=normpdf(markAll_t4(i,2)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,2)',smker).*normpdf(markAll_t4(i,3)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,3)',smker).*normpdf(markAll_t4(i,4)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,4)',smker).*normpdf(markAll_t4(i,5)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,5)',smker);
-                l1=Xnum_t4_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t4_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(4)==1 %tet5
-                spike_r(4,t)=1;
-                i=tet_sum(jj,4);
-                l0=normpdf(markAll_t5(i,2)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,2)',smker).*normpdf(markAll_t5(i,3)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,3)',smker).*normpdf(markAll_t5(i,4)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,4)',smker).*normpdf(markAll_t5(i,5)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,5)',smker);
-                l1=Xnum_t5_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t5_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(5)==1 %tet7
-                spike_r(5,t)=1;
-                i=tet_sum(jj,5);
-                l0=normpdf(markAll_t7(i,2)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,2)',smker).*normpdf(markAll_t7(i,3)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,3)',smker).*normpdf(markAll_t7(i,4)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,4)',smker).*normpdf(markAll_t7(i,5)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,5)',smker);
-                l1=Xnum_t7_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t7_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(6)==1 %tet10
-                spike_r(6,t)=1;
-                i=tet_sum(jj,6);
-                l0=normpdf(markAll_t10(i,2)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,2)',smker).*normpdf(markAll_t10(i,3)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,3)',smker).*normpdf(markAll_t10(i,4)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,4)',smker).*normpdf(markAll_t10(i,5)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,5)',smker);
-                l1=Xnum_t10_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t10_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(7)==1 %tet11
-                spike_r(7,t)=1;
-                i=tet_sum(jj,7);
-                l0=normpdf(markAll_t11(i,2)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,2)',smker).*normpdf(markAll_t11(i,3)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,3)',smker).*normpdf(markAll_t11(i,4)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,4)',smker).*normpdf(markAll_t11(i,5)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,5)',smker);
-                l1=Xnum_t11_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t11_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(8)==1 %tet12
-                spike_r(8,t)=1;
-                i=tet_sum(jj,8);
-                l0=normpdf(markAll_t12(i,2)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,2)',smker).*normpdf(markAll_t12(i,3)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,3)',smker).*normpdf(markAll_t12(i,4)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,4)',smker).*normpdf(markAll_t12(i,5)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,5)',smker);
-                l1=Xnum_t12_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t12_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(9)==1 %tet13
-                spike_r(9,t)=1;
-                i=tet_sum(jj,9);
-                l0=normpdf(markAll_t13(i,2)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,2)',smker).*normpdf(markAll_t13(i,3)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,3)',smker).*normpdf(markAll_t13(i,4)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,4)',smker).*normpdf(markAll_t13(i,5)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,5)',smker);
-                l1=Xnum_t13_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t13_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(10)==1 %tet14
-                spike_r(10,t)=1;
-                i=tet_sum(jj,10);
-                l0=normpdf(markAll_t14(i,2)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,2)',smker).*normpdf(markAll_t14(i,3)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,3)',smker).*normpdf(markAll_t14(i,4)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,4)',smker).*normpdf(markAll_t14(i,5)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,5)',smker);
-                l1=Xnum_t14_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t14_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(11)==1 %tet17
-                spike_r(11,t)=1;
-                i=tet_sum(jj,11);
-                l0=normpdf(markAll_t17(i,2)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,2)',smker).*normpdf(markAll_t17(i,3)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,3)',smker).*normpdf(markAll_t17(i,4)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,4)',smker).*normpdf(markAll_t17(i,5)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,5)',smker);
-                l1=Xnum_t17_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t17_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(12)==1 %tet18
-                spike_r(12,t)=1;
-                i=tet_sum(jj,12);
-                l0=normpdf(markAll_t18(i,2)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,2)',smker).*normpdf(markAll_t18(i,3)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,3)',smker).*normpdf(markAll_t18(i,4)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,4)',smker).*normpdf(markAll_t18(i,5)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,5)',smker);
-                l1=Xnum_t18_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t18_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(13)==1 %tet19
-                spike_r(13,t)=1;
-                i=tet_sum(jj,13);
-                l0=normpdf(markAll_t19(i,2)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,2)',smker).*normpdf(markAll_t19(i,3)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,3)',smker).*normpdf(markAll_t19(i,4)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,4)',smker).*normpdf(markAll_t19(i,5)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,5)',smker);
-                l1=Xnum_t19_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t19_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(14)==1 %tet20
-                spike_r(14,t)=1;
-                i=tet_sum(jj,14);
-                l0=normpdf(markAll_t20(i,2)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,2)',smker).*normpdf(markAll_t20(i,3)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,3)',smker).*normpdf(markAll_t20(i,4)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,4)',smker).*normpdf(markAll_t20(i,5)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,5)',smker);
-                l1=Xnum_t20_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t20_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(15)==1 %tet22
-                spike_r(15,t)=1;
-                i=tet_sum(jj,15);
-                l0=normpdf(markAll_t22(i,2)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,2)',smker).*normpdf(markAll_t22(i,3)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,3)',smker).*normpdf(markAll_t22(i,4)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,4)',smker).*normpdf(markAll_t22(i,5)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,5)',smker);
-                l1=Xnum_t22_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t22_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(16)==1 %tet23
-                spike_r(16,t)=1;
-                i=tet_sum(jj,16);
-                l0=normpdf(markAll_t23(i,2)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,2)',smker).*normpdf(markAll_t23(i,3)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,3)',smker).*normpdf(markAll_t23(i,4)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,4)',smker).*normpdf(markAll_t23(i,5)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,5)',smker);
-                l1=Xnum_t23_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t23_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(17)==1 %tet27
-                spike_r(17,t)=1;
-                i=tet_sum(jj,17);
-                l0=normpdf(markAll_t27(i,2)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,2)',smker).*normpdf(markAll_t27(i,3)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,3)',smker).*normpdf(markAll_t27(i,4)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,4)',smker).*normpdf(markAll_t27(i,5)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,5)',smker);
-                l1=Xnum_t27_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t27_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
-            elseif tetVec(18)==1 %tet29
-                spike_r(18,t)=1;
-                i=tet_sum(jj,18);
-                l0=normpdf(markAll_t29(i,2)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,2)',smker).*normpdf(markAll_t29(i,3)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,3)',smker).*normpdf(markAll_t29(i,4)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,4)',smker).*normpdf(markAll_t29(i,5)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,5)',smker);
-                l1=Xnum_t29_I_in*l0'./occ_I_in(:,1)./dt;
-                l2=l1.*dt.*exp(-Lint_t29_I_in.*dt);
-                l2=l2./sum(l2);
-                l_in(:,j)=l2;
+                if tetVec(1)==1 %tet1
+                    spike_r(1,t)=1;
+                    i=tet_sum(jj,1);
+                    l0=normpdf(markAll_t1(i,2)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,2)',smker).*normpdf(markAll_t1(i,3)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,3)',smker).*normpdf(markAll_t1(i,4)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,4)',smker).*normpdf(markAll_t1(i,5)*ones(1,length(procInd1_t1_Ia_out)),markAll_t1(procInd1_t1_I_out,5)',smker);
+                    l1=Xnum_t1_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t1_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(2)==1 %tet2
+                    spike_r(2,t)=1;
+                    i=tet_sum(jj,2);
+                    l0=normpdf(markAll_t2(i,2)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,2)',smker).*normpdf(markAll_t2(i,3)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,3)',smker).*normpdf(markAll_t2(i,4)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,4)',smker).*normpdf(markAll_t2(i,5)*ones(1,length(procInd1_t2_Ia_out)),markAll_t2(procInd1_t2_I_out,5)',smker);
+                    l1=Xnum_t2_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t2_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(3)==1 %tet4
+                    spike_r(3,t)=1;
+                    i=tet_sum(jj,3);
+                    l0=normpdf(markAll_t4(i,2)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,2)',smker).*normpdf(markAll_t4(i,3)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,3)',smker).*normpdf(markAll_t4(i,4)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,4)',smker).*normpdf(markAll_t4(i,5)*ones(1,length(procInd1_t4_Ia_out)),markAll_t4(procInd1_t4_I_out,5)',smker);
+                    l1=Xnum_t4_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t4_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(4)==1 %tet5
+                    spike_r(4,t)=1;
+                    i=tet_sum(jj,4);
+                    l0=normpdf(markAll_t5(i,2)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,2)',smker).*normpdf(markAll_t5(i,3)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,3)',smker).*normpdf(markAll_t5(i,4)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,4)',smker).*normpdf(markAll_t5(i,5)*ones(1,length(procInd1_t5_Ia_out)),markAll_t5(procInd1_t5_I_out,5)',smker);
+                    l1=Xnum_t5_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t5_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(5)==1 %tet7
+                    spike_r(5,t)=1;
+                    i=tet_sum(jj,5);
+                    l0=normpdf(markAll_t7(i,2)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,2)',smker).*normpdf(markAll_t7(i,3)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,3)',smker).*normpdf(markAll_t7(i,4)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,4)',smker).*normpdf(markAll_t7(i,5)*ones(1,length(procInd1_t7_Ia_out)),markAll_t7(procInd1_t7_I_out,5)',smker);
+                    l1=Xnum_t7_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t7_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(6)==1 %tet10
+                    spike_r(6,t)=1;
+                    i=tet_sum(jj,6);
+                    l0=normpdf(markAll_t10(i,2)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,2)',smker).*normpdf(markAll_t10(i,3)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,3)',smker).*normpdf(markAll_t10(i,4)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,4)',smker).*normpdf(markAll_t10(i,5)*ones(1,length(procInd1_t10_Ia_out)),markAll_t10(procInd1_t10_I_out,5)',smker);
+                    l1=Xnum_t10_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t10_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(7)==1 %tet11
+                    spike_r(7,t)=1;
+                    i=tet_sum(jj,7);
+                    l0=normpdf(markAll_t11(i,2)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,2)',smker).*normpdf(markAll_t11(i,3)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,3)',smker).*normpdf(markAll_t11(i,4)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,4)',smker).*normpdf(markAll_t11(i,5)*ones(1,length(procInd1_t11_Ia_out)),markAll_t11(procInd1_t11_I_out,5)',smker);
+                    l1=Xnum_t11_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t11_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(8)==1 %tet12
+                    spike_r(8,t)=1;
+                    i=tet_sum(jj,8);
+                    l0=normpdf(markAll_t12(i,2)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,2)',smker).*normpdf(markAll_t12(i,3)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,3)',smker).*normpdf(markAll_t12(i,4)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,4)',smker).*normpdf(markAll_t12(i,5)*ones(1,length(procInd1_t12_Ia_out)),markAll_t12(procInd1_t12_I_out,5)',smker);
+                    l1=Xnum_t12_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t12_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(9)==1 %tet13
+                    spike_r(9,t)=1;
+                    i=tet_sum(jj,9);
+                    l0=normpdf(markAll_t13(i,2)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,2)',smker).*normpdf(markAll_t13(i,3)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,3)',smker).*normpdf(markAll_t13(i,4)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,4)',smker).*normpdf(markAll_t13(i,5)*ones(1,length(procInd1_t13_Ia_out)),markAll_t13(procInd1_t13_I_out,5)',smker);
+                    l1=Xnum_t13_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t13_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(10)==1 %tet14
+                    spike_r(10,t)=1;
+                    i=tet_sum(jj,10);
+                    l0=normpdf(markAll_t14(i,2)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,2)',smker).*normpdf(markAll_t14(i,3)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,3)',smker).*normpdf(markAll_t14(i,4)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,4)',smker).*normpdf(markAll_t14(i,5)*ones(1,length(procInd1_t14_Ia_out)),markAll_t14(procInd1_t14_I_out,5)',smker);
+                    l1=Xnum_t14_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t14_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(11)==1 %tet17
+                    spike_r(11,t)=1;
+                    i=tet_sum(jj,11);
+                    l0=normpdf(markAll_t17(i,2)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,2)',smker).*normpdf(markAll_t17(i,3)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,3)',smker).*normpdf(markAll_t17(i,4)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,4)',smker).*normpdf(markAll_t17(i,5)*ones(1,length(procInd1_t17_Ia_out)),markAll_t17(procInd1_t17_I_out,5)',smker);
+                    l1=Xnum_t17_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t17_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(12)==1 %tet18
+                    spike_r(12,t)=1;
+                    i=tet_sum(jj,12);
+                    l0=normpdf(markAll_t18(i,2)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,2)',smker).*normpdf(markAll_t18(i,3)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,3)',smker).*normpdf(markAll_t18(i,4)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,4)',smker).*normpdf(markAll_t18(i,5)*ones(1,length(procInd1_t18_Ia_out)),markAll_t18(procInd1_t18_I_out,5)',smker);
+                    l1=Xnum_t18_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t18_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(13)==1 %tet19
+                    spike_r(13,t)=1;
+                    i=tet_sum(jj,13);
+                    l0=normpdf(markAll_t19(i,2)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,2)',smker).*normpdf(markAll_t19(i,3)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,3)',smker).*normpdf(markAll_t19(i,4)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,4)',smker).*normpdf(markAll_t19(i,5)*ones(1,length(procInd1_t19_Ia_out)),markAll_t19(procInd1_t19_I_out,5)',smker);
+                    l1=Xnum_t19_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t19_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(14)==1 %tet20
+                    spike_r(14,t)=1;
+                    i=tet_sum(jj,14);
+                    l0=normpdf(markAll_t20(i,2)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,2)',smker).*normpdf(markAll_t20(i,3)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,3)',smker).*normpdf(markAll_t20(i,4)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,4)',smker).*normpdf(markAll_t20(i,5)*ones(1,length(procInd1_t20_Ia_out)),markAll_t20(procInd1_t20_I_out,5)',smker);
+                    l1=Xnum_t20_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t20_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(15)==1 %tet22
+                    spike_r(15,t)=1;
+                    i=tet_sum(jj,15);
+                    l0=normpdf(markAll_t22(i,2)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,2)',smker).*normpdf(markAll_t22(i,3)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,3)',smker).*normpdf(markAll_t22(i,4)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,4)',smker).*normpdf(markAll_t22(i,5)*ones(1,length(procInd1_t22_Ia_out)),markAll_t22(procInd1_t22_I_out,5)',smker);
+                    l1=Xnum_t22_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t22_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(16)==1 %tet23
+                    spike_r(16,t)=1;
+                    i=tet_sum(jj,16);
+                    l0=normpdf(markAll_t23(i,2)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,2)',smker).*normpdf(markAll_t23(i,3)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,3)',smker).*normpdf(markAll_t23(i,4)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,4)',smker).*normpdf(markAll_t23(i,5)*ones(1,length(procInd1_t23_Ia_out)),markAll_t23(procInd1_t23_I_out,5)',smker);
+                    l1=Xnum_t23_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t23_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(17)==1 %tet27
+                    spike_r(17,t)=1;
+                    i=tet_sum(jj,17);
+                    l0=normpdf(markAll_t27(i,2)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,2)',smker).*normpdf(markAll_t27(i,3)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,3)',smker).*normpdf(markAll_t27(i,4)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,4)',smker).*normpdf(markAll_t27(i,5)*ones(1,length(procInd1_t27_Ia_out)),markAll_t27(procInd1_t27_I_out,5)',smker);
+                    l1=Xnum_t27_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t27_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                elseif tetVec(18)==1 %tet29
+                    spike_r(18,t)=1;
+                    i=tet_sum(jj,18);
+                    l0=normpdf(markAll_t29(i,2)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,2)',smker).*normpdf(markAll_t29(i,3)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,3)',smker).*normpdf(markAll_t29(i,4)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,4)',smker).*normpdf(markAll_t29(i,5)*ones(1,length(procInd1_t29_Ia_out)),markAll_t29(procInd1_t29_I_out,5)',smker);
+                    l1=Xnum_t29_I_out*l0'./occ_I_out(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t29_I_out.*dt);
+                    l2=l2./sum(l2);
+                    l_out(:,j)=l2;
+                end
             end
+            L_out=prod(l_out,2);L_out=L_out./sum(L_out);
+            
+            l_in=zeros(n,length(aa));
+            for j=1:length(aa)
+                jj=aa(j);
+                tetVec=tet_ind(jj,:);
+                
+                if tetVec(1)==1 %tet1
+                    spike_r(1,t)=1;
+                    i=tet_sum(jj,1);
+                    l0=normpdf(markAll_t1(i,2)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,2)',smker).*normpdf(markAll_t1(i,3)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,3)',smker).*normpdf(markAll_t1(i,4)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,4)',smker).*normpdf(markAll_t1(i,5)*ones(1,length(procInd1_t1_Ia_in)),markAll_t1(procInd1_t1_I_in,5)',smker);
+                    l1=Xnum_t1_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t1_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(2)==1 %tet2
+                    spike_r(2,t)=1;
+                    i=tet_sum(jj,2);
+                    l0=normpdf(markAll_t2(i,2)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,2)',smker).*normpdf(markAll_t2(i,3)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,3)',smker).*normpdf(markAll_t2(i,4)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,4)',smker).*normpdf(markAll_t2(i,5)*ones(1,length(procInd1_t2_Ia_in)),markAll_t2(procInd1_t2_I_in,5)',smker);
+                    l1=Xnum_t2_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t2_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(3)==1 %tet4
+                    spike_r(3,t)=1;
+                    i=tet_sum(jj,3);
+                    l0=normpdf(markAll_t4(i,2)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,2)',smker).*normpdf(markAll_t4(i,3)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,3)',smker).*normpdf(markAll_t4(i,4)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,4)',smker).*normpdf(markAll_t4(i,5)*ones(1,length(procInd1_t4_Ia_in)),markAll_t4(procInd1_t4_I_in,5)',smker);
+                    l1=Xnum_t4_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t4_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(4)==1 %tet5
+                    spike_r(4,t)=1;
+                    i=tet_sum(jj,4);
+                    l0=normpdf(markAll_t5(i,2)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,2)',smker).*normpdf(markAll_t5(i,3)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,3)',smker).*normpdf(markAll_t5(i,4)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,4)',smker).*normpdf(markAll_t5(i,5)*ones(1,length(procInd1_t5_Ia_in)),markAll_t5(procInd1_t5_I_in,5)',smker);
+                    l1=Xnum_t5_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t5_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(5)==1 %tet7
+                    spike_r(5,t)=1;
+                    i=tet_sum(jj,5);
+                    l0=normpdf(markAll_t7(i,2)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,2)',smker).*normpdf(markAll_t7(i,3)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,3)',smker).*normpdf(markAll_t7(i,4)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,4)',smker).*normpdf(markAll_t7(i,5)*ones(1,length(procInd1_t7_Ia_in)),markAll_t7(procInd1_t7_I_in,5)',smker);
+                    l1=Xnum_t7_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t7_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(6)==1 %tet10
+                    spike_r(6,t)=1;
+                    i=tet_sum(jj,6);
+                    l0=normpdf(markAll_t10(i,2)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,2)',smker).*normpdf(markAll_t10(i,3)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,3)',smker).*normpdf(markAll_t10(i,4)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,4)',smker).*normpdf(markAll_t10(i,5)*ones(1,length(procInd1_t10_Ia_in)),markAll_t10(procInd1_t10_I_in,5)',smker);
+                    l1=Xnum_t10_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t10_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(7)==1 %tet11
+                    spike_r(7,t)=1;
+                    i=tet_sum(jj,7);
+                    l0=normpdf(markAll_t11(i,2)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,2)',smker).*normpdf(markAll_t11(i,3)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,3)',smker).*normpdf(markAll_t11(i,4)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,4)',smker).*normpdf(markAll_t11(i,5)*ones(1,length(procInd1_t11_Ia_in)),markAll_t11(procInd1_t11_I_in,5)',smker);
+                    l1=Xnum_t11_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t11_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(8)==1 %tet12
+                    spike_r(8,t)=1;
+                    i=tet_sum(jj,8);
+                    l0=normpdf(markAll_t12(i,2)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,2)',smker).*normpdf(markAll_t12(i,3)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,3)',smker).*normpdf(markAll_t12(i,4)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,4)',smker).*normpdf(markAll_t12(i,5)*ones(1,length(procInd1_t12_Ia_in)),markAll_t12(procInd1_t12_I_in,5)',smker);
+                    l1=Xnum_t12_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t12_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(9)==1 %tet13
+                    spike_r(9,t)=1;
+                    i=tet_sum(jj,9);
+                    l0=normpdf(markAll_t13(i,2)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,2)',smker).*normpdf(markAll_t13(i,3)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,3)',smker).*normpdf(markAll_t13(i,4)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,4)',smker).*normpdf(markAll_t13(i,5)*ones(1,length(procInd1_t13_Ia_in)),markAll_t13(procInd1_t13_I_in,5)',smker);
+                    l1=Xnum_t13_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t13_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(10)==1 %tet14
+                    spike_r(10,t)=1;
+                    i=tet_sum(jj,10);
+                    l0=normpdf(markAll_t14(i,2)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,2)',smker).*normpdf(markAll_t14(i,3)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,3)',smker).*normpdf(markAll_t14(i,4)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,4)',smker).*normpdf(markAll_t14(i,5)*ones(1,length(procInd1_t14_Ia_in)),markAll_t14(procInd1_t14_I_in,5)',smker);
+                    l1=Xnum_t14_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t14_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(11)==1 %tet17
+                    spike_r(11,t)=1;
+                    i=tet_sum(jj,11);
+                    l0=normpdf(markAll_t17(i,2)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,2)',smker).*normpdf(markAll_t17(i,3)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,3)',smker).*normpdf(markAll_t17(i,4)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,4)',smker).*normpdf(markAll_t17(i,5)*ones(1,length(procInd1_t17_Ia_in)),markAll_t17(procInd1_t17_I_in,5)',smker);
+                    l1=Xnum_t17_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t17_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(12)==1 %tet18
+                    spike_r(12,t)=1;
+                    i=tet_sum(jj,12);
+                    l0=normpdf(markAll_t18(i,2)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,2)',smker).*normpdf(markAll_t18(i,3)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,3)',smker).*normpdf(markAll_t18(i,4)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,4)',smker).*normpdf(markAll_t18(i,5)*ones(1,length(procInd1_t18_Ia_in)),markAll_t18(procInd1_t18_I_in,5)',smker);
+                    l1=Xnum_t18_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t18_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(13)==1 %tet19
+                    spike_r(13,t)=1;
+                    i=tet_sum(jj,13);
+                    l0=normpdf(markAll_t19(i,2)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,2)',smker).*normpdf(markAll_t19(i,3)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,3)',smker).*normpdf(markAll_t19(i,4)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,4)',smker).*normpdf(markAll_t19(i,5)*ones(1,length(procInd1_t19_Ia_in)),markAll_t19(procInd1_t19_I_in,5)',smker);
+                    l1=Xnum_t19_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t19_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(14)==1 %tet20
+                    spike_r(14,t)=1;
+                    i=tet_sum(jj,14);
+                    l0=normpdf(markAll_t20(i,2)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,2)',smker).*normpdf(markAll_t20(i,3)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,3)',smker).*normpdf(markAll_t20(i,4)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,4)',smker).*normpdf(markAll_t20(i,5)*ones(1,length(procInd1_t20_Ia_in)),markAll_t20(procInd1_t20_I_in,5)',smker);
+                    l1=Xnum_t20_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t20_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(15)==1 %tet22
+                    spike_r(15,t)=1;
+                    i=tet_sum(jj,15);
+                    l0=normpdf(markAll_t22(i,2)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,2)',smker).*normpdf(markAll_t22(i,3)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,3)',smker).*normpdf(markAll_t22(i,4)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,4)',smker).*normpdf(markAll_t22(i,5)*ones(1,length(procInd1_t22_Ia_in)),markAll_t22(procInd1_t22_I_in,5)',smker);
+                    l1=Xnum_t22_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t22_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(16)==1 %tet23
+                    spike_r(16,t)=1;
+                    i=tet_sum(jj,16);
+                    l0=normpdf(markAll_t23(i,2)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,2)',smker).*normpdf(markAll_t23(i,3)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,3)',smker).*normpdf(markAll_t23(i,4)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,4)',smker).*normpdf(markAll_t23(i,5)*ones(1,length(procInd1_t23_Ia_in)),markAll_t23(procInd1_t23_I_in,5)',smker);
+                    l1=Xnum_t23_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t23_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(17)==1 %tet27
+                    spike_r(17,t)=1;
+                    i=tet_sum(jj,17);
+                    l0=normpdf(markAll_t27(i,2)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,2)',smker).*normpdf(markAll_t27(i,3)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,3)',smker).*normpdf(markAll_t27(i,4)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,4)',smker).*normpdf(markAll_t27(i,5)*ones(1,length(procInd1_t27_Ia_in)),markAll_t27(procInd1_t27_I_in,5)',smker);
+                    l1=Xnum_t27_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t27_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                elseif tetVec(18)==1 %tet29
+                    spike_r(18,t)=1;
+                    i=tet_sum(jj,18);
+                    l0=normpdf(markAll_t29(i,2)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,2)',smker).*normpdf(markAll_t29(i,3)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,3)',smker).*normpdf(markAll_t29(i,4)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,4)',smker).*normpdf(markAll_t29(i,5)*ones(1,length(procInd1_t29_Ia_in)),markAll_t29(procInd1_t29_I_in,5)',smker);
+                    l1=Xnum_t29_I_in*l0'./occ_I_in(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_t29_I_in.*dt);
+                    l2=l2./sum(l2);
+                    l_in(:,j)=l2;
+                end
+            end
+            L_in=prod(l_in,2);L_in=L_in./sum(L_in);
+            
+            L_I0=L_out;L_I1=L_out;L_I2=L_in;L_I3=L_in;
         end
-        L_in=prod(l_in,2);L_in=L_in./sum(L_in);
-
-        L_I0=L_out;L_I1=L_out;L_I2=L_in;L_I3=L_in;
+        
+        totnorm=sum(onestep_I0.*L_I0)+sum(onestep_I1.*L_I1)+sum(onestep_I2.*L_I2)+sum(onestep_I3.*L_I3);
+        postx_I0=onestep_I0.*L_I0./totnorm;
+        postx_I1=onestep_I1.*L_I1./totnorm;
+        postx_I2=onestep_I2.*L_I2./totnorm;
+        postx_I3=onestep_I3.*L_I3./totnorm;
+        
+        pI0_vec(t)=sum(postx_I0);
+        pI1_vec(t)=sum(postx_I1);
+        pI2_vec(t)=sum(postx_I2);
+        pI3_vec(t)=sum(postx_I3);
     end
     
-    totnorm=sum(onestep_I0.*L_I0)+sum(onestep_I1.*L_I1)+sum(onestep_I2.*L_I2)+sum(onestep_I3.*L_I3);
-    postx_I0=onestep_I0.*L_I0./totnorm;
-    postx_I1=onestep_I1.*L_I1./totnorm;
-    postx_I2=onestep_I2.*L_I2./totnorm;
-    postx_I3=onestep_I3.*L_I3./totnorm;
-
-    pI0_vec(t)=sum(postx_I0);
-    pI1_vec(t)=sum(postx_I1);
-    pI2_vec(t)=sum(postx_I2);
-    pI3_vec(t)=sum(postx_I3);
-end
-
-sumStat{pic}=[pI0_vec pI1_vec pI2_vec pI3_vec];
+    sumStat{pic}=[pI0_vec pI1_vec pI2_vec pI3_vec];
 end
