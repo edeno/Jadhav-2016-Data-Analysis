@@ -62,7 +62,7 @@ for s=1:n
         stateM(:,s)=zeros(1,n);
     end
 end
-gaussian=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
+gaussian=@(sig, x, y) exp(-(x.^2+y.^2)/2/sig^2); %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
@@ -99,7 +99,6 @@ for i=1:n
     end
 end
 %stateM_I1=stateM_I1*diag(1./sum(stateM_I1,1));
-gaussian=inline('exp(-(x.^2+y.^2)/2/sig^2)'); %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
@@ -130,7 +129,7 @@ for i=1:n
     end
 end
 %stateM_I0=stateM_I0*diag(1./sum(stateM_I0,1));
-gaussian=@(x) exp(-(x.^2+y.^2)/2/sig^2)'; %gaussian
+
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
