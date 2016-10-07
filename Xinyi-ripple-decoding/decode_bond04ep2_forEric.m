@@ -39,18 +39,18 @@ end
 
 %% use Loren's linearization
 time=linpos{day}{epoch}.statematrix.time;
-lindist=linpos{day}{epoch}.statematrix.lindist;
-vecLF(:,1)=time;vecLF(:,2)=lindist;
+linear_distance=linpos{day}{epoch}.statematrix.lindist;
+vecLF(:,1)=time;vecLF(:,2)=linear_distance;
 %figure;plot(time,lindist,'.');
 
-A=pos{day}{epoch}.data(:,1); %time stamps for animal's trajectory
-ti=round(A(1)*1000):1:round(A(end)*1000); %binning time stamps at 1 ms
-stateV=linspace(min(lindist),max(lindist),61);
+position_time_stamps=pos{day}{epoch}.data(:,1); %time stamps for animal's trajectory
+position_time_stamps_binned=round(position_time_stamps(1)*1000):1:round(position_time_stamps(end)*1000); %binning time stamps at 1 ms
+stateV=linspace(min(linear_distance),max(linear_distance),61);
 xdel=stateV(2)-stateV(1);
 
 
 %% calculate emipirical movement transition matrix, then Gaussian smoothed
-[~,state_bin]=histc(lindist,stateV);
+[~,state_bin]=histc(linear_distance,stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 n=size(stateV,2);
 %by column=departuring
@@ -66,8 +66,8 @@ gaussian=@(sig, x, y) exp(-(x.^2+y.^2)/2/sig^2); %gaussian
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaus=conv2(stateM,weight,'same'); %gaussian smoothed
-stateM_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
+stateM_gaussian_smoothed=conv2(stateM,weight,'same'); %gaussian smoothed
+stateM_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 %%
 ind_I_out=find(trajencode{day}{epoch}.trajstate==1 | trajencode{day}{epoch}.trajstate==3);
@@ -102,8 +102,8 @@ end
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaus=conv2(stateM_I_out,weight,'same'); %gaussian smoothed
-stateM_I1_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
+stateM_gaussian_smoothed=conv2(stateM_I_out,weight,'same'); %gaussian smoothed
+stateM_I1_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 
 stateM_I_in=zeros(n,n);
@@ -133,65 +133,65 @@ end
 [dx,dy]=meshgrid([-1:1]);
 sig=0.5;
 weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaus=conv2(stateM_I_in,weight,'same'); %gaussian smoothed
-stateM_I0_gausnorm=stateM_gaus*diag(1./sum(stateM_gaus,1)); %normalized to confine probability to 1
+stateM_gaussian_smoothed=conv2(stateM_I_in,weight,'same'); %gaussian smoothed
+stateM_I0_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 
 %% calculate ripple starting and end times
-startT=ripplescons{day}{epoch}{1}.starttime;
-endT=ripplescons{day}{epoch}{1}.endtime;
+ripple_start_time=ripplescons{day}{epoch}{1}.starttime;
+ripple_end_time=ripplescons{day}{epoch}{1}.endtime;
 traj_Ind=find(ripplescons{day}{epoch}{1}.maxthresh>4);
-startT=startT(traj_Ind);
-endT=endT(traj_Ind);
-ripple_seg=[round(startT*1000)-ti(1)-1 round(endT*1000)-ti(1)-1]; %index for ripple segments
+ripple_start_time=ripple_start_time(traj_Ind);
+ripple_end_time=ripple_end_time(traj_Ind);
+ripple_index=[round(ripple_start_time*1000)-position_time_stamps_binned(1)-1 round(ripple_end_time*1000)-position_time_stamps_binned(1)-1]; %index for ripple segments
 
 clear sptrain2_list;
 for kk=1:size(tetrode_index,2)
     j=tetrode_index(kk);i=neuron_index(kk);
     B=spikes{day}{epoch}{j}{i}.data(:,1); %spiking times for tetrode j, cell i
     xi=round(B*1000); %binning spiking times at 1 ms
-    [sptrain2,~]=ismember(ti,xi); %sptrain2: spike train binned at 1 ms instead of 33.4ms (sptrain0)
+    [sptrain2,~]=ismember(position_time_stamps_binned,xi); %sptrain2: spike train binned at 1 ms instead of 33.4ms (sptrain0)
     sptrain2_list{kk}=sptrain2;
 end
 
 clear spike_r_all;
-for k=1:size(ripple_seg,1)
+for k=1:size(ripple_index,1)
     spike_r=[];
     for kk=1:size(tetrode_index,2)
         sptrain2=sptrain2_list{kk};
-        spike_r=[spike_r;sptrain2(ripple_seg(k,1):ripple_seg(k,2))];
+        spike_r=[spike_r;sptrain2(ripple_index(k,1):ripple_index(k,2))];
     end
     spike_r_all{k}=spike_r;
 end
 
 clear sumR;
-for k=1:size(ripple_seg,1)
+for k=1:size(ripple_index,1)
     spike_r=spike_r_all{k};
     sumR(k)=sum(spike_r(:));
 end
 rippleI=find(sumR>0);length(rippleI)
 
 %% prepare kernel density model
-tlin=linpos{day}{epoch}.statematrix.time;
+linear_position_time=linpos{day}{epoch}.statematrix.time;
 
 poslin=vecLF(:,2);
 xs=min(poslin):xdel:max(poslin);
-dt=tlin(2)-tlin(1);
+dt=linear_position_time(2)-linear_position_time(1);
 xtrain=poslin';
 
-sxker=xdel; mdel=20; smker=mdel; T=size(tlin,1);
+sxker=xdel; mdel=20; smker=mdel; T=size(linear_position_time,1);
 
 %% encode the kernel density model per tetrode
 load('bond_data\bond04-01_params.mat');
 %ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t1=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t1=filedata.params(ind_t1,1);
 mark0_t1=[filedata.params(ind_t1,2) filedata.params(ind_t1,3) filedata.params(ind_t1,4) filedata.params(ind_t1,5)];
 time2_t1=time_t1/10000;
 spikeT0_t1=time2_t1;
-[procInd0_t1,procInd1_t1]=histc(spikeT0_t1,tlin);
+[procInd0_t1,procInd1_t1]=histc(spikeT0_t1,linear_position_time);
 procInd_t1=find(procInd0_t1);
-spikeT_t1=tlin(procInd_t1);
+spikeT_t1=linear_position_time(procInd_t1);
 spike_t1=procInd0_t1';
 [~,rawInd0_t1]=histc(spikeT0_t1,time2_t1);
 markAll_t1(:,1)=procInd1_t1;markAll_t1(:,2:5)=mark0_t1(rawInd0_t1(rawInd0_t1~=0),:);
@@ -205,14 +205,14 @@ Lint_t1=Lint_t1./sum(Lint_t1);
 
 load('bond_data\bond04\bond04-02_params.mat');
 %ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t2=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t2=filedata.params(ind_t2,1);
 mark0_t2=[filedata.params(ind_t2,2) filedata.params(ind_t2,3) filedata.params(ind_t2,4) filedata.params(ind_t2,5)];
 time2_t2=time_t2/10000;
 spikeT0_t2=time2_t2;
-[procInd0_t2,procInd1_t2]=histc(spikeT0_t2,tlin);
+[procInd0_t2,procInd1_t2]=histc(spikeT0_t2,linear_position_time);
 procInd_t2=find(procInd0_t2);
-spikeT_t2=tlin(procInd_t2);
+spikeT_t2=linear_position_time(procInd_t2);
 spike_t2=procInd0_t2';
 [~,rawInd0_t2]=histc(spikeT0_t2,time2_t2);
 markAll_t2(:,1)=procInd1_t2;markAll_t2(:,2:5)=mark0_t2(rawInd0_t2(rawInd0_t2~=0),:);
@@ -226,14 +226,14 @@ Lint_t2=Lint_t2./sum(Lint_t2);
 
 load('bond_data\bond04-04_params.mat');
 %ind_t4=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t4=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t4=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t4=filedata.params(ind_t4,1);
 mark0_t4=[filedata.params(ind_t4,2) filedata.params(ind_t4,3) filedata.params(ind_t4,4) filedata.params(ind_t4,5)];
 time2_t4=time_t4/10000;
 spikeT0_t4=time2_t4;
-[procInd0_t4,procInd1_t4]=histc(spikeT0_t4,tlin);
+[procInd0_t4,procInd1_t4]=histc(spikeT0_t4,linear_position_time);
 procInd_t4=find(procInd0_t4);
-spikeT_t4=tlin(procInd_t4);
+spikeT_t4=linear_position_time(procInd_t4);
 spike_t4=procInd0_t4';
 [~,rawInd0_t4]=histc(spikeT0_t4,time2_t4);
 markAll_t4(:,1)=procInd1_t4;markAll_t4(:,2:5)=mark0_t4(rawInd0_t4(rawInd0_t4~=0),:);
@@ -247,14 +247,14 @@ Lint_t4=Lint_t4./sum(Lint_t4);
 
 load('bond_data\bond04-05_params.mat');
 %ind_t5=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t5=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t5=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t5=filedata.params(ind_t5,1);
 mark0_t5=[filedata.params(ind_t5,2) filedata.params(ind_t5,3) filedata.params(ind_t5,4) filedata.params(ind_t5,5)];
 time2_t5=time_t5/10000;
 spikeT0_t5=time2_t5;
-[procInd0_t5,procInd1_t5]=histc(spikeT0_t5,tlin);
+[procInd0_t5,procInd1_t5]=histc(spikeT0_t5,linear_position_time);
 procInd_t5=find(procInd0_t5);
-spikeT_t5=tlin(procInd_t5);
+spikeT_t5=linear_position_time(procInd_t5);
 spike_t5=procInd0_t5';
 [~,rawInd0_t5]=histc(spikeT0_t5,time2_t5);
 markAll_t5(:,1)=procInd1_t5;markAll_t5(:,2:5)=mark0_t5(rawInd0_t5(rawInd0_t5~=0),:);
@@ -268,14 +268,14 @@ Lint_t5=Lint_t5./sum(Lint_t5);
 
 load('bond_data\bond04-07_params.mat');
 %ind_t7=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t7=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t7=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t7=filedata.params(ind_t7,1);
 mark0_t7=[filedata.params(ind_t7,2) filedata.params(ind_t7,3) filedata.params(ind_t7,4) filedata.params(ind_t7,5)];
 time2_t7=time_t7/10000;
 spikeT0_t7=time2_t7;
-[procInd0_t7,procInd1_t7]=histc(spikeT0_t7,tlin);
+[procInd0_t7,procInd1_t7]=histc(spikeT0_t7,linear_position_time);
 procInd_t7=find(procInd0_t7);
-spikeT_t7=tlin(procInd_t7);
+spikeT_t7=linear_position_time(procInd_t7);
 spike_t7=procInd0_t7';
 [~,rawInd0_t7]=histc(spikeT0_t7,time2_t7);
 markAll_t7(:,1)=procInd1_t7;markAll_t7(:,2:5)=mark0_t7(rawInd0_t7(rawInd0_t7~=0),:);
@@ -289,14 +289,14 @@ Lint_t7=Lint_t7./sum(Lint_t7);
 
 load('bond_data\bond04-10_params.mat');
 %ind_t10=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t10=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t10=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t10=filedata.params(ind_t10,1);
 mark0_t10=[filedata.params(ind_t10,2) filedata.params(ind_t10,3) filedata.params(ind_t10,4) filedata.params(ind_t10,5)];
 time2_t10=time_t10/10000;
 spikeT0_t10=time2_t10;
-[procInd0_t10,procInd1_t10]=histc(spikeT0_t10,tlin);
+[procInd0_t10,procInd1_t10]=histc(spikeT0_t10,linear_position_time);
 procInd_t10=find(procInd0_t10);
-spikeT_t10=tlin(procInd_t10);
+spikeT_t10=linear_position_time(procInd_t10);
 spike_t10=procInd0_t10';
 [~,rawInd0_t10]=histc(spikeT0_t10,time2_t10);
 markAll_t10(:,1)=procInd1_t10;markAll_t10(:,2:5)=mark0_t10(rawInd0_t10(rawInd0_t10~=0),:);
@@ -310,14 +310,14 @@ Lint_t10=Lint_t10./sum(Lint_t10);
 
 load('bond_data\bond04-11_params.mat');
 %ind_t11=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t11=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t11=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t11=filedata.params(ind_t11,1);
 mark0_t11=[filedata.params(ind_t11,2) filedata.params(ind_t11,3) filedata.params(ind_t11,4) filedata.params(ind_t11,5)];
 time2_t11=time_t11/10000;
 spikeT0_t11=time2_t11;
-[procInd0_t11,procInd1_t11]=histc(spikeT0_t11,tlin);
+[procInd0_t11,procInd1_t11]=histc(spikeT0_t11,linear_position_time);
 procInd_t11=find(procInd0_t11);
-spikeT_t11=tlin(procInd_t11);
+spikeT_t11=linear_position_time(procInd_t11);
 spike_t11=procInd0_t11';
 [~,rawInd0_t11]=histc(spikeT0_t11,time2_t11);
 markAll_t11(:,1)=procInd1_t11;markAll_t11(:,2:5)=mark0_t11(rawInd0_t11(rawInd0_t11~=0),:);
@@ -331,14 +331,14 @@ Lint_t11=Lint_t11./sum(Lint_t11);
 
 load('bond_data\bond04-12_params.mat');
 %ind_t12=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t12=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t12=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t12=filedata.params(ind_t12,1);
 mark0_t12=[filedata.params(ind_t12,2) filedata.params(ind_t12,3) filedata.params(ind_t12,4) filedata.params(ind_t12,5)];
 time2_t12=time_t12/10000;
 spikeT0_t12=time2_t12;
-[procInd0_t12,procInd1_t12]=histc(spikeT0_t12,tlin);
+[procInd0_t12,procInd1_t12]=histc(spikeT0_t12,linear_position_time);
 procInd_t12=find(procInd0_t12);
-spikeT_t12=tlin(procInd_t12);
+spikeT_t12=linear_position_time(procInd_t12);
 spike_t12=procInd0_t12';
 [~,rawInd0_t12]=histc(spikeT0_t12,time2_t12);
 markAll_t12(:,1)=procInd1_t12;markAll_t12(:,2:5)=mark0_t12(rawInd0_t12(rawInd0_t12~=0),:);
@@ -352,14 +352,14 @@ Lint_t12=Lint_t12./sum(Lint_t12);
 
 load('bond_data\bond04-13_params.mat');
 %ind_t13=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t13=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t13=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t13=filedata.params(ind_t13,1);
 mark0_t13=[filedata.params(ind_t13,2) filedata.params(ind_t13,3) filedata.params(ind_t13,4) filedata.params(ind_t13,5)];
 time2_t13=time_t13/10000;
 spikeT0_t13=time2_t13;
-[procInd0_t13,procInd1_t13]=histc(spikeT0_t13,tlin);
+[procInd0_t13,procInd1_t13]=histc(spikeT0_t13,linear_position_time);
 procInd_t13=find(procInd0_t13);
-spikeT_t13=tlin(procInd_t13);
+spikeT_t13=linear_position_time(procInd_t13);
 spike_t13=procInd0_t13';
 [~,rawInd0_t13]=histc(spikeT0_t13,time2_t13);
 markAll_t13(:,1)=procInd1_t13;markAll_t13(:,2:5)=mark0_t13(rawInd0_t13(rawInd0_t13~=0),:);
@@ -373,14 +373,14 @@ Lint_t13=Lint_t13./sum(Lint_t13);
 
 load('bond_data\bond04-14_params.mat');
 %ind_t14=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t14=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t14=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t14=filedata.params(ind_t14,1);
 mark0_t14=[filedata.params(ind_t14,2) filedata.params(ind_t14,3) filedata.params(ind_t14,4) filedata.params(ind_t14,5)];
 time2_t14=time_t14/10000;
 spikeT0_t14=time2_t14;
-[procInd0_t14,procInd1_t14]=histc(spikeT0_t14,tlin);
+[procInd0_t14,procInd1_t14]=histc(spikeT0_t14,linear_position_time);
 procInd_t14=find(procInd0_t14);
-spikeT_t14=tlin(procInd_t14);
+spikeT_t14=linear_position_time(procInd_t14);
 spike_t14=procInd0_t14';
 [~,rawInd0_t14]=histc(spikeT0_t14,time2_t14);
 markAll_t14(:,1)=procInd1_t14;markAll_t14(:,2:5)=mark0_t14(rawInd0_t14(rawInd0_t14~=0),:);
@@ -394,14 +394,14 @@ Lint_t14=Lint_t14./sum(Lint_t14);
 
 load('bond_data\bond04-17_params.mat');
 %ind_t17=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t17=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t17=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t17=filedata.params(ind_t17,1);
 mark0_t17=[filedata.params(ind_t17,2) filedata.params(ind_t17,3) filedata.params(ind_t17,4) filedata.params(ind_t17,5)];
 time2_t17=time_t17/10000;
 spikeT0_t17=time2_t17;
-[procInd0_t17,procInd1_t17]=histc(spikeT0_t17,tlin);
+[procInd0_t17,procInd1_t17]=histc(spikeT0_t17,linear_position_time);
 procInd_t17=find(procInd0_t17);
-spikeT_t17=tlin(procInd_t17);
+spikeT_t17=linear_position_time(procInd_t17);
 spike_t17=procInd0_t17';
 [~,rawInd0_t17]=histc(spikeT0_t17,time2_t17);
 markAll_t17(:,1)=procInd1_t17;markAll_t17(:,2:5)=mark0_t17(rawInd0_t17(rawInd0_t17~=0),:);
@@ -415,14 +415,14 @@ Lint_t17=Lint_t17./sum(Lint_t17);
 
 load('bond_data\bond04-18_params.mat');
 %ind_t18=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t18=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t18=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t18=filedata.params(ind_t18,1);
 mark0_t18=[filedata.params(ind_t18,2) filedata.params(ind_t18,3) filedata.params(ind_t18,4) filedata.params(ind_t18,5)];
 time2_t18=time_t18/10000;
 spikeT0_t18=time2_t18;
-[procInd0_t18,procInd1_t18]=histc(spikeT0_t18,tlin);
+[procInd0_t18,procInd1_t18]=histc(spikeT0_t18,linear_position_time);
 procInd_t18=find(procInd0_t18);
-spikeT_t18=tlin(procInd_t18);
+spikeT_t18=linear_position_time(procInd_t18);
 spike_t18=procInd0_t18';
 [~,rawInd0_t18]=histc(spikeT0_t18,time2_t18);
 markAll_t18(:,1)=procInd1_t18;markAll_t18(:,2:5)=mark0_t18(rawInd0_t18(rawInd0_t18~=0),:);
@@ -436,14 +436,14 @@ Lint_t18=Lint_t18./sum(Lint_t18);
 
 load('bond_data\bond04-19_params.mat');
 %ind_t19=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t19=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t19=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t19=filedata.params(ind_t19,1);
 mark0_t19=[filedata.params(ind_t19,2) filedata.params(ind_t19,3) filedata.params(ind_t19,4) filedata.params(ind_t19,5)];
 time2_t19=time_t19/10000;
 spikeT0_t19=time2_t19;
-[procInd0_t19,procInd1_t19]=histc(spikeT0_t19,tlin);
+[procInd0_t19,procInd1_t19]=histc(spikeT0_t19,linear_position_time);
 procInd_t19=find(procInd0_t19);
-spikeT_t19=tlin(procInd_t19);
+spikeT_t19=linear_position_time(procInd_t19);
 spike_t19=procInd0_t19';
 [~,rawInd0_t19]=histc(spikeT0_t19,time2_t19);
 markAll_t19(:,1)=procInd1_t19;markAll_t19(:,2:5)=mark0_t19(rawInd0_t19(rawInd0_t19~=0),:);
@@ -457,14 +457,14 @@ Lint_t19=Lint_t19./sum(Lint_t19);
 
 load('bond_data\bond04-20_params.mat');
 %ind_t20=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t20=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t20=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t20=filedata.params(ind_t20,1);
 mark0_t20=[filedata.params(ind_t20,2) filedata.params(ind_t20,3) filedata.params(ind_t20,4) filedata.params(ind_t20,5)];
 time2_t20=time_t20/10000;
 spikeT0_t20=time2_t20;
-[procInd0_t20,procInd1_t20]=histc(spikeT0_t20,tlin);
+[procInd0_t20,procInd1_t20]=histc(spikeT0_t20,linear_position_time);
 procInd_t20=find(procInd0_t20);
-spikeT_t20=tlin(procInd_t20);
+spikeT_t20=linear_position_time(procInd_t20);
 spike_t20=procInd0_t20';
 [~,rawInd0_t20]=histc(spikeT0_t20,time2_t20);
 markAll_t20(:,1)=procInd1_t20;markAll_t20(:,2:5)=mark0_t20(rawInd0_t20(rawInd0_t20~=0),:);
@@ -478,14 +478,14 @@ Lint_t20=Lint_t20./sum(Lint_t20);
 
 load('bond_data\bond04-22_params.mat');
 %ind_t22=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t22=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t22=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t22=filedata.params(ind_t22,1);
 mark0_t22=[filedata.params(ind_t22,2) filedata.params(ind_t22,3) filedata.params(ind_t22,4) filedata.params(ind_t22,5)];
 time2_t22=time_t22/10000;
 spikeT0_t22=time2_t22;
-[procInd0_t22,procInd1_t22]=histc(spikeT0_t22,tlin);
+[procInd0_t22,procInd1_t22]=histc(spikeT0_t22,linear_position_time);
 procInd_t22=find(procInd0_t22);
-spikeT_t22=tlin(procInd_t22);
+spikeT_t22=linear_position_time(procInd_t22);
 spike_t22=procInd0_t22';
 [~,rawInd0_t22]=histc(spikeT0_t22,time2_t22);
 markAll_t22(:,1)=procInd1_t22;markAll_t22(:,2:5)=mark0_t22(rawInd0_t22(rawInd0_t22~=0),:);
@@ -499,14 +499,14 @@ Lint_t22=Lint_t22./sum(Lint_t22);
 
 load('bond_data\bond04-23_params.mat');
 %ind_t23=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t23=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t23=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t23=filedata.params(ind_t23,1);
 mark0_t23=[filedata.params(ind_t23,2) filedata.params(ind_t23,3) filedata.params(ind_t23,4) filedata.params(ind_t23,5)];
 time2_t23=time_t23/10000;
 spikeT0_t23=time2_t23;
-[procInd0_t23,procInd1_t23]=histc(spikeT0_t23,tlin);
+[procInd0_t23,procInd1_t23]=histc(spikeT0_t23,linear_position_time);
 procInd_t23=find(procInd0_t23);
-spikeT_t23=tlin(procInd_t23);
+spikeT_t23=linear_position_time(procInd_t23);
 spike_t23=procInd0_t23';
 [~,rawInd0_t23]=histc(spikeT0_t23,time2_t23);
 markAll_t23(:,1)=procInd1_t23;markAll_t23(:,2:5)=mark0_t23(rawInd0_t23(rawInd0_t23~=0),:);
@@ -520,14 +520,14 @@ Lint_t23=Lint_t23./sum(Lint_t23);
 
 load('bond_data\bond04-27_params.mat');
 %ind_t27=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t27=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t27=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t27=filedata.params(ind_t27,1);
 mark0_t27=[filedata.params(ind_t27,2) filedata.params(ind_t27,3) filedata.params(ind_t27,4) filedata.params(ind_t27,5)];
 time2_t27=time_t27/10000;
 spikeT0_t27=time2_t27;
-[procInd0_t27,procInd1_t27]=histc(spikeT0_t27,tlin);
+[procInd0_t27,procInd1_t27]=histc(spikeT0_t27,linear_position_time);
 procInd_t27=find(procInd0_t27);
-spikeT_t27=tlin(procInd_t27);
+spikeT_t27=linear_position_time(procInd_t27);
 spike_t27=procInd0_t27';
 [~,rawInd0_t27]=histc(spikeT0_t27,time2_t27);
 markAll_t27(:,1)=procInd1_t27;markAll_t27(:,2:5)=mark0_t27(rawInd0_t27(rawInd0_t27~=0),:);
@@ -541,14 +541,14 @@ Lint_t27=Lint_t27./sum(Lint_t27);
 
 load('bond_data\bond04-29_params.mat');
 %ind_t29=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t29=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
+ind_t29=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t29=filedata.params(ind_t29,1);
 mark0_t29=[filedata.params(ind_t29,2) filedata.params(ind_t29,3) filedata.params(ind_t29,4) filedata.params(ind_t29,5)];
 time2_t29=time_t29/10000;
 spikeT0_t29=time2_t29;
-[procInd0_t29,procInd1_t29]=histc(spikeT0_t29,tlin);
+[procInd0_t29,procInd1_t29]=histc(spikeT0_t29,linear_position_time);
 procInd_t29=find(procInd0_t29);
-spikeT_t29=tlin(procInd_t29);
+spikeT_t29=linear_position_time(procInd_t29);
 spike_t29=procInd0_t29';
 [~,rawInd0_t29]=histc(spikeT0_t29,time2_t29);
 markAll_t29(:,1)=procInd1_t29;markAll_t29(:,2:5)=mark0_t29(rawInd0_t29(rawInd0_t29~=0),:);
@@ -898,22 +898,22 @@ velocity=pos{day}{epoch}.data(:,5);
 clear rloc vel;
 for pic=1:length(rippleI)
     rIndV=pic; %5, 12
-    rloc_Ind=find(A*1000>ti(ripple_seg(rippleI(rIndV),1))&A*1000<ti(ripple_seg(rippleI(rIndV),2)));
+    rloc_Ind=find(position_time_stamps*1000>position_time_stamps_binned(ripple_index(rippleI(rIndV),1))&position_time_stamps*1000<position_time_stamps_binned(ripple_index(rippleI(rIndV),2)));
     
     rloc(pic)=vecLF(rloc_Ind(1),2);
     vel(pic)=velocity(rloc_Ind(1),1);
 end
 
-Ind_vel=find(vel<4);length(Ind_vel)
+velocity_threshold_index=find(vel<4);length(velocity_threshold_index)
 %only decode replay when the running speed < 4cm/sec
-ripplesconsN=traj_Ind(rippleI(Ind_vel));
+ripplesconsN=traj_Ind(rippleI(velocity_threshold_index));
 
 %% decoder
 clear sumStat;
-for pic=1:length(Ind_vel)
-    rIndV=Ind_vel(pic); %5, 12
+for pic=1:length(velocity_threshold_index)
+    rIndV=velocity_threshold_index(pic); %5, 12
     
-    spike_tim=ripple_seg(rippleI(rIndV),1):ripple_seg(rippleI(rIndV),2); %from 1 to 90000~
+    spike_tim=ripple_index(rippleI(rIndV),1):ripple_index(rippleI(rIndV),2); %from 1 to 90000~
     numSteps=length(spike_tim);
     xi=round(time/10);
     
@@ -930,11 +930,11 @@ for pic=1:length(Ind_vel)
     pI0_vec=zeros(numSteps,1);pI1_vec=zeros(numSteps,1);pI2_vec=zeros(numSteps,1);pI3_vec=zeros(numSteps,1);
     postxM_r_I0=zeros(n,numSteps);postxM_r_I1=zeros(n,numSteps);postxM_r_I2=zeros(n,numSteps);postxM_r_I3=zeros(n,numSteps);
     %state transition
-    stateM_I_out=stateM_I1_gausnorm;stateM_I_in=stateM_I0_gausnorm;
+    stateM_I_out=stateM_I1_normalized_gaussian;stateM_I_in=stateM_I0_normalized_gaussian;
     stateM_I0=stateM_I_out;stateM_I1=stateM_I_in;stateM_I2=stateM_I_in;stateM_I3=stateM_I_out;
     for t=1:numSteps
         tt=spike_tim(t);
-        aa=find(xi==ti(tt));
+        aa=find(xi==position_time_stamps_binned(tt));
         
         onestep_I0=stateM_I0*postx_I0;
         onestep_I1=stateM_I1*postx_I1;
