@@ -27,7 +27,8 @@ vecLF(:,1)=time;vecLF(:,2)=linear_distance;
 
 position_time_stamps=pos{day}{epoch}.data(:,1); %time stamps for animal's trajectory
 position_time_stamps_binned=round(position_time_stamps(1)*1000):1:round(position_time_stamps(end)*1000); %binning time stamps at 1 ms
-stateV=linspace(min(linear_distance),max(linear_distance),61);
+linear_distance_bins = 61;
+stateV=linspace(min(linear_distance),max(linear_distance), linear_distance_bins);
 stateV_delta=stateV(2)-stateV(1);
 
 
