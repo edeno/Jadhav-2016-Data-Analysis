@@ -2,15 +2,15 @@ function [tetrode_index, neuron_index] = get_tetrodes_with_spikes(spikes, day, e
 tetrode_index=[];neuron_index=[];
 %this is from sorted spikes, we only use this to select replay events with
 %non-zero sorted spikes in it to decode
-for neuron_ind=1:length(tetrode_number)
-    numNeurons=length(spikes{day}{epoch}{tetrode_number(neuron_ind)});
+for tetrode_ind=1:length(tetrode_number)
+    numNeurons=length(spikes{day}{epoch}{tetrode_number(tetrode_ind)});
     b0=zeros(1,numNeurons);a0=zeros(1,numNeurons);
-    if isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)})==0
+    if isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)})==0
         for neuron_ind=1:numNeurons
-            if ~isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)}{neuron_ind}) && ...
-                    ~isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)}{neuron_ind}.data)
+            if ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}) && ...
+                    ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}.data)
                 b0(neuron_ind)=neuron_ind;
-                a0(neuron_ind)=tetrode_number(neuron_ind);
+                a0(neuron_ind)=tetrode_number(tetrode_ind);
             end
         end
     end
