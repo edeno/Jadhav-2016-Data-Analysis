@@ -16,14 +16,14 @@ tetrode_index=[];neuron_index=[];
 %a: tetrode index; b: corresponding cell index
 %this is from sorted spikes, we only use this to select replay events with
 %non-zero sorted spikes in it to decode
-for tetrode_ind=1:length(tetrode_number)
-    numNeurons=length(spikes{day}{epoch}{tetrode_number(tetrode_ind)});
+for neuron_ind=1:length(tetrode_number)
+    numNeurons=length(spikes{day}{epoch}{tetrode_number(neuron_ind)});
     b0=zeros(1,numNeurons);a0=zeros(1,numNeurons);
-    if isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)})==0
+    if isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)})==0
         for neuron_ind=1:numNeurons
-            if ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}) && ~isempty(spikes{day}{epoch}{tetrode_number(tetrode_ind)}{neuron_ind}.data)
+            if ~isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)}{neuron_ind}) && ~isempty(spikes{day}{epoch}{tetrode_number(neuron_ind)}{neuron_ind}.data)
                 b0(neuron_ind)=neuron_ind;
-                a0(neuron_ind)=tetrode_number(tetrode_ind);
+                a0(neuron_ind)=tetrode_number(neuron_ind);
             end
         end
     end
@@ -41,99 +41,99 @@ end
 time=linpos{day}{epoch}.statematrix.time;
 linear_distance=linpos{day}{epoch}.statematrix.lindist;
 vecLF(:,1)=time;vecLF(:,2)=linear_distance;
-%figure;plot(time,lindist,'.');
+%figure;plot(time,linear_distance,'.');
 
 position_time_stamps=pos{day}{epoch}.data(:,1); %time stamps for animal's trajectory
 position_time_stamps_binned=round(position_time_stamps(1)*1000):1:round(position_time_stamps(end)*1000); %binning time stamps at 1 ms
 stateV=linspace(min(linear_distance),max(linear_distance),61);
-xdel=stateV(2)-stateV(1);
+stateV_delta=stateV(2)-stateV(1);
 
 
 %% calculate emipirical movement transition matrix, then Gaussian smoothed
 [~,state_bin]=histc(linear_distance,stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
-n=size(stateV,2);
+stateV_length=size(stateV,2);
 %by column=departuring
-for s=1:n
-    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-    if isempty(sp0)==0
-        stateM(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
-    elseif isempty(sp0)==1
-        stateM(:,s)=zeros(1,n);
+for stateV_ind=1:stateV_length
+    sp0=state_disM(state_disM(:,1)==stateV_ind,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+    if ~isempty(sp0)
+        stateM(:,stateV_ind)=histc(sp0,linspace(1,stateV_length,stateV_length))./size(sp0,1);
+    else
+        stateM(:,stateV_ind)=zeros(1,stateV_length);
     end
 end
-gaussian=@(sig, x, y) exp(-(x.^2+y.^2)/2/sig^2); %gaussian
+gaussian=@(sigma, x, y) exp(-(x.^2+y.^2)/2/sigma^2); %gaussian
 [dx,dy]=meshgrid([-1:1]);
-sig=0.5;
-weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaussian_smoothed=conv2(stateM,weight,'same'); %gaussian smoothed
+sigma=0.5;
+normalizing_weight=gaussian(sigma,dx,dy)/sum(sum(gaussian(sigma,dx,dy))); %normalizing weights
+stateM_gaussian_smoothed=conv2(stateM,normalizing_weight,'same'); %gaussian smoothed
 stateM_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 %%
-ind_I_out=find(trajencode{day}{epoch}.trajstate==1 | trajencode{day}{epoch}.trajstate==3);
-ind_I_in=find(trajencode{day}{epoch}.trajstate==2 | trajencode{day}{epoch}.trajstate==4);
+ind_I_outbound=find(trajencode{day}{epoch}.trajstate==1 | trajencode{day}{epoch}.trajstate==3);
+ind_I_inbound=find(trajencode{day}{epoch}.trajstate==2 | trajencode{day}{epoch}.trajstate==4);
 %figure;plot(vecLF(ind_I_out,1),vecLF(ind_I_out,2),'r.',vecLF(ind_I_in,1),vecLF(ind_I_in,2),'b.');
 
 %% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
-n=length(stateV);
-stateM_I_out=zeros(n,n);
-vecLF_seg=vecLF(ind_I_out,:);
+stateV_length=length(stateV);
+stateM_I_outbound=zeros(stateV_length);
+vecLF_seg=vecLF(ind_I_outbound,:);
 [~,state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
-stateM_seg=zeros(n,n);
-for s=1:n
-    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+stateM_seg=zeros(stateV_length);
+for stateV_ind=1:stateV_length
+    sp0=state_disM(state_disM(:,1)==stateV_ind,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
     if isempty(sp0)==0
-        stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
+        stateM_seg(:,stateV_ind)=histc(sp0,linspace(1,stateV_length,stateV_length))./size(sp0,1);
     elseif isempty(sp0)==1
-        stateM_seg(:,s)=zeros(1,n);
+        stateM_seg(:,stateV_ind)=zeros(1,stateV_length);
     end
 end
-stateM_I_out=stateM_I_out+stateM_seg;
+stateM_I_outbound=stateM_I_outbound+stateM_seg;
 %%%if too many zeros:
-for i=1:n
-    if sum(stateM_I_out(:,i))==0
-        stateM_I_out(:,i)=1/n;
-    elseif sum(stateM_I_out(:,i))~=0
-        stateM_I_out(:,i)=stateM_I_out(:,i)./sum(stateM_I_out(:,i));
+for i=1:stateV_length
+    if sum(stateM_I_outbound(:,i))==0
+        stateM_I_outbound(:,i)=1/stateV_length;
+    elseif sum(stateM_I_outbound(:,i))~=0
+        stateM_I_outbound(:,i)=stateM_I_outbound(:,i)./sum(stateM_I_outbound(:,i));
     end
 end
 %stateM_I1=stateM_I1*diag(1./sum(stateM_I1,1));
 [dx,dy]=meshgrid([-1:1]);
-sig=0.5;
-weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaussian_smoothed=conv2(stateM_I_out,weight,'same'); %gaussian smoothed
+sigma=0.5;
+normalizing_weight=gaussian(sigma,dx,dy)/sum(sum(gaussian(sigma,dx,dy))); %normalizing weights
+stateM_gaussian_smoothed=conv2(stateM_I_outbound,normalizing_weight,'same'); %gaussian smoothed
 stateM_I1_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 
-stateM_I_in=zeros(n,n);
-vecLF_seg=vecLF(ind_I_in,:);
+stateM_I_inbound=zeros(stateV_length);
+vecLF_seg=vecLF(ind_I_inbound,:);
 [sn,state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
-stateM_seg=zeros(n,n);
-for s=1:n
-    sp0=state_disM(state_disM(:,1)==s,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
+stateM_seg=zeros(stateV_length);
+for stateV_ind=1:stateV_length
+    sp0=state_disM(state_disM(:,1)==stateV_ind,2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
     if isempty(sp0)==0
-        stateM_seg(:,s)=histc(sp0,linspace(1,n,n))./size(sp0,1);
+        stateM_seg(:,stateV_ind)=histc(sp0,linspace(1,stateV_length,stateV_length))./size(sp0,1);
     elseif isempty(sp0)==1
-        stateM_seg(:,s)=zeros(1,n);
+        stateM_seg(:,stateV_ind)=zeros(1,stateV_length);
     end
 end
-stateM_I_in=stateM_I_in+stateM_seg;
+stateM_I_inbound=stateM_I_inbound+stateM_seg;
 %%if too many zeros
-for i=1:n
-    if sum(stateM_I_in(:,i))==0
-        stateM_I_in(:,i)=1/n;
-    elseif sum(stateM_I_in(:,i))~=0
-        stateM_I_in(:,i)=stateM_I_in(:,i)./sum(stateM_I_in(:,i));
+for i=1:stateV_length
+    if sum(stateM_I_inbound(:,i))==0
+        stateM_I_inbound(:,i)=1/stateV_length;
+    elseif sum(stateM_I_inbound(:,i))~=0
+        stateM_I_inbound(:,i)=stateM_I_inbound(:,i)./sum(stateM_I_inbound(:,i));
     end
 end
 %stateM_I0=stateM_I0*diag(1./sum(stateM_I0,1));
 
 [dx,dy]=meshgrid([-1:1]);
-sig=0.5;
-weight=gaussian(sig,dx,dy)/sum(sum(gaussian(sig,dx,dy))); %normalizing weights
-stateM_gaussian_smoothed=conv2(stateM_I_in,weight,'same'); %gaussian smoothed
+sigma=0.5;
+normalizing_weight=gaussian(sigma,dx,dy)/sum(sum(gaussian(sigma,dx,dy))); %normalizing weights
+stateM_gaussian_smoothed=conv2(stateM_I_inbound,normalizing_weight,'same'); %gaussian smoothed
 stateM_I0_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 
@@ -143,22 +143,21 @@ ripple_end_time=ripplescons{day}{epoch}{1}.endtime;
 traj_Ind=find(ripplescons{day}{epoch}{1}.maxthresh>4);
 ripple_start_time=ripple_start_time(traj_Ind);
 ripple_end_time=ripple_end_time(traj_Ind);
-ripple_index=[round(ripple_start_time*1000)-position_time_stamps_binned(1)-1 round(ripple_end_time*1000)-position_time_stamps_binned(1)-1]; %index for ripple segments
+ripple_index=[round(ripple_start_time*1000)-position_time_stamps_binned(1)-1, round(ripple_end_time*1000)-position_time_stamps_binned(1)-1]; %index for ripple segments
 
 clear sptrain2_list;
-for kk=1:size(tetrode_index,2)
-    j=tetrode_index(kk);i=neuron_index(kk);
-    B=spikes{day}{epoch}{j}{i}.data(:,1); %spiking times for tetrode j, cell i
-    xi=round(B*1000); %binning spiking times at 1 ms
+for neuron_ind=1:size(tetrode_index,2)
+    spike_times=spikes{day}{epoch}{tetrode_index(neuron_ind)}{neuron_index(neuron_ind)}.data(:,1); %spiking times for tetrode j, cell i
+    xi=round(spike_times*1000); %binning spiking times at 1 ms
     [sptrain2,~]=ismember(position_time_stamps_binned,xi); %sptrain2: spike train binned at 1 ms instead of 33.4ms (sptrain0)
-    sptrain2_list{kk}=sptrain2;
+    sptrain2_list{neuron_ind}=sptrain2;
 end
 
 clear spike_r_all;
 for k=1:size(ripple_index,1)
     spike_r=[];
-    for kk=1:size(tetrode_index,2)
-        sptrain2=sptrain2_list{kk};
+    for neuron_ind=1:size(tetrode_index,2)
+        sptrain2=sptrain2_list{neuron_ind};
         spike_r=[spike_r;sptrain2(ripple_index(k,1):ripple_index(k,2))];
     end
     spike_r_all{k}=spike_r;
@@ -175,14 +174,14 @@ rippleI=find(sumR>0);length(rippleI)
 linear_position_time=linpos{day}{epoch}.statematrix.time;
 
 poslin=vecLF(:,2);
-xs=min(poslin):xdel:max(poslin);
+xs=min(poslin):stateV_delta:max(poslin);
 dt=linear_position_time(2)-linear_position_time(1);
 xtrain=poslin';
 
-sxker=xdel; mdel=20; smker=mdel; T=size(linear_position_time,1);
+sxker=stateV_delta; mdel=20; smker=mdel; T=size(linear_position_time,1);
 
 %% encode the kernel density model per tetrode
-load('bond_data\bond04-01_params.mat');
+load('bond_data/bond04-01_params.mat');
 %ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t1=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t1=filedata.params(ind_t1,1);
@@ -203,7 +202,7 @@ Xnum_t1=normpdf(xs'*ones(1,length(spikeT0_t1)),ones(length(xs),1)*xtrain(procInd
 Lint_t1=sum(Xnum_t1,2)./occ(:,1)./dt; %integral
 Lint_t1=Lint_t1./sum(Lint_t1);
 
-load('bond_data\bond04\bond04-02_params.mat');
+load('bond_data/bond04-02_params.mat');
 %ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t2=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t2=filedata.params(ind_t2,1);
@@ -224,7 +223,7 @@ Xnum_t2=normpdf(xs'*ones(1,length(spikeT0_t2)),ones(length(xs),1)*xtrain(procInd
 Lint_t2=sum(Xnum_t2,2)./occ(:,1)./dt; %integral
 Lint_t2=Lint_t2./sum(Lint_t2);
 
-load('bond_data\bond04-04_params.mat');
+load('bond_data/bond04-04_params.mat');
 %ind_t4=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t4=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t4=filedata.params(ind_t4,1);
@@ -245,7 +244,7 @@ Xnum_t4=normpdf(xs'*ones(1,length(spikeT0_t4)),ones(length(xs),1)*xtrain(procInd
 Lint_t4=sum(Xnum_t4,2)./occ(:,1)./dt; %integral
 Lint_t4=Lint_t4./sum(Lint_t4);
 
-load('bond_data\bond04-05_params.mat');
+load('bond_data/bond04-05_params.mat');
 %ind_t5=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t5=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t5=filedata.params(ind_t5,1);
@@ -266,7 +265,7 @@ Xnum_t5=normpdf(xs'*ones(1,length(spikeT0_t5)),ones(length(xs),1)*xtrain(procInd
 Lint_t5=sum(Xnum_t5,2)./occ(:,1)./dt; %integral
 Lint_t5=Lint_t5./sum(Lint_t5);
 
-load('bond_data\bond04-07_params.mat');
+load('bond_data/bond04-07_params.mat');
 %ind_t7=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t7=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t7=filedata.params(ind_t7,1);
@@ -287,7 +286,7 @@ Xnum_t7=normpdf(xs'*ones(1,length(spikeT0_t7)),ones(length(xs),1)*xtrain(procInd
 Lint_t7=sum(Xnum_t7,2)./occ(:,1)./dt; %integral
 Lint_t7=Lint_t7./sum(Lint_t7);
 
-load('bond_data\bond04-10_params.mat');
+load('bond_data/bond04-10_params.mat');
 %ind_t10=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t10=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t10=filedata.params(ind_t10,1);
@@ -308,7 +307,7 @@ Xnum_t10=normpdf(xs'*ones(1,length(spikeT0_t10)),ones(length(xs),1)*xtrain(procI
 Lint_t10=sum(Xnum_t10,2)./occ(:,1)./dt; %integral
 Lint_t10=Lint_t10./sum(Lint_t10);
 
-load('bond_data\bond04-11_params.mat');
+load('bond_data/bond04-11_params.mat');
 %ind_t11=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t11=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t11=filedata.params(ind_t11,1);
@@ -329,7 +328,7 @@ Xnum_t11=normpdf(xs'*ones(1,length(spikeT0_t11)),ones(length(xs),1)*xtrain(procI
 Lint_t11=sum(Xnum_t11,2)./occ(:,1)./dt; %integral
 Lint_t11=Lint_t11./sum(Lint_t11);
 
-load('bond_data\bond04-12_params.mat');
+load('bond_data/bond04-12_params.mat');
 %ind_t12=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t12=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t12=filedata.params(ind_t12,1);
@@ -350,7 +349,7 @@ Xnum_t12=normpdf(xs'*ones(1,length(spikeT0_t12)),ones(length(xs),1)*xtrain(procI
 Lint_t12=sum(Xnum_t12,2)./occ(:,1)./dt; %integral
 Lint_t12=Lint_t12./sum(Lint_t12);
 
-load('bond_data\bond04-13_params.mat');
+load('bond_data/bond04-13_params.mat');
 %ind_t13=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t13=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t13=filedata.params(ind_t13,1);
@@ -371,7 +370,7 @@ Xnum_t13=normpdf(xs'*ones(1,length(spikeT0_t13)),ones(length(xs),1)*xtrain(procI
 Lint_t13=sum(Xnum_t13,2)./occ(:,1)./dt; %integral
 Lint_t13=Lint_t13./sum(Lint_t13);
 
-load('bond_data\bond04-14_params.mat');
+load('bond_data/bond04-14_params.mat');
 %ind_t14=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t14=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t14=filedata.params(ind_t14,1);
@@ -392,7 +391,7 @@ Xnum_t14=normpdf(xs'*ones(1,length(spikeT0_t14)),ones(length(xs),1)*xtrain(procI
 Lint_t14=sum(Xnum_t14,2)./occ(:,1)./dt; %integral
 Lint_t14=Lint_t14./sum(Lint_t14);
 
-load('bond_data\bond04-17_params.mat');
+load('bond_data/bond04-17_params.mat');
 %ind_t17=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t17=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t17=filedata.params(ind_t17,1);
@@ -413,7 +412,7 @@ Xnum_t17=normpdf(xs'*ones(1,length(spikeT0_t17)),ones(length(xs),1)*xtrain(procI
 Lint_t17=sum(Xnum_t17,2)./occ(:,1)./dt; %integral
 Lint_t17=Lint_t17./sum(Lint_t17);
 
-load('bond_data\bond04-18_params.mat');
+load('bond_data/bond04-18_params.mat');
 %ind_t18=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t18=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t18=filedata.params(ind_t18,1);
@@ -434,7 +433,7 @@ Xnum_t18=normpdf(xs'*ones(1,length(spikeT0_t18)),ones(length(xs),1)*xtrain(procI
 Lint_t18=sum(Xnum_t18,2)./occ(:,1)./dt; %integral
 Lint_t18=Lint_t18./sum(Lint_t18);
 
-load('bond_data\bond04-19_params.mat');
+load('bond_data/bond04-19_params.mat');
 %ind_t19=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t19=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t19=filedata.params(ind_t19,1);
@@ -455,7 +454,7 @@ Xnum_t19=normpdf(xs'*ones(1,length(spikeT0_t19)),ones(length(xs),1)*xtrain(procI
 Lint_t19=sum(Xnum_t19,2)./occ(:,1)./dt; %integral
 Lint_t19=Lint_t19./sum(Lint_t19);
 
-load('bond_data\bond04-20_params.mat');
+load('bond_data/bond04-20_params.mat');
 %ind_t20=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t20=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t20=filedata.params(ind_t20,1);
@@ -476,7 +475,7 @@ Xnum_t20=normpdf(xs'*ones(1,length(spikeT0_t20)),ones(length(xs),1)*xtrain(procI
 Lint_t20=sum(Xnum_t20,2)./occ(:,1)./dt; %integral
 Lint_t20=Lint_t20./sum(Lint_t20);
 
-load('bond_data\bond04-22_params.mat');
+load('bond_data/bond04-22_params.mat');
 %ind_t22=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t22=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t22=filedata.params(ind_t22,1);
@@ -497,7 +496,7 @@ Xnum_t22=normpdf(xs'*ones(1,length(spikeT0_t22)),ones(length(xs),1)*xtrain(procI
 Lint_t22=sum(Xnum_t22,2)./occ(:,1)./dt; %integral
 Lint_t22=Lint_t22./sum(Lint_t22);
 
-load('bond_data\bond04-23_params.mat');
+load('bond_data/bond04-23_params.mat');
 %ind_t23=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t23=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t23=filedata.params(ind_t23,1);
@@ -518,7 +517,7 @@ Xnum_t23=normpdf(xs'*ones(1,length(spikeT0_t23)),ones(length(xs),1)*xtrain(procI
 Lint_t23=sum(Xnum_t23,2)./occ(:,1)./dt; %integral
 Lint_t23=Lint_t23./sum(Lint_t23);
 
-load('bond_data\bond04-27_params.mat');
+load('bond_data/bond04-27_params.mat');
 %ind_t27=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t27=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t27=filedata.params(ind_t27,1);
@@ -539,7 +538,7 @@ Xnum_t27=normpdf(xs'*ones(1,length(spikeT0_t27)),ones(length(xs),1)*xtrain(procI
 Lint_t27=sum(Xnum_t27,2)./occ(:,1)./dt; %integral
 Lint_t27=Lint_t27./sum(Lint_t27);
 
-load('bond_data\bond04-29_params.mat');
+load('bond_data/bond04-29_params.mat');
 %ind_t29=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t29=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
 time_t29=filedata.params(ind_t29,1);
@@ -633,16 +632,16 @@ Lint=Lint./sum(Lint);
 
 
 %% captial LAMBDA conditioned on I=1 and I=0
-procInd1_I_out=procInd1(ismember(procInd1,ind_I_out));
-occ_I_out=normpdf(xs'*ones(1,length(ind_I_out)),ones(length(xs),1)*xtrain(ind_I_out),sxker)*ones(length(ind_I_out),length(ms));
+procInd1_I_out=procInd1(ismember(procInd1,ind_I_outbound));
+occ_I_out=normpdf(xs'*ones(1,length(ind_I_outbound)),ones(length(xs),1)*xtrain(ind_I_outbound),sxker)*ones(length(ind_I_outbound),length(ms));
 Xnum_I_out=normpdf(xs'*ones(1,length(xtrain(procInd1_I_out))),ones(length(xs),1)*xtrain(procInd1_I_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_I_out=sum(Xnum_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_I_out=Lint_I_out./sum(Lint_I_out);
 
 
-procInd1_I_in=procInd1(ismember(procInd1,ind_I_in));
-occ_I_in=normpdf(xs'*ones(1,length(ind_I_in)),ones(length(xs),1)*xtrain(ind_I_in),sxker)*ones(length(ind_I_in),length(ms));
+procInd1_I_in=procInd1(ismember(procInd1,ind_I_inbound));
+occ_I_in=normpdf(xs'*ones(1,length(ind_I_inbound)),ones(length(xs),1)*xtrain(ind_I_inbound),sxker)*ones(length(ind_I_inbound),length(ms));
 Xnum_I_in=normpdf(xs'*ones(1,length(xtrain(procInd1_I_in))),ones(length(xs),1)*xtrain(procInd1_I_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_I_in=sum(Xnum_I_in,2)./occ_I_in(:,1)./dt; %integral
@@ -652,235 +651,235 @@ Lint_I_in=Lint_I_in./sum(Lint_I_in);
 
 
 %% encode per tetrode, conditioning on I=1 and I=0
-procInd1_t1_Ia_out=procInd1_t1(ismember(procInd1_t1,ind_I_out));
-procInd1_t1_I_out=find(ismember(procInd1_t1,ind_I_out));
+procInd1_t1_Ia_out=procInd1_t1(ismember(procInd1_t1,ind_I_outbound));
+procInd1_t1_I_out=find(ismember(procInd1_t1,ind_I_outbound));
 Xnum_t1_I_out=normpdf(xs'*ones(1,length(procInd1_t1_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t1_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t1_I_out=sum(Xnum_t1_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t1_I_out=Lint_t1_I_out./sum(Lint_t1_I_out);
-procInd1_t1_Ia_in=procInd1_t1(ismember(procInd1_t1,ind_I_in));
-procInd1_t1_I_in=find(ismember(procInd1_t1,ind_I_in));
+procInd1_t1_Ia_in=procInd1_t1(ismember(procInd1_t1,ind_I_inbound));
+procInd1_t1_I_in=find(ismember(procInd1_t1,ind_I_inbound));
 Xnum_t1_I_in=normpdf(xs'*ones(1,length(procInd1_t1_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t1_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t1_I_in=sum(Xnum_t1_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t1_I_in=Lint_t1_I_in./sum(Lint_t1_I_in);
 
-procInd1_t2_Ia_out=procInd1_t2(ismember(procInd1_t2,ind_I_out));
-procInd1_t2_I_out=find(ismember(procInd1_t2,ind_I_out));
+procInd1_t2_Ia_out=procInd1_t2(ismember(procInd1_t2,ind_I_outbound));
+procInd1_t2_I_out=find(ismember(procInd1_t2,ind_I_outbound));
 Xnum_t2_I_out=normpdf(xs'*ones(1,length(procInd1_t2_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t2_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t2_I_out=sum(Xnum_t2_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t2_I_out=Lint_t2_I_out./sum(Lint_t2_I_out);
-procInd1_t2_Ia_in=procInd1_t2(ismember(procInd1_t2,ind_I_in));
-procInd1_t2_I_in=find(ismember(procInd1_t2,ind_I_in));
+procInd1_t2_Ia_in=procInd1_t2(ismember(procInd1_t2,ind_I_inbound));
+procInd1_t2_I_in=find(ismember(procInd1_t2,ind_I_inbound));
 Xnum_t2_I_in=normpdf(xs'*ones(1,length(procInd1_t2_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t2_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t2_I_in=sum(Xnum_t2_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t2_I_in=Lint_t2_I_in./sum(Lint_t2_I_in);
 
-procInd1_t4_Ia_out=procInd1_t4(ismember(procInd1_t4,ind_I_out));
-procInd1_t4_I_out=find(ismember(procInd1_t4,ind_I_out));
+procInd1_t4_Ia_out=procInd1_t4(ismember(procInd1_t4,ind_I_outbound));
+procInd1_t4_I_out=find(ismember(procInd1_t4,ind_I_outbound));
 Xnum_t4_I_out=normpdf(xs'*ones(1,length(procInd1_t4_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t4_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t4_I_out=sum(Xnum_t4_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t4_I_out=Lint_t4_I_out./sum(Lint_t4_I_out);
-procInd1_t4_Ia_in=procInd1_t4(ismember(procInd1_t4,ind_I_in));
-procInd1_t4_I_in=find(ismember(procInd1_t4,ind_I_in));
+procInd1_t4_Ia_in=procInd1_t4(ismember(procInd1_t4,ind_I_inbound));
+procInd1_t4_I_in=find(ismember(procInd1_t4,ind_I_inbound));
 Xnum_t4_I_in=normpdf(xs'*ones(1,length(procInd1_t4_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t4_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t4_I_in=sum(Xnum_t4_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t4_I_in=Lint_t4_I_in./sum(Lint_t4_I_in);
 
-procInd1_t5_Ia_out=procInd1_t5(ismember(procInd1_t5,ind_I_out));
-procInd1_t5_I_out=find(ismember(procInd1_t5,ind_I_out));
+procInd1_t5_Ia_out=procInd1_t5(ismember(procInd1_t5,ind_I_outbound));
+procInd1_t5_I_out=find(ismember(procInd1_t5,ind_I_outbound));
 Xnum_t5_I_out=normpdf(xs'*ones(1,length(procInd1_t5_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t5_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t5_I_out=sum(Xnum_t5_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t5_I_out=Lint_t5_I_out./sum(Lint_t5_I_out);
-procInd1_t5_Ia_in=procInd1_t5(ismember(procInd1_t5,ind_I_in));
-procInd1_t5_I_in=find(ismember(procInd1_t5,ind_I_in));
+procInd1_t5_Ia_in=procInd1_t5(ismember(procInd1_t5,ind_I_inbound));
+procInd1_t5_I_in=find(ismember(procInd1_t5,ind_I_inbound));
 Xnum_t5_I_in=normpdf(xs'*ones(1,length(procInd1_t5_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t5_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t5_I_in=sum(Xnum_t5_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t5_I_in=Lint_t5_I_in./sum(Lint_t5_I_in);
 
-procInd1_t7_Ia_out=procInd1_t7(ismember(procInd1_t7,ind_I_out));
-procInd1_t7_I_out=find(ismember(procInd1_t7,ind_I_out));
+procInd1_t7_Ia_out=procInd1_t7(ismember(procInd1_t7,ind_I_outbound));
+procInd1_t7_I_out=find(ismember(procInd1_t7,ind_I_outbound));
 Xnum_t7_I_out=normpdf(xs'*ones(1,length(procInd1_t7_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t7_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t7_I_out=sum(Xnum_t7_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t7_I_out=Lint_t7_I_out./sum(Lint_t7_I_out);
-procInd1_t7_Ia_in=procInd1_t7(ismember(procInd1_t7,ind_I_in));
-procInd1_t7_I_in=find(ismember(procInd1_t7,ind_I_in));
+procInd1_t7_Ia_in=procInd1_t7(ismember(procInd1_t7,ind_I_inbound));
+procInd1_t7_I_in=find(ismember(procInd1_t7,ind_I_inbound));
 Xnum_t7_I_in=normpdf(xs'*ones(1,length(procInd1_t7_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t7_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t7_I_in=sum(Xnum_t7_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t7_I_in=Lint_t7_I_in./sum(Lint_t7_I_in);
 
-procInd1_t10_Ia_out=procInd1_t10(ismember(procInd1_t10,ind_I_out));
-procInd1_t10_I_out=find(ismember(procInd1_t10,ind_I_out));
+procInd1_t10_Ia_out=procInd1_t10(ismember(procInd1_t10,ind_I_outbound));
+procInd1_t10_I_out=find(ismember(procInd1_t10,ind_I_outbound));
 Xnum_t10_I_out=normpdf(xs'*ones(1,length(procInd1_t10_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t10_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t10_I_out=sum(Xnum_t10_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t10_I_out=Lint_t10_I_out./sum(Lint_t10_I_out);
-procInd1_t10_Ia_in=procInd1_t10(ismember(procInd1_t10,ind_I_in));
-procInd1_t10_I_in=find(ismember(procInd1_t10,ind_I_in));
+procInd1_t10_Ia_in=procInd1_t10(ismember(procInd1_t10,ind_I_inbound));
+procInd1_t10_I_in=find(ismember(procInd1_t10,ind_I_inbound));
 Xnum_t10_I_in=normpdf(xs'*ones(1,length(procInd1_t10_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t10_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t10_I_in=sum(Xnum_t10_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t10_I_in=Lint_t10_I_in./sum(Lint_t10_I_in);
 
-procInd1_t11_Ia_out=procInd1_t11(ismember(procInd1_t11,ind_I_out));
-procInd1_t11_I_out=find(ismember(procInd1_t11,ind_I_out));
+procInd1_t11_Ia_out=procInd1_t11(ismember(procInd1_t11,ind_I_outbound));
+procInd1_t11_I_out=find(ismember(procInd1_t11,ind_I_outbound));
 Xnum_t11_I_out=normpdf(xs'*ones(1,length(procInd1_t11_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t11_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t11_I_out=sum(Xnum_t11_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t11_I_out=Lint_t11_I_out./sum(Lint_t11_I_out);
-procInd1_t11_Ia_in=procInd1_t11(ismember(procInd1_t11,ind_I_in));
-procInd1_t11_I_in=find(ismember(procInd1_t11,ind_I_in));
+procInd1_t11_Ia_in=procInd1_t11(ismember(procInd1_t11,ind_I_inbound));
+procInd1_t11_I_in=find(ismember(procInd1_t11,ind_I_inbound));
 Xnum_t11_I_in=normpdf(xs'*ones(1,length(procInd1_t11_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t11_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t11_I_in=sum(Xnum_t11_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t11_I_in=Lint_t11_I_in./sum(Lint_t11_I_in);
 
-procInd1_t12_Ia_out=procInd1_t12(ismember(procInd1_t12,ind_I_out));
-procInd1_t12_I_out=find(ismember(procInd1_t12,ind_I_out));
+procInd1_t12_Ia_out=procInd1_t12(ismember(procInd1_t12,ind_I_outbound));
+procInd1_t12_I_out=find(ismember(procInd1_t12,ind_I_outbound));
 Xnum_t12_I_out=normpdf(xs'*ones(1,length(procInd1_t12_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t12_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t12_I_out=sum(Xnum_t12_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t12_I_out=Lint_t12_I_out./sum(Lint_t12_I_out);
-procInd1_t12_Ia_in=procInd1_t12(ismember(procInd1_t12,ind_I_in));
-procInd1_t12_I_in=find(ismember(procInd1_t12,ind_I_in));
+procInd1_t12_Ia_in=procInd1_t12(ismember(procInd1_t12,ind_I_inbound));
+procInd1_t12_I_in=find(ismember(procInd1_t12,ind_I_inbound));
 Xnum_t12_I_in=normpdf(xs'*ones(1,length(procInd1_t12_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t12_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t12_I_in=sum(Xnum_t12_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t12_I_in=Lint_t12_I_in./sum(Lint_t12_I_in);
 
-procInd1_t13_Ia_out=procInd1_t13(ismember(procInd1_t13,ind_I_out));
-procInd1_t13_I_out=find(ismember(procInd1_t13,ind_I_out));
+procInd1_t13_Ia_out=procInd1_t13(ismember(procInd1_t13,ind_I_outbound));
+procInd1_t13_I_out=find(ismember(procInd1_t13,ind_I_outbound));
 Xnum_t13_I_out=normpdf(xs'*ones(1,length(procInd1_t13_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t13_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t13_I_out=sum(Xnum_t13_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t13_I_out=Lint_t13_I_out./sum(Lint_t13_I_out);
-procInd1_t13_Ia_in=procInd1_t13(ismember(procInd1_t13,ind_I_in));
-procInd1_t13_I_in=find(ismember(procInd1_t13,ind_I_in));
+procInd1_t13_Ia_in=procInd1_t13(ismember(procInd1_t13,ind_I_inbound));
+procInd1_t13_I_in=find(ismember(procInd1_t13,ind_I_inbound));
 Xnum_t13_I_in=normpdf(xs'*ones(1,length(procInd1_t13_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t13_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t13_I_in=sum(Xnum_t13_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t13_I_in=Lint_t13_I_in./sum(Lint_t13_I_in);
 
-procInd1_t14_Ia_out=procInd1_t14(ismember(procInd1_t14,ind_I_out));
-procInd1_t14_I_out=find(ismember(procInd1_t14,ind_I_out));
+procInd1_t14_Ia_out=procInd1_t14(ismember(procInd1_t14,ind_I_outbound));
+procInd1_t14_I_out=find(ismember(procInd1_t14,ind_I_outbound));
 Xnum_t14_I_out=normpdf(xs'*ones(1,length(procInd1_t14_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t14_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t14_I_out=sum(Xnum_t14_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t14_I_out=Lint_t14_I_out./sum(Lint_t14_I_out);
-procInd1_t14_Ia_in=procInd1_t14(ismember(procInd1_t14,ind_I_in));
-procInd1_t14_I_in=find(ismember(procInd1_t14,ind_I_in));
+procInd1_t14_Ia_in=procInd1_t14(ismember(procInd1_t14,ind_I_inbound));
+procInd1_t14_I_in=find(ismember(procInd1_t14,ind_I_inbound));
 Xnum_t14_I_in=normpdf(xs'*ones(1,length(procInd1_t14_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t14_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t14_I_in=sum(Xnum_t14_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t14_I_in=Lint_t14_I_in./sum(Lint_t14_I_in);
 
-procInd1_t17_Ia_out=procInd1_t17(ismember(procInd1_t17,ind_I_out));
-procInd1_t17_I_out=find(ismember(procInd1_t17,ind_I_out));
+procInd1_t17_Ia_out=procInd1_t17(ismember(procInd1_t17,ind_I_outbound));
+procInd1_t17_I_out=find(ismember(procInd1_t17,ind_I_outbound));
 Xnum_t17_I_out=normpdf(xs'*ones(1,length(procInd1_t17_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t17_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t17_I_out=sum(Xnum_t17_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t17_I_out=Lint_t17_I_out./sum(Lint_t17_I_out);
-procInd1_t17_Ia_in=procInd1_t17(ismember(procInd1_t17,ind_I_in));
-procInd1_t17_I_in=find(ismember(procInd1_t17,ind_I_in));
+procInd1_t17_Ia_in=procInd1_t17(ismember(procInd1_t17,ind_I_inbound));
+procInd1_t17_I_in=find(ismember(procInd1_t17,ind_I_inbound));
 Xnum_t17_I_in=normpdf(xs'*ones(1,length(procInd1_t17_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t17_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t17_I_in=sum(Xnum_t17_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t17_I_in=Lint_t17_I_in./sum(Lint_t17_I_in);
 
-procInd1_t18_Ia_out=procInd1_t18(ismember(procInd1_t18,ind_I_out));
-procInd1_t18_I_out=find(ismember(procInd1_t18,ind_I_out));
+procInd1_t18_Ia_out=procInd1_t18(ismember(procInd1_t18,ind_I_outbound));
+procInd1_t18_I_out=find(ismember(procInd1_t18,ind_I_outbound));
 Xnum_t18_I_out=normpdf(xs'*ones(1,length(procInd1_t18_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t18_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t18_I_out=sum(Xnum_t18_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t18_I_out=Lint_t18_I_out./sum(Lint_t18_I_out);
-procInd1_t18_Ia_in=procInd1_t18(ismember(procInd1_t18,ind_I_in));
-procInd1_t18_I_in=find(ismember(procInd1_t18,ind_I_in));
+procInd1_t18_Ia_in=procInd1_t18(ismember(procInd1_t18,ind_I_inbound));
+procInd1_t18_I_in=find(ismember(procInd1_t18,ind_I_inbound));
 Xnum_t18_I_in=normpdf(xs'*ones(1,length(procInd1_t18_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t18_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t18_I_in=sum(Xnum_t18_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t18_I_in=Lint_t18_I_in./sum(Lint_t18_I_in);
 
-procInd1_t19_Ia_out=procInd1_t19(ismember(procInd1_t19,ind_I_out));
-procInd1_t19_I_out=find(ismember(procInd1_t19,ind_I_out));
+procInd1_t19_Ia_out=procInd1_t19(ismember(procInd1_t19,ind_I_outbound));
+procInd1_t19_I_out=find(ismember(procInd1_t19,ind_I_outbound));
 Xnum_t19_I_out=normpdf(xs'*ones(1,length(procInd1_t19_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t19_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t19_I_out=sum(Xnum_t19_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t19_I_out=Lint_t19_I_out./sum(Lint_t19_I_out);
-procInd1_t19_Ia_in=procInd1_t19(ismember(procInd1_t19,ind_I_out));
-procInd1_t19_I_in=find(ismember(procInd1_t19,ind_I_out));
+procInd1_t19_Ia_in=procInd1_t19(ismember(procInd1_t19,ind_I_outbound));
+procInd1_t19_I_in=find(ismember(procInd1_t19,ind_I_outbound));
 Xnum_t19_I_in=normpdf(xs'*ones(1,length(procInd1_t19_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t19_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t19_I_in=sum(Xnum_t19_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t19_I_in=Lint_t19_I_in./sum(Lint_t19_I_in);
 
-procInd1_t20_Ia_out=procInd1_t20(ismember(procInd1_t20,ind_I_out));
-procInd1_t20_I_out=find(ismember(procInd1_t20,ind_I_out));
+procInd1_t20_Ia_out=procInd1_t20(ismember(procInd1_t20,ind_I_outbound));
+procInd1_t20_I_out=find(ismember(procInd1_t20,ind_I_outbound));
 Xnum_t20_I_out=normpdf(xs'*ones(1,length(procInd1_t20_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t20_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t20_I_out=sum(Xnum_t20_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t20_I_out=Lint_t20_I_out./sum(Lint_t20_I_out);
-procInd1_t20_Ia_in=procInd1_t20(ismember(procInd1_t20,ind_I_in));
-procInd1_t20_I_in=find(ismember(procInd1_t20,ind_I_in));
+procInd1_t20_Ia_in=procInd1_t20(ismember(procInd1_t20,ind_I_inbound));
+procInd1_t20_I_in=find(ismember(procInd1_t20,ind_I_inbound));
 Xnum_t20_I_in=normpdf(xs'*ones(1,length(procInd1_t20_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t20_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t20_I_in=sum(Xnum_t20_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t20_I_in=Lint_t20_I_in./sum(Lint_t20_I_in);
 
-procInd1_t22_Ia_out=procInd1_t22(ismember(procInd1_t22,ind_I_out));
-procInd1_t22_I_out=find(ismember(procInd1_t22,ind_I_out));
+procInd1_t22_Ia_out=procInd1_t22(ismember(procInd1_t22,ind_I_outbound));
+procInd1_t22_I_out=find(ismember(procInd1_t22,ind_I_outbound));
 Xnum_t22_I_out=normpdf(xs'*ones(1,length(procInd1_t22_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t22_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t22_I_out=sum(Xnum_t22_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t22_I_out=Lint_t22_I_out./sum(Lint_t22_I_out);
-procInd1_t22_Ia_in=procInd1_t22(ismember(procInd1_t22,ind_I_out));
-procInd1_t22_I_in=find(ismember(procInd1_t22,ind_I_out));
+procInd1_t22_Ia_in=procInd1_t22(ismember(procInd1_t22,ind_I_outbound));
+procInd1_t22_I_in=find(ismember(procInd1_t22,ind_I_outbound));
 Xnum_t22_I_in=normpdf(xs'*ones(1,length(procInd1_t22_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t22_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t22_I_in=sum(Xnum_t22_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t22_I_in=Lint_t22_I_in./sum(Lint_t22_I_in);
 
-procInd1_t23_Ia_out=procInd1_t23(ismember(procInd1_t23,ind_I_out));
-procInd1_t23_I_out=find(ismember(procInd1_t23,ind_I_out));
+procInd1_t23_Ia_out=procInd1_t23(ismember(procInd1_t23,ind_I_outbound));
+procInd1_t23_I_out=find(ismember(procInd1_t23,ind_I_outbound));
 Xnum_t23_I_out=normpdf(xs'*ones(1,length(procInd1_t23_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t23_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t23_I_out=sum(Xnum_t23_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t23_I_out=Lint_t23_I_out./sum(Lint_t23_I_out);
-procInd1_t23_Ia_in=procInd1_t23(ismember(procInd1_t23,ind_I_in));
-procInd1_t23_I_in=find(ismember(procInd1_t23,ind_I_in));
+procInd1_t23_Ia_in=procInd1_t23(ismember(procInd1_t23,ind_I_inbound));
+procInd1_t23_I_in=find(ismember(procInd1_t23,ind_I_inbound));
 Xnum_t23_I_in=normpdf(xs'*ones(1,length(procInd1_t23_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t23_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t23_I_in=sum(Xnum_t23_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t23_I_in=Lint_t23_I_in./sum(Lint_t23_I_in);
 
-procInd1_t27_Ia_out=procInd1_t27(ismember(procInd1_t27,ind_I_out));
-procInd1_t27_I_out=find(ismember(procInd1_t27,ind_I_out));
+procInd1_t27_Ia_out=procInd1_t27(ismember(procInd1_t27,ind_I_outbound));
+procInd1_t27_I_out=find(ismember(procInd1_t27,ind_I_outbound));
 Xnum_t27_I_out=normpdf(xs'*ones(1,length(procInd1_t27_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t27_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t27_I_out=sum(Xnum_t27_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t27_I_out=Lint_t27_I_out./sum(Lint_t27_I_out);
-procInd1_t27_Ia_in=procInd1_t27(ismember(procInd1_t27,ind_I_in));
-procInd1_t27_I_in=find(ismember(procInd1_t27,ind_I_in));
+procInd1_t27_Ia_in=procInd1_t27(ismember(procInd1_t27,ind_I_inbound));
+procInd1_t27_I_in=find(ismember(procInd1_t27,ind_I_inbound));
 Xnum_t27_I_in=normpdf(xs'*ones(1,length(procInd1_t27_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t27_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t27_I_in=sum(Xnum_t27_I_in,2)./occ_I_in(:,1)./dt; %integral
 Lint_t27_I_in=Lint_t27_I_in./sum(Lint_t27_I_in);
 
-procInd1_t29_Ia_out=procInd1_t29(ismember(procInd1_t29,ind_I_out));
-procInd1_t29_I_out=find(ismember(procInd1_t29,ind_I_out));
+procInd1_t29_Ia_out=procInd1_t29(ismember(procInd1_t29,ind_I_outbound));
+procInd1_t29_I_out=find(ismember(procInd1_t29,ind_I_outbound));
 Xnum_t29_I_out=normpdf(xs'*ones(1,length(procInd1_t29_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t29_Ia_out),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t29_I_out=sum(Xnum_t29_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t29_I_out=Lint_t29_I_out./sum(Lint_t29_I_out);
-procInd1_t29_Ia_in=procInd1_t29(ismember(procInd1_t29,ind_I_in));
-procInd1_t29_I_in=find(ismember(procInd1_t29,ind_I_in));
+procInd1_t29_Ia_in=procInd1_t29(ismember(procInd1_t29,ind_I_inbound));
+procInd1_t29_I_in=find(ismember(procInd1_t29,ind_I_inbound));
 Xnum_t29_I_in=normpdf(xs'*ones(1,length(procInd1_t29_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t29_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t29_I_in=sum(Xnum_t29_I_in,2)./occ_I_in(:,1)./dt; %integral
@@ -899,7 +898,7 @@ clear rloc vel;
 for pic=1:length(rippleI)
     rIndV=pic; %5, 12
     rloc_Ind=find(position_time_stamps*1000>position_time_stamps_binned(ripple_index(rippleI(rIndV),1))&position_time_stamps*1000<position_time_stamps_binned(ripple_index(rippleI(rIndV),2)));
-    
+
     rloc(pic)=vecLF(rloc_Ind(1),2);
     vel(pic)=velocity(rloc_Ind(1),1);
 end
@@ -912,48 +911,48 @@ ripplesconsN=traj_Ind(rippleI(velocity_threshold_index));
 clear sumStat;
 for pic=1:length(velocity_threshold_index)
     rIndV=velocity_threshold_index(pic); %5, 12
-    
+
     spike_tim=ripple_index(rippleI(rIndV),1):ripple_index(rippleI(rIndV),2); %from 1 to 90000~
     numSteps=length(spike_tim);
     xi=round(time/10);
-    
+
     %%
     dt=1/33.4;spike_r=zeros(18,numSteps);
-    n=length(stateV);
+    stateV_length=length(stateV);
     numSteps=size(spike_r,2);
     %P(x0|I);
-    Px_I_out=exp(-stateV.^2./(2*(2*xdel)^2));Px_I_out=Px_I_out./sum(Px_I_out);
-    Px_I_in=max(Px_I_out)*ones(1,n)-Px_I_out; Px_I_in=Px_I_in./sum(Px_I_in);
+    Px_I_out=exp(-stateV.^2./(2*(2*stateV_delta)^2));Px_I_out=Px_I_out./sum(Px_I_out);
+    Px_I_in=max(Px_I_out)*ones(1,stateV_length)-Px_I_out; Px_I_in=Px_I_in./sum(Px_I_in);
     Px_I0=Px_I_out;Px_I1=Px_I_in;Px_I2=Px_I_in;Px_I3=Px_I_out;
     %P(x0)=P(x0|I)P(I);
     postx_I0=0.25*Px_I_out';postx_I1=0.25*Px_I_in';postx_I2=0.25*Px_I_in';postx_I3=0.25*Px_I_out';
     pI0_vec=zeros(numSteps,1);pI1_vec=zeros(numSteps,1);pI2_vec=zeros(numSteps,1);pI3_vec=zeros(numSteps,1);
-    postxM_r_I0=zeros(n,numSteps);postxM_r_I1=zeros(n,numSteps);postxM_r_I2=zeros(n,numSteps);postxM_r_I3=zeros(n,numSteps);
+    postxM_r_I0=zeros(stateV_length,numSteps);postxM_r_I1=zeros(stateV_length,numSteps);postxM_r_I2=zeros(stateV_length,numSteps);postxM_r_I3=zeros(stateV_length,numSteps);
     %state transition
-    stateM_I_out=stateM_I1_normalized_gaussian;stateM_I_in=stateM_I0_normalized_gaussian;
-    stateM_I0=stateM_I_out;stateM_I1=stateM_I_in;stateM_I2=stateM_I_in;stateM_I3=stateM_I_out;
+    stateM_I_outbound=stateM_I1_normalized_gaussian;stateM_I_inbound=stateM_I0_normalized_gaussian;
+    stateM_I0=stateM_I_outbound;stateM_I1=stateM_I_inbound;stateM_I2=stateM_I_inbound;stateM_I3=stateM_I_outbound;
     for t=1:numSteps
         tt=spike_tim(t);
         aa=find(xi==position_time_stamps_binned(tt));
-        
+
         onestep_I0=stateM_I0*postx_I0;
         onestep_I1=stateM_I1*postx_I1;
         onestep_I2=stateM_I2*postx_I2;
         onestep_I3=stateM_I3*postx_I3;
-        
-        L_I0=ones(n,1);L_I1=ones(n,1);L_I2=ones(n,1);L_I3=ones(n,1);
-        
+
+        L_I0=ones(stateV_length,1);L_I1=ones(stateV_length,1);L_I2=ones(stateV_length,1);L_I3=ones(stateV_length,1);
+
         if isempty(aa)==1 %if no spike occurs at time t
             L_I0=exp(-Lint_I_out.*dt);L_I1=exp(-Lint_I_out.*dt);
             L_I2=exp(-Lint_I_in.*dt);L_I3=exp(-Lint_I_in.*dt);
-            
+
         elseif isempty(aa)==0 %if spikes
-            
-            l_out=zeros(n,length(aa));
+
+            l_out=zeros(stateV_length,length(aa));
             for j=1:length(aa)
                 jj=aa(j);
                 tetVec=tet_ind(jj,:);
-                
+
                 if tetVec(1)==1 %tet1
                     spike_r(1,t)=1;
                     i=tet_sum(jj,1);
@@ -1101,12 +1100,12 @@ for pic=1:length(velocity_threshold_index)
                 end
             end
             L_out=prod(l_out,2);L_out=L_out./sum(L_out);
-            
-            l_in=zeros(n,length(aa));
+
+            l_in=zeros(stateV_length,length(aa));
             for j=1:length(aa)
                 jj=aa(j);
                 tetVec=tet_ind(jj,:);
-                
+
                 if tetVec(1)==1 %tet1
                     spike_r(1,t)=1;
                     i=tet_sum(jj,1);
@@ -1254,21 +1253,21 @@ for pic=1:length(velocity_threshold_index)
                 end
             end
             L_in=prod(l_in,2);L_in=L_in./sum(L_in);
-            
+
             L_I0=L_out;L_I1=L_out;L_I2=L_in;L_I3=L_in;
         end
-        
+
         totnorm=sum(onestep_I0.*L_I0)+sum(onestep_I1.*L_I1)+sum(onestep_I2.*L_I2)+sum(onestep_I3.*L_I3);
         postx_I0=onestep_I0.*L_I0./totnorm;
         postx_I1=onestep_I1.*L_I1./totnorm;
         postx_I2=onestep_I2.*L_I2./totnorm;
         postx_I3=onestep_I3.*L_I3./totnorm;
-        
+
         pI0_vec(t)=sum(postx_I0);
         pI1_vec(t)=sum(postx_I1);
         pI2_vec(t)=sum(postx_I2);
         pI3_vec(t)=sum(postx_I3);
     end
-    
+
     sumStat{pic}=[pI0_vec pI1_vec pI2_vec pI3_vec];
 end
