@@ -178,7 +178,7 @@ function [rippleI, ...
     Lint_t23_I_in, ...
     Lint_t27_I_in, ...
     Lint_t29_I_in ...
-    ] = encode_state(linpos, pos, trajencode, ripplescons, spikes, tetrode_index, neuron_index)
+    ] = encode_state(animal, day, linpos, pos, trajencode, ripplescons, spikes, tetrode_index, neuron_index)
 %% use Loren's linearization
 time=linpos.statematrix.time;
 linear_distance=linpos.statematrix.lindist;
@@ -206,11 +206,6 @@ for stateV_ind=1:stateV_length
     end
 end
 gaussian=@(sigma, x, y) exp(-(x.^2+y.^2)/2/sigma^2); %gaussian
-[dx,dy]=meshgrid([-1:1]);
-sigma=0.5;
-normalizing_weight=gaussian(sigma,dx,dy)/sum(sum(gaussian(sigma,dx,dy))); %normalizing weights
-stateM_gaussian_smoothed=conv2(stateM,normalizing_weight,'same'); %gaussian smoothed
-stateM_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussian_smoothed,1)); %normalized to confine probability to 1
 
 %%
 ind_Indicator_outbound=find(trajencode.trajstate==1 | trajencode.trajstate==3);
@@ -251,7 +246,7 @@ stateM_I1_normalized_gaussian=stateM_gaussian_smoothed*diag(1./sum(stateM_gaussi
 
 stateM_Indicator_inbound=zeros(stateV_length);
 vecLF_seg=vecLF(ind_Indicator_inbound,:);
-[sn,state_bin]=histc(vecLF_seg(:,2),stateV);
+[~,  state_bin]=histc(vecLF_seg(:,2),stateV);
 state_disM=[state_bin(1:end-1) state_bin(2:end)];
 stateM_seg=zeros(stateV_length);
 for stateV_ind=1:stateV_length
@@ -314,36 +309,20 @@ end
 rippleI=find(sumR>0);length(rippleI)
 
 %% prepare kernel density model
-linear_position_time=linpos.statematrix.time;
+linear_position_time = linpos.statematrix.time;
 
-poslin=vecLF(:,2);
-xs=min(poslin):stateV_delta:max(poslin);
-dt=linear_position_time(2)-linear_position_time(1);
-xtrain=poslin';
+poslin = vecLF(:,2);
+xs = min(poslin):stateV_delta:max(poslin);
+dt = linear_position_time(2)-linear_position_time(1);
+xtrain = poslin';
 
-sxker=stateV_delta; mdel=20; smker=mdel; T=size(linear_position_time,1);
+sxker = stateV_delta;
+mdel = 20;
+smker = mdel;
+num_time_points = size(linear_position_time, 1);
 
 %% encode the kernel density model per tetrode
-load('bond_data/bond04-01_params.mat');
-%ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
-ind_t1=find(filedata.params(:,1)/10000>=linear_position_time(1)&filedata.params(:,1)/10000<=linear_position_time(end));
-time_t1=filedata.params(ind_t1,1);
-mark0_t1=[filedata.params(ind_t1,2) filedata.params(ind_t1,3) filedata.params(ind_t1,4) filedata.params(ind_t1,5)];
-time2_t1=time_t1/10000;
-spikeT0_t1=time2_t1;
-[procInd0_t1,procInd1_t1]=histc(spikeT0_t1,linear_position_time);
-procInd_t1=find(procInd0_t1);
-spikeT_t1=linear_position_time(procInd_t1);
-spike_t1=procInd0_t1';
-[~,rawInd0_t1]=histc(spikeT0_t1,time2_t1);
-markAll_t1(:,1)=procInd1_t1;markAll_t1(:,2:5)=mark0_t1(rawInd0_t1(rawInd0_t1~=0),:);
-ms=min(min(markAll_t1(:,2:5))):mdel:max(max(markAll_t1(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
-%occ: columns are identical; occupancy based on position; denominator
-Xnum_t1=normpdf(xs'*ones(1,length(spikeT0_t1)),ones(length(xs),1)*xtrain(procInd1_t1),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t1=sum(Xnum_t1,2)./occ(:,1)./dt; %integral
-Lint_t1=Lint_t1./sum(Lint_t1);
+[markAll_t1, time_t1, mark0_t1, procInd1_t1] = kernel_density_model(animal, day, 1, linear_position_time, mdel, sxker, xs, xtrain, num_time_points, dt);
 
 load('bond_data/bond04-02_params.mat');
 %ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
@@ -359,7 +338,7 @@ spike_t2=procInd0_t2';
 [~,rawInd0_t2]=histc(spikeT0_t2,time2_t2);
 markAll_t2(:,1)=procInd1_t2;markAll_t2(:,2:5)=mark0_t2(rawInd0_t2(rawInd0_t2~=0),:);
 ms=min(min(markAll_t2(:,2:5))):mdel:max(max(markAll_t2(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t2=normpdf(xs'*ones(1,length(spikeT0_t2)),ones(length(xs),1)*xtrain(procInd1_t2),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -380,7 +359,7 @@ spike_t4=procInd0_t4';
 [~,rawInd0_t4]=histc(spikeT0_t4,time2_t4);
 markAll_t4(:,1)=procInd1_t4;markAll_t4(:,2:5)=mark0_t4(rawInd0_t4(rawInd0_t4~=0),:);
 ms=min(min(markAll_t4(:,2:5))):mdel:max(max(markAll_t4(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t4=normpdf(xs'*ones(1,length(spikeT0_t4)),ones(length(xs),1)*xtrain(procInd1_t4),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -401,7 +380,7 @@ spike_t5=procInd0_t5';
 [~,rawInd0_t5]=histc(spikeT0_t5,time2_t5);
 markAll_t5(:,1)=procInd1_t5;markAll_t5(:,2:5)=mark0_t5(rawInd0_t5(rawInd0_t5~=0),:);
 ms=min(min(markAll_t5(:,2:5))):mdel:max(max(markAll_t5(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t5=normpdf(xs'*ones(1,length(spikeT0_t5)),ones(length(xs),1)*xtrain(procInd1_t5),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -422,7 +401,7 @@ spike_t7=procInd0_t7';
 [~,rawInd0_t7]=histc(spikeT0_t7,time2_t7);
 markAll_t7(:,1)=procInd1_t7;markAll_t7(:,2:5)=mark0_t7(rawInd0_t7(rawInd0_t7~=0),:);
 ms=min(min(markAll_t7(:,2:5))):mdel:max(max(markAll_t7(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t7=normpdf(xs'*ones(1,length(spikeT0_t7)),ones(length(xs),1)*xtrain(procInd1_t7),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -443,7 +422,7 @@ spike_t10=procInd0_t10';
 [~,rawInd0_t10]=histc(spikeT0_t10,time2_t10);
 markAll_t10(:,1)=procInd1_t10;markAll_t10(:,2:5)=mark0_t10(rawInd0_t10(rawInd0_t10~=0),:);
 ms=min(min(markAll_t10(:,2:5))):mdel:max(max(markAll_t10(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t10=normpdf(xs'*ones(1,length(spikeT0_t10)),ones(length(xs),1)*xtrain(procInd1_t10),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -464,7 +443,7 @@ spike_t11=procInd0_t11';
 [~,rawInd0_t11]=histc(spikeT0_t11,time2_t11);
 markAll_t11(:,1)=procInd1_t11;markAll_t11(:,2:5)=mark0_t11(rawInd0_t11(rawInd0_t11~=0),:);
 ms=min(min(markAll_t11(:,2:5))):mdel:max(max(markAll_t11(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t11=normpdf(xs'*ones(1,length(spikeT0_t11)),ones(length(xs),1)*xtrain(procInd1_t11),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -485,7 +464,7 @@ spike_t12=procInd0_t12';
 [~,rawInd0_t12]=histc(spikeT0_t12,time2_t12);
 markAll_t12(:,1)=procInd1_t12;markAll_t12(:,2:5)=mark0_t12(rawInd0_t12(rawInd0_t12~=0),:);
 ms=min(min(markAll_t12(:,2:5))):mdel:max(max(markAll_t12(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t12=normpdf(xs'*ones(1,length(spikeT0_t12)),ones(length(xs),1)*xtrain(procInd1_t12),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -506,7 +485,7 @@ spike_t13=procInd0_t13';
 [~,rawInd0_t13]=histc(spikeT0_t13,time2_t13);
 markAll_t13(:,1)=procInd1_t13;markAll_t13(:,2:5)=mark0_t13(rawInd0_t13(rawInd0_t13~=0),:);
 ms=min(min(markAll_t13(:,2:5))):mdel:max(max(markAll_t13(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t13=normpdf(xs'*ones(1,length(spikeT0_t13)),ones(length(xs),1)*xtrain(procInd1_t13),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -527,7 +506,7 @@ spike_t14=procInd0_t14';
 [~,rawInd0_t14]=histc(spikeT0_t14,time2_t14);
 markAll_t14(:,1)=procInd1_t14;markAll_t14(:,2:5)=mark0_t14(rawInd0_t14(rawInd0_t14~=0),:);
 ms=min(min(markAll_t14(:,2:5))):mdel:max(max(markAll_t14(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t14=normpdf(xs'*ones(1,length(spikeT0_t14)),ones(length(xs),1)*xtrain(procInd1_t14),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -548,7 +527,7 @@ spike_t17=procInd0_t17';
 [~,rawInd0_t17]=histc(spikeT0_t17,time2_t17);
 markAll_t17(:,1)=procInd1_t17;markAll_t17(:,2:5)=mark0_t17(rawInd0_t17(rawInd0_t17~=0),:);
 ms=min(min(markAll_t17(:,2:5))):mdel:max(max(markAll_t17(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t17=normpdf(xs'*ones(1,length(spikeT0_t17)),ones(length(xs),1)*xtrain(procInd1_t17),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -569,7 +548,7 @@ spike_t18=procInd0_t18';
 [~,rawInd0_t18]=histc(spikeT0_t18,time2_t18);
 markAll_t18(:,1)=procInd1_t18;markAll_t18(:,2:5)=mark0_t18(rawInd0_t18(rawInd0_t18~=0),:);
 ms=min(min(markAll_t18(:,2:5))):mdel:max(max(markAll_t18(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t18=normpdf(xs'*ones(1,length(spikeT0_t18)),ones(length(xs),1)*xtrain(procInd1_t18),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -590,7 +569,7 @@ spike_t19=procInd0_t19';
 [~,rawInd0_t19]=histc(spikeT0_t19,time2_t19);
 markAll_t19(:,1)=procInd1_t19;markAll_t19(:,2:5)=mark0_t19(rawInd0_t19(rawInd0_t19~=0),:);
 ms=min(min(markAll_t19(:,2:5))):mdel:max(max(markAll_t19(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t19=normpdf(xs'*ones(1,length(spikeT0_t19)),ones(length(xs),1)*xtrain(procInd1_t19),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -611,7 +590,7 @@ spike_t20=procInd0_t20';
 [~,rawInd0_t20]=histc(spikeT0_t20,time2_t20);
 markAll_t20(:,1)=procInd1_t20;markAll_t20(:,2:5)=mark0_t20(rawInd0_t20(rawInd0_t20~=0),:);
 ms=min(min(markAll_t20(:,2:5))):mdel:max(max(markAll_t20(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t20=normpdf(xs'*ones(1,length(spikeT0_t20)),ones(length(xs),1)*xtrain(procInd1_t20),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -632,7 +611,7 @@ spike_t22=procInd0_t22';
 [~,rawInd0_t22]=histc(spikeT0_t22,time2_t22);
 markAll_t22(:,1)=procInd1_t22;markAll_t22(:,2:5)=mark0_t22(rawInd0_t22(rawInd0_t22~=0),:);
 ms=min(min(markAll_t22(:,2:5))):mdel:max(max(markAll_t22(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t22=normpdf(xs'*ones(1,length(spikeT0_t22)),ones(length(xs),1)*xtrain(procInd1_t22),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -653,7 +632,7 @@ spike_t23=procInd0_t23';
 [~,rawInd0_t23]=histc(spikeT0_t23,time2_t23);
 markAll_t23(:,1)=procInd1_t23;markAll_t23(:,2:5)=mark0_t23(rawInd0_t23(rawInd0_t23~=0),:);
 ms=min(min(markAll_t23(:,2:5))):mdel:max(max(markAll_t23(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t23=normpdf(xs'*ones(1,length(spikeT0_t23)),ones(length(xs),1)*xtrain(procInd1_t23),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -674,7 +653,7 @@ spike_t27=procInd0_t27';
 [~,rawInd0_t27]=histc(spikeT0_t27,time2_t27);
 markAll_t27(:,1)=procInd1_t27;markAll_t27(:,2:5)=mark0_t27(rawInd0_t27(rawInd0_t27~=0),:);
 ms=min(min(markAll_t27(:,2:5))):mdel:max(max(markAll_t27(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t27=normpdf(xs'*ones(1,length(spikeT0_t27)),ones(length(xs),1)*xtrain(procInd1_t27),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -695,7 +674,7 @@ spike_t29=procInd0_t29';
 [~,rawInd0_t29]=histc(spikeT0_t29,time2_t29);
 markAll_t29(:,1)=procInd1_t29;markAll_t29(:,2:5)=mark0_t29(rawInd0_t29(rawInd0_t29~=0),:);
 ms=min(min(markAll_t29(:,2:5))):mdel:max(max(markAll_t29(:,2:5)));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum_t29=normpdf(xs'*ones(1,length(spikeT0_t29)),ones(length(xs),1)*xtrain(procInd1_t29),sxker);
 %Xnum: Gaussian kernel estimators for position
@@ -764,7 +743,7 @@ tet_sum=tet_ind.*cumsum(tet_ind,1); %row: time point; column: index of spike per
 
 %% caculate captial LAMBDA (when there is no spike on any tetrode)
 ms=min(mark0(:)):mdel:max(mark0(:));
-occ=normpdf(xs'*ones(1,T),ones(length(xs),1)*xtrain,sxker)*ones(T,length(ms));
+occ=normpdf(xs'*ones(1,num_time_points),ones(length(xs),1)*xtrain,sxker)*ones(num_time_points,length(ms));
 %occ: columns are identical; occupancy based on position; denominator
 Xnum=normpdf(xs'*ones(1,length(time0)),ones(length(xs),1)*xtrain(procInd1),sxker);
 %Xnum: Gaussian kernel estimators for position
