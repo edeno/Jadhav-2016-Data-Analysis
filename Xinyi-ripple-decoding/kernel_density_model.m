@@ -5,7 +5,7 @@ params = mark_data_file.filedata.params;
 ind = find(params(:, 1) / 1E4 >= linear_position_time(1) & ...
     params(:, 1) / 1E4 <= linear_position_time(end));
 time = params(ind, 1);
-mark0 = [params(ind, 2), params(ind, 3), params(ind, 4), params(ind, 5)];
+mark0 = params(ind, 2:5); % tetrode wire maxes
 time2= time / 1E4;
 spikeT0 = time2;
 [procInd0,procInd1] = histc(spikeT0, linear_position_time);
