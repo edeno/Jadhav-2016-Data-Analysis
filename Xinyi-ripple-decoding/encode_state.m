@@ -328,17 +328,38 @@ num_tetrodes = length(tetrode_number);
 markAll = cell(num_tetrodes, 1);
 time0 = cell(num_tetrodes, 1);
 mark0 = cell(num_tetrodes, 1);
-procInd1 = cell(num_tetrodes, 1);
+procInd1_tet = cell(num_tetrodes, 1);
 
 for tetrode_ind = 1:num_tetrodes,
     [markAll{tetrode_ind}, time0{tetrode_ind}, mark0{tetrode_ind}, ...
-        procInd1{tetrode_ind}] = kernel_density_model(animal, day, tetrode_number(tetrode_ind), ...
+        procInd1_tet{tetrode_ind}] = kernel_density_model(animal, day, tetrode_number(tetrode_ind), ...
         linear_position_time, mdel, sxker, xs, xtrain, num_time_points_position, dt);
 end
 
+markAll_t1 = markAll{1};
+markAll_t2 = markAll{2};
+markAll_t4 = markAll{3};
+markAll_t5 = markAll{4};
+markAll_t7 = markAll{5};
+markAll_t10 = markAll{6};
+markAll_t11 = markAll{7};
+markAll_t12 = markAll{8};
+markAll_t13 = markAll{9};
+markAll_t14 = markAll{10};
+markAll_t17 = markAll{11};
+markAll_t18 = markAll{12};
+markAll_t19 = markAll{13};
+markAll_t20 = markAll{14};
+markAll_t22 = markAll{15};
+markAll_t23 = markAll{16};
+markAll_t27 = markAll{17};
+markAll_t29 = markAll{18};
+
 mark0 = cat(1, mark0{:});
-procInd1 = cat(1, procInd1{:});
+procInd1 = cat(1, procInd1_tet{:});
 %% bookkeeping code: which spike comes which tetrode
+group_labels = cellfun(@(t, group) group * ones(size(t)), time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
+group_labels = cat(1, group_labels{:});
 [time, timeInd] = sort(cat(1, time0{:}));
 mark0 = mark0(timeInd, :);
 procInd1=procInd1(timeInd, :);
@@ -346,11 +367,10 @@ procInd1=procInd1(timeInd, :);
 tet_ind = false(length(time), num_tetrodes);
 
 for tetrode_ind = 1:num_tetrodes,
-    tet_ind(:, tetrode_ind) = ismember(time, time0{tetrode_ind});
+    tet_ind(:, tetrode_ind) = (group_labels(timeInd) == tetrode_ind);
 end
 
-tet_sum=tet_ind .* cumsum(tet_ind,1); %row: time point; column: index of spike per tetrode
-
+tet_sum = tet_ind .* cumsum(tet_ind,1); %row: time point; column: index of spike per tetrode
 %% caculate captial LAMBDA (when there is no spike on any tetrode)
 ms=min(mark0(:)):mdel:max(mark0(:));
 occ=normpdf(xs' * ones(1,num_time_points_position), ones(length(xs),1)*xtrain,sxker) * ones(num_time_points_position, length(ms));
@@ -361,8 +381,6 @@ Lint=sum(Xnum,2)./occ(:,1)./dt; %integral
 Lint=Lint./sum(Lint);
 %Lint: conditional intensity function for the unmarked case
 
-
-
 %% captial LAMBDA conditioned on I=1 and I=0
 procInd1_Indicator_outbound=procInd1(ismember(procInd1,ind_Indicator_outbound));
 occ_Indicator_outbound=normpdf(xs'*ones(1,length(ind_Indicator_outbound)),ones(length(xs),1)*xtrain(ind_Indicator_outbound),sxker)*ones(length(ind_Indicator_outbound),length(ms));
@@ -370,7 +388,6 @@ Xnum_Indicator_outbound=normpdf(xs'*ones(1,length(xtrain(procInd1_Indicator_outb
 %Xnum: Gaussian kernel estimators for position
 Lint_Indicator_outbound=sum(Xnum_Indicator_outbound,2)./occ_Indicator_outbound(:,1)./dt; %integral
 Lint_Indicator_outbound=Lint_Indicator_outbound./sum(Lint_Indicator_outbound);
-
 
 procInd1_I_inbound=procInd1(ismember(procInd1,ind_Indicator_inbound));
 occ_Indicator_inbound=normpdf(xs'*ones(1,length(ind_Indicator_inbound)),ones(length(xs),1)*xtrain(ind_Indicator_inbound),sxker)*ones(length(ind_Indicator_inbound),length(ms));
@@ -380,238 +397,95 @@ Lint_Indicator_inbound=sum(Xnum_Indicator_inbound,2)./occ_Indicator_inbound(:,1)
 Lint_Indicator_inbound=Lint_Indicator_inbound./sum(Lint_Indicator_inbound);
 
 %% encode per tetrode, conditioning on I=1 and I=0
-procInd1_t1_Ia_out=procInd1_t1(ismember(procInd1_t1,ind_Indicator_outbound));
-procInd1_t1_I_out=find(ismember(procInd1_t1,ind_Indicator_outbound));
-Xnum_t1_I_out=normpdf(xs'*ones(1,length(procInd1_t1_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t1_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t1_I_out=sum(Xnum_t1_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t1_I_out=Lint_t1_I_out./sum(Lint_t1_I_out);
-procInd1_t1_Ia_in=procInd1_t1(ismember(procInd1_t1,ind_Indicator_inbound));
-procInd1_t1_I_in=find(ismember(procInd1_t1,ind_Indicator_inbound));
-Xnum_t1_I_in=normpdf(xs'*ones(1,length(procInd1_t1_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t1_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t1_I_in=sum(Xnum_t1_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t1_I_in=Lint_t1_I_in./sum(Lint_t1_I_in);
+[procInd1_t1_Ia_out, procInd1_t1_Ia_in, procInd1_t1_I_out, procInd1_t1_I_in, ...
+    Xnum_t1_I_out, Xnum_t1_I_in, Lint_t1_I_out, Lint_t1_I_in] = ...
+    encode_per_tetrode(procInd1_tet{1}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t2_Ia_out=procInd1_t2(ismember(procInd1_t2,ind_Indicator_outbound));
-procInd1_t2_I_out=find(ismember(procInd1_t2,ind_Indicator_outbound));
-Xnum_t2_I_out=normpdf(xs'*ones(1,length(procInd1_t2_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t2_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t2_I_out=sum(Xnum_t2_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t2_I_out=Lint_t2_I_out./sum(Lint_t2_I_out);
-procInd1_t2_Ia_in=procInd1_t2(ismember(procInd1_t2,ind_Indicator_inbound));
-procInd1_t2_I_in=find(ismember(procInd1_t2,ind_Indicator_inbound));
-Xnum_t2_I_in=normpdf(xs'*ones(1,length(procInd1_t2_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t2_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t2_I_in=sum(Xnum_t2_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t2_I_in=Lint_t2_I_in./sum(Lint_t2_I_in);
+[procInd1_t2_Ia_out, procInd1_t2_Ia_in, procInd1_t2_I_out, procInd1_t2_I_in, ...
+    Xnum_t2_I_out, Xnum_t2_I_in, Lint_t2_I_out, Lint_t2_I_in] = ...
+    encode_per_tetrode(procInd1_tet{2}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t4_Ia_out=procInd1_t4(ismember(procInd1_t4,ind_Indicator_outbound));
-procInd1_t4_I_out=find(ismember(procInd1_t4,ind_Indicator_outbound));
-Xnum_t4_I_out=normpdf(xs'*ones(1,length(procInd1_t4_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t4_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t4_I_out=sum(Xnum_t4_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t4_I_out=Lint_t4_I_out./sum(Lint_t4_I_out);
-procInd1_t4_Ia_in=procInd1_t4(ismember(procInd1_t4,ind_Indicator_inbound));
-procInd1_t4_I_in=find(ismember(procInd1_t4,ind_Indicator_inbound));
-Xnum_t4_I_in=normpdf(xs'*ones(1,length(procInd1_t4_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t4_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t4_I_in=sum(Xnum_t4_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t4_I_in=Lint_t4_I_in./sum(Lint_t4_I_in);
+[procInd1_t4_Ia_out, procInd1_t4_Ia_in, procInd1_t4_I_out, procInd1_t4_I_in, ...
+    Xnum_t4_I_out, Xnum_t4_I_in, Lint_t4_I_out, Lint_t4_I_in] = ...
+    encode_per_tetrode(procInd1_tet{3}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t5_Ia_out=procInd1_t5(ismember(procInd1_t5,ind_Indicator_outbound));
-procInd1_t5_I_out=find(ismember(procInd1_t5,ind_Indicator_outbound));
-Xnum_t5_I_out=normpdf(xs'*ones(1,length(procInd1_t5_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t5_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t5_I_out=sum(Xnum_t5_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t5_I_out=Lint_t5_I_out./sum(Lint_t5_I_out);
-procInd1_t5_Ia_in=procInd1_t5(ismember(procInd1_t5,ind_Indicator_inbound));
-procInd1_t5_I_in=find(ismember(procInd1_t5,ind_Indicator_inbound));
-Xnum_t5_I_in=normpdf(xs'*ones(1,length(procInd1_t5_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t5_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t5_I_in=sum(Xnum_t5_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t5_I_in=Lint_t5_I_in./sum(Lint_t5_I_in);
+[procInd1_t5_Ia_out, procInd1_t5_Ia_in, procInd1_t5_I_out, procInd1_t5_I_in, ...
+    Xnum_t5_I_out, Xnum_t5_I_in, Lint_t5_I_out, Lint_t5_I_in] = ...
+    encode_per_tetrode(procInd1_tet{4}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t7_Ia_out=procInd1_t7(ismember(procInd1_t7,ind_Indicator_outbound));
-procInd1_t7_I_out=find(ismember(procInd1_t7,ind_Indicator_outbound));
-Xnum_t7_I_out=normpdf(xs'*ones(1,length(procInd1_t7_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t7_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t7_I_out=sum(Xnum_t7_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t7_I_out=Lint_t7_I_out./sum(Lint_t7_I_out);
-procInd1_t7_Ia_in=procInd1_t7(ismember(procInd1_t7,ind_Indicator_inbound));
-procInd1_t7_I_in=find(ismember(procInd1_t7,ind_Indicator_inbound));
-Xnum_t7_I_in=normpdf(xs'*ones(1,length(procInd1_t7_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t7_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t7_I_in=sum(Xnum_t7_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t7_I_in=Lint_t7_I_in./sum(Lint_t7_I_in);
+[procInd1_t7_Ia_out, procInd1_t7_Ia_in, procInd1_t7_I_out, procInd1_t7_I_in, ...
+    Xnum_t7_I_out, Xnum_t7_I_in, Lint_t7_I_out, Lint_t7_I_in] = ...
+    encode_per_tetrode(procInd1_tet{5}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t10_Ia_out=procInd1_t10(ismember(procInd1_t10,ind_Indicator_outbound));
-procInd1_t10_I_out=find(ismember(procInd1_t10,ind_Indicator_outbound));
-Xnum_t10_I_out=normpdf(xs'*ones(1,length(procInd1_t10_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t10_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t10_I_out=sum(Xnum_t10_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t10_I_out=Lint_t10_I_out./sum(Lint_t10_I_out);
-procInd1_t10_Ia_in=procInd1_t10(ismember(procInd1_t10,ind_Indicator_inbound));
-procInd1_t10_I_in=find(ismember(procInd1_t10,ind_Indicator_inbound));
-Xnum_t10_I_in=normpdf(xs'*ones(1,length(procInd1_t10_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t10_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t10_I_in=sum(Xnum_t10_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t10_I_in=Lint_t10_I_in./sum(Lint_t10_I_in);
+[procInd1_t10_Ia_out, procInd1_t10_Ia_in, procInd1_t10_I_out, procInd1_t10_I_in, ...
+    Xnum_t10_I_out, Xnum_t10_I_in, Lint_t10_I_out, Lint_t10_I_in] = ...
+    encode_per_tetrode(procInd1_tet{6}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t11_Ia_out=procInd1_t11(ismember(procInd1_t11,ind_Indicator_outbound));
-procInd1_t11_I_out=find(ismember(procInd1_t11,ind_Indicator_outbound));
-Xnum_t11_I_out=normpdf(xs'*ones(1,length(procInd1_t11_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t11_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t11_I_out=sum(Xnum_t11_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t11_I_out=Lint_t11_I_out./sum(Lint_t11_I_out);
-procInd1_t11_Ia_in=procInd1_t11(ismember(procInd1_t11,ind_Indicator_inbound));
-procInd1_t11_I_in=find(ismember(procInd1_t11,ind_Indicator_inbound));
-Xnum_t11_I_in=normpdf(xs'*ones(1,length(procInd1_t11_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t11_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t11_I_in=sum(Xnum_t11_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t11_I_in=Lint_t11_I_in./sum(Lint_t11_I_in);
+[procInd1_t11_Ia_out, procInd1_t11_Ia_in, procInd1_t11_I_out, procInd1_t11_I_in, ...
+    Xnum_t11_I_out, Xnum_t11_I_in, Lint_t11_I_out, Lint_t11_I_in] = ...
+    encode_per_tetrode(procInd1_tet{7}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t12_Ia_out=procInd1_t12(ismember(procInd1_t12,ind_Indicator_outbound));
-procInd1_t12_I_out=find(ismember(procInd1_t12,ind_Indicator_outbound));
-Xnum_t12_I_out=normpdf(xs'*ones(1,length(procInd1_t12_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t12_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t12_I_out=sum(Xnum_t12_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t12_I_out=Lint_t12_I_out./sum(Lint_t12_I_out);
-procInd1_t12_Ia_in=procInd1_t12(ismember(procInd1_t12,ind_Indicator_inbound));
-procInd1_t12_I_in=find(ismember(procInd1_t12,ind_Indicator_inbound));
-Xnum_t12_I_in=normpdf(xs'*ones(1,length(procInd1_t12_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t12_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t12_I_in=sum(Xnum_t12_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t12_I_in=Lint_t12_I_in./sum(Lint_t12_I_in);
+[procInd1_t12_Ia_out, procInd1_t12_Ia_in, procInd1_t12_I_out, procInd1_t12_I_in, ...
+    Xnum_t12_I_out, Xnum_t12_I_in, Lint_t12_I_out, Lint_t12_I_in] = ...
+    encode_per_tetrode(procInd1_tet{8}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t13_Ia_out=procInd1_t13(ismember(procInd1_t13,ind_Indicator_outbound));
-procInd1_t13_I_out=find(ismember(procInd1_t13,ind_Indicator_outbound));
-Xnum_t13_I_out=normpdf(xs'*ones(1,length(procInd1_t13_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t13_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t13_I_out=sum(Xnum_t13_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t13_I_out=Lint_t13_I_out./sum(Lint_t13_I_out);
-procInd1_t13_Ia_in=procInd1_t13(ismember(procInd1_t13,ind_Indicator_inbound));
-procInd1_t13_I_in=find(ismember(procInd1_t13,ind_Indicator_inbound));
-Xnum_t13_I_in=normpdf(xs'*ones(1,length(procInd1_t13_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t13_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t13_I_in=sum(Xnum_t13_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t13_I_in=Lint_t13_I_in./sum(Lint_t13_I_in);
+[procInd1_t13_Ia_out, procInd1_t13_Ia_in, procInd1_t13_I_out, procInd1_t13_I_in, ...
+    Xnum_t13_I_out, Xnum_t13_I_in, Lint_t13_I_out, Lint_t13_I_in] = ...
+    encode_per_tetrode(procInd1_tet{9}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t14_Ia_out=procInd1_t14(ismember(procInd1_t14,ind_Indicator_outbound));
-procInd1_t14_I_out=find(ismember(procInd1_t14,ind_Indicator_outbound));
-Xnum_t14_I_out=normpdf(xs'*ones(1,length(procInd1_t14_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t14_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t14_I_out=sum(Xnum_t14_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t14_I_out=Lint_t14_I_out./sum(Lint_t14_I_out);
-procInd1_t14_Ia_in=procInd1_t14(ismember(procInd1_t14,ind_Indicator_inbound));
-procInd1_t14_I_in=find(ismember(procInd1_t14,ind_Indicator_inbound));
-Xnum_t14_I_in=normpdf(xs'*ones(1,length(procInd1_t14_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t14_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t14_I_in=sum(Xnum_t14_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t14_I_in=Lint_t14_I_in./sum(Lint_t14_I_in);
+[procInd1_t14_Ia_out, procInd1_t14_Ia_in, procInd1_t14_I_out, procInd1_t14_I_in, ...
+    Xnum_t14_I_out, Xnum_t14_I_in, Lint_t14_I_out, Lint_t14_I_in] = ...
+    encode_per_tetrode(procInd1_tet{10}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t17_Ia_out=procInd1_t17(ismember(procInd1_t17,ind_Indicator_outbound));
-procInd1_t17_I_out=find(ismember(procInd1_t17,ind_Indicator_outbound));
-Xnum_t17_I_out=normpdf(xs'*ones(1,length(procInd1_t17_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t17_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t17_I_out=sum(Xnum_t17_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t17_I_out=Lint_t17_I_out./sum(Lint_t17_I_out);
-procInd1_t17_Ia_in=procInd1_t17(ismember(procInd1_t17,ind_Indicator_inbound));
-procInd1_t17_I_in=find(ismember(procInd1_t17,ind_Indicator_inbound));
-Xnum_t17_I_in=normpdf(xs'*ones(1,length(procInd1_t17_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t17_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t17_I_in=sum(Xnum_t17_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t17_I_in=Lint_t17_I_in./sum(Lint_t17_I_in);
+[procInd1_t17_Ia_out, procInd1_t17_Ia_in, procInd1_t17_I_out, procInd1_t17_I_in, ...
+    Xnum_t17_I_out, Xnum_t17_I_in, Lint_t17_I_out, Lint_t17_I_in] = ...
+    encode_per_tetrode(procInd1_tet{11}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t18_Ia_out=procInd1_t18(ismember(procInd1_t18,ind_Indicator_outbound));
-procInd1_t18_I_out=find(ismember(procInd1_t18,ind_Indicator_outbound));
-Xnum_t18_I_out=normpdf(xs'*ones(1,length(procInd1_t18_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t18_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t18_I_out=sum(Xnum_t18_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t18_I_out=Lint_t18_I_out./sum(Lint_t18_I_out);
-procInd1_t18_Ia_in=procInd1_t18(ismember(procInd1_t18,ind_Indicator_inbound));
-procInd1_t18_I_in=find(ismember(procInd1_t18,ind_Indicator_inbound));
-Xnum_t18_I_in=normpdf(xs'*ones(1,length(procInd1_t18_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t18_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t18_I_in=sum(Xnum_t18_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t18_I_in=Lint_t18_I_in./sum(Lint_t18_I_in);
+[procInd1_t18_Ia_out, procInd1_t18_Ia_in, procInd1_t18_I_out, procInd1_t18_I_in, ...
+    Xnum_t18_I_out, Xnum_t18_I_in, Lint_t18_I_out, Lint_t18_I_in] = ...
+    encode_per_tetrode(procInd1_tet{12}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t19_Ia_out=procInd1_t19(ismember(procInd1_t19,ind_Indicator_outbound));
-procInd1_t19_I_out=find(ismember(procInd1_t19,ind_Indicator_outbound));
-Xnum_t19_I_out=normpdf(xs'*ones(1,length(procInd1_t19_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t19_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t19_I_out=sum(Xnum_t19_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t19_I_out=Lint_t19_I_out./sum(Lint_t19_I_out);
-procInd1_t19_Ia_in=procInd1_t19(ismember(procInd1_t19,ind_Indicator_outbound));
-procInd1_t19_I_in=find(ismember(procInd1_t19,ind_Indicator_outbound));
-Xnum_t19_I_in=normpdf(xs'*ones(1,length(procInd1_t19_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t19_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t19_I_in=sum(Xnum_t19_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t19_I_in=Lint_t19_I_in./sum(Lint_t19_I_in);
+[procInd1_t19_Ia_out, procInd1_t19_Ia_in, procInd1_t19_I_out, procInd1_t19_I_in, ...
+    Xnum_t19_I_out, Xnum_t19_I_in, Lint_t19_I_out, Lint_t19_I_in] = ...
+    encode_per_tetrode(procInd1_tet{13}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t20_Ia_out=procInd1_t20(ismember(procInd1_t20,ind_Indicator_outbound));
-procInd1_t20_I_out=find(ismember(procInd1_t20,ind_Indicator_outbound));
-Xnum_t20_I_out=normpdf(xs'*ones(1,length(procInd1_t20_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t20_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t20_I_out=sum(Xnum_t20_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t20_I_out=Lint_t20_I_out./sum(Lint_t20_I_out);
-procInd1_t20_Ia_in=procInd1_t20(ismember(procInd1_t20,ind_Indicator_inbound));
-procInd1_t20_I_in=find(ismember(procInd1_t20,ind_Indicator_inbound));
-Xnum_t20_I_in=normpdf(xs'*ones(1,length(procInd1_t20_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t20_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t20_I_in=sum(Xnum_t20_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t20_I_in=Lint_t20_I_in./sum(Lint_t20_I_in);
+[procInd1_t20_Ia_out, procInd1_t20_Ia_in, procInd1_t20_I_out, procInd1_t20_I_in, ...
+    Xnum_t20_I_out, Xnum_t20_I_in, Lint_t20_I_out, Lint_t20_I_in] = ...
+    encode_per_tetrode(procInd1_tet{14}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t22_Ia_out=procInd1_t22(ismember(procInd1_t22,ind_Indicator_outbound));
-procInd1_t22_I_out=find(ismember(procInd1_t22,ind_Indicator_outbound));
-Xnum_t22_I_out=normpdf(xs'*ones(1,length(procInd1_t22_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t22_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t22_I_out=sum(Xnum_t22_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t22_I_out=Lint_t22_I_out./sum(Lint_t22_I_out);
-procInd1_t22_Ia_in=procInd1_t22(ismember(procInd1_t22,ind_Indicator_outbound));
-procInd1_t22_I_in=find(ismember(procInd1_t22,ind_Indicator_outbound));
-Xnum_t22_I_in=normpdf(xs'*ones(1,length(procInd1_t22_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t22_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t22_I_in=sum(Xnum_t22_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t22_I_in=Lint_t22_I_in./sum(Lint_t22_I_in);
+[procInd1_t22_Ia_out, procInd1_t22_Ia_in, procInd1_t22_I_out, procInd1_t22_I_in, ...
+    Xnum_t22_I_out, Xnum_t22_I_in, Lint_t22_I_out, Lint_t22_I_in] = ...
+    encode_per_tetrode(procInd1_tet{15}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t23_Ia_out=procInd1_t23(ismember(procInd1_t23,ind_Indicator_outbound));
-procInd1_t23_I_out=find(ismember(procInd1_t23,ind_Indicator_outbound));
-Xnum_t23_I_out=normpdf(xs'*ones(1,length(procInd1_t23_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t23_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t23_I_out=sum(Xnum_t23_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t23_I_out=Lint_t23_I_out./sum(Lint_t23_I_out);
-procInd1_t23_Ia_in=procInd1_t23(ismember(procInd1_t23,ind_Indicator_inbound));
-procInd1_t23_I_in=find(ismember(procInd1_t23,ind_Indicator_inbound));
-Xnum_t23_I_in=normpdf(xs'*ones(1,length(procInd1_t23_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t23_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t23_I_in=sum(Xnum_t23_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t23_I_in=Lint_t23_I_in./sum(Lint_t23_I_in);
+[procInd1_t23_Ia_out, procInd1_t23_Ia_in, procInd1_t23_I_out, procInd1_t23_I_in, ...
+    Xnum_t23_I_out, Xnum_t23_I_in, Lint_t23_I_out, Lint_t23_I_in] = ...
+    encode_per_tetrode(procInd1_tet{16}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t27_Ia_out=procInd1_t27(ismember(procInd1_t27,ind_Indicator_outbound));
-procInd1_t27_I_out=find(ismember(procInd1_t27,ind_Indicator_outbound));
-Xnum_t27_I_out=normpdf(xs'*ones(1,length(procInd1_t27_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t27_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t27_I_out=sum(Xnum_t27_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t27_I_out=Lint_t27_I_out./sum(Lint_t27_I_out);
-procInd1_t27_Ia_in=procInd1_t27(ismember(procInd1_t27,ind_Indicator_inbound));
-procInd1_t27_I_in=find(ismember(procInd1_t27,ind_Indicator_inbound));
-Xnum_t27_I_in=normpdf(xs'*ones(1,length(procInd1_t27_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t27_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t27_I_in=sum(Xnum_t27_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t27_I_in=Lint_t27_I_in./sum(Lint_t27_I_in);
+[procInd1_t27_Ia_out, procInd1_t27_Ia_in, procInd1_t27_I_out, procInd1_t27_I_in, ...
+    Xnum_t27_I_out, Xnum_t27_I_in, Lint_t27_I_out, Lint_t27_I_in] = ...
+    encode_per_tetrode(procInd1_tet{17}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
 
-procInd1_t29_Ia_out=procInd1_t29(ismember(procInd1_t29,ind_Indicator_outbound));
-procInd1_t29_I_out=find(ismember(procInd1_t29,ind_Indicator_outbound));
-Xnum_t29_I_out=normpdf(xs'*ones(1,length(procInd1_t29_Ia_out)),ones(length(xs),1)*xtrain(procInd1_t29_Ia_out),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t29_I_out=sum(Xnum_t29_I_out,2)./occ_Indicator_outbound(:,1)./dt; %integral
-Lint_t29_I_out=Lint_t29_I_out./sum(Lint_t29_I_out);
-procInd1_t29_Ia_in=procInd1_t29(ismember(procInd1_t29,ind_Indicator_inbound));
-procInd1_t29_I_in=find(ismember(procInd1_t29,ind_Indicator_inbound));
-Xnum_t29_I_in=normpdf(xs'*ones(1,length(procInd1_t29_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t29_Ia_in),sxker);
-%Xnum: Gaussian kernel estimators for position
-Lint_t29_I_in=sum(Xnum_t29_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
-Lint_t29_I_in=Lint_t29_I_in./sum(Lint_t29_I_in);
+[procInd1_t29_Ia_out, procInd1_t29_Ia_in, procInd1_t29_I_out, procInd1_t29_I_in, ...
+    Xnum_t29_I_out, Xnum_t29_I_in, Lint_t29_I_out, Lint_t29_I_in] = ...
+    encode_per_tetrode(procInd1_tet{18}, ind_Indicator_outbound, ind_Indicator_inbound, ...
+    occ_Indicator_outbound, occ_Indicator_inbound, dt, xs, xtrain, sxker);
+
 save('computed_var.mat');
 end
