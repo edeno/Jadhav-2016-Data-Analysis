@@ -1,4 +1,4 @@
-
+clear variables; clc;
 %%
 %%%%bond04, epoch 2
 load('bond_data/bontask04.mat');
@@ -183,7 +183,7 @@ xtrain=poslin';
 sxker=xdel; mdel=20; smker=mdel; T=size(tlin,1);
 
 %% encode the kernel density model per tetrode
-load('bond_data\bond04-01_params.mat');
+load('bond_data/bond04-01_params.mat');
 %ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t1=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t1=filedata.params(ind_t1,1);
@@ -204,7 +204,7 @@ Xnum_t1=normpdf(xs'*ones(1,length(spikeT0_t1)),ones(length(xs),1)*xtrain(procInd
 Lint_t1=sum(Xnum_t1,2)./occ(:,1)./dt; %integral
 Lint_t1=Lint_t1./sum(Lint_t1);
 
-load('bond_data\bond04\bond04-02_params.mat');
+load('bond_data/bond04-02_params.mat');
 %ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t2=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t2=filedata.params(ind_t2,1);
@@ -225,7 +225,7 @@ Xnum_t2=normpdf(xs'*ones(1,length(spikeT0_t2)),ones(length(xs),1)*xtrain(procInd
 Lint_t2=sum(Xnum_t2,2)./occ(:,1)./dt; %integral
 Lint_t2=Lint_t2./sum(Lint_t2);
 
-load('bond_data\bond04-04_params.mat');
+load('bond_data/bond04-04_params.mat');
 %ind_t4=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t4=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t4=filedata.params(ind_t4,1);
@@ -246,7 +246,7 @@ Xnum_t4=normpdf(xs'*ones(1,length(spikeT0_t4)),ones(length(xs),1)*xtrain(procInd
 Lint_t4=sum(Xnum_t4,2)./occ(:,1)./dt; %integral
 Lint_t4=Lint_t4./sum(Lint_t4);
 
-load('bond_data\bond04-05_params.mat');
+load('bond_data/bond04-05_params.mat');
 %ind_t5=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t5=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t5=filedata.params(ind_t5,1);
@@ -267,7 +267,7 @@ Xnum_t5=normpdf(xs'*ones(1,length(spikeT0_t5)),ones(length(xs),1)*xtrain(procInd
 Lint_t5=sum(Xnum_t5,2)./occ(:,1)./dt; %integral
 Lint_t5=Lint_t5./sum(Lint_t5);
 
-load('bond_data\bond04-07_params.mat');
+load('bond_data/bond04-07_params.mat');
 %ind_t7=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t7=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t7=filedata.params(ind_t7,1);
@@ -288,7 +288,7 @@ Xnum_t7=normpdf(xs'*ones(1,length(spikeT0_t7)),ones(length(xs),1)*xtrain(procInd
 Lint_t7=sum(Xnum_t7,2)./occ(:,1)./dt; %integral
 Lint_t7=Lint_t7./sum(Lint_t7);
 
-load('bond_data\bond04-10_params.mat');
+load('bond_data/bond04-10_params.mat');
 %ind_t10=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t10=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t10=filedata.params(ind_t10,1);
@@ -309,7 +309,7 @@ Xnum_t10=normpdf(xs'*ones(1,length(spikeT0_t10)),ones(length(xs),1)*xtrain(procI
 Lint_t10=sum(Xnum_t10,2)./occ(:,1)./dt; %integral
 Lint_t10=Lint_t10./sum(Lint_t10);
 
-load('bond_data\bond04-11_params.mat');
+load('bond_data/bond04-11_params.mat');
 %ind_t11=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t11=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t11=filedata.params(ind_t11,1);
@@ -330,7 +330,7 @@ Xnum_t11=normpdf(xs'*ones(1,length(spikeT0_t11)),ones(length(xs),1)*xtrain(procI
 Lint_t11=sum(Xnum_t11,2)./occ(:,1)./dt; %integral
 Lint_t11=Lint_t11./sum(Lint_t11);
 
-load('bond_data\bond04-12_params.mat');
+load('bond_data/bond04-12_params.mat');
 %ind_t12=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t12=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t12=filedata.params(ind_t12,1);
@@ -351,7 +351,7 @@ Xnum_t12=normpdf(xs'*ones(1,length(spikeT0_t12)),ones(length(xs),1)*xtrain(procI
 Lint_t12=sum(Xnum_t12,2)./occ(:,1)./dt; %integral
 Lint_t12=Lint_t12./sum(Lint_t12);
 
-load('bond_data\bond04-13_params.mat');
+load('bond_data/bond04-13_params.mat');
 %ind_t13=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t13=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t13=filedata.params(ind_t13,1);
@@ -372,7 +372,7 @@ Xnum_t13=normpdf(xs'*ones(1,length(spikeT0_t13)),ones(length(xs),1)*xtrain(procI
 Lint_t13=sum(Xnum_t13,2)./occ(:,1)./dt; %integral
 Lint_t13=Lint_t13./sum(Lint_t13);
 
-load('bond_data\bond04-14_params.mat');
+load('bond_data/bond04-14_params.mat');
 %ind_t14=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t14=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t14=filedata.params(ind_t14,1);
@@ -393,7 +393,7 @@ Xnum_t14=normpdf(xs'*ones(1,length(spikeT0_t14)),ones(length(xs),1)*xtrain(procI
 Lint_t14=sum(Xnum_t14,2)./occ(:,1)./dt; %integral
 Lint_t14=Lint_t14./sum(Lint_t14);
 
-load('bond_data\bond04-17_params.mat');
+load('bond_data/bond04-17_params.mat');
 %ind_t17=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t17=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t17=filedata.params(ind_t17,1);
@@ -414,7 +414,7 @@ Xnum_t17=normpdf(xs'*ones(1,length(spikeT0_t17)),ones(length(xs),1)*xtrain(procI
 Lint_t17=sum(Xnum_t17,2)./occ(:,1)./dt; %integral
 Lint_t17=Lint_t17./sum(Lint_t17);
 
-load('bond_data\bond04-18_params.mat');
+load('bond_data/bond04-18_params.mat');
 %ind_t18=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t18=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t18=filedata.params(ind_t18,1);
@@ -435,7 +435,7 @@ Xnum_t18=normpdf(xs'*ones(1,length(spikeT0_t18)),ones(length(xs),1)*xtrain(procI
 Lint_t18=sum(Xnum_t18,2)./occ(:,1)./dt; %integral
 Lint_t18=Lint_t18./sum(Lint_t18);
 
-load('bond_data\bond04-19_params.mat');
+load('bond_data/bond04-19_params.mat');
 %ind_t19=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t19=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t19=filedata.params(ind_t19,1);
@@ -456,7 +456,7 @@ Xnum_t19=normpdf(xs'*ones(1,length(spikeT0_t19)),ones(length(xs),1)*xtrain(procI
 Lint_t19=sum(Xnum_t19,2)./occ(:,1)./dt; %integral
 Lint_t19=Lint_t19./sum(Lint_t19);
 
-load('bond_data\bond04-20_params.mat');
+load('bond_data/bond04-20_params.mat');
 %ind_t20=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t20=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t20=filedata.params(ind_t20,1);
@@ -477,7 +477,7 @@ Xnum_t20=normpdf(xs'*ones(1,length(spikeT0_t20)),ones(length(xs),1)*xtrain(procI
 Lint_t20=sum(Xnum_t20,2)./occ(:,1)./dt; %integral
 Lint_t20=Lint_t20./sum(Lint_t20);
 
-load('bond_data\bond04-22_params.mat');
+load('bond_data/bond04-22_params.mat');
 %ind_t22=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t22=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t22=filedata.params(ind_t22,1);
@@ -498,7 +498,7 @@ Xnum_t22=normpdf(xs'*ones(1,length(spikeT0_t22)),ones(length(xs),1)*xtrain(procI
 Lint_t22=sum(Xnum_t22,2)./occ(:,1)./dt; %integral
 Lint_t22=Lint_t22./sum(Lint_t22);
 
-load('bond_data\bond04-23_params.mat');
+load('bond_data/bond04-23_params.mat');
 %ind_t23=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t23=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t23=filedata.params(ind_t23,1);
@@ -519,7 +519,7 @@ Xnum_t23=normpdf(xs'*ones(1,length(spikeT0_t23)),ones(length(xs),1)*xtrain(procI
 Lint_t23=sum(Xnum_t23,2)./occ(:,1)./dt; %integral
 Lint_t23=Lint_t23./sum(Lint_t23);
 
-load('bond_data\bond04-27_params.mat');
+load('bond_data/bond04-27_params.mat');
 %ind_t27=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t27=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t27=filedata.params(ind_t27,1);
@@ -540,7 +540,7 @@ Xnum_t27=normpdf(xs'*ones(1,length(spikeT0_t27)),ones(length(xs),1)*xtrain(procI
 Lint_t27=sum(Xnum_t27,2)./occ(:,1)./dt; %integral
 Lint_t27=Lint_t27./sum(Lint_t27);
 
-load('bond_data\bond04-29_params.mat');
+load('bond_data/bond04-29_params.mat');
 %ind_t29=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end)&filedata.params(:,8)>10&(filedata.params(:,2)>100|filedata.params(:,3)>100|filedata.params(:,4)>100|filedata.params(:,5)>100));
 ind_t29=find(filedata.params(:,1)/10000>=tlin(1)&filedata.params(:,1)/10000<=tlin(end));
 time_t29=filedata.params(ind_t29,1);
