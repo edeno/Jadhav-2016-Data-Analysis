@@ -15,153 +15,17 @@ function [summary_statistic] = decode_state(pos, ...
     tet_ind, ...
     tet_sum, ...
     markAll, ...
-    procInd1_t1_Ia_out, ...
-    procInd1_t2_Ia_out, ...
-    procInd1_t4_Ia_out, ...
-    procInd1_t5_Ia_out, ...
-    procInd1_t7_Ia_out, ...
-    procInd1_t10_Ia_out, ...
-    procInd1_t11_Ia_out, ...
-    procInd1_t12_Ia_out, ...
-    procInd1_t13_Ia_out, ...
-    procInd1_t14_Ia_out, ...
-    procInd1_t17_Ia_out, ...
-    procInd1_t18_Ia_out, ...
-    procInd1_t19_Ia_out, ...
-    procInd1_t20_Ia_out, ...
-    procInd1_t22_Ia_out, ...
-    procInd1_t23_Ia_out, ...
-    procInd1_t27_Ia_out, ...
-    procInd1_t29_Ia_out, ...
-    procInd1_t1_I_out, ...
-    procInd1_t2_I_out, ...
-    procInd1_t4_I_out, ...
-    procInd1_t5_I_out, ...
-    procInd1_t7_I_out, ...
-    procInd1_t10_I_out, ...
-    procInd1_t11_I_out, ...
-    procInd1_t12_I_out, ...
-    procInd1_t13_I_out, ...
-    procInd1_t14_I_out, ...
-    procInd1_t17_I_out, ...
-    procInd1_t18_I_out, ...
-    procInd1_t19_I_out, ...
-    procInd1_t20_I_out, ...
-    procInd1_t22_I_out, ...
-    procInd1_t23_I_out, ...
-    procInd1_t27_I_out, ...
-    procInd1_t29_I_out, ...
+    procInd1_Ia_out, ...
+    procInd1_I_out, ...
     smker, ...
-    Xnum_t1_I_out, ...
-    Xnum_t2_I_out, ...
-    Xnum_t4_I_out, ...
-    Xnum_t5_I_out, ...
-    Xnum_t7_I_out, ...
-    Xnum_t10_I_out, ...
-    Xnum_t11_I_out, ...
-    Xnum_t12_I_out, ...
-    Xnum_t13_I_out, ...
-    Xnum_t14_I_out, ...
-    Xnum_t17_I_out, ...
-    Xnum_t18_I_out, ...
-    Xnum_t19_I_out, ...
-    Xnum_t20_I_out, ...
-    Xnum_t22_I_out, ...
-    Xnum_t23_I_out, ...
-    Xnum_t27_I_out, ...
-    Xnum_t29_I_out, ...
+    Xnum_I_out, ....
     occ_Indicator_outbound, ...
-    Lint_t1_I_out, ...
-    Lint_t2_I_out, ...
-    Lint_t4_I_out, ...
-    Lint_t5_I_out, ...
-    Lint_t7_I_out, ...
-    Lint_t10_I_out, ...
-    Lint_t11_I_out, ...
-    Lint_t12_I_out, ...
-    Lint_t13_I_out, ...
-    Lint_t14_I_out, ...
-    Lint_t17_I_out, ...
-    Lint_t18_I_out, ...
-    Lint_t19_I_out, ...
-    Lint_t20_I_out, ...
-    Lint_t22_I_out, ...
-    Lint_t23_I_out, ...
-    Lint_t27_I_out, ...
-    Lint_t29_I_out, ...
-    procInd1_t1_Ia_in, ...
-    procInd1_t2_Ia_in, ...
-    procInd1_t4_Ia_in, ...
-    procInd1_t5_Ia_in, ...
-    procInd1_t7_Ia_in, ...
-    procInd1_t10_Ia_in, ...
-    procInd1_t11_Ia_in, ...
-    procInd1_t12_Ia_in, ...
-    procInd1_t13_Ia_in, ...
-    procInd1_t14_Ia_in, ...
-    procInd1_t17_Ia_in, ...
-    procInd1_t18_Ia_in, ...
-    procInd1_t19_Ia_in, ...
-    procInd1_t20_Ia_in, ...
-    procInd1_t22_Ia_in, ...
-    procInd1_t23_Ia_in, ...
-    procInd1_t27_Ia_in, ...
-    procInd1_t29_Ia_in, ...
-    procInd1_t1_I_in, ...
-    procInd1_t2_I_in, ...
-    procInd1_t4_I_in, ...
-    procInd1_t5_I_in, ...
-    procInd1_t7_I_in, ...
-    procInd1_t10_I_in, ...
-    procInd1_t11_I_in, ...
-    procInd1_t12_I_in, ...
-    procInd1_t13_I_in, ...
-    procInd1_t14_I_in, ...
-    procInd1_t17_I_in, ...
-    procInd1_t18_I_in, ...
-    procInd1_t19_I_in, ...
-    procInd1_t20_I_in, ...
-    procInd1_t22_I_in, ...
-    procInd1_t23_I_in, ...
-    procInd1_t27_I_in, ...
-    procInd1_t29_I_in, ...
-    Xnum_t1_I_in, ...
-    Xnum_t2_I_in, ...
-    Xnum_t4_I_in, ...
-    Xnum_t5_I_in, ...
-    Xnum_t7_I_in, ...
-    Xnum_t10_I_in, ...
-    Xnum_t11_I_in, ...
-    Xnum_t12_I_in, ...
-    Xnum_t13_I_in, ...
-    Xnum_t14_I_in, ...
-    Xnum_t17_I_in, ...
-    Xnum_t18_I_in, ...
-    Xnum_t19_I_in, ...
-    Xnum_t20_I_in, ...
-    Xnum_t22_I_in, ...
-    Xnum_t23_I_in, ...
-    Xnum_t27_I_in, ...
-    Xnum_t29_I_in, ...
+    Lint_I_out, ...
+    procInd1_Ia_in, ...
+    procInd1_I_in, ...
+    Xnum_I_in, ...
     occ_Indicator_inbound, ...
-    Lint_t1_I_in, ...
-    Lint_t2_I_in, ...
-    Lint_t4_I_in, ...
-    Lint_t5_I_in, ...
-    Lint_t7_I_in, ...
-    Lint_t10_I_in, ...
-    Lint_t11_I_in, ...
-    Lint_t12_I_in, ...
-    Lint_t13_I_in, ...
-    Lint_t14_I_in, ...
-    Lint_t17_I_in, ...
-    Lint_t18_I_in, ...
-    Lint_t19_I_in, ...
-    Lint_t20_I_in, ...
-    Lint_t22_I_in, ...
-    Lint_t23_I_in, ...
-    Lint_t27_I_in, ...
-    Lint_t29_I_in ...
+    Lint_I_in ...
     )
 
 velocity=pos.data(:,5);
@@ -245,145 +109,145 @@ for pic=1:length(velocity_threshold_index)
                 if tetVec(1)==1 %tet1
                     spike_r(1,t)=1;
                     i=tet_sum(jj,1);
-                    l0=normpdf(markAll{1}(i,2)*ones(1,length(procInd1_t1_Ia_out)),markAll{1}(procInd1_t1_I_out,2)',smker).*normpdf(markAll{1}(i,3)*ones(1,length(procInd1_t1_Ia_out)),markAll{1}(procInd1_t1_I_out,3)',smker).*normpdf(markAll{1}(i,4)*ones(1,length(procInd1_t1_Ia_out)),markAll{1}(procInd1_t1_I_out,4)',smker).*normpdf(markAll{1}(i,5)*ones(1,length(procInd1_t1_Ia_out)),markAll{1}(procInd1_t1_I_out,5)',smker);
-                    l1=Xnum_t1_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t1_I_out.*dt);
+                    l0=normpdf(markAll{1}(i,2)*ones(1,length(procInd1_Ia_out{1})),markAll{1}(procInd1_I_out{1},2)',smker).*normpdf(markAll{1}(i,3)*ones(1,length(procInd1_Ia_out{1})),markAll{1}(procInd1_I_out{1},3)',smker).*normpdf(markAll{1}(i,4)*ones(1,length(procInd1_Ia_out{1})),markAll{1}(procInd1_I_out{1},4)',smker).*normpdf(markAll{1}(i,5)*ones(1,length(procInd1_Ia_out{1})),markAll{1}(procInd1_I_out{1},5)',smker);
+                    l1=Xnum_I_out{1}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{1}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(2)==1 %tet2
                     spike_r(2,t)=1;
                     i=tet_sum(jj,2);
-                    l0=normpdf(markAll{2}(i,2)*ones(1,length(procInd1_t2_Ia_out)),markAll{2}(procInd1_t2_I_out,2)',smker).*normpdf(markAll{2}(i,3)*ones(1,length(procInd1_t2_Ia_out)),markAll{2}(procInd1_t2_I_out,3)',smker).*normpdf(markAll{2}(i,4)*ones(1,length(procInd1_t2_Ia_out)),markAll{2}(procInd1_t2_I_out,4)',smker).*normpdf(markAll{2}(i,5)*ones(1,length(procInd1_t2_Ia_out)),markAll{2}(procInd1_t2_I_out,5)',smker);
-                    l1=Xnum_t2_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t2_I_out.*dt);
+                    l0=normpdf(markAll{2}(i,2)*ones(1,length(procInd1_Ia_out{2})),markAll{2}(procInd1_I_out{2},2)',smker).*normpdf(markAll{2}(i,3)*ones(1,length(procInd1_Ia_out{2})),markAll{2}(procInd1_I_out{2},3)',smker).*normpdf(markAll{2}(i,4)*ones(1,length(procInd1_Ia_out{2})),markAll{2}(procInd1_I_out{2},4)',smker).*normpdf(markAll{2}(i,5)*ones(1,length(procInd1_Ia_out{2})),markAll{2}(procInd1_I_out{2},5)',smker);
+                    l1=Xnum_I_out{2}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{2}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(3)==1 %tet4
                     spike_r(3,t)=1;
                     i=tet_sum(jj,3);
-                    l0=normpdf(markAll{3}(i,2)*ones(1,length(procInd1_t4_Ia_out)),markAll{3}(procInd1_t4_I_out,2)',smker).*normpdf(markAll{3}(i,3)*ones(1,length(procInd1_t4_Ia_out)),markAll{3}(procInd1_t4_I_out,3)',smker).*normpdf(markAll{3}(i,4)*ones(1,length(procInd1_t4_Ia_out)),markAll{3}(procInd1_t4_I_out,4)',smker).*normpdf(markAll{3}(i,5)*ones(1,length(procInd1_t4_Ia_out)),markAll{3}(procInd1_t4_I_out,5)',smker);
-                    l1=Xnum_t4_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t4_I_out.*dt);
+                    l0=normpdf(markAll{3}(i,2)*ones(1,length(procInd1_Ia_out{3})),markAll{3}(procInd1_I_out{3},2)',smker).*normpdf(markAll{3}(i,3)*ones(1,length(procInd1_Ia_out{3})),markAll{3}(procInd1_I_out{3},3)',smker).*normpdf(markAll{3}(i,4)*ones(1,length(procInd1_Ia_out{3})),markAll{3}(procInd1_I_out{3},4)',smker).*normpdf(markAll{3}(i,5)*ones(1,length(procInd1_Ia_out{3})),markAll{3}(procInd1_I_out{3},5)',smker);
+                    l1=Xnum_I_out{3}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{3}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(4)==1 %tet5
                     spike_r(4,t)=1;
                     i=tet_sum(jj,4);
-                    l0=normpdf(markAll{4}(i,2)*ones(1,length(procInd1_t5_Ia_out)),markAll{4}(procInd1_t5_I_out,2)',smker).*normpdf(markAll{4}(i,3)*ones(1,length(procInd1_t5_Ia_out)),markAll{4}(procInd1_t5_I_out,3)',smker).*normpdf(markAll{4}(i,4)*ones(1,length(procInd1_t5_Ia_out)),markAll{4}(procInd1_t5_I_out,4)',smker).*normpdf(markAll{4}(i,5)*ones(1,length(procInd1_t5_Ia_out)),markAll{4}(procInd1_t5_I_out,5)',smker);
-                    l1=Xnum_t5_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t5_I_out.*dt);
+                    l0=normpdf(markAll{4}(i,2)*ones(1,length(procInd1_Ia_out{4})),markAll{4}(procInd1_I_out{4},2)',smker).*normpdf(markAll{4}(i,3)*ones(1,length(procInd1_Ia_out{4})),markAll{4}(procInd1_I_out{4},3)',smker).*normpdf(markAll{4}(i,4)*ones(1,length(procInd1_Ia_out{4})),markAll{4}(procInd1_I_out{4},4)',smker).*normpdf(markAll{4}(i,5)*ones(1,length(procInd1_Ia_out{4})),markAll{4}(procInd1_I_out{4},5)',smker);
+                    l1=Xnum_I_out{4}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{4}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(5)==1 %tet7
                     spike_r(5,t)=1;
                     i=tet_sum(jj,5);
-                    l0=normpdf(markAll{5}(i,2)*ones(1,length(procInd1_t7_Ia_out)),markAll{5}(procInd1_t7_I_out,2)',smker).*normpdf(markAll{5}(i,3)*ones(1,length(procInd1_t7_Ia_out)),markAll{5}(procInd1_t7_I_out,3)',smker).*normpdf(markAll{5}(i,4)*ones(1,length(procInd1_t7_Ia_out)),markAll{5}(procInd1_t7_I_out,4)',smker).*normpdf(markAll{5}(i,5)*ones(1,length(procInd1_t7_Ia_out)),markAll{5}(procInd1_t7_I_out,5)',smker);
-                    l1=Xnum_t7_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t7_I_out.*dt);
+                    l0=normpdf(markAll{5}(i,2)*ones(1,length(procInd1_Ia_out{5})),markAll{5}(procInd1_I_out{5},2)',smker).*normpdf(markAll{5}(i,3)*ones(1,length(procInd1_Ia_out{5})),markAll{5}(procInd1_I_out{5},3)',smker).*normpdf(markAll{5}(i,4)*ones(1,length(procInd1_Ia_out{5})),markAll{5}(procInd1_I_out{5},4)',smker).*normpdf(markAll{5}(i,5)*ones(1,length(procInd1_Ia_out{5})),markAll{5}(procInd1_I_out{5},5)',smker);
+                    l1=Xnum_I_out{5}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{5}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(6)==1 %tet10
                     spike_r(6,t)=1;
                     i=tet_sum(jj,6);
-                    l0=normpdf(markAll{6}(i,2)*ones(1,length(procInd1_t10_Ia_out)),markAll{6}(procInd1_t10_I_out,2)',smker).*normpdf(markAll{6}(i,3)*ones(1,length(procInd1_t10_Ia_out)),markAll{6}(procInd1_t10_I_out,3)',smker).*normpdf(markAll{6}(i,4)*ones(1,length(procInd1_t10_Ia_out)),markAll{6}(procInd1_t10_I_out,4)',smker).*normpdf(markAll{6}(i,5)*ones(1,length(procInd1_t10_Ia_out)),markAll{6}(procInd1_t10_I_out,5)',smker);
-                    l1=Xnum_t10_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t10_I_out.*dt);
+                    l0=normpdf(markAll{6}(i,2)*ones(1,length(procInd1_Ia_out{6})),markAll{6}(procInd1_I_out{6},2)',smker).*normpdf(markAll{6}(i,3)*ones(1,length(procInd1_Ia_out{6})),markAll{6}(procInd1_I_out{6},3)',smker).*normpdf(markAll{6}(i,4)*ones(1,length(procInd1_Ia_out{6})),markAll{6}(procInd1_I_out{6},4)',smker).*normpdf(markAll{6}(i,5)*ones(1,length(procInd1_Ia_out{6})),markAll{6}(procInd1_I_out{6},5)',smker);
+                    l1=Xnum_I_out{6}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{6}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(7)==1 %tet11
                     spike_r(7,t)=1;
                     i=tet_sum(jj,7);
-                    l0=normpdf(markAll{7}(i,2)*ones(1,length(procInd1_t11_Ia_out)),markAll{7}(procInd1_t11_I_out,2)',smker).*normpdf(markAll{7}(i,3)*ones(1,length(procInd1_t11_Ia_out)),markAll{7}(procInd1_t11_I_out,3)',smker).*normpdf(markAll{7}(i,4)*ones(1,length(procInd1_t11_Ia_out)),markAll{7}(procInd1_t11_I_out,4)',smker).*normpdf(markAll{7}(i,5)*ones(1,length(procInd1_t11_Ia_out)),markAll{7}(procInd1_t11_I_out,5)',smker);
-                    l1=Xnum_t11_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t11_I_out.*dt);
+                    l0=normpdf(markAll{7}(i,2)*ones(1,length(procInd1_Ia_out{7})),markAll{7}(procInd1_I_out{7},2)',smker).*normpdf(markAll{7}(i,3)*ones(1,length(procInd1_Ia_out{7})),markAll{7}(procInd1_I_out{7},3)',smker).*normpdf(markAll{7}(i,4)*ones(1,length(procInd1_Ia_out{7})),markAll{7}(procInd1_I_out{7},4)',smker).*normpdf(markAll{7}(i,5)*ones(1,length(procInd1_Ia_out{7})),markAll{7}(procInd1_I_out{7},5)',smker);
+                    l1=Xnum_I_out{7}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{7}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(8)==1 %tet12
                     spike_r(8,t)=1;
                     i=tet_sum(jj,8);
-                    l0=normpdf(markAll{8}(i,2)*ones(1,length(procInd1_t12_Ia_out)),markAll{8}(procInd1_t12_I_out,2)',smker).*normpdf(markAll{8}(i,3)*ones(1,length(procInd1_t12_Ia_out)),markAll{8}(procInd1_t12_I_out,3)',smker).*normpdf(markAll{8}(i,4)*ones(1,length(procInd1_t12_Ia_out)),markAll{8}(procInd1_t12_I_out,4)',smker).*normpdf(markAll{8}(i,5)*ones(1,length(procInd1_t12_Ia_out)),markAll{8}(procInd1_t12_I_out,5)',smker);
-                    l1=Xnum_t12_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t12_I_out.*dt);
+                    l0=normpdf(markAll{8}(i,2)*ones(1,length(procInd1_Ia_out{8})),markAll{8}(procInd1_I_out{8},2)',smker).*normpdf(markAll{8}(i,3)*ones(1,length(procInd1_Ia_out{8})),markAll{8}(procInd1_I_out{8},3)',smker).*normpdf(markAll{8}(i,4)*ones(1,length(procInd1_Ia_out{8})),markAll{8}(procInd1_I_out{8},4)',smker).*normpdf(markAll{8}(i,5)*ones(1,length(procInd1_Ia_out{8})),markAll{8}(procInd1_I_out{8},5)',smker);
+                    l1=Xnum_I_out{8}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{8}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(9)==1 %tet13
                     spike_r(9,t)=1;
                     i=tet_sum(jj,9);
-                    l0=normpdf(markAll{9}(i,2)*ones(1,length(procInd1_t13_Ia_out)),markAll{9}(procInd1_t13_I_out,2)',smker).*normpdf(markAll{9}(i,3)*ones(1,length(procInd1_t13_Ia_out)),markAll{9}(procInd1_t13_I_out,3)',smker).*normpdf(markAll{9}(i,4)*ones(1,length(procInd1_t13_Ia_out)),markAll{9}(procInd1_t13_I_out,4)',smker).*normpdf(markAll{9}(i,5)*ones(1,length(procInd1_t13_Ia_out)),markAll{9}(procInd1_t13_I_out,5)',smker);
-                    l1=Xnum_t13_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t13_I_out.*dt);
+                    l0=normpdf(markAll{9}(i,2)*ones(1,length(procInd1_Ia_out{9})),markAll{9}(procInd1_I_out{9},2)',smker).*normpdf(markAll{9}(i,3)*ones(1,length(procInd1_Ia_out{9})),markAll{9}(procInd1_I_out{9},3)',smker).*normpdf(markAll{9}(i,4)*ones(1,length(procInd1_Ia_out{9})),markAll{9}(procInd1_I_out{9},4)',smker).*normpdf(markAll{9}(i,5)*ones(1,length(procInd1_Ia_out{9})),markAll{9}(procInd1_I_out{9},5)',smker);
+                    l1=Xnum_I_out{9}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{9}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(10)==1 %tet14
                     spike_r(10,t)=1;
                     i=tet_sum(jj,10);
-                    l0=normpdf(markAll{10}(i,2)*ones(1,length(procInd1_t14_Ia_out)),markAll{10}(procInd1_t14_I_out,2)',smker).*normpdf(markAll{10}(i,3)*ones(1,length(procInd1_t14_Ia_out)),markAll{10}(procInd1_t14_I_out,3)',smker).*normpdf(markAll{10}(i,4)*ones(1,length(procInd1_t14_Ia_out)),markAll{10}(procInd1_t14_I_out,4)',smker).*normpdf(markAll{10}(i,5)*ones(1,length(procInd1_t14_Ia_out)),markAll{10}(procInd1_t14_I_out,5)',smker);
-                    l1=Xnum_t14_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t14_I_out.*dt);
+                    l0=normpdf(markAll{10}(i,2)*ones(1,length(procInd1_Ia_out{10})),markAll{10}(procInd1_I_out{10},2)',smker).*normpdf(markAll{10}(i,3)*ones(1,length(procInd1_Ia_out{10})),markAll{10}(procInd1_I_out{10},3)',smker).*normpdf(markAll{10}(i,4)*ones(1,length(procInd1_Ia_out{10})),markAll{10}(procInd1_I_out{10},4)',smker).*normpdf(markAll{10}(i,5)*ones(1,length(procInd1_Ia_out{10})),markAll{10}(procInd1_I_out{10},5)',smker);
+                    l1=Xnum_I_out{10}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{10}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(11)==1 %tet17
                     spike_r(11,t)=1;
                     i=tet_sum(jj,11);
-                    l0=normpdf(markAll{11}(i,2)*ones(1,length(procInd1_t17_Ia_out)),markAll{11}(procInd1_t17_I_out,2)',smker).*normpdf(markAll{11}(i,3)*ones(1,length(procInd1_t17_Ia_out)),markAll{11}(procInd1_t17_I_out,3)',smker).*normpdf(markAll{11}(i,4)*ones(1,length(procInd1_t17_Ia_out)),markAll{11}(procInd1_t17_I_out,4)',smker).*normpdf(markAll{11}(i,5)*ones(1,length(procInd1_t17_Ia_out)),markAll{11}(procInd1_t17_I_out,5)',smker);
-                    l1=Xnum_t17_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t17_I_out.*dt);
+                    l0=normpdf(markAll{11}(i,2)*ones(1,length(procInd1_Ia_out{11})),markAll{11}(procInd1_I_out{11},2)',smker).*normpdf(markAll{11}(i,3)*ones(1,length(procInd1_Ia_out{11})),markAll{11}(procInd1_I_out{11},3)',smker).*normpdf(markAll{11}(i,4)*ones(1,length(procInd1_Ia_out{11})),markAll{11}(procInd1_I_out{11},4)',smker).*normpdf(markAll{11}(i,5)*ones(1,length(procInd1_Ia_out{11})),markAll{11}(procInd1_I_out{11},5)',smker);
+                    l1=Xnum_I_out{11}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{11}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(12)==1 %tet18
                     spike_r(12,t)=1;
                     i=tet_sum(jj,12);
-                    l0=normpdf(markAll{12}(i,2)*ones(1,length(procInd1_t18_Ia_out)),markAll{12}(procInd1_t18_I_out,2)',smker).*normpdf(markAll{12}(i,3)*ones(1,length(procInd1_t18_Ia_out)),markAll{12}(procInd1_t18_I_out,3)',smker).*normpdf(markAll{12}(i,4)*ones(1,length(procInd1_t18_Ia_out)),markAll{12}(procInd1_t18_I_out,4)',smker).*normpdf(markAll{12}(i,5)*ones(1,length(procInd1_t18_Ia_out)),markAll{12}(procInd1_t18_I_out,5)',smker);
-                    l1=Xnum_t18_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t18_I_out.*dt);
+                    l0=normpdf(markAll{12}(i,2)*ones(1,length(procInd1_Ia_out{12})),markAll{12}(procInd1_I_out{12},2)',smker).*normpdf(markAll{12}(i,3)*ones(1,length(procInd1_Ia_out{12})),markAll{12}(procInd1_I_out{12},3)',smker).*normpdf(markAll{12}(i,4)*ones(1,length(procInd1_Ia_out{12})),markAll{12}(procInd1_I_out{12},4)',smker).*normpdf(markAll{12}(i,5)*ones(1,length(procInd1_Ia_out{12})),markAll{12}(procInd1_I_out{12},5)',smker);
+                    l1=Xnum_I_out{12}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{12}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(13)==1 %tet19
                     spike_r(13,t)=1;
                     i=tet_sum(jj,13);
-                    l0=normpdf(markAll{13}(i,2)*ones(1,length(procInd1_t19_Ia_out)),markAll{13}(procInd1_t19_I_out,2)',smker).*normpdf(markAll{13}(i,3)*ones(1,length(procInd1_t19_Ia_out)),markAll{13}(procInd1_t19_I_out,3)',smker).*normpdf(markAll{13}(i,4)*ones(1,length(procInd1_t19_Ia_out)),markAll{13}(procInd1_t19_I_out,4)',smker).*normpdf(markAll{13}(i,5)*ones(1,length(procInd1_t19_Ia_out)),markAll{13}(procInd1_t19_I_out,5)',smker);
-                    l1=Xnum_t19_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t19_I_out.*dt);
+                    l0=normpdf(markAll{13}(i,2)*ones(1,length(procInd1_Ia_out{13})),markAll{13}(procInd1_I_out{13},2)',smker).*normpdf(markAll{13}(i,3)*ones(1,length(procInd1_Ia_out{13})),markAll{13}(procInd1_I_out{13},3)',smker).*normpdf(markAll{13}(i,4)*ones(1,length(procInd1_Ia_out{13})),markAll{13}(procInd1_I_out{13},4)',smker).*normpdf(markAll{13}(i,5)*ones(1,length(procInd1_Ia_out{13})),markAll{13}(procInd1_I_out{13},5)',smker);
+                    l1=Xnum_I_out{13}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{13}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(14)==1 %tet20
                     spike_r(14,t)=1;
                     i=tet_sum(jj,14);
-                    l0=normpdf(markAll{14}(i,2)*ones(1,length(procInd1_t20_Ia_out)),markAll{14}(procInd1_t20_I_out,2)',smker).*normpdf(markAll{14}(i,3)*ones(1,length(procInd1_t20_Ia_out)),markAll{14}(procInd1_t20_I_out,3)',smker).*normpdf(markAll{14}(i,4)*ones(1,length(procInd1_t20_Ia_out)),markAll{14}(procInd1_t20_I_out,4)',smker).*normpdf(markAll{14}(i,5)*ones(1,length(procInd1_t20_Ia_out)),markAll{14}(procInd1_t20_I_out,5)',smker);
-                    l1=Xnum_t20_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t20_I_out.*dt);
+                    l0=normpdf(markAll{14}(i,2)*ones(1,length(procInd1_Ia_out{14})),markAll{14}(procInd1_I_out{14},2)',smker).*normpdf(markAll{14}(i,3)*ones(1,length(procInd1_Ia_out{14})),markAll{14}(procInd1_I_out{14},3)',smker).*normpdf(markAll{14}(i,4)*ones(1,length(procInd1_Ia_out{14})),markAll{14}(procInd1_I_out{14},4)',smker).*normpdf(markAll{14}(i,5)*ones(1,length(procInd1_Ia_out{14})),markAll{14}(procInd1_I_out{14},5)',smker);
+                    l1=Xnum_I_out{14}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{14}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(15)==1 %tet22
                     spike_r(15,t)=1;
                     i=tet_sum(jj,15);
-                    l0=normpdf(markAll{15}(i,2)*ones(1,length(procInd1_t22_Ia_out)),markAll{15}(procInd1_t22_I_out,2)',smker).*normpdf(markAll{15}(i,3)*ones(1,length(procInd1_t22_Ia_out)),markAll{15}(procInd1_t22_I_out,3)',smker).*normpdf(markAll{15}(i,4)*ones(1,length(procInd1_t22_Ia_out)),markAll{15}(procInd1_t22_I_out,4)',smker).*normpdf(markAll{15}(i,5)*ones(1,length(procInd1_t22_Ia_out)),markAll{15}(procInd1_t22_I_out,5)',smker);
-                    l1=Xnum_t22_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t22_I_out.*dt);
+                    l0=normpdf(markAll{15}(i,2)*ones(1,length(procInd1_Ia_out{15})),markAll{15}(procInd1_I_out{15},2)',smker).*normpdf(markAll{15}(i,3)*ones(1,length(procInd1_Ia_out{15})),markAll{15}(procInd1_I_out{15},3)',smker).*normpdf(markAll{15}(i,4)*ones(1,length(procInd1_Ia_out{15})),markAll{15}(procInd1_I_out{15},4)',smker).*normpdf(markAll{15}(i,5)*ones(1,length(procInd1_Ia_out{15})),markAll{15}(procInd1_I_out{15},5)',smker);
+                    l1=Xnum_I_out{15}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{15}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(16)==1 %tet23
                     spike_r(16,t)=1;
                     i=tet_sum(jj,16);
-                    l0=normpdf(markAll{16}(i,2)*ones(1,length(procInd1_t23_Ia_out)),markAll{16}(procInd1_t23_I_out,2)',smker).*normpdf(markAll{16}(i,3)*ones(1,length(procInd1_t23_Ia_out)),markAll{16}(procInd1_t23_I_out,3)',smker).*normpdf(markAll{16}(i,4)*ones(1,length(procInd1_t23_Ia_out)),markAll{16}(procInd1_t23_I_out,4)',smker).*normpdf(markAll{16}(i,5)*ones(1,length(procInd1_t23_Ia_out)),markAll{16}(procInd1_t23_I_out,5)',smker);
-                    l1=Xnum_t23_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t23_I_out.*dt);
+                    l0=normpdf(markAll{16}(i,2)*ones(1,length(procInd1_Ia_out{16})),markAll{16}(procInd1_I_out{16},2)',smker).*normpdf(markAll{16}(i,3)*ones(1,length(procInd1_Ia_out{16})),markAll{16}(procInd1_I_out{16},3)',smker).*normpdf(markAll{16}(i,4)*ones(1,length(procInd1_Ia_out{16})),markAll{16}(procInd1_I_out{16},4)',smker).*normpdf(markAll{16}(i,5)*ones(1,length(procInd1_Ia_out{16})),markAll{16}(procInd1_I_out{16},5)',smker);
+                    l1=Xnum_I_out{16}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{16}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(17)==1 %tet27
                     spike_r(17,t)=1;
                     i=tet_sum(jj,17);
-                    l0=normpdf(markAll{17}(i,2)*ones(1,length(procInd1_t27_Ia_out)),markAll{17}(procInd1_t27_I_out,2)',smker).*normpdf(markAll{17}(i,3)*ones(1,length(procInd1_t27_Ia_out)),markAll{17}(procInd1_t27_I_out,3)',smker).*normpdf(markAll{17}(i,4)*ones(1,length(procInd1_t27_Ia_out)),markAll{17}(procInd1_t27_I_out,4)',smker).*normpdf(markAll{17}(i,5)*ones(1,length(procInd1_t27_Ia_out)),markAll{17}(procInd1_t27_I_out,5)',smker);
-                    l1=Xnum_t27_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t27_I_out.*dt);
+                    l0=normpdf(markAll{17}(i,2)*ones(1,length(procInd1_Ia_out{17})),markAll{17}(procInd1_I_out{17},2)',smker).*normpdf(markAll{17}(i,3)*ones(1,length(procInd1_Ia_out{17})),markAll{17}(procInd1_I_out{17},3)',smker).*normpdf(markAll{17}(i,4)*ones(1,length(procInd1_Ia_out{17})),markAll{17}(procInd1_I_out{17},4)',smker).*normpdf(markAll{17}(i,5)*ones(1,length(procInd1_Ia_out{17})),markAll{17}(procInd1_I_out{17},5)',smker);
+                    l1=Xnum_I_out{17}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{17}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 elseif tetVec(18)==1 %tet29
                     spike_r(18,t)=1;
                     i=tet_sum(jj,18);
-                    l0=normpdf(markAll{18}(i,2)*ones(1,length(procInd1_t29_Ia_out)),markAll{18}(procInd1_t29_I_out,2)',smker).*normpdf(markAll{18}(i,3)*ones(1,length(procInd1_t29_Ia_out)),markAll{18}(procInd1_t29_I_out,3)',smker).*normpdf(markAll{18}(i,4)*ones(1,length(procInd1_t29_Ia_out)),markAll{18}(procInd1_t29_I_out,4)',smker).*normpdf(markAll{18}(i,5)*ones(1,length(procInd1_t29_Ia_out)),markAll{18}(procInd1_t29_I_out,5)',smker);
-                    l1=Xnum_t29_I_out*l0'./occ_Indicator_outbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t29_I_out.*dt);
+                    l0=normpdf(markAll{18}(i,2)*ones(1,length(procInd1_Ia_out{18})),markAll{18}(procInd1_I_out{18},2)',smker).*normpdf(markAll{18}(i,3)*ones(1,length(procInd1_Ia_out{18})),markAll{18}(procInd1_I_out{18},3)',smker).*normpdf(markAll{18}(i,4)*ones(1,length(procInd1_Ia_out{18})),markAll{18}(procInd1_I_out{18},4)',smker).*normpdf(markAll{18}(i,5)*ones(1,length(procInd1_Ia_out{18})),markAll{18}(procInd1_I_out{18},5)',smker);
+                    l1=Xnum_I_out{18}*l0'./occ_Indicator_outbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_out{18}.*dt);
                     l2=l2./sum(l2);
                     l_out(:,j)=l2;
                 end
@@ -398,145 +262,145 @@ for pic=1:length(velocity_threshold_index)
                 if tetVec(1)==1 %tet1
                     spike_r(1,t)=1;
                     i=tet_sum(jj,1);
-                    l0=normpdf(markAll{1}(i,2)*ones(1,length(procInd1_t1_Ia_in)),markAll{1}(procInd1_t1_I_in,2)',smker).*normpdf(markAll{1}(i,3)*ones(1,length(procInd1_t1_Ia_in)),markAll{1}(procInd1_t1_I_in,3)',smker).*normpdf(markAll{1}(i,4)*ones(1,length(procInd1_t1_Ia_in)),markAll{1}(procInd1_t1_I_in,4)',smker).*normpdf(markAll{1}(i,5)*ones(1,length(procInd1_t1_Ia_in)),markAll{1}(procInd1_t1_I_in,5)',smker);
-                    l1=Xnum_t1_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t1_I_in.*dt);
+                    l0=normpdf(markAll{1}(i,2)*ones(1,length(procInd1_Ia_in{1})),markAll{1}(procInd1_I_in{1},2)',smker).*normpdf(markAll{1}(i,3)*ones(1,length(procInd1_Ia_in{1})),markAll{1}(procInd1_I_in{1},3)',smker).*normpdf(markAll{1}(i,4)*ones(1,length(procInd1_Ia_in{1})),markAll{1}(procInd1_I_in{1},4)',smker).*normpdf(markAll{1}(i,5)*ones(1,length(procInd1_Ia_in{1})),markAll{1}(procInd1_I_in{1},5)',smker);
+                    l1=Xnum_I_in{1}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{1}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(2)==1 %tet2
                     spike_r(2,t)=1;
                     i=tet_sum(jj,2);
-                    l0=normpdf(markAll{2}(i,2)*ones(1,length(procInd1_t2_Ia_in)),markAll{2}(procInd1_t2_I_in,2)',smker).*normpdf(markAll{2}(i,3)*ones(1,length(procInd1_t2_Ia_in)),markAll{2}(procInd1_t2_I_in,3)',smker).*normpdf(markAll{2}(i,4)*ones(1,length(procInd1_t2_Ia_in)),markAll{2}(procInd1_t2_I_in,4)',smker).*normpdf(markAll{2}(i,5)*ones(1,length(procInd1_t2_Ia_in)),markAll{2}(procInd1_t2_I_in,5)',smker);
-                    l1=Xnum_t2_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t2_I_in.*dt);
+                    l0=normpdf(markAll{2}(i,2)*ones(1,length(procInd1_Ia_in{2})),markAll{2}(procInd1_I_in{2},2)',smker).*normpdf(markAll{2}(i,3)*ones(1,length(procInd1_Ia_in{2})),markAll{2}(procInd1_I_in{2},3)',smker).*normpdf(markAll{2}(i,4)*ones(1,length(procInd1_Ia_in{2})),markAll{2}(procInd1_I_in{2},4)',smker).*normpdf(markAll{2}(i,5)*ones(1,length(procInd1_Ia_in{2})),markAll{2}(procInd1_I_in{2},5)',smker);
+                    l1=Xnum_I_in{2}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{2}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(3)==1 %tet4
                     spike_r(3,t)=1;
                     i=tet_sum(jj,3);
-                    l0=normpdf(markAll{3}(i,2)*ones(1,length(procInd1_t4_Ia_in)),markAll{3}(procInd1_t4_I_in,2)',smker).*normpdf(markAll{3}(i,3)*ones(1,length(procInd1_t4_Ia_in)),markAll{3}(procInd1_t4_I_in,3)',smker).*normpdf(markAll{3}(i,4)*ones(1,length(procInd1_t4_Ia_in)),markAll{3}(procInd1_t4_I_in,4)',smker).*normpdf(markAll{3}(i,5)*ones(1,length(procInd1_t4_Ia_in)),markAll{3}(procInd1_t4_I_in,5)',smker);
-                    l1=Xnum_t4_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t4_I_in.*dt);
+                    l0=normpdf(markAll{3}(i,2)*ones(1,length(procInd1_Ia_in{3})),markAll{3}(procInd1_I_in{3},2)',smker).*normpdf(markAll{3}(i,3)*ones(1,length(procInd1_Ia_in{3})),markAll{3}(procInd1_I_in{3},3)',smker).*normpdf(markAll{3}(i,4)*ones(1,length(procInd1_Ia_in{3})),markAll{3}(procInd1_I_in{3},4)',smker).*normpdf(markAll{3}(i,5)*ones(1,length(procInd1_Ia_in{3})),markAll{3}(procInd1_I_in{3},5)',smker);
+                    l1=Xnum_I_in{3}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{3}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(4)==1 %tet5
                     spike_r(4,t)=1;
                     i=tet_sum(jj,4);
-                    l0=normpdf(markAll{4}(i,2)*ones(1,length(procInd1_t5_Ia_in)),markAll{4}(procInd1_t5_I_in,2)',smker).*normpdf(markAll{4}(i,3)*ones(1,length(procInd1_t5_Ia_in)),markAll{4}(procInd1_t5_I_in,3)',smker).*normpdf(markAll{4}(i,4)*ones(1,length(procInd1_t5_Ia_in)),markAll{4}(procInd1_t5_I_in,4)',smker).*normpdf(markAll{4}(i,5)*ones(1,length(procInd1_t5_Ia_in)),markAll{4}(procInd1_t5_I_in,5)',smker);
-                    l1=Xnum_t5_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t5_I_in.*dt);
+                    l0=normpdf(markAll{4}(i,2)*ones(1,length(procInd1_Ia_in{4})),markAll{4}(procInd1_I_in{4},2)',smker).*normpdf(markAll{4}(i,3)*ones(1,length(procInd1_Ia_in{4})),markAll{4}(procInd1_I_in{4},3)',smker).*normpdf(markAll{4}(i,4)*ones(1,length(procInd1_Ia_in{4})),markAll{4}(procInd1_I_in{4},4)',smker).*normpdf(markAll{4}(i,5)*ones(1,length(procInd1_Ia_in{4})),markAll{4}(procInd1_I_in{4},5)',smker);
+                    l1=Xnum_I_in{4}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{4}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(5)==1 %tet7
                     spike_r(5,t)=1;
                     i=tet_sum(jj,5);
-                    l0=normpdf(markAll{5}(i,2)*ones(1,length(procInd1_t7_Ia_in)),markAll{5}(procInd1_t7_I_in,2)',smker).*normpdf(markAll{5}(i,3)*ones(1,length(procInd1_t7_Ia_in)),markAll{5}(procInd1_t7_I_in,3)',smker).*normpdf(markAll{5}(i,4)*ones(1,length(procInd1_t7_Ia_in)),markAll{5}(procInd1_t7_I_in,4)',smker).*normpdf(markAll{5}(i,5)*ones(1,length(procInd1_t7_Ia_in)),markAll{5}(procInd1_t7_I_in,5)',smker);
-                    l1=Xnum_t7_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t7_I_in.*dt);
+                    l0=normpdf(markAll{5}(i,2)*ones(1,length(procInd1_Ia_in{5})),markAll{5}(procInd1_I_in{5},2)',smker).*normpdf(markAll{5}(i,3)*ones(1,length(procInd1_Ia_in{5})),markAll{5}(procInd1_I_in{5},3)',smker).*normpdf(markAll{5}(i,4)*ones(1,length(procInd1_Ia_in{5})),markAll{5}(procInd1_I_in{5},4)',smker).*normpdf(markAll{5}(i,5)*ones(1,length(procInd1_Ia_in{5})),markAll{5}(procInd1_I_in{5},5)',smker);
+                    l1=Xnum_I_in{5}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{5}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(6)==1 %tet10
                     spike_r(6,t)=1;
                     i=tet_sum(jj,6);
-                    l0=normpdf(markAll{6}(i,2)*ones(1,length(procInd1_t10_Ia_in)),markAll{6}(procInd1_t10_I_in,2)',smker).*normpdf(markAll{6}(i,3)*ones(1,length(procInd1_t10_Ia_in)),markAll{6}(procInd1_t10_I_in,3)',smker).*normpdf(markAll{6}(i,4)*ones(1,length(procInd1_t10_Ia_in)),markAll{6}(procInd1_t10_I_in,4)',smker).*normpdf(markAll{6}(i,5)*ones(1,length(procInd1_t10_Ia_in)),markAll{6}(procInd1_t10_I_in,5)',smker);
-                    l1=Xnum_t10_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t10_I_in.*dt);
+                    l0=normpdf(markAll{6}(i,2)*ones(1,length(procInd1_Ia_in{6})),markAll{6}(procInd1_I_in{6},2)',smker).*normpdf(markAll{6}(i,3)*ones(1,length(procInd1_Ia_in{6})),markAll{6}(procInd1_I_in{6},3)',smker).*normpdf(markAll{6}(i,4)*ones(1,length(procInd1_Ia_in{6})),markAll{6}(procInd1_I_in{6},4)',smker).*normpdf(markAll{6}(i,5)*ones(1,length(procInd1_Ia_in{6})),markAll{6}(procInd1_I_in{6},5)',smker);
+                    l1=Xnum_I_in{6}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{6}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(7)==1 %tet11
                     spike_r(7,t)=1;
                     i=tet_sum(jj,7);
-                    l0=normpdf(markAll{7}(i,2)*ones(1,length(procInd1_t11_Ia_in)),markAll{7}(procInd1_t11_I_in,2)',smker).*normpdf(markAll{7}(i,3)*ones(1,length(procInd1_t11_Ia_in)),markAll{7}(procInd1_t11_I_in,3)',smker).*normpdf(markAll{7}(i,4)*ones(1,length(procInd1_t11_Ia_in)),markAll{7}(procInd1_t11_I_in,4)',smker).*normpdf(markAll{7}(i,5)*ones(1,length(procInd1_t11_Ia_in)),markAll{7}(procInd1_t11_I_in,5)',smker);
-                    l1=Xnum_t11_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t11_I_in.*dt);
+                    l0=normpdf(markAll{7}(i,2)*ones(1,length(procInd1_Ia_in{7})),markAll{7}(procInd1_I_in{7},2)',smker).*normpdf(markAll{7}(i,3)*ones(1,length(procInd1_Ia_in{7})),markAll{7}(procInd1_I_in{7},3)',smker).*normpdf(markAll{7}(i,4)*ones(1,length(procInd1_Ia_in{7})),markAll{7}(procInd1_I_in{7},4)',smker).*normpdf(markAll{7}(i,5)*ones(1,length(procInd1_Ia_in{7})),markAll{7}(procInd1_I_in{7},5)',smker);
+                    l1=Xnum_I_in{7}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{7}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(8)==1 %tet12
                     spike_r(8,t)=1;
                     i=tet_sum(jj,8);
-                    l0=normpdf(markAll{8}(i,2)*ones(1,length(procInd1_t12_Ia_in)),markAll{8}(procInd1_t12_I_in,2)',smker).*normpdf(markAll{8}(i,3)*ones(1,length(procInd1_t12_Ia_in)),markAll{8}(procInd1_t12_I_in,3)',smker).*normpdf(markAll{8}(i,4)*ones(1,length(procInd1_t12_Ia_in)),markAll{8}(procInd1_t12_I_in,4)',smker).*normpdf(markAll{8}(i,5)*ones(1,length(procInd1_t12_Ia_in)),markAll{8}(procInd1_t12_I_in,5)',smker);
-                    l1=Xnum_t12_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t12_I_in.*dt);
+                    l0=normpdf(markAll{8}(i,2)*ones(1,length(procInd1_Ia_in{8})),markAll{8}(procInd1_I_in{8},2)',smker).*normpdf(markAll{8}(i,3)*ones(1,length(procInd1_Ia_in{8})),markAll{8}(procInd1_I_in{8},3)',smker).*normpdf(markAll{8}(i,4)*ones(1,length(procInd1_Ia_in{8})),markAll{8}(procInd1_I_in{8},4)',smker).*normpdf(markAll{8}(i,5)*ones(1,length(procInd1_Ia_in{8})),markAll{8}(procInd1_I_in{8},5)',smker);
+                    l1=Xnum_I_in{8}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{8}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(9)==1 %tet13
                     spike_r(9,t)=1;
                     i=tet_sum(jj,9);
-                    l0=normpdf(markAll{9}(i,2)*ones(1,length(procInd1_t13_Ia_in)),markAll{9}(procInd1_t13_I_in,2)',smker).*normpdf(markAll{9}(i,3)*ones(1,length(procInd1_t13_Ia_in)),markAll{9}(procInd1_t13_I_in,3)',smker).*normpdf(markAll{9}(i,4)*ones(1,length(procInd1_t13_Ia_in)),markAll{9}(procInd1_t13_I_in,4)',smker).*normpdf(markAll{9}(i,5)*ones(1,length(procInd1_t13_Ia_in)),markAll{9}(procInd1_t13_I_in,5)',smker);
-                    l1=Xnum_t13_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t13_I_in.*dt);
+                    l0=normpdf(markAll{9}(i,2)*ones(1,length(procInd1_Ia_in{9})),markAll{9}(procInd1_I_in{9},2)',smker).*normpdf(markAll{9}(i,3)*ones(1,length(procInd1_Ia_in{9})),markAll{9}(procInd1_I_in{9},3)',smker).*normpdf(markAll{9}(i,4)*ones(1,length(procInd1_Ia_in{9})),markAll{9}(procInd1_I_in{9},4)',smker).*normpdf(markAll{9}(i,5)*ones(1,length(procInd1_Ia_in{9})),markAll{9}(procInd1_I_in{9},5)',smker);
+                    l1=Xnum_I_in{9}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{9}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(10)==1 %tet14
                     spike_r(10,t)=1;
                     i=tet_sum(jj,10);
-                    l0=normpdf(markAll{10}(i,2)*ones(1,length(procInd1_t14_Ia_in)),markAll{10}(procInd1_t14_I_in,2)',smker).*normpdf(markAll{10}(i,3)*ones(1,length(procInd1_t14_Ia_in)),markAll{10}(procInd1_t14_I_in,3)',smker).*normpdf(markAll{10}(i,4)*ones(1,length(procInd1_t14_Ia_in)),markAll{10}(procInd1_t14_I_in,4)',smker).*normpdf(markAll{10}(i,5)*ones(1,length(procInd1_t14_Ia_in)),markAll{10}(procInd1_t14_I_in,5)',smker);
-                    l1=Xnum_t14_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t14_I_in.*dt);
+                    l0=normpdf(markAll{10}(i,2)*ones(1,length(procInd1_Ia_in{10})),markAll{10}(procInd1_I_in{10},2)',smker).*normpdf(markAll{10}(i,3)*ones(1,length(procInd1_Ia_in{10})),markAll{10}(procInd1_I_in{10},3)',smker).*normpdf(markAll{10}(i,4)*ones(1,length(procInd1_Ia_in{10})),markAll{10}(procInd1_I_in{10},4)',smker).*normpdf(markAll{10}(i,5)*ones(1,length(procInd1_Ia_in{10})),markAll{10}(procInd1_I_in{10},5)',smker);
+                    l1=Xnum_I_in{10}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{10}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(11)==1 %tet17
                     spike_r(11,t)=1;
                     i=tet_sum(jj,11);
-                    l0=normpdf(markAll{11}(i,2)*ones(1,length(procInd1_t17_Ia_in)),markAll{11}(procInd1_t17_I_in,2)',smker).*normpdf(markAll{11}(i,3)*ones(1,length(procInd1_t17_Ia_in)),markAll{11}(procInd1_t17_I_in,3)',smker).*normpdf(markAll{11}(i,4)*ones(1,length(procInd1_t17_Ia_in)),markAll{11}(procInd1_t17_I_in,4)',smker).*normpdf(markAll{11}(i,5)*ones(1,length(procInd1_t17_Ia_in)),markAll{11}(procInd1_t17_I_in,5)',smker);
-                    l1=Xnum_t17_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t17_I_in.*dt);
+                    l0=normpdf(markAll{11}(i,2)*ones(1,length(procInd1_Ia_in{11})),markAll{11}(procInd1_I_in{11},2)',smker).*normpdf(markAll{11}(i,3)*ones(1,length(procInd1_Ia_in{11})),markAll{11}(procInd1_I_in{11},3)',smker).*normpdf(markAll{11}(i,4)*ones(1,length(procInd1_Ia_in{11})),markAll{11}(procInd1_I_in{11},4)',smker).*normpdf(markAll{11}(i,5)*ones(1,length(procInd1_Ia_in{11})),markAll{11}(procInd1_I_in{11},5)',smker);
+                    l1=Xnum_I_in{11}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{11}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(12)==1 %tet18
                     spike_r(12,t)=1;
                     i=tet_sum(jj,12);
-                    l0=normpdf(markAll{12}(i,2)*ones(1,length(procInd1_t18_Ia_in)),markAll{12}(procInd1_t18_I_in,2)',smker).*normpdf(markAll{12}(i,3)*ones(1,length(procInd1_t18_Ia_in)),markAll{12}(procInd1_t18_I_in,3)',smker).*normpdf(markAll{12}(i,4)*ones(1,length(procInd1_t18_Ia_in)),markAll{12}(procInd1_t18_I_in,4)',smker).*normpdf(markAll{12}(i,5)*ones(1,length(procInd1_t18_Ia_in)),markAll{12}(procInd1_t18_I_in,5)',smker);
-                    l1=Xnum_t18_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t18_I_in.*dt);
+                    l0=normpdf(markAll{12}(i,2)*ones(1,length(procInd1_Ia_in{12})),markAll{12}(procInd1_I_in{12},2)',smker).*normpdf(markAll{12}(i,3)*ones(1,length(procInd1_Ia_in{12})),markAll{12}(procInd1_I_in{12},3)',smker).*normpdf(markAll{12}(i,4)*ones(1,length(procInd1_Ia_in{12})),markAll{12}(procInd1_I_in{12},4)',smker).*normpdf(markAll{12}(i,5)*ones(1,length(procInd1_Ia_in{12})),markAll{12}(procInd1_I_in{12},5)',smker);
+                    l1=Xnum_I_in{12}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{12}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(13)==1 %tet19
                     spike_r(13,t)=1;
                     i=tet_sum(jj,13);
-                    l0=normpdf(markAll{13}(i,2)*ones(1,length(procInd1_t19_Ia_in)),markAll{13}(procInd1_t19_I_in,2)',smker).*normpdf(markAll{13}(i,3)*ones(1,length(procInd1_t19_Ia_in)),markAll{13}(procInd1_t19_I_in,3)',smker).*normpdf(markAll{13}(i,4)*ones(1,length(procInd1_t19_Ia_in)),markAll{13}(procInd1_t19_I_in,4)',smker).*normpdf(markAll{13}(i,5)*ones(1,length(procInd1_t19_Ia_in)),markAll{13}(procInd1_t19_I_in,5)',smker);
-                    l1=Xnum_t19_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t19_I_in.*dt);
+                    l0=normpdf(markAll{13}(i,2)*ones(1,length(procInd1_Ia_in{13})),markAll{13}(procInd1_I_in{13},2)',smker).*normpdf(markAll{13}(i,3)*ones(1,length(procInd1_Ia_in{13})),markAll{13}(procInd1_I_in{13},3)',smker).*normpdf(markAll{13}(i,4)*ones(1,length(procInd1_Ia_in{13})),markAll{13}(procInd1_I_in{13},4)',smker).*normpdf(markAll{13}(i,5)*ones(1,length(procInd1_Ia_in{13})),markAll{13}(procInd1_I_in{13},5)',smker);
+                    l1=Xnum_I_in{13}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{13}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(14)==1 %tet20
                     spike_r(14,t)=1;
                     i=tet_sum(jj,14);
-                    l0=normpdf(markAll{14}(i,2)*ones(1,length(procInd1_t20_Ia_in)),markAll{14}(procInd1_t20_I_in,2)',smker).*normpdf(markAll{14}(i,3)*ones(1,length(procInd1_t20_Ia_in)),markAll{14}(procInd1_t20_I_in,3)',smker).*normpdf(markAll{14}(i,4)*ones(1,length(procInd1_t20_Ia_in)),markAll{14}(procInd1_t20_I_in,4)',smker).*normpdf(markAll{14}(i,5)*ones(1,length(procInd1_t20_Ia_in)),markAll{14}(procInd1_t20_I_in,5)',smker);
-                    l1=Xnum_t20_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t20_I_in.*dt);
+                    l0=normpdf(markAll{14}(i,2)*ones(1,length(procInd1_Ia_in{14})),markAll{14}(procInd1_I_in{14},2)',smker).*normpdf(markAll{14}(i,3)*ones(1,length(procInd1_Ia_in{14})),markAll{14}(procInd1_I_in{14},3)',smker).*normpdf(markAll{14}(i,4)*ones(1,length(procInd1_Ia_in{14})),markAll{14}(procInd1_I_in{14},4)',smker).*normpdf(markAll{14}(i,5)*ones(1,length(procInd1_Ia_in{14})),markAll{14}(procInd1_I_in{14},5)',smker);
+                    l1=Xnum_I_in{14}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{14}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(15)==1 %tet22
                     spike_r(15,t)=1;
                     i=tet_sum(jj,15);
-                    l0=normpdf(markAll{15}(i,2)*ones(1,length(procInd1_t22_Ia_in)),markAll{15}(procInd1_t22_I_in,2)',smker).*normpdf(markAll{15}(i,3)*ones(1,length(procInd1_t22_Ia_in)),markAll{15}(procInd1_t22_I_in,3)',smker).*normpdf(markAll{15}(i,4)*ones(1,length(procInd1_t22_Ia_in)),markAll{15}(procInd1_t22_I_in,4)',smker).*normpdf(markAll{15}(i,5)*ones(1,length(procInd1_t22_Ia_in)),markAll{15}(procInd1_t22_I_in,5)',smker);
-                    l1=Xnum_t22_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t22_I_in.*dt);
+                    l0=normpdf(markAll{15}(i,2)*ones(1,length(procInd1_Ia_in{15})),markAll{15}(procInd1_I_in{15},2)',smker).*normpdf(markAll{15}(i,3)*ones(1,length(procInd1_Ia_in{15})),markAll{15}(procInd1_I_in{15},3)',smker).*normpdf(markAll{15}(i,4)*ones(1,length(procInd1_Ia_in{15})),markAll{15}(procInd1_I_in{15},4)',smker).*normpdf(markAll{15}(i,5)*ones(1,length(procInd1_Ia_in{15})),markAll{15}(procInd1_I_in{15},5)',smker);
+                    l1=Xnum_I_in{15}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{15}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(16)==1 %tet23
                     spike_r(16,t)=1;
                     i=tet_sum(jj,16);
-                    l0=normpdf(markAll{16}(i,2)*ones(1,length(procInd1_t23_Ia_in)),markAll{16}(procInd1_t23_I_in,2)',smker).*normpdf(markAll{16}(i,3)*ones(1,length(procInd1_t23_Ia_in)),markAll{16}(procInd1_t23_I_in,3)',smker).*normpdf(markAll{16}(i,4)*ones(1,length(procInd1_t23_Ia_in)),markAll{16}(procInd1_t23_I_in,4)',smker).*normpdf(markAll{16}(i,5)*ones(1,length(procInd1_t23_Ia_in)),markAll{16}(procInd1_t23_I_in,5)',smker);
-                    l1=Xnum_t23_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t23_I_in.*dt);
+                    l0=normpdf(markAll{16}(i,2)*ones(1,length(procInd1_Ia_in{16})),markAll{16}(procInd1_I_in{16},2)',smker).*normpdf(markAll{16}(i,3)*ones(1,length(procInd1_Ia_in{16})),markAll{16}(procInd1_I_in{16},3)',smker).*normpdf(markAll{16}(i,4)*ones(1,length(procInd1_Ia_in{16})),markAll{16}(procInd1_I_in{16},4)',smker).*normpdf(markAll{16}(i,5)*ones(1,length(procInd1_Ia_in{16})),markAll{16}(procInd1_I_in{16},5)',smker);
+                    l1=Xnum_I_in{16}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{16}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(17)==1 %tet27
                     spike_r(17,t)=1;
                     i=tet_sum(jj,17);
-                    l0=normpdf(markAll{17}(i,2)*ones(1,length(procInd1_t27_Ia_in)),markAll{17}(procInd1_t27_I_in,2)',smker).*normpdf(markAll{17}(i,3)*ones(1,length(procInd1_t27_Ia_in)),markAll{17}(procInd1_t27_I_in,3)',smker).*normpdf(markAll{17}(i,4)*ones(1,length(procInd1_t27_Ia_in)),markAll{17}(procInd1_t27_I_in,4)',smker).*normpdf(markAll{17}(i,5)*ones(1,length(procInd1_t27_Ia_in)),markAll{17}(procInd1_t27_I_in,5)',smker);
-                    l1=Xnum_t27_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t27_I_in.*dt);
+                    l0=normpdf(markAll{17}(i,2)*ones(1,length(procInd1_Ia_in{17})),markAll{17}(procInd1_I_in{17},2)',smker).*normpdf(markAll{17}(i,3)*ones(1,length(procInd1_Ia_in{17})),markAll{17}(procInd1_I_in{17},3)',smker).*normpdf(markAll{17}(i,4)*ones(1,length(procInd1_Ia_in{17})),markAll{17}(procInd1_I_in{17},4)',smker).*normpdf(markAll{17}(i,5)*ones(1,length(procInd1_Ia_in{17})),markAll{17}(procInd1_I_in{17},5)',smker);
+                    l1=Xnum_I_in{17}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{17}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 elseif tetVec(18)==1 %tet29
                     spike_r(18,t)=1;
                     i=tet_sum(jj,18);
-                    l0=normpdf(markAll{18}(i,2)*ones(1,length(procInd1_t29_Ia_in)),markAll{18}(procInd1_t29_I_in,2)',smker).*normpdf(markAll{18}(i,3)*ones(1,length(procInd1_t29_Ia_in)),markAll{18}(procInd1_t29_I_in,3)',smker).*normpdf(markAll{18}(i,4)*ones(1,length(procInd1_t29_Ia_in)),markAll{18}(procInd1_t29_I_in,4)',smker).*normpdf(markAll{18}(i,5)*ones(1,length(procInd1_t29_Ia_in)),markAll{18}(procInd1_t29_I_in,5)',smker);
-                    l1=Xnum_t29_I_in*l0'./occ_Indicator_inbound(:,1)./dt;
-                    l2=l1.*dt.*exp(-Lint_t29_I_in.*dt);
+                    l0=normpdf(markAll{18}(i,2)*ones(1,length(procInd1_Ia_in{18})),markAll{18}(procInd1_I_in{18},2)',smker).*normpdf(markAll{18}(i,3)*ones(1,length(procInd1_Ia_in{18})),markAll{18}(procInd1_I_in{18},3)',smker).*normpdf(markAll{18}(i,4)*ones(1,length(procInd1_Ia_in{18})),markAll{18}(procInd1_I_in{18},4)',smker).*normpdf(markAll{18}(i,5)*ones(1,length(procInd1_Ia_in{18})),markAll{18}(procInd1_I_in{18},5)',smker);
+                    l1=Xnum_I_in{18}*l0'./occ_Indicator_inbound(:,1)./dt;
+                    l2=l1.*dt.*exp(-Lint_I_in{18}.*dt);
                     l2=l2./sum(l2);
                     l_in(:,j)=l2;
                 end
