@@ -889,7 +889,7 @@ Lint_t29_I_in=Lint_t29_I_in./sum(Lint_t29_I_in);
 
 
 
-
+save('expected_var.mat')
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%     DECODE        %%%%%%%%%%%%%
@@ -1273,3 +1273,5 @@ end
 
 sumStat{pic}=[pI0_vec pI1_vec pI2_vec pI3_vec];
 end
+
+save('expected_sumStat.mat', 'sumStat')

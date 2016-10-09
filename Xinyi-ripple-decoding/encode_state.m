@@ -613,4 +613,5 @@ Xnum_t29_I_in=normpdf(xs'*ones(1,length(procInd1_t29_Ia_in)),ones(length(xs),1)*
 %Xnum: Gaussian kernel estimators for position
 Lint_t29_I_in=sum(Xnum_t29_I_in,2)./occ_Indicator_inbound(:,1)./dt; %integral
 Lint_t29_I_in=Lint_t29_I_in./sum(Lint_t29_I_in);
+save('computed_var.mat');
 end

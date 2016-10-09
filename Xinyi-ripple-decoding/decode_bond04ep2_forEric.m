@@ -394,5 +394,8 @@ summary_statistic = decode_state(...
     );
 
 
+expected = load('expected_sumStat.mat');
+isequal(expected.sumStat, summary_statistic)
+
 
 
