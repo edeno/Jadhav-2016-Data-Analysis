@@ -306,7 +306,7 @@ for k=1:size(ripple_index,1)
     spike_r=spike_r_all{k};
     sumR(k)=sum(spike_r(:));
 end
-rippleI=find(sumR>0);length(rippleI)
+rippleI=find(sumR>0);
 
 %% prepare kernel density model
 linear_position_time = linpos.statematrix.time;
