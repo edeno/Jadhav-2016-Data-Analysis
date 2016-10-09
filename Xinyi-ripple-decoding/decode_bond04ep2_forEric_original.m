@@ -815,8 +815,8 @@ Xnum_t19_I_out=normpdf(xs'*ones(1,length(procInd1_t19_Ia_out)),ones(length(xs),1
 %Xnum: Gaussian kernel estimators for position
 Lint_t19_I_out=sum(Xnum_t19_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t19_I_out=Lint_t19_I_out./sum(Lint_t19_I_out);
-procInd1_t19_Ia_in=procInd1_t19(ismember(procInd1_t19,ind_I_out));
-procInd1_t19_I_in=find(ismember(procInd1_t19,ind_I_out));
+procInd1_t19_Ia_in=procInd1_t19(ismember(procInd1_t19,ind_I_in));
+procInd1_t19_I_in=find(ismember(procInd1_t19,ind_I_in));
 Xnum_t19_I_in=normpdf(xs'*ones(1,length(procInd1_t19_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t19_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t19_I_in=sum(Xnum_t19_I_in,2)./occ_I_in(:,1)./dt; %integral
@@ -841,8 +841,8 @@ Xnum_t22_I_out=normpdf(xs'*ones(1,length(procInd1_t22_Ia_out)),ones(length(xs),1
 %Xnum: Gaussian kernel estimators for position
 Lint_t22_I_out=sum(Xnum_t22_I_out,2)./occ_I_out(:,1)./dt; %integral
 Lint_t22_I_out=Lint_t22_I_out./sum(Lint_t22_I_out);
-procInd1_t22_Ia_in=procInd1_t22(ismember(procInd1_t22,ind_I_out));
-procInd1_t22_I_in=find(ismember(procInd1_t22,ind_I_out));
+procInd1_t22_Ia_in=procInd1_t22(ismember(procInd1_t22,ind_I_in));
+procInd1_t22_I_in=find(ismember(procInd1_t22,ind_I_in));
 Xnum_t22_I_in=normpdf(xs'*ones(1,length(procInd1_t22_Ia_in)),ones(length(xs),1)*xtrain(procInd1_t22_Ia_in),sxker);
 %Xnum: Gaussian kernel estimators for position
 Lint_t22_I_in=sum(Xnum_t22_I_in,2)./occ_I_in(:,1)./dt; %integral
