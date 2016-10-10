@@ -86,10 +86,10 @@ for pic=1:length(velocity_threshold_index)
         tt = spike_tim(t);
         aa = find(xi == position_time_stamps_binned(tt));
         
-        onestep_I0 = stateM_I0*postx_I0;
-        onestep_I1 = stateM_I1*postx_I1;
-        onestep_I2 = stateM_I2*postx_I2;
-        onestep_I3 = stateM_I3*postx_I3;
+        onestep_I0 = stateM_I0 * postx_I0;
+        onestep_I1 = stateM_I1 * postx_I1;
+        onestep_I2 = stateM_I2 * postx_I2;
+        onestep_I3 = stateM_I3 * postx_I3;
         
         if isempty(aa) %if no spike occurs at time t
             L_I0 = exp(-Lint_Indicator_outbound .* dt);
