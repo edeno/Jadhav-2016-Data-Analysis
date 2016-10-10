@@ -29,6 +29,7 @@ function [summary_statistic] = decode_state(pos, ...
     )
 
 velocity = pos.data(:,5);
+num_tetrodes = size(tet_ind, 2);
 
 for pic=1:length(rippleI)
     rIndV = pic; %5, 12
@@ -45,7 +46,7 @@ ripplesconsN = traj_Ind(rippleI(velocity_threshold_index));
 
 %% decoder
 for pic=1:length(velocity_threshold_index)
-    rIndV=velocity_threshold_index(pic); %5, 12
+    rIndV = velocity_threshold_index(pic); %5, 12
     
     spike_tim = ripple_index(rippleI(rIndV), 1):ripple_index(rippleI(rIndV), 2); %from 1 to 90000~
     numSteps=length(spike_tim);
@@ -53,18 +54,16 @@ for pic=1:length(velocity_threshold_index)
     
     %%
     dt = 1 / 33.4;
-    spike_r = zeros(length(tetrode_number), numSteps);
+    
+    spike_r = zeros(num_tetrodes, numSteps);
     stateV_length = length(stateV);
     numSteps = size(spike_r,2);
     %P(x0|I);
     Px_I_out = exp(-stateV.^2 ./ (2 * (2 * stateV_delta)^2));
     Px_I_out = Px_I_out ./ sum(Px_I_out);
-    Px_I_in = max(Px_I_out) * ones(1,stateV_length) - Px_I_out;
+    Px_I_in = max(Px_I_out) * ones(1, stateV_length) - Px_I_out;
     Px_I_in = Px_I_in ./ sum(Px_I_in);
-    Px_I0 = Px_I_out;
-    Px_I1 = Px_I_in;
-    Px_I2 = Px_I_in;
-    Px_I3 = Px_I_out;
+    
     %P(x0)=P(x0|I)P(I);
     postx_I0 = 0.25 * Px_I_out';
     postx_I1 = 0.25 * Px_I_in';
@@ -74,10 +73,7 @@ for pic=1:length(velocity_threshold_index)
     pI1_vec = zeros(numSteps, 1);
     pI2_vec = zeros(numSteps, 1);
     pI3_vec = zeros(numSteps, 1);
-    postxM_r_I0 = zeros(stateV_length, numSteps);
-    postxM_r_I1 = zeros(stateV_length, numSteps);
-    postxM_r_I2 = zeros(stateV_length, numSteps);
-    postxM_r_I3 = zeros(stateV_length, numSteps);
+    
     %state transition
     stateM_Indicator_outbound = stateM_I1_normalized_gaussian;
     stateM_Indicator_inbound = stateM_Indicator0_normalized_gaussian;
@@ -95,25 +91,19 @@ for pic=1:length(velocity_threshold_index)
         onestep_I2 = stateM_I2*postx_I2;
         onestep_I3 = stateM_I3*postx_I3;
         
-        L_I0 = ones(stateV_length, 1);
-        L_I1 = ones(stateV_length, 1);
-        L_I2 = ones(stateV_length, 1);
-        L_I3 = ones(stateV_length, 1);
-        
         if isempty(aa) %if no spike occurs at time t
-            L_I0=exp(-Lint_Indicator_outbound .* dt);
-            L_I1=exp(-Lint_Indicator_outbound .* dt);
-            L_I2=exp(-Lint_Indicator_inbound .* dt);
-            L_I3=exp(-Lint_Indicator_inbound .* dt);
+            L_I0 = exp(-Lint_Indicator_outbound .* dt);
+            L_I1 = exp(-Lint_Indicator_outbound .* dt);
+            L_I2 = exp(-Lint_Indicator_inbound .* dt);
+            L_I3 = exp(-Lint_Indicator_inbound .* dt);
             
         else %if spikes
             
             l_out = zeros(stateV_length, length(aa));
             for j=1:length(aa)
-                jj = aa(j);
-                tetrode_ind = find(tet_ind(jj,:));
+                tetrode_ind = find(tet_ind(aa(j), :));
                 spike_r(tetrode_ind, t) = 1;
-                l_out(:,j) = decode_per_tetrode(tet_sum(jj, tetrode_ind), ...
+                l_out(:, j) = decode_per_tetrode(tet_sum(aa(j), tetrode_ind), ...
                     markAll{tetrode_ind}, procInd1_I_out{tetrode_ind}, procInd1_Ia_out{tetrode_ind}, ...
                     Xnum_I_out{tetrode_ind}, occ_Indicator_outbound, ...
                     Lint_I_out{tetrode_ind}, dt, smker);
@@ -123,10 +113,9 @@ for pic=1:length(velocity_threshold_index)
             
             l_in = zeros(stateV_length, length(aa));
             for j=1:length(aa)
-                jj=aa(j);
-                tetrode_ind=find(tet_ind(jj,:));
+                tetrode_ind = find(tet_ind(aa(j), :));
                 spike_r(tetrode_ind, t) = 1;
-                l_in(:,j) = decode_per_tetrode(tet_sum(jj, tetrode_ind), ...
+                l_in(:, j) = decode_per_tetrode(tet_sum(aa(j), tetrode_ind), ...
                     markAll{tetrode_ind}, procInd1_I_in{tetrode_ind}, procInd1_Ia_in{tetrode_ind}, ...
                     Xnum_I_in{tetrode_ind}, occ_Indicator_inbound, ...
                     Lint_I_in{tetrode_ind}, dt, smker);
