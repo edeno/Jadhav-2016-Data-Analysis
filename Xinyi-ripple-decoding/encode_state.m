@@ -149,8 +149,7 @@ rippleI = find(sumR > 0);
 %% prepare kernel density model
 linear_position_time = linpos.statematrix.time;
 
-poslin = vecLF(:,2);
-xs = min(poslin):stateV_delta:max(poslin);
+linear_distance_bins = min(linear_distance):stateV_delta:max(linear_distance);
 dt = linear_position_time(2) - linear_position_time(1);
 xtrain = poslin';
 
