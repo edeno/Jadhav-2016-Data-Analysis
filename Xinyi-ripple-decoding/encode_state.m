@@ -54,15 +54,15 @@ end
 gaussian = @(sigma, x, y) exp(-(x.^2 + y.^2) / 2 / sigma^2); %gaussian
 
 %%
-ind_Indicator_outbound = find(trajencode.trajstate == 1 | trajencode.trajstate == 3);
-ind_Indicator_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
+is_outbound = find(trajencode.trajstate == 1 | trajencode.trajstate == 3);
+is_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
 %figure;plot(vecLF(ind_I_out,1),vecLF(ind_I_out,2),'r.',vecLF(ind_I_in,1),vecLF(ind_I_in,2),'b.');
 
 %% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
 stateV_length = length(stateV);
 stateM_Indicator_outbound = zeros(stateV_length);
-vecLF_seg = vecLF(ind_Indicator_outbound,:);
-[~,state_bin] = histc(vecLF_seg(:, 2), stateV);
+vecLF_seg = vecLF(is_outbound, :);
+[~, state_bin] = histc(vecLF_seg(:, 2), stateV);
 state_disM = [state_bin(1:end-1) state_bin(2:end)];
 stateM_seg = zeros(stateV_length);
 for stateV_ind=1:stateV_length
@@ -90,7 +90,7 @@ stateM_gaussian_smoothed = conv2(stateM_Indicator_outbound, normalizing_weight, 
 stateM_I1_normalized_gaussian = stateM_gaussian_smoothed * diag(1 ./ sum(stateM_gaussian_smoothed, 1)); %normalized to confine probability to 1
 
 stateM_Indicator_inbound = zeros(stateV_length);
-vecLF_seg = vecLF(ind_Indicator_inbound, :);
+vecLF_seg = vecLF(is_inbound, :);
 [~,  state_bin] = histc(vecLF_seg(:, 2), stateV);
 state_disM = [state_bin(1:end-1) state_bin(2:end)];
 stateM_seg = zeros(stateV_length);
