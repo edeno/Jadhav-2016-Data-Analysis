@@ -55,12 +55,12 @@ smker = mdel;
 num_tetrodes = length(tetrode_number);
 
 markAll = cell(num_tetrodes, 1);
-time0 = cell(num_tetrodes, 1);
+mark_spike_time0 = cell(num_tetrodes, 1);
 mark0 = cell(num_tetrodes, 1);
 procInd1_tet = cell(num_tetrodes, 1);
 
 for tetrode_ind = 1:num_tetrodes,
-    [markAll{tetrode_ind}, time0{tetrode_ind}, mark0{tetrode_ind}, ...
+    [markAll{tetrode_ind}, mark_spike_time0{tetrode_ind}, mark0{tetrode_ind}, ...
         procInd1_tet{tetrode_ind}] = kernel_density_model(animal, day, tetrode_number(tetrode_ind), ...
         linear_position_time);
 end
@@ -68,9 +68,9 @@ end
 mark0 = cat(1, mark0{:});
 procInd1 = cat(1, procInd1_tet{:});
 %% bookkeeping code: which spike comes which tetrode
-group_labels = cellfun(@(t, group) group * ones(size(t)), time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
+group_labels = cellfun(@(t, group) group * ones(size(t)), mark_spike_time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
 group_labels = cat(1, group_labels{:});
-[spike_times, timeInd] = sort(cat(1, time0{:}));
+[spike_times, timeInd] = sort(cat(1, mark_spike_time0{:}));
 mark0 = mark0(timeInd, :);
 procInd1=procInd1(timeInd, :);
 
