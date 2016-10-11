@@ -66,29 +66,10 @@ for ripple_number = 1:length(ripple_index)
             
         else %if spikes
             
-            l_out = zeros(stateV_length, length(is_spike_at_time_t));
-            for j=1:length(is_spike_at_time_t)
-                tetrode_ind = find(tet_ind(is_spike_at_time_t(j), :));
-                spike_r(tetrode_ind, step_ind) = 1;
-                l_out(:, j) = decode_per_tetrode(tet_sum(is_spike_at_time_t(j), tetrode_ind), ...
-                    markAll{tetrode_ind}, procInd1_I{tetrode_ind, 1}, procInd1_Ia{tetrode_ind, 1}, ...
-                    Xnum_I{tetrode_ind, 1}, occ_I_Lambda{1}, ...
-                    Lint_I{tetrode_ind, 1}, dt, smker);
-            end
-            L_out = prod(l_out, 2);
-            L_out = L_out ./ sum(L_out);
-            
-            l_in = zeros(stateV_length, length(is_spike_at_time_t));
-            for j=1:length(is_spike_at_time_t)
-                tetrode_ind = find(tet_ind(is_spike_at_time_t(j), :));
-                spike_r(tetrode_ind, step_ind) = 1;
-                l_in(:, j) = decode_per_tetrode(tet_sum(is_spike_at_time_t(j), tetrode_ind), ...
-                    markAll{tetrode_ind}, procInd1_I{tetrode_ind, 2}, procInd1_Ia{tetrode_ind, 2}, ...
-                    Xnum_I{tetrode_ind, 2}, occ_I_Lambda{2}, ...
-                    Lint_I{tetrode_ind, 2}, dt, smker);
-            end
-            L_in = prod(l_in, 2);
-            L_in = L_in ./ sum(L_in);
+            L_out = decode_per_state(1, stateV_length, is_spike_at_time_t, ...
+                tet_ind, tet_sum, markAll, procInd1_I, procInd1_Ia, Xnum_I, occ_I_Lambda, Lint_I, dt, smker);
+            L_in = decode_per_state(2, stateV_length, is_spike_at_time_t, ...
+                tet_ind, tet_sum, markAll, procInd1_I, procInd1_Ia, Xnum_I, occ_I_Lambda, Lint_I, dt, smker);
             
             L{1} = L_out;
             L{2} = L_out;
@@ -100,6 +81,7 @@ for ripple_number = 1:length(ripple_index)
             sum(one_step_prediction_density{2} .* L{2}) + ...
             sum(one_step_prediction_density{3} .* L{3}) + ...
             sum(one_step_prediction_density{4} .* L{4});
+        
         for state_ind = 1:length(postx),
             postx{state_ind} = one_step_prediction_density{state_ind} .* L{state_ind} ./ totnorm;
         end
