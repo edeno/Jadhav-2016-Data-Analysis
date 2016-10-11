@@ -27,34 +27,26 @@ function [summary_statistic] = decode_state(pos, ...
     Lint_I_in ...
     )
 
-velocity = pos.data(:,5);
+running_speed = pos.data(:,5);
 num_tetrodes = size(tet_ind, 2);
 
-for pic=1:length(rippleI)
-    rIndV = pic; %5, 12
-    rloc_Ind = find(position_time_stamps * 1000 > position_time_stamps_binned(ripple_index(rippleI(rIndV), 1)) & ...
-        position_time_stamps * 1000 < position_time_stamps_binned(ripple_index(rippleI(rIndV), 2)));
+for ripple_number = 1:length(rippleI)
+    rloc_Ind = find(position_time_stamps * 1000 > position_time_stamps_binned(ripple_index(rippleI(ripple_number), 1)) & ...
+        position_time_stamps * 1000 < position_time_stamps_binned(ripple_index(rippleI(ripple_number), 2)));
     
-    rloc(pic) = vecLF(rloc_Ind(1),2);
-    vel(pic) = velocity(rloc_Ind(1),1);
+    running_speed_at_ripple(ripple_number) = running_speed(rloc_Ind(1),1);
 end
 
-velocity_threshold_index = find(vel < 4);
+velocity_threshold_index = find(running_speed_at_ripple < 4);
 %only decode replay when the running speed < 4cm/sec
 dt = 1 / 33.4;
 stateV_length = length(stateV);
 
-%% decoder
 for pic = 1:length(velocity_threshold_index)
-    rIndV = velocity_threshold_index(pic); %5, 12
     
-    spike_tim = ripple_index(rippleI(rIndV), 1):ripple_index(rippleI(rIndV), 2); %from 1 to 90000~
+    ripple_number = velocity_threshold_index(pic); %5, 12
+    spike_tim = ripple_index(rippleI(ripple_number), 1):ripple_index(rippleI(ripple_number), 2); %from 1 to 90000~
     numSteps = length(spike_tim);
-    xi = round(spike_times / 10);
-    
-    %%
-    dt = 1 / 33.4;
-    
     spike_r = zeros(num_tetrodes, numSteps);
 
     %P(x0|I);
@@ -81,9 +73,8 @@ for pic = 1:length(velocity_threshold_index)
     stateM_I2 = stateM_Indicator_inbound;
     stateM_I3 = stateM_Indicator_outbound;
     
-    for t=1:numSteps
-        tt = spike_tim(t);
-        aa = find(xi == position_time_stamps_binned(tt));
+    for t=1:numSteps       
+        aa = find(spike_times == position_time_stamps_binned(spike_tim(t)));
         
         onestep_I0 = stateM_I0 * postx_I0;
         onestep_I1 = stateM_I1 * postx_I1;
