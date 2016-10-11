@@ -29,6 +29,7 @@ function [summary_statistic] = decode_state(pos, ...
 
 running_speed = pos.data(:,5);
 num_tetrodes = size(tet_ind, 2);
+spike_times = round(spike_times / 10);
 
 for ripple_number = 1:length(rippleI)
     rloc_Ind = find(position_time_stamps * 1000 > position_time_stamps_binned(ripple_index(rippleI(ripple_number), 1)) & ...
