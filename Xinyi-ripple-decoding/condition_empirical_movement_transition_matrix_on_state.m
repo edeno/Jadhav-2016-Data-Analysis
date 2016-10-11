@@ -1,4 +1,5 @@
 function [stateM_normalized_gaussian] = condition_empirical_movement_transition_matrix_on_state(stateV, vecLF, is_state)
+%% calculate emipirical movement transition matrix, then Gaussian smoothed
 stateV_length = length(stateV);
 stateM_I = zeros(stateV_length);
 vecLF_seg = vecLF(is_state, :);
