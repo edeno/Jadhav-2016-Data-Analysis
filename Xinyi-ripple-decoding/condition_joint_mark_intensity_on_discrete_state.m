@@ -1,4 +1,4 @@
-function [Lint_I, occ_I] = condition_Lambda_on_discrete_state(xtrain, procInd1, is_state, sxker, mark_bins, linear_distance_bins, dt)
+function [Lint_I, occ_I] = condition_joint_mark_intensity_on_discrete_state(xtrain, procInd1, is_state, sxker, mark_bins, linear_distance_bins, dt)
 num_mark_bins = length(mark_bins);
 num_state = length(is_state);
 num_linear_distance_bins = length(linear_distance_bins);

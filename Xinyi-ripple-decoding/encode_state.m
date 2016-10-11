@@ -189,10 +189,10 @@ end
 
 tet_sum = tet_ind .* cumsum(tet_ind,1); %row: time point; column: index of spike per tetrode
 
-%% captial LAMBDA conditioned on I=1 and I=0
+%% captial LAMBDA (joint mark intensity function) conditioned on I=1 and I=0
 mark_bins = min(mark0(:)):mdel:max(mark0(:));
-[Lint_I_Lambda_outbound, occ_I_Lambda_outbound] = condition_Lambda_on_discrete_state(xtrain, procInd1, is_outbound, sxker, mark_bins, linear_distance_bins, dt);
-[Lint_I_Lambda_inbound, occ_I_Lambda_inbound] = condition_Lambda_on_discrete_state(xtrain, procInd1, is_inbound, sxker, mark_bins, linear_distance_bins, dt);
+[Lint_I_Lambda_outbound, occ_I_Lambda_outbound] = condition_joint_mark_intensity_on_discrete_state(xtrain, procInd1, is_outbound, sxker, mark_bins, linear_distance_bins, dt);
+[Lint_I_Lambda_inbound, occ_I_Lambda_inbound] = condition_joint_mark_intensity_on_discrete_state(xtrain, procInd1, is_inbound, sxker, mark_bins, linear_distance_bins, dt);
 
 %% encode per tetrode, conditioning on I=1 and I=0
 procInd1_Ia_out = cell(num_tetrodes, 1);
