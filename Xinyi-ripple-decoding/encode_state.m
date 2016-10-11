@@ -151,7 +151,7 @@ linear_position_time = linpos.statematrix.time;
 
 linear_distance_bins = min(linear_distance):stateV_delta:max(linear_distance);
 dt = linear_position_time(2) - linear_position_time(1);
-xtrain = poslin';
+xtrain = linear_distance';
 
 sxker = stateV_delta;
 mdel = 20;
