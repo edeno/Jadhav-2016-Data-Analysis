@@ -34,7 +34,7 @@ stateV_delta = stateV(2) - stateV(1);
 %% calculate emipirical movement transition matrix, then Gaussian smoothed
 [~, state_bin] = histc(linear_distance, stateV);
 state_disM = [state_bin(1:end-1) state_bin(2:end)];
-stateV_length = size(stateV,2);
+stateV_length = size(stateV, 2);
 %by column=departuring
 for stateV_ind = 1:stateV_length
     sp0 = state_disM(state_disM(:, 1) == stateV_ind, 2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
@@ -52,64 +52,8 @@ is_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
 %figure;plot(vecLF(ind_I_out,1),vecLF(ind_I_out,2),'r.',vecLF(ind_I_in,1),vecLF(ind_I_in,2),'b.');
 
 %% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
-stateV_length = length(stateV);
-stateM_Indicator_outbound = zeros(stateV_length);
-vecLF_seg = vecLF(is_outbound, :);
-[~, state_bin] = histc(vecLF_seg(:, 2), stateV);
-state_disM = [state_bin(1:end-1) state_bin(2:end)];
-stateM_seg = zeros(stateV_length);
-for stateV_ind=1:stateV_length
-    sp0 = state_disM(state_disM(:,1) == stateV_ind, 2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-    if ~isempty(sp0)
-        stateM_seg(:, stateV_ind) = histc(sp0, linspace(1, stateV_length, stateV_length)) ./ size(sp0, 1);
-    else
-        stateM_seg(:, stateV_ind) = zeros(1, stateV_length);
-    end
-end
-stateM_Indicator_outbound = stateM_Indicator_outbound + stateM_seg;
-%%%if too many zeros:
-for i=1:stateV_length
-    if sum(stateM_Indicator_outbound(:, i)) == 0
-        stateM_Indicator_outbound(:, i) = 1 / stateV_length;
-    else
-        stateM_Indicator_outbound(:, i) = stateM_Indicator_outbound(:,i) ./ sum(stateM_Indicator_outbound(:, i));
-    end
-end
-
-[dx, dy] = meshgrid([-1:1]);
-sigma = 0.5;
-normalizing_weight = gaussian(sigma, dx, dy) / sum(sum(gaussian(sigma, dx, dy))); %normalizing weights
-stateM_gaussian_smoothed = conv2(stateM_Indicator_outbound, normalizing_weight, 'same'); %gaussian smoothed
-stateM_I1_normalized_gaussian = stateM_gaussian_smoothed * diag(1 ./ sum(stateM_gaussian_smoothed, 1)); %normalized to confine probability to 1
-
-stateM_Indicator_inbound = zeros(stateV_length);
-vecLF_seg = vecLF(is_inbound, :);
-[~,  state_bin] = histc(vecLF_seg(:, 2), stateV);
-state_disM = [state_bin(1:end-1) state_bin(2:end)];
-stateM_seg = zeros(stateV_length);
-for stateV_ind = 1:stateV_length
-    sp0 = state_disM(state_disM(:, 1) == stateV_ind, 2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-    if ~isempty(sp0)
-        stateM_seg(:,stateV_ind) = histc(sp0, linspace(1, stateV_length, stateV_length)) ./ size(sp0, 1);
-    else
-        stateM_seg(:, stateV_ind) = zeros(1, stateV_length);
-    end
-end
-stateM_Indicator_inbound = stateM_Indicator_inbound + stateM_seg;
-%%if too many zeros
-for i = 1:stateV_length
-    if sum(stateM_Indicator_inbound(:, i)) == 0
-        stateM_Indicator_inbound(:, i) = 1 / stateV_length;
-    else
-        stateM_Indicator_inbound(:, i) = stateM_Indicator_inbound(:, i) ./ sum(stateM_Indicator_inbound(:, i));
-    end
-end
-
-[dx, dy] = meshgrid([-1:1]);
-sigma = 0.5;
-normalizing_weight = gaussian(sigma, dx, dy) / sum(sum(gaussian(sigma, dx, dy))); %normalizing weights
-stateM_gaussian_smoothed = conv2(stateM_Indicator_inbound, normalizing_weight, 'same'); %gaussian smoothed
-stateM_Indicator0_normalized_gaussian = stateM_gaussian_smoothed * diag(1 ./ sum(stateM_gaussian_smoothed, 1)); %normalized to confine probability to 1
+[stateM_I1_normalized_gaussian] = condition_empirical_movement_transition_matrix_on_state(stateV, vecLF, is_outbound);
+[stateM_Indicator0_normalized_gaussian] = condition_empirical_movement_transition_matrix_on_state(stateV, vecLF, is_inbound);
 
 %% prepare kernel density model
 linear_position_time = linpos.statematrix.time;
@@ -123,7 +67,6 @@ mdel = 20;
 smker = mdel;
 
 %% encode the kernel density model per tetrode
-
 num_tetrodes = length(tetrode_number);
 
 markAll = cell(num_tetrodes, 1);
