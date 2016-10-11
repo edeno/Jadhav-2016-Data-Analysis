@@ -41,6 +41,8 @@ end
 
 velocity_threshold_index = find(vel < 4);
 %only decode replay when the running speed < 4cm/sec
+dt = 1 / 33.4;
+stateV_length = length(stateV);
 
 %% decoder
 for pic = 1:length(velocity_threshold_index)
@@ -54,10 +56,9 @@ for pic = 1:length(velocity_threshold_index)
     dt = 1 / 33.4;
     
     spike_r = zeros(num_tetrodes, numSteps);
-    stateV_length = length(stateV);
-    numSteps = size(spike_r,2);
+
     %P(x0|I);
-    Px_I_out = exp(-stateV.^2 ./ (2 * (2 * stateV_delta)^2));
+    Px_I_out = exp(-stateV.^2  ./ (2 * (2 * stateV_delta)^2));
     Px_I_out = Px_I_out ./ sum(Px_I_out);
     Px_I_in = max(Px_I_out) * ones(1, stateV_length) - Px_I_out;
     Px_I_in = Px_I_in ./ sum(Px_I_in);
