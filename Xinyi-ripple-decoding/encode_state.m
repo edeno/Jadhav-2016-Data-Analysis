@@ -22,9 +22,9 @@ function [vecLF, ...
     Lint_I_in ...
     ] = encode_state(animal, day, linpos, trajencode, tetrode_number)
 %% use Loren's linearization
-spike_times = linpos.statematrix.time;
+linear_position_spike_times = linpos.statematrix.time;
 linear_distance = linpos.statematrix.lindist;
-vecLF(:,1) = spike_times;
+vecLF(:,1) = linear_position_spike_times;
 vecLF(:,2) = linear_distance;
 %figure;plot(time,linear_distance,'.');
 
