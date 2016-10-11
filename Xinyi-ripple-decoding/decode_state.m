@@ -1,9 +1,5 @@
-function [summary_statistic] = decode_state(pos, ...
-    rippleI, ...
-    ripple_index, ...
-    position_time_stamps, ...
+function [summary_statistic] = decode_state(ripple_index, ...
     position_time_stamps_binned, ...
-    vecLF, ...
     spike_times, ...
     stateV, ...
     stateV_delta, ...
@@ -27,26 +23,16 @@ function [summary_statistic] = decode_state(pos, ...
     Lint_I_in ...
     )
 
-running_speed = pos.data(:,5);
 num_tetrodes = size(tet_ind, 2);
 spike_times = round(spike_times / 10);
 
-for ripple_number = 1:length(rippleI)
-    rloc_Ind = find(position_time_stamps * 1000 > position_time_stamps_binned(ripple_index(rippleI(ripple_number), 1)) & ...
-        position_time_stamps * 1000 < position_time_stamps_binned(ripple_index(rippleI(ripple_number), 2)));
-    
-    running_speed_at_ripple(ripple_number) = running_speed(rloc_Ind(1),1);
-end
-
-velocity_threshold_index = find(running_speed_at_ripple < 4);
 %only decode replay when the running speed < 4cm/sec
 dt = 1 / 33.4;
 stateV_length = length(stateV);
 
-for pic = 1:length(velocity_threshold_index)
+for ripple_number = 1:length(ripple_index)
     
-    ripple_number = velocity_threshold_index(pic); %5, 12
-    spike_tim = ripple_index(rippleI(ripple_number), 1):ripple_index(rippleI(ripple_number), 2); %from 1 to 90000~
+    spike_tim = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
     numSteps = length(spike_tim);
     spike_r = zeros(num_tetrodes, numSteps);
 
@@ -74,8 +60,8 @@ for pic = 1:length(velocity_threshold_index)
     stateM_I2 = stateM_Indicator_inbound;
     stateM_I3 = stateM_Indicator_outbound;
     
-    for t=1:numSteps       
-        aa = find(spike_times == position_time_stamps_binned(spike_tim(t)));
+    for step_ind = 1:numSteps       
+        aa = find(spike_times == position_time_stamps_binned(spike_tim(step_ind)));
         
         onestep_I0 = stateM_I0 * postx_I0;
         onestep_I1 = stateM_I1 * postx_I1;
@@ -93,7 +79,7 @@ for pic = 1:length(velocity_threshold_index)
             l_out = zeros(stateV_length, length(aa));
             for j=1:length(aa)
                 tetrode_ind = find(tet_ind(aa(j), :));
-                spike_r(tetrode_ind, t) = 1;
+                spike_r(tetrode_ind, step_ind) = 1;
                 l_out(:, j) = decode_per_tetrode(tet_sum(aa(j), tetrode_ind), ...
                     markAll{tetrode_ind}, procInd1_I_out{tetrode_ind}, procInd1_Ia_out{tetrode_ind}, ...
                     Xnum_I_out{tetrode_ind}, occ_Indicator_outbound, ...
@@ -105,7 +91,7 @@ for pic = 1:length(velocity_threshold_index)
             l_in = zeros(stateV_length, length(aa));
             for j=1:length(aa)
                 tetrode_ind = find(tet_ind(aa(j), :));
-                spike_r(tetrode_ind, t) = 1;
+                spike_r(tetrode_ind, step_ind) = 1;
                 l_in(:, j) = decode_per_tetrode(tet_sum(aa(j), tetrode_ind), ...
                     markAll{tetrode_ind}, procInd1_I_in{tetrode_ind}, procInd1_Ia_in{tetrode_ind}, ...
                     Xnum_I_in{tetrode_ind}, occ_I_Lambda_inbound, ...
@@ -129,12 +115,12 @@ for pic = 1:length(velocity_threshold_index)
         postx_I2 = onestep_I2 .* L_I2 ./ totnorm;
         postx_I3 = onestep_I3 .* L_I3 ./ totnorm;
         
-        pI0_vec(t) = sum(postx_I0);
-        pI1_vec(t) = sum(postx_I1);
-        pI2_vec(t) = sum(postx_I2);
-        pI3_vec(t) = sum(postx_I3);
+        pI0_vec(step_ind) = sum(postx_I0);
+        pI1_vec(step_ind) = sum(postx_I1);
+        pI2_vec(step_ind) = sum(postx_I2);
+        pI3_vec(step_ind) = sum(postx_I3);
     end
     
-    summary_statistic{pic} = [pI0_vec pI1_vec pI2_vec pI3_vec];
+    summary_statistic{ripple_number} = [pI0_vec pI1_vec pI2_vec pI3_vec];
 end
 end
