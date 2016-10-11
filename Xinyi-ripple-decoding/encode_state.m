@@ -31,21 +31,6 @@ vecLF(:,2) = linear_distance;
 linear_distance_bins = 61;
 stateV = linspace(min(linear_distance), max(linear_distance), linear_distance_bins);
 stateV_delta = stateV(2) - stateV(1);
-%% calculate emipirical movement transition matrix, then Gaussian smoothed
-[~, state_bin] = histc(linear_distance, stateV);
-state_disM = [state_bin(1:end-1) state_bin(2:end)];
-stateV_length = size(stateV, 2);
-%by column=departuring
-for stateV_ind = 1:stateV_length
-    sp0 = state_disM(state_disM(:, 1) == stateV_ind, 2); %by departure x_k-1 (by column); sp0 is the departuring x_(k-1);
-    if ~isempty(sp0)
-        stateM(:, stateV_ind) = histc(sp0, linspace(1, stateV_length,stateV_length)) ./ size(sp0, 1);
-    else
-        stateM(:, stateV_ind) = zeros(1, stateV_length);
-    end
-end
-gaussian = @(sigma, x, y) exp(-(x.^2 + y.^2) / 2 / sigma^2); %gaussian
-
 %%
 is_outbound = find(trajencode.trajstate == 1 | trajencode.trajstate == 3);
 is_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
