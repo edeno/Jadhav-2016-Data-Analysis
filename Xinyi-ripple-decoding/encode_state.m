@@ -21,27 +21,20 @@ function [spike_times, ...
     Lint_I_in ...
     ] = encode_state(animal, day, linpos, trajencode, tetrode_number)
 %% use Loren's linearization
-linear_position_spike_times = linpos.statematrix.time;
 linear_distance = linpos.statematrix.lindist;
-vecLF(:,1) = linear_position_spike_times;
-vecLF(:,2) = linear_distance;
-%figure;plot(time,linear_distance,'.');
-
-linear_distance_bins = 61;
-stateV = linspace(min(linear_distance), max(linear_distance), linear_distance_bins);
-stateV_delta = stateV(2) - stateV(1);
-%%
-is_outbound = find(trajencode.trajstate == 1 | trajencode.trajstate == 3);
-is_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
-%figure;plot(vecLF(ind_I_out,1),vecLF(ind_I_out,2),'r.',vecLF(ind_I_in,1),vecLF(ind_I_in,2),'b.');
-
-%% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
-[stateM_I_normalized_gaussian_outbound] = condition_empirical_movement_transition_matrix_on_state(stateV, vecLF, is_outbound);
-[stateM_I_normalized_gaussian_inbound] = condition_empirical_movement_transition_matrix_on_state(stateV, vecLF, is_inbound);
-
-%% prepare kernel density model
 linear_position_time = linpos.statematrix.time;
 
+num_linear_distance_bins = 61;
+stateV = linspace(min(linear_distance), max(linear_distance), num_linear_distance_bins);
+stateV_delta = stateV(2) - stateV(1);
+
+is_outbound = find(trajencode.trajstate == 1 | trajencode.trajstate == 3);
+is_inbound = find(trajencode.trajstate == 2 | trajencode.trajstate == 4);
+%% empirical movement transition matrix conditioned on I=1(outbound) and I=0 (inbound)
+[stateM_I_normalized_gaussian_outbound] = condition_empirical_movement_transition_matrix_on_state(stateV, linear_distance, is_outbound);
+[stateM_I_normalized_gaussian_inbound] = condition_empirical_movement_transition_matrix_on_state(stateV, linear_distance, is_inbound);
+
+%% prepare kernel density model
 linear_distance_bins = min(linear_distance):stateV_delta:max(linear_distance);
 dt = linear_position_time(2) - linear_position_time(1);
 xtrain = linear_distance';
@@ -49,7 +42,6 @@ xtrain = linear_distance';
 sxker = stateV_delta;
 mdel = 20;
 smker = mdel;
-
 %% encode the kernel density model per tetrode
 num_tetrodes = length(tetrode_number);
 
