@@ -1,4 +1,4 @@
-function [spike_times, ...
+function [mark_spike_times, ...
     stateV, ...
     stateV_delta, ...
     stateM_I_normalized_gaussian_outbound, ...
@@ -61,11 +61,11 @@ procInd1 = cat(1, procInd1_tet{:});
 %% bookkeeping code: which spike comes which tetrode
 group_labels = cellfun(@(t, group) group * ones(size(t)), mark_spike_time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
 group_labels = cat(1, group_labels{:});
-[spike_times, timeInd] = sort(cat(1, mark_spike_time0{:}));
+[mark_spike_times, timeInd] = sort(cat(1, mark_spike_time0{:}));
 mark0 = mark0(timeInd, :);
 procInd1 = procInd1(timeInd, :);
 
-tet_ind = false(length(spike_times), num_tetrodes);
+tet_ind = false(length(mark_spike_times), num_tetrodes);
 
 for tetrode_ind = 1:num_tetrodes,
     tet_ind(:, tetrode_ind) = (group_labels(timeInd) == tetrode_ind);
