@@ -26,7 +26,6 @@ for ripple_number = 1:length(ripple_index)
     
     spike_tim = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
     numSteps = length(spike_tim);
-    spike_r = zeros(num_tetrodes, numSteps);
     
     %P(x0|I);
     Px_I{1} = exp(-stateV.^2  ./ (2 * (2 * stateV_delta)^2));
@@ -35,63 +34,54 @@ for ripple_number = 1:length(ripple_index)
     Px_I{2} = Px_I{2} ./ sum(Px_I{2});
     
     %P(x0)=P(x0|I)P(I);
-    postx{1} = 0.25 * Px_I{1}';
-    postx{2} = 0.25 * Px_I{2}';
-    postx{3} = 0.25 * Px_I{2}';
-    postx{4} = 0.25 * Px_I{1}';
-    pI0_vec = zeros(numSteps, 1);
-    pI1_vec = zeros(numSteps, 1);
-    pI2_vec = zeros(numSteps, 1);
-    pI3_vec = zeros(numSteps, 1);
     
-    %state transition
-    stateM{1} = stateM_I_normalized_gaussian{1};
-    stateM{2} = stateM_I_normalized_gaussian{2};
-    stateM{3} = stateM_I_normalized_gaussian{2};
-    stateM{4} = stateM_I_normalized_gaussian{1};
+    posterior_density{1} = 0.25 * Px_I{1}';
+    posterior_density{2} = 0.25 * Px_I{2}';
+    posterior_density{3} = 0.25 * Px_I{2}';
+    posterior_density{4} = 0.25 * Px_I{1}';
+    decision_state_probability = zeros(numSteps, 4);
     
-    for step_ind = 1:numSteps
-        is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(spike_tim(step_ind)));
+    state_transition_model{1} = stateM_I_normalized_gaussian{1}; % outbound forward
+    state_transition_model{2} = stateM_I_normalized_gaussian{2}; % outbound reverse
+    state_transition_model{3} = stateM_I_normalized_gaussian{2}; % inbound forward
+    state_transition_model{4} = stateM_I_normalized_gaussian{1}; % inbound reverse
+    
+    for time_step_ind = 1:numSteps
+        is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(spike_tim(time_step_ind)));
         
-        for state_ind = 1:length(postx),
-            one_step_prediction_density{state_ind} = stateM{state_ind} * postx{state_ind};
+        for decision_state_ind = 1:length(posterior_density),
+            one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density{decision_state_ind};
         end
         
         if isempty(is_spike_at_time_t) %if no spike occurs at time t
             %% Is this supposed to happen? The labels don't seem right
-            L{1} = exp(-Lint_I_Lambda{1} .* dt);
-            L{2} = exp(-Lint_I_Lambda{1} .* dt);
-            L{3} = exp(-Lint_I_Lambda{2} .* dt);
-            L{4} = exp(-Lint_I_Lambda{2} .* dt);
+            likelihood(:, 1) = exp(-Lint_I_Lambda{1} .* dt);
+            likelihood(:, 2) = exp(-Lint_I_Lambda{1} .* dt);
+            likelihood(:, 3) = exp(-Lint_I_Lambda{2} .* dt);
+            likelihood(:, 4) = exp(-Lint_I_Lambda{2} .* dt);
             
         else %if spikes
             
-            L_out = decode_per_state(1, stateV_length, is_spike_at_time_t, ...
+            likelihood_outbound = decode_per_state(1, stateV_length, is_spike_at_time_t, ...
                 tet_ind, tet_sum, markAll, procInd1_I, procInd1_Ia, Xnum_I, occ_I_Lambda, Lint_I, dt, smker);
-            L_in = decode_per_state(2, stateV_length, is_spike_at_time_t, ...
+            likelihood_inbound = decode_per_state(2, stateV_length, is_spike_at_time_t, ...
                 tet_ind, tet_sum, markAll, procInd1_I, procInd1_Ia, Xnum_I, occ_I_Lambda, Lint_I, dt, smker);
             
-            L{1} = L_out;
-            L{2} = L_out;
-            L{3} = L_in;
-            L{4} = L_in;
+            likelihood(:, 1) = likelihood_outbound;
+            likelihood(:, 2) = likelihood_outbound;
+            likelihood(:, 3) = likelihood_inbound;
+            likelihood(:, 4) = likelihood_inbound;
         end
         
-        totnorm = sum(one_step_prediction_density{1} .* L{1}) + ...
-            sum(one_step_prediction_density{2} .* L{2}) + ...
-            sum(one_step_prediction_density{3} .* L{3}) + ...
-            sum(one_step_prediction_density{4} .* L{4});
+        total_norm = sum(one_step_prediction_density(:) .* likelihood(:));
         
-        for state_ind = 1:length(postx),
-            postx{state_ind} = one_step_prediction_density{state_ind} .* L{state_ind} ./ totnorm;
+        for decision_state_ind = 1:length(posterior_density),
+            posterior_density{decision_state_ind} = one_step_prediction_density(:, decision_state_ind) .* likelihood(:, decision_state_ind) ./ total_norm;
+            decision_state_probability(time_step_ind, decision_state_ind) = sum(posterior_density{decision_state_ind});
         end
-        
-        pI0_vec(step_ind) = sum(postx{1});
-        pI1_vec(step_ind) = sum(postx{2});
-        pI2_vec(step_ind) = sum(postx{3});
-        pI3_vec(step_ind) = sum(postx{4});
+
     end
     
-    summary_statistic{ripple_number} = [pI0_vec pI1_vec pI2_vec pI3_vec];
+    summary_statistic{ripple_number} = decision_state_probability;
 end
 end
