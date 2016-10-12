@@ -6,7 +6,7 @@ function [mark_spike_times, ...
     tet_ind, ...
     tet_sum, ...
     marks, ...
-    procInd1_I, ...
+    mark_spikes_to_linear_position_time_bins_index_I, ...
     smker, ...
     Xnum_I, ....
     occ_I_Lambda, ...
@@ -36,19 +36,20 @@ num_tetrodes = length(tetrode_number);
 
 mark_spike_time0 = cell(num_tetrodes, 1);
 marks = cell(num_tetrodes, 1);
+mark_spikes_to_linear_position_time_bins_index_by_tetrode = cell(num_tetrodes, 1);
 
 for tetrode_ind = 1:num_tetrodes,
     [mark_spike_time0{tetrode_ind}, marks{tetrode_ind}, ...
+        mark_spikes_to_linear_position_time_bins_index_by_tetrode{tetrode_ind}] = kernel_density_model(animal, day, tetrode_number(tetrode_ind), ...
         linear_position_time);
 end
 
-mark0 = cat(1, mark0{:});
-procInd1 = cat(1, procInd1_tet{:});
+mark_spikes_to_linear_position_time_bins_index = cat(1, mark_spikes_to_linear_position_time_bins_index_by_tetrode{:});
 %% bookkeeping code: which spike comes which tetrode
 group_labels = cellfun(@(t, group) group * ones(size(t)), mark_spike_time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
 group_labels = cat(1, group_labels{:});
 [mark_spike_times, timeInd] = sort(cat(1, mark_spike_time0{:}));
-procInd1 = procInd1(timeInd, :);
+mark_spikes_to_linear_position_time_bins_index = mark_spikes_to_linear_position_time_bins_index(timeInd, :);
 
 tet_ind = false(length(mark_spike_times), num_tetrodes);
 
@@ -64,19 +65,20 @@ Lint_I_Lambda = cell(num_discrete_states, 1);
 occ_I_Lambda = cell(num_discrete_states, 1);
 
 for state_number = 1:num_discrete_states,
-    [Lint_I_Lambda{state_number}, occ_I_Lambda{state_number}] = condition_joint_mark_intensity_on_discrete_state(xtrain, procInd1, state_index{state_number}, sxker, mark_bins, linear_distance_bins, dt);
+    [Lint_I_Lambda{state_number}, occ_I_Lambda{state_number}] = condition_joint_mark_intensity_on_discrete_state(xtrain, mark_spikes_to_linear_position_time_bins_index, state_index{state_number}, sxker, mark_bins, linear_distance_bins, dt);
 end
 
 % encode per tetrode, conditioning on I=1 and I=0
-procInd1_I = cell(num_tetrodes, num_discrete_states);
+mark_spikes_to_linear_position_time_bins_index_I = cell(num_tetrodes, num_discrete_states);
 Xnum_I = cell(num_tetrodes, num_discrete_states);
 Lint_I = cell(num_tetrodes, num_discrete_states);
 
 for tetrode_ind = 1:num_tetrodes,
     for state_number = 1:num_discrete_states,
-        [procInd1_I{tetrode_ind, state_number}, Xnum_I{tetrode_ind, state_number}, ...
+        [mark_spikes_to_linear_position_time_bins_index_I{tetrode_ind, state_number}, ...
+            Xnum_I{tetrode_ind, state_number}, ...
             Lint_I{tetrode_ind, state_number}] = encode_per_tetrode( ...
-            procInd1_tet{tetrode_ind}, state_index{state_number},  occ_I_Lambda{state_number}, dt, linear_distance_bins, xtrain, sxker);
+            mark_spikes_to_linear_position_time_bins_index_by_tetrode{tetrode_ind}, state_index{state_number},  occ_I_Lambda{state_number}, dt, linear_distance_bins, xtrain, sxker);
     end
 end
 
