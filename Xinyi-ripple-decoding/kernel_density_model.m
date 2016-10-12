@@ -9,8 +9,7 @@ marks = params(ind, 2:5); % tetrode wire maxes
 spike_time_in_seconds = spike_times / 1E4;
 [~, procInd1] = histc(spike_time_in_seconds, linear_position_time);
 [~, rawInd0] = histc(spike_time_in_seconds, spike_time_in_seconds);
-markAll(:, 1) = procInd1;
-markAll(:, 2:5) = marks(rawInd0(rawInd0 ~= 0), :);
+markAll = marks(rawInd0(rawInd0 ~= 0), :);
 end
 
 function [filename] = get_mark_filename(animal, day, tetrode_number)
