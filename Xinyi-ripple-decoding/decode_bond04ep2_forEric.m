@@ -64,7 +64,11 @@ summary_statistic = decode_state(...
 
 
 expected = load('expected_sumStat.mat');
-isequal(expected.sumStat, summary_statistic)
+for ripple_ind = 1:length(expected.sumStat)
+    is_same(ripple_ind) = all(all(abs(summary_statistic{ripple_ind} - expected.sumStat{ripple_ind}) < 1E6));
+end
+
+all(is_same)
 
 
 
