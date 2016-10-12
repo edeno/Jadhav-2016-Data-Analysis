@@ -24,8 +24,8 @@ stateV_length = length(stateV);
 
 for ripple_number = 1:length(ripple_index)
     
-    spike_tim = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
-    numSteps = length(spike_tim);
+    ripple_time = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
+    numSteps = length(ripple_time);
     
     %P(x0|I);
     Px_I{1} = exp(-stateV.^2  ./ (2 * (2 * stateV_delta)^2));
@@ -47,7 +47,7 @@ for ripple_number = 1:length(ripple_index)
     state_transition_model{4} = stateM_I_normalized_gaussian{1}; % inbound reverse
     
     for time_step_ind = 1:numSteps
-        is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(spike_tim(time_step_ind)));
+        is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
         
         for decision_state_ind = 1:length(posterior_density),
             one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density{decision_state_ind};
