@@ -5,7 +5,7 @@ function [mark_spike_times, ...
     Lint_I_Lambda, ...
     tet_ind, ...
     tet_sum, ...
-    markAll, ...
+    marks, ...
     procInd1_I, ...
     smker, ...
     Xnum_I, ....
@@ -34,14 +34,11 @@ smker = mdel;
 %% encode the kernel density model per tetrode
 num_tetrodes = length(tetrode_number);
 
-markAll = cell(num_tetrodes, 1);
 mark_spike_time0 = cell(num_tetrodes, 1);
-mark0 = cell(num_tetrodes, 1);
-procInd1_tet = cell(num_tetrodes, 1);
+marks = cell(num_tetrodes, 1);
 
 for tetrode_ind = 1:num_tetrodes,
-    [markAll{tetrode_ind}, mark_spike_time0{tetrode_ind}, mark0{tetrode_ind}, ...
-        procInd1_tet{tetrode_ind}] = kernel_density_model(animal, day, tetrode_number(tetrode_ind), ...
+    [mark_spike_time0{tetrode_ind}, marks{tetrode_ind}, ...
         linear_position_time);
 end
 
@@ -51,7 +48,6 @@ procInd1 = cat(1, procInd1_tet{:});
 group_labels = cellfun(@(t, group) group * ones(size(t)), mark_spike_time0, num2cell(1:num_tetrodes)', 'uniformOutput', false);
 group_labels = cat(1, group_labels{:});
 [mark_spike_times, timeInd] = sort(cat(1, mark_spike_time0{:}));
-mark0 = mark0(timeInd, :);
 procInd1 = procInd1(timeInd, :);
 
 tet_ind = false(length(mark_spike_times), num_tetrodes);
@@ -63,7 +59,7 @@ end
 tet_sum = tet_ind .* cumsum(tet_ind,1); %row: time point; column: index of spike per tetrode
 
 %% captial LAMBDA (joint mark intensity function) conditioned on I=1 and I=0
-mark_bins = min(mark0(:)):mdel:max(mark0(:));
+mark_bins = min(cat(1, marks{:})):mdel:max(cat(1, marks{:}));
 Lint_I_Lambda = cell(num_discrete_states, 1);
 occ_I_Lambda = cell(num_discrete_states, 1);
 
