@@ -16,7 +16,6 @@ function [summary_statistic] = decode_state(ripple_index, ...
     Lint_I ...
     )
 
-num_tetrodes = size(tet_ind, 2);
 mark_spike_times = round(mark_spike_times / 10);
 
 dt = 1 / 33.4;
@@ -54,14 +53,11 @@ for ripple_number = 1:length(ripple_index)
         end
         
         if isempty(is_spike_at_time_t) %if no spike occurs at time t
-            %% Is this supposed to happen? The labels don't seem right
             likelihood(:, 1) = exp(-Lint_I_Lambda{1} .* dt);
             likelihood(:, 2) = exp(-Lint_I_Lambda{1} .* dt);
             likelihood(:, 3) = exp(-Lint_I_Lambda{2} .* dt);
             likelihood(:, 4) = exp(-Lint_I_Lambda{2} .* dt);
-            
-        else %if spikes
-            
+        else %if spikes   
             likelihood_outbound = decode_per_state(1, stateV_length, is_spike_at_time_t, ...
                 tet_ind, tet_sum, markAll, procInd1_I, procInd1_Ia, Xnum_I, occ_I_Lambda, Lint_I, dt, smker);
             likelihood_inbound = decode_per_state(2, stateV_length, is_spike_at_time_t, ...
