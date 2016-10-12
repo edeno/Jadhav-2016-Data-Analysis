@@ -35,10 +35,10 @@ for ripple_number = 1:length(ripple_index)
     
     %P(x0)=P(x0|I)P(I);
     
-    posterior_density{1} = 0.25 * Px_I{1}';
-    posterior_density{2} = 0.25 * Px_I{2}';
-    posterior_density{3} = 0.25 * Px_I{2}';
-    posterior_density{4} = 0.25 * Px_I{1}';
+    posterior_density(:, 1) = 0.25 * Px_I{1}';
+    posterior_density(:, 2) = 0.25 * Px_I{2}';
+    posterior_density(:, 3) = 0.25 * Px_I{2}';
+    posterior_density(:, 4) = 0.25 * Px_I{1}';
     decision_state_probability = zeros(numSteps, 4);
     
     state_transition_model{1} = stateM_I_normalized_gaussian{1}; % outbound forward
@@ -49,8 +49,8 @@ for ripple_number = 1:length(ripple_index)
     for time_step_ind = 1:numSteps
         is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
         
-        for decision_state_ind = 1:length(posterior_density),
-            one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density{decision_state_ind};
+        for decision_state_ind = 1:size(posterior_density, 2),
+            one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density(:, decision_state_ind);
         end
         
         if isempty(is_spike_at_time_t) %if no spike occurs at time t
@@ -74,11 +74,8 @@ for ripple_number = 1:length(ripple_index)
         end
         
         total_norm = sum(one_step_prediction_density(:) .* likelihood(:));
-        
-        for decision_state_ind = 1:length(posterior_density),
-            posterior_density{decision_state_ind} = one_step_prediction_density(:, decision_state_ind) .* likelihood(:, decision_state_ind) ./ total_norm;
-            decision_state_probability(time_step_ind, decision_state_ind) = sum(posterior_density{decision_state_ind});
-        end
+        posterior_density = one_step_prediction_density .* likelihood / total_norm;
+        decision_state_probability(time_step_ind, :) = sum(posterior_density);
 
     end
     
