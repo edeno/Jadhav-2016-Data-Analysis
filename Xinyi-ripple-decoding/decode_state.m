@@ -18,11 +18,13 @@ function [decision_state_probability] = decode_state(ripple_time, ...
 
 num_time_steps = length(ripple_time);
 posterior_density = initial_conditions;
-num_decision_states = size(posterior_density, 2);
+[posterior_length, num_decision_states] = size(posterior_density);
 decision_state_probability = zeros(num_time_steps, num_decision_states);
+one_step_prediction_density = zeros(posterior_length, num_decision_states);
 
 for time_step_ind = 1:num_time_steps
     
+    % Update one step prediction density
     for decision_state_ind = 1:num_decision_states,
         one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density(:, decision_state_ind);
     end
@@ -33,8 +35,11 @@ for time_step_ind = 1:num_time_steps
         marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, ...
         position_occupancy, estimated_rate_by_tetrode, mark_smoothing_standard_deviation);
     
+    % Update posterior density
     total_norm = sum(one_step_prediction_density(:) .* likelihood(:));
     posterior_density = one_step_prediction_density .* likelihood / total_norm;
+    
+    % Record decision state probability
     decision_state_probability(time_step_ind, :) = sum(posterior_density);
     
 end

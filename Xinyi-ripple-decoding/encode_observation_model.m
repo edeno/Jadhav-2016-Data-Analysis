@@ -11,7 +11,8 @@ function [mark_spike_times, ...
     position_occupancy, ...
     estimated_rate_by_tetrode ...
     ] = encode_observation_model(animal, day, linear_distance, linear_position_time, state_index, tetrode_number)
-%% Whether the replay activity reflects spiking from inbound or outbound movements
+% Whether the replay activity reflects spiking from inbound or outbound
+% movements. Relate position to channel maximums
 num_linear_distance_bins = 61;
 linear_distance_bins = linspace(min(linear_distance), max(linear_distance), num_linear_distance_bins);
 linear_distance_bin_size = linear_distance_bins(2) - linear_distance_bins(1);
