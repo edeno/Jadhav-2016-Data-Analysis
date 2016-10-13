@@ -17,5 +17,5 @@ gaussian_kernel_position_estimator = normpdf(linear_distance_bins' * spikes_axis
     sxker);
 
 estimated_rate = sum(gaussian_kernel_position_estimator, 2) ./ position_occupancy ./ dt; %integral
-estimated_rate = normalize_distirbution(estimated_rate);
+estimated_rate = normalize_distribution(estimated_rate);
 end

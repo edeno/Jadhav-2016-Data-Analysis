@@ -10,5 +10,5 @@ for spike_number = 1:length(spike_inds)
         estimated_rate_by_tetrode{tetrode_ind, state_number}, dt, smker);
 end
 likelihood_by_state = prod(likelihood_by_tetrode, 2);
-likelihood_by_state = likelihood_by_state ./ sum(likelihood_by_state);
+likelihood_by_state = normalize_distribution(likelihood_by_state);
 end
