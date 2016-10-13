@@ -1,5 +1,6 @@
 function [state_transition_model] = get_state_transition_model(state_index, linear_distance_bins, linear_distance)
-%% empirical movement transition matrix conditioned on discrete state
+%% Whether the replay path follows an outbound or inbound movement trajectory
+% empirical movement transition matrix conditioned on discrete state
 num_discrete_states = length(state_index);
 empirical_movement_transition_matrix = cell(num_discrete_states, 1);
 for state_number = 1:num_discrete_states,

@@ -1,4 +1,5 @@
 function [initial_conditions] = get_initial_conditions(linear_distance_bins)
+%% Where the replay trajectory starts
 num_linear_distance_bins = length(linear_distance_bins);
 linear_distance_bin_size = linear_distance_bins(2) - linear_distance_bins(1);
 %P(x0|I);

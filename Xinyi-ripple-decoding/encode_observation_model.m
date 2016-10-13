@@ -11,11 +11,10 @@ function [mark_spike_times, ...
     position_occupancy, ...
     estimated_rate_by_tetrode ...
     ] = encode_observation_model(animal, day, linear_distance, linear_position_time, state_index, tetrode_number)
-%% use Loren's linearization
+%% Whether the replay activity reflects spiking from inbound or outbound movements
 num_linear_distance_bins = 61;
 linear_distance_bins = linspace(min(linear_distance), max(linear_distance), num_linear_distance_bins);
 linear_distance_bin_size = linear_distance_bins(2) - linear_distance_bins(1);
-
 %% prepare kernel density model
 dt = linear_position_time(2) - linear_position_time(1);
 xtrain = linear_distance';
