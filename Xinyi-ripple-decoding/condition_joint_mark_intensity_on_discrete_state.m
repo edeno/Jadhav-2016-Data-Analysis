@@ -1,5 +1,5 @@
 function [estimated_rate, position_occupancy] = condition_joint_mark_intensity_on_discrete_state(xtrain, ...
-    mark_spikes_to_linear_position_time_bins_index, state_index, sxker, mark_bins, linear_distance_bins, dt)
+    mark_spikes_to_linear_position_time_bins_index, state_index, sxker, linear_distance_bins, dt)
 num_state = length(state_index);
 linear_distance_bins_axis = ones(length(linear_distance_bins), 1);
 state_axis = ones(1, num_state);

@@ -57,16 +57,14 @@ for tetrode_ind = 1:num_tetrodes,
 end
 
 mark_spike_number_by_tetrode = mark_spike_by_tetrode .* cumsum(mark_spike_by_tetrode,1); %row: time point; column: index of spike per tetrode
-
 %% captial LAMBDA (joint mark intensity function) conditioned on I=1 and I=0
-mark_bins = min(cat(1, marks{:})):mdel:max(cat(1, marks{:}));
 estimated_rate_all = cell(num_discrete_states, 1);
 position_occupancy = cell(num_discrete_states, 1);
 
 for state_number = 1:num_discrete_states,
     [estimated_rate_all{state_number}, position_occupancy{state_number}] = condition_joint_mark_intensity_on_discrete_state(xtrain, ...
         mark_spikes_to_linear_position_time_bins_index, state_index{state_number}, ...
-        sxker, mark_bins, linear_distance_bins, dt);
+        sxker, linear_distance_bins, dt);
 end
 
 % encode per tetrode, conditioning on I=1 and I=0
