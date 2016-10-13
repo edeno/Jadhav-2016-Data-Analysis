@@ -19,8 +19,7 @@ well_visitions_file = load(get_file_name('wellvisits'));
 [state_index] = get_state_index(trajectory_encode_file.trajencode{day}{epoch});
 linear_distance = linear_position_file.linpos{day}{epoch}.statematrix.lindist;
 linear_position_time = linear_position_file.linpos{day}{epoch}.statematrix.time;
-%% Encode
-% Observation Model
+%% Encode (Initial Conditions, State Transition Model, Observation Model)
 [mark_spike_times, ...
     linear_distance_bins, ...
     linear_distance_bin_size, ...
@@ -36,18 +35,13 @@ linear_position_time = linear_position_file.linpos{day}{epoch}.statematrix.time;
     ] = encode_observation_model(animal, day, linear_distance, linear_position_time, ...
     state_index, tetrode_number);
 
-% Initial Conditions
 initial_conditions = get_initial_conditions(linear_distance_bins);
-% State Transition Model
-state_transition_model = get_state_transition_model(state_index, linear_distance_bins, linear_distance);
 
+state_transition_model = get_state_transition_model(state_index, linear_distance_bins, linear_distance);
 %% Decode ripples
-[ripple_index, position_time_stamps_binned] = ...
-    get_ripple_index(position_file.pos{day}{epoch}, ...
-    ripples_file.ripplescons{day}{epoch}, ...
-    spikes_file.spikes{day}{epoch}, ...
-    tetrode_index, ...
-    neuron_index);
+[ripple_index, position_time_stamps_binned] = get_ripple_index(...
+    position_file.pos{day}{epoch}, ripples_file.ripplescons{day}{epoch}, ...
+    spikes_file.spikes{day}{epoch}, tetrode_index, neuron_index);
 
 mark_spike_times = round(mark_spike_times / 10);
 dt = 1 / 33.4;
@@ -81,11 +75,10 @@ for ripple_number = 1:num_ripples,
     
     summary_statistic{ripple_number} = decision_state_probability;
 end
-
 %% Test if code matches Xinyi's original code
 expected = load('expected_sumStat.mat');
-for ripple_ind = 1:length(expected.sumStat)
-    is_same(ripple_ind) = all(all(abs(summary_statistic{ripple_ind} - expected.sumStat{ripple_ind}) < 1E6));
+for ripple_number = 1:num_ripples,
+    is_same(ripple_number) = all(all(abs(summary_statistic{ripple_number} - expected.sumStat{ripple_number}) < 1E6));
 end
 
 all(is_same)
