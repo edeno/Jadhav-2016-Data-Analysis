@@ -16,34 +16,23 @@ function [decision_state_probability] = decode_state(ripple_time, ...
     num_linear_distance_bins ...
     )
 
-
-numSteps = length(ripple_time);
-decision_state_probability = zeros(numSteps, 4);
+num_time_steps = length(ripple_time);
 posterior_density = inital_conditions;
+num_decision_states = size(posterior_density, 2);
+decision_state_probability = zeros(num_time_steps, num_decision_states);
 
-for time_step_ind = 1:numSteps
-    spike_inds = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
+for time_step_ind = 1:num_time_steps
     
-    for decision_state_ind = 1:size(posterior_density, 2),
+    for decision_state_ind = 1:num_decision_states,
         one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density(:, decision_state_ind);
     end
     
-    if isempty(spike_inds) %if no spike occurs at time step
-        likelihood(:, 1) = exp(-estimated_rate_all{1} .* dt);
-        likelihood(:, 2) = exp(-estimated_rate_all{1} .* dt);
-        likelihood(:, 3) = exp(-estimated_rate_all{2} .* dt);
-        likelihood(:, 4) = exp(-estimated_rate_all{2} .* dt);
-    else %if spikes
-        likelihood_outbound = get_likelihood_by_state(1, num_linear_distance_bins, spike_inds, ...
-            mark_spike_by_tetrode, mark_spike_number_by_tetrode, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, mark_smoothing_standard_deviation);
-        likelihood_inbound = get_likelihood_by_state(2, num_linear_distance_bins, spike_inds, ...
-            mark_spike_by_tetrode, mark_spike_number_by_tetrode, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, mark_smoothing_standard_deviation);
-        
-        likelihood(:, 1) = likelihood_outbound;
-        likelihood(:, 2) = likelihood_outbound;
-        likelihood(:, 3) = likelihood_inbound;
-        likelihood(:, 4) = likelihood_inbound;
-    end
+    spike_inds = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
+    
+    likelihood = get_likelihood(spike_inds, estimated_rate_all, dt, ...
+        num_linear_distance_bins, mark_spike_by_tetrode, mark_spike_number_by_tetrode, ...
+        marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, ...
+        position_occupancy, estimated_rate_by_tetrode, mark_smoothing_standard_deviation);
     
     total_norm = sum(one_step_prediction_density(:) .* likelihood(:));
     posterior_density = one_step_prediction_density .* likelihood / total_norm;
