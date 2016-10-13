@@ -14,10 +14,10 @@ Px_I{1} = Px_I{1} ./ sum(Px_I{1});
 Px_I{2} = max(Px_I{1}) * ones(1, num_linear_distance_bins) - Px_I{1};
 Px_I{2} = Px_I{2} ./ sum(Px_I{2});
 
-%P(x0)=P(x0|I)P(I);
-initial_conditions(:, 1) = 0.25 * Px_I{1}'; % outbound forward
-initial_conditions(:, 2) = 0.25 * Px_I{2}'; % outbound reverse
-initial_conditions(:, 3) = 0.25 * Px_I{2}'; % inbound forward
-initial_conditions(:, 4) = 0.25 * Px_I{1}'; % inbound reverse
 %% P(x0)=P(x0|I)P(I);
+prior_probability_of_state = 1/4;
+initial_conditions(:, 1) = prior_probability_of_state * Px_I{1}'; % outbound forward
+initial_conditions(:, 2) = prior_probability_of_state * Px_I{2}'; % outbound reverse
+initial_conditions(:, 3) = prior_probability_of_state * Px_I{2}'; % inbound forward
+initial_conditions(:, 4) = prior_probability_of_state * Px_I{1}'; % inbound reverse
 end
