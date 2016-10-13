@@ -12,7 +12,3 @@ mark_spike_time_in_seconds = mark_spike_times / 1E4;
 
 [~, mark_spikes_to_linear_position_time_bins_index] = histc(mark_spike_time_in_seconds, linear_position_time);
 end
-
-function [filename] = get_mark_filename(animal, day, tetrode_number)
-    filename = sprintf('bond_data/%s%02d-%02d_params.mat', animal, day, tetrode_number);
-end
