@@ -4,6 +4,7 @@ num_linear_distance_bins = length(linear_distance_bins);
 linear_distance_bin_size = linear_distance_bins(2) - linear_distance_bins(1);
 %P(x0|I);
 Px_I{1} = exp(-linear_distance_bins.^2  ./ (2 * (2 * linear_distance_bin_size)^2));
+Px_I{1} = normpdf(linear_distance_bins, 0, linear_distance_bin_size * 2);
 Px_I{1} = Px_I{1} ./ sum(Px_I{1});
 Px_I{2} = max(Px_I{1}) * ones(1, num_linear_distance_bins) - Px_I{1};
 Px_I{2} = Px_I{2} ./ sum(Px_I{2});
