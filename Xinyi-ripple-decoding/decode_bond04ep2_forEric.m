@@ -1,3 +1,4 @@
+%% Load data and extract data
 clear variables; clc;
 % bond04, epoch 2
 animal = 'bon';
@@ -18,7 +19,7 @@ well_visitions_file = load(get_file_name('wellvisits'));
 [state_index] = get_state_index(trajectory_encode_file.trajencode{day}{epoch});
 linear_distance = linear_position_file.linpos{day}{epoch}.statematrix.lindist;
 linear_position_time = linear_position_file.linpos{day}{epoch}.statematrix.time;
-
+%% Get encoding model, state transition matrix
 [mark_spike_times, ...
     linear_distance_bins, ...
     linear_distance_bin_size, ...
@@ -34,7 +35,7 @@ linear_position_time = linear_position_file.linpos{day}{epoch}.statematrix.time;
     estimated_rate_by_tetrode ...
     ] = encode_state(animal, day, linear_distance, linear_position_time, ...
     state_index, tetrode_number);
-
+%% Decode ripples
 [ripple_index, position_time_stamps_binned] = ...
     get_ripple_index(position_file.pos{day}{epoch}, ...
     ripples_file.ripplescons{day}{epoch}, ...
@@ -60,13 +61,10 @@ summary_statistic = decode_state(...
     estimated_rate_by_tetrode ...
     );
 
-
+%% Test if code matches Xinyi's original code
 expected = load('expected_sumStat.mat');
 for ripple_ind = 1:length(expected.sumStat)
     is_same(ripple_ind) = all(all(abs(summary_statistic{ripple_ind} - expected.sumStat{ripple_ind}) < 1E6));
 end
 
 all(is_same)
-
-
-
