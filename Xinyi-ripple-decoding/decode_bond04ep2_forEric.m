@@ -49,29 +49,30 @@ num_linear_distance_bins = length(linear_distance_bins);
 num_ripples = length(ripple_index);
 summary_statistic = cell(num_ripples, 1);
 
+% Initial Conditions and State Transition Model
+%P(x0|I);
+Px_I{1} = exp(-linear_distance_bins.^2  ./ (2 * (2 * linear_distance_bin_size)^2));
+Px_I{1} = Px_I{1} ./ sum(Px_I{1});
+Px_I{2} = max(Px_I{1}) * ones(1, num_linear_distance_bins) - Px_I{1};
+Px_I{2} = Px_I{2} ./ sum(Px_I{2});
+
+%P(x0)=P(x0|I)P(I);
+inital_conditions(:, 1) = 0.25 * Px_I{1}';
+inital_conditions(:, 2) = 0.25 * Px_I{2}';
+inital_conditions(:, 3) = 0.25 * Px_I{2}';
+inital_conditions(:, 4) = 0.25 * Px_I{1}';
+
+state_transition_model{1} = empirical_movement_transition_matrix{1}; % outbound forward
+state_transition_model{2} = empirical_movement_transition_matrix{2}; % outbound reverse
+state_transition_model{3} = empirical_movement_transition_matrix{2}; % inbound forward
+state_transition_model{4} = empirical_movement_transition_matrix{1}; % inbound reverse
+
 for ripple_number = 1:num_ripples,
     
-    ripple_time = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
-    
-    %P(x0|I);
-    Px_I{1} = exp(-linear_distance_bins.^2  ./ (2 * (2 * linear_distance_bin_size)^2));
-    Px_I{1} = Px_I{1} ./ sum(Px_I{1});
-    Px_I{2} = max(Px_I{1}) * ones(1, num_linear_distance_bins) - Px_I{1};
-    Px_I{2} = Px_I{2} ./ sum(Px_I{2});
-    
-    %P(x0)=P(x0|I)P(I);
-    inital_conditions(:, 1) = 0.25 * Px_I{1}';
-    inital_conditions(:, 2) = 0.25 * Px_I{2}';
-    inital_conditions(:, 3) = 0.25 * Px_I{2}';
-    inital_conditions(:, 4) = 0.25 * Px_I{1}';
-    
-    state_transition_model{1} = empirical_movement_transition_matrix{1}; % outbound forward
-    state_transition_model{2} = empirical_movement_transition_matrix{2}; % outbound reverse
-    state_transition_model{3} = empirical_movement_transition_matrix{2}; % inbound forward
-    state_transition_model{4} = empirical_movement_transition_matrix{1}; % inbound reverse
+    cur_ripple_time = ripple_index(ripple_number, 1):ripple_index(ripple_number, 2);
     
     decision_state_probability = decode_state(...
-        ripple_time, ...
+        cur_ripple_time, ...
         position_time_stamps_binned, ...
         mark_spike_times, ...
         inital_conditions, ...
