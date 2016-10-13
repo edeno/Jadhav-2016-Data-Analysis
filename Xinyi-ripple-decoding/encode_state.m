@@ -28,8 +28,7 @@ dt = linear_position_time(2) - linear_position_time(1);
 xtrain = linear_distance';
 
 sxker = linear_distance_bin_size;
-mdel = 20;
-smker = mdel;
+smker = 20;
 %% encode the kernel density model per tetrode
 num_tetrodes = length(tetrode_number);
 
