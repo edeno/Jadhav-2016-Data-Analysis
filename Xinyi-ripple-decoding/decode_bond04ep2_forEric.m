@@ -13,7 +13,6 @@ spikes_file = load(get_file_name('spikes')); %sorted spikes
 linear_position_file = load(get_file_name('linpos'));
 ripples_file = load(get_file_name('ripplescons'));
 trajectory_encode_file = load(get_file_name('trajencode'));
-well_visitions_file = load(get_file_name('wellvisits'));
 
 [tetrode_index, neuron_index] = get_tetrodes_with_spikes(spikes_file.spikes, day, epoch, tetrode_number);
 [state_index] = get_state_index(trajectory_encode_file.trajencode{day}{epoch});
