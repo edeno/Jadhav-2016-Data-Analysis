@@ -3,9 +3,8 @@ function [mark_spike_times, marks, mark_spikes_to_linear_position_time_bins_inde
 
 mark_spike_time_in_seconds = mark_spike_times / 1E4;
 
-ind = find(mark_spike_time_in_seconds >= linear_position_time(1) & ...
-    mark_spike_time_in_seconds <= linear_position_time(end));
-
+ind = mark_spike_time_in_seconds >= linear_position_time(1) & ...
+    mark_spike_time_in_seconds <= linear_position_time(end);
 
 mark_spike_times = mark_spike_times(ind);
 mark_spike_time_in_seconds = mark_spike_times / 1E4;
