@@ -5,8 +5,8 @@ function [summary_statistic] = decode_state(ripple_index, ...
     linear_distance_bin_size, ...
     empirical_movement_transition_matrix, ...
     estimated_rate_all, ...
-    tet_ind, ...
-    tet_sum, ...
+    mark_spike_by_tetrode, ...
+    mark_spike_number_by_tetrode, ...
     marks, ...
     mark_spikes_to_linear_position_time_bins_index, ...
     smker, ...
@@ -18,7 +18,7 @@ function [summary_statistic] = decode_state(ripple_index, ...
 mark_spike_times = round(mark_spike_times / 10);
 
 dt = 1 / 33.4;
-stateV_length = length(linear_distance_bins);
+num_linear_distance_bins = length(linear_distance_bins);
 
 for ripple_number = 1:length(ripple_index)
     
@@ -28,7 +28,7 @@ for ripple_number = 1:length(ripple_index)
     %P(x0|I);
     Px_I{1} = exp(-linear_distance_bins.^2  ./ (2 * (2 * linear_distance_bin_size)^2));
     Px_I{1} = Px_I{1} ./ sum(Px_I{1});
-    Px_I{2} = max(Px_I{1}) * ones(1, stateV_length) - Px_I{1};
+    Px_I{2} = max(Px_I{1}) * ones(1, num_linear_distance_bins) - Px_I{1};
     Px_I{2} = Px_I{2} ./ sum(Px_I{2});
     
     %P(x0)=P(x0|I)P(I);
@@ -45,22 +45,22 @@ for ripple_number = 1:length(ripple_index)
     state_transition_model{4} = empirical_movement_transition_matrix{1}; % inbound reverse
     
     for time_step_ind = 1:numSteps
-        is_spike_at_time_t = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
+        spike_inds = find(mark_spike_times == position_time_stamps_binned(ripple_time(time_step_ind)));
         
         for decision_state_ind = 1:size(posterior_density, 2),
             one_step_prediction_density(:, decision_state_ind) = state_transition_model{decision_state_ind} * posterior_density(:, decision_state_ind);
         end
         
-        if isempty(is_spike_at_time_t) %if no spike occurs at time t
+        if isempty(spike_inds) %if no spike occurs at time step
             likelihood(:, 1) = exp(-estimated_rate_all{1} .* dt);
             likelihood(:, 2) = exp(-estimated_rate_all{1} .* dt);
             likelihood(:, 3) = exp(-estimated_rate_all{2} .* dt);
             likelihood(:, 4) = exp(-estimated_rate_all{2} .* dt);
         else %if spikes   
-            likelihood_outbound = get_likelihood_by_state(1, stateV_length, is_spike_at_time_t, ...
-                tet_ind, tet_sum, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, smker);
-            likelihood_inbound = get_likelihood_by_state(2, stateV_length, is_spike_at_time_t, ...
-                tet_ind, tet_sum, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, smker);
+            likelihood_outbound = get_likelihood_by_state(1, num_linear_distance_bins, spike_inds, ...
+                mark_spike_by_tetrode, mark_spike_number_by_tetrode, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, smker);
+            likelihood_inbound = get_likelihood_by_state(2, num_linear_distance_bins, spike_inds, ...
+                mark_spike_by_tetrode, mark_spike_number_by_tetrode, marks, mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, position_occupancy, estimated_rate_by_tetrode, dt, smker);
             
             likelihood(:, 1) = likelihood_outbound;
             likelihood(:, 2) = likelihood_outbound;
