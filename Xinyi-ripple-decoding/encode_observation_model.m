@@ -10,7 +10,7 @@ function [mark_spike_times, ...
     gaussian_kernel_position_estimator, ....
     position_occupancy, ...
     estimated_rate_by_tetrode ...
-    ] = encode_observation_model(mark_spike_times, marks, linear_distance, linear_position_time, state_index)
+    ] = encode_observation_model(mark_spike_time0, marks, linear_distance, linear_position_time, state_index)
 % Whether the replay activity reflects spiking from inbound or outbound
 % movements. Relate position to channel maximums
 num_linear_distance_bins = 61;
@@ -23,14 +23,11 @@ mark_smoothing_standard_deviation = 20;
 num_discrete_states = length(state_index);
 %% encode the kernel density model per tetrode
 num_tetrodes = length(marks);
-
-mark_spike_time0 = cell(num_tetrodes, 1);
 mark_spikes_to_linear_position_time_bins_index_by_tetrode = cell(num_tetrodes, 1);
 
 for tetrode_ind = 1:num_tetrodes,
-    [mark_spike_time0{tetrode_ind}, marks{tetrode_ind}, ...
-        mark_spikes_to_linear_position_time_bins_index_by_tetrode{tetrode_ind}] = ...
-        kernel_density_model(mark_spike_times{tetrode_ind}, marks{tetrode_ind}, linear_position_time);
+    [mark_spikes_to_linear_position_time_bins_index_by_tetrode{tetrode_ind}] = ...
+        kernel_density_model(mark_spike_time0{tetrode_ind}, linear_position_time);
 end
 
 mark_spikes_to_linear_position_time_bins_index = cat(1, mark_spikes_to_linear_position_time_bins_index_by_tetrode{:});
