@@ -25,7 +25,7 @@ def get_data_filename(animal, day, file_type):
         day=day)
 
 
-def get_epochs(animal, days, epoch_type='', environment=''):
+def get_epochs(animal, day):
     '''Returns a list of three-element tuples (animal, day, epoch index) that
     can access the data structure within each Matlab file. Epoch type
     is the task for that epoch (sleep, run, etc.) and environment is
@@ -33,44 +33,26 @@ def get_epochs(animal, days, epoch_type='', environment=''):
     environment is given, returns all epoch types and environments.
     Days can be either a single integer day or a list of days.
     '''
-    epoch_index = list()
-
-    if isinstance(days, int):
-        days = [days]
-
-    for day in days:
-        try:
-            task_file = scipy.io.loadmat(
-                get_data_filename(animal, day, 'task'))
-            filtered_epochs = [(ind, epoch) for ind, epoch in enumerate(task_file['task'][0, - 1][0])
-                               if epoch['type'] == epoch_type or
-                               epoch_type == '']
-            epoch_index += [(animal, day, ind) for ind, epoch in filtered_epochs
-                            if ('environment' in epoch.dtype.names and
-                                epoch['environment'] == environment) or
-                            environment == '']
-        except IOError as err:
-            print('I/O error({0}): {1}'.format(err.errno, err.strerror))
-            sys.exit()
-
-    return epoch_index
+    try:
+        task_file = scipy.io.loadmat(
+            get_data_filename(animal, day, 'task'))
+        return [(animal, day, ind+1) for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
+    except IOError as err:
+        print('I/O error({0}): {1}'.format(err.errno, err.strerror))
+        sys.exit()
 
 
-def get_data_structure(animal, days, file_type, variable, epoch_type='', environment=''):
+def get_data_structure(animal, day, file_type, variable):
     '''Returns a filtered list containing the data structures corresponding to the
     animal, day, file_type, epoch specified.
     '''
-    if isinstance(days, int):
-        days = [days]
-    epoch = get_epochs(animal, days, epoch_type=epoch_type,
-                       environment=environment)
-    files = {day: scipy.io.loadmat(get_data_filename(animal, day, file_type))
-             for day in days}
+    epoch = get_epochs(animal, day)
+    file = scipy.io.loadmat(get_data_filename(animal, day, file_type))
     try:
-        return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch]
+        return [file[variable][0, day - 1][0, ind - 1] for _, day, ind in epoch]
     except IndexError:
         # candripples file doesn't have a cell for the last epoch.
-        return [files[day][variable][0, day - 1][0, ind] for _, day, ind in epoch[:-1]]
+        return [file[variable][0, day - 1][0, ind - 1] for _, day, ind in epoch[:-1]]
 
 
 def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
