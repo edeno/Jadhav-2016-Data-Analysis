@@ -432,5 +432,11 @@ def get_trial_time(index, animals):
     return lfp_df.index
 
 
+def filter_dataframe_by_dataframe(dataframe_of_interest, filter_dataframe):
+    original_columns = dataframe_of_interest.columns.tolist()
+    return (pd.concat([dataframe_of_interest,
+                      filter_dataframe], join='inner', axis=1)
+            .loc[:, original_columns])
+
 if __name__ == '__main__':
     sys.exit()
