@@ -436,6 +436,16 @@ def get_linear_position_structure(epoch_key, animals, trajectory_category=None):
             )
 
 
+def get_spike_indicator_dataframe(neuron_index, animals):
+    ''' Returns a dataframe with a spike time indicator column
+    where 1 indicates a spike at that time and 0 indicates no
+    spike at that time. The number of datapoints corresponds
+    is the same as the LFP.
+    '''
+    time = get_trial_time(neuron_index, animals)
+    spikes_df = get_spikes_dataframe(neuron_index, animals)
+    spikes_df.index = time[find_closest_ind(time, spikes_df.index.values)]
+    return spikes_df.reindex(index=time, fill_value=0)
 
 
 def get_trial_time(index, animals):
