@@ -3,7 +3,7 @@ import scipy.ndimage.filters
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
-                  likelihood_function=None, likelihood_args={}, debug=False):
+                  likelihood_function=None, likelihood_kwargs={}, debug=False):
     ''' Adaptive filter
     '''
     posterior = initial_conditions
@@ -16,7 +16,7 @@ def predict_state(data, initial_conditions=None, state_transition=None,
     for time_ind in np.arange(num_time_points):
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
-        likelihood = likelihood_function(data[time_ind, :], **likelihood_args)
+        likelihood = likelihood_function(data[time_ind, :], **likelihood_kwargs)
         posterior = _update_posterior(prior, likelihood)
         if debug:
             likelihood_over_time[time_ind, :] = likelihood
