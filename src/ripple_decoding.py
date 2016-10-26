@@ -31,10 +31,10 @@ def _update_posterior(prior, likelihood):
     ''' Yields the posterior density given the prior state
     weighted by the observed instantaneous likelihood
     '''
-    return _normalize_to_probability(prior * likelihood)
+    return normalize_to_probability(prior * likelihood)
 
 
-def _normalize_to_probability(distribution):
+def normalize_to_probability(distribution):
     '''Ensure the distribution integrates to 1
     so that it is a probability distribution
     '''
