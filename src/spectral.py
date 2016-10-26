@@ -11,7 +11,7 @@ import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import pandas as pd
-import ripples
+import ripple_detection
 
 
 def convert_pandas(func):
@@ -483,9 +483,9 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     baseline_time_halfbandwidth_product = _match_frequency_resolution(
         time_halfbandwidth_product, time_window_duration, baseline_window)
     baseline_lfp_segments = list(
-        ripples.reshape_to_segments(lfps, times_of_interest, baseline_window, concat_axis=1))
+        ripple_detection.reshape_to_segments(lfps, times_of_interest, baseline_window, concat_axis=1))
     time_of_interest_lfp_segments = list(
-        ripples.reshape_to_segments(lfps, times_of_interest, window_of_interest, concat_axis=1))
+        ripple_detection.reshape_to_segments(lfps, times_of_interest, window_of_interest, concat_axis=1))
     coherence_baseline = multitaper_coherence(
         baseline_lfp_segments,
         sampling_frequency=sampling_frequency,
