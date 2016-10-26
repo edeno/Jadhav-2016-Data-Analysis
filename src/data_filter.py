@@ -103,7 +103,11 @@ def _convert_position_array_to_dataframe(array):
     column_names = ['time', 'x_position', 'y_position', 'head_direction',
                     'speed', 'smoothed_x_position', 'smoothed_y_position',
                     'smoothed_head_direction', 'smoothed_speed']
-    return pd.DataFrame(array, columns=column_names).set_index('time')
+    drop_columns = ['smoothed_x_position', 'smoothed_y_position',
+                    'smoothed_speed', 'smoothed_head_direction']
+    return (pd.DataFrame(array, columns=column_names)
+            .set_index('time')
+            .drop(drop_columns, axis=1))
 
 
 def find_closest_ind(search_array, target):
