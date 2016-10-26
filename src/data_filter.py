@@ -441,7 +441,7 @@ def get_spike_indicator_dataframe(neuron_index, animals):
 
 def get_trial_time(index, animals):
     try:
-        animal, day, epoch, tetrode_number = index[:3]
+        animal, day, epoch, tetrode_number = index[:4]
     except ValueError:
         # no tetrode number provided
         tetrode_info = make_tetrode_dataframe(animals)
