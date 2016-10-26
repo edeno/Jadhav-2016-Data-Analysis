@@ -375,5 +375,79 @@ def make_neuron_dataframe(animals):
             }
 
 
+def get_interpolated_position_dataframe(epoch_index, animals):
+    time = get_trial_time(epoch_index, animals)
+    position = (pd.concat([get_linear_position_structure(epoch_index, animals),
+                           get_position_dataframe(epoch_index, animals)], axis=1)
+                .assign(trajectory_direction=_trajectory_direction)
+                .assign(trajectory_turn=_trajectory_turn)
+                .assign(trial_number=_trial_number)
+                .assign(linear_position=_linear_position)
+                )
+    categorical_columns = ['trajectory_category_ind',
+                           'trajectory_turn', 'trajectory_direction', 'trial_number']
+    continuous_columns = ['head_direction', 'speed',
+                          'linear_distance', 'linear_position',
+                          'x_position', 'y_position']
+    position_categorical = (position
+                            .drop(continuous_columns, axis=1)
+                            .reindex(index=time, method='pad'))
+    position_continuous = (position
+                           .drop(categorical_columns, axis=1)
+                           .dropna())
+    new_index = pd.Index(np.sort(np.concatenate((position_continuous.index, time))), name='time')
+    interpolated_position = (position_continuous
+                             .reindex(index=new_index)
+                             .interpolate(method='spline', order=3)
+                             .reindex(index=time))
+    return (pd.concat([position_categorical, interpolated_position], axis=1)
+            .fillna(method='backfill'))
+
+
+def _linear_position(df):
+    is_left_arm = (df.trajectory_category_ind == 1) | (
+        df.trajectory_category_ind == 2)
+    return np.where(is_left_arm, -1 * df.linear_distance, df.linear_distance)
+
+
+def _trial_number(df):
+    return np.cumsum(df.trajectory_category_ind.diff().fillna(0) > 0) + 1
+
+
+def _trajectory_turn(df):
+    trajectory_turn = {0: np.nan, 1: 'Left', 2: 'Right', 3: 'Left', 4: 'Right'}
+    return df.trajectory_category_ind.map(trajectory_turn)
+
+
+def _trajectory_direction(df):
+    trajectory_direction = {0: np.nan, 1: 'Outbound',
+                            2: 'Inbound', 3: 'Outbound', 4: 'Inbound'}
+    return df.trajectory_category_ind.map(trajectory_direction)
+
+
+def get_linear_position_structure(epoch_key, animals, trajectory_category=None):
+    animal, day, epoch = epoch_key
+    struct = get_data_structure(animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0]['statematrix']
+    include_fields = ['time', 'traj', 'lindist']
+    new_names = {'time': 'time', 'traj': 'trajectory_category_ind', 'lindist': 'linear_distance'}
+    return (pd.DataFrame({new_names[name]: struct[name][0][0].flatten() for name in struct.dtype.names
+                         if name in include_fields})
+            .set_index('time')
+            )
+
+
+
+
+def get_trial_time(index, animals):
+    try:
+        animal, day, epoch, tetrode_number = index[:3]
+    except ValueError:
+        # no tetrode number provided
+        tetrode_info = make_tetrode_dataframe(animals)
+        animal, day, epoch, tetrode_number = tetrode_info[index].index[0]
+    lfp_df = _get_LFP_dataframe((animal, day, epoch, tetrode_number), animals)
+    return lfp_df.index
+
+
 if __name__ == '__main__':
     sys.exit()
