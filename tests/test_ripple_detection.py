@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-import src.ripples as ripples
+import src.ripple_detection as ripples
 
 
 @pytest.mark.parametrize("series, expected_segments", [
