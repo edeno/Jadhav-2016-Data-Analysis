@@ -232,9 +232,8 @@ def _get_LFP_time(start_time, number_samples, sampling_frequency):
     ''' Returns an array of time stamps
     '''
     sampling_frequency = int(np.round(sampling_frequency))
-    end_time = start_time + (number_samples / sampling_frequency)
 
-    return np.linspace(start_time, end_time, number_samples)
+    return start_time + np.arange(0, number_samples) * (1 / sampling_frequency)
 
 
 def get_neuron_info(animal):
