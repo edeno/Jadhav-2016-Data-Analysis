@@ -280,18 +280,27 @@ def merge_ranges(ranges):
 
 def get_windowed_dataframe(dataframe, segments, window_offset):
     segments = iter(segments)
-    for segment_start, _ in segments:
+    for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index
         segment_start_ind = dataframe.index.get_loc(
             segment_start, method='nearest')
         segment_start = dataframe.iloc[segment_start_ind].name
-        yield (dataframe.loc[segment_start + window_offset[0]:segment_start + window_offset[1], :]
-                        .reset_index()
-                        .assign(time=lambda x: np.round(x.time - segment_start, decimals=4))
-                        .set_index('time'))
+        try:
+            yield (dataframe.loc[segment_start + window_offset[0]:segment_start + window_offset[1], :]
+                            .reset_index()
+                            .assign(time=lambda x: np.round(x.time - segment_start, decimals=4))
+                            .set_index('time'))
+        except TypeError:
+            segment_end_ind = dataframe.index.get_loc(
+                segment_end, method='nearest')
+            segment_end = dataframe.iloc[segment_end_ind].name
+            yield (dataframe.loc[segment_start:segment_end, :]
+                            .reset_index()
+                            .assign(time=lambda x: np.round(x.time - segment_start, decimals=4))
+                            .set_index('time'))
 
 
-def reshape_to_segments(dataframes, segments, window_offset, concat_axis=0):
+def reshape_to_segments(dataframes, segments, window_offset=None, concat_axis=0):
     if isinstance(window_offset, float):
         window_offset = [-window_offset, window_offset]
     segment_label = [(segment_ind + 1, segment_start, segment_end)
