@@ -93,15 +93,10 @@ def get_position_dataframe(epoch_index, animals):
     epochs in the epoch index -- either a tuple or a list of tuples with the format
     (animal, day, epoch_number)
     '''
-    try:
-        epoch_data = [get_data_structure(animals[animal], day, 'pos', 'pos')[epoch - 1]['data'][0, 0]
-                      for animal, day, epoch in epoch_index]
-        return [_convert_position_array_to_dataframe(epoch_array) for epoch_array in epoch_data]
-    except ValueError:
-        animal, day, epoch = epoch_index
-        epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
-            epoch - 1]['data'][0, 0]
-        return _convert_position_array_to_dataframe(epoch_data)
+    animal, day, epoch = epoch_index
+    epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
+        epoch - 1]['data'][0, 0]
+    return _convert_position_array_to_dataframe(epoch_data)
 
 
 def _convert_position_array_to_dataframe(array):
