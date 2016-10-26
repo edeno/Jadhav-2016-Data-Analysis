@@ -198,13 +198,6 @@ def _convert_to_dict(struct_array):
         return {}
 
 
-def get_dataframe_index(data_frame):
-    ''' Converts pandas dataframe to a list of tuples corresponding to
-    the dataframe multi-index
-    '''
-    return list(data_frame.index.get_values())
-
-
 def _get_LFP_dataframe(tetrode_index, animals):
     ''' Given a tetrode index tuple and the animals dictionary,
     return the LFP data and start time
