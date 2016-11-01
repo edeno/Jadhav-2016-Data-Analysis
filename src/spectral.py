@@ -393,8 +393,7 @@ def multitaper_coherogram(data,
 
 
 def plot_coherogram(coherogram_dataframe, axis_handle=None,
-                    cmap='viridis', vmin=0.3, vmax=0.7,
-                    time_units='seconds', frequency_units='Hz'):
+                    cmap='viridis', vmin=0.3, vmax=0.7):
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
@@ -405,9 +404,6 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
                                   shading='gouraud',
                                   vmin=vmin,
                                   vmax=vmax)
-    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
-        frequency_units=frequency_units))
-    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
