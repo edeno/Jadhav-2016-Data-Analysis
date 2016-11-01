@@ -67,7 +67,7 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
         return likelihood_function(data, **likelihood_kwargs)
 
 
-def empirical_movement_transition_matrix(linear_position, linear_position_grid):
+def empirical_movement_transition_matrix(linear_position, linear_position_grid, speed_up_factor=30):
     ''' Estimates the probablity of the next position based on the movement data.
     '''
     movement_bins, _, _ = np.histogram2d(linear_position, linear_position.shift(1),
@@ -76,7 +76,8 @@ def empirical_movement_transition_matrix(linear_position, linear_position_grid):
     movement_bins_probability = _normalize_column_probability(_fix_zero_bins(movement_bins))
     smoothed_movement_bins_probability = scipy.ndimage.filters.gaussian_filter(
         movement_bins_probability, sigma=0.5)
-    return _normalize_column_probability(smoothed_movement_bins_probability)
+    return _normalize_column_probability(
+        np.linalg.matrix_power(smoothed_movement_bins_probability, speed_up_factor))
 
 
 def _normalize_column_probability(x):
