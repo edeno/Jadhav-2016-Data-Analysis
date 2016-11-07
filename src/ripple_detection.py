@@ -25,11 +25,11 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
                ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
 
 
-def get_computed_consensus_ripple_times(epoch_tuple, animals):
+def get_computed_consensus_ripple_times(epoch_index, animals):
     ''' Returns a list of tuples for a given epoch in the format
     (start_time, end_time).
     '''
-    animal, day, epoch_ind = epoch_tuple
+    animal, day, epoch_ind = epoch_index
     ripples_data = data_processing.get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
