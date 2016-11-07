@@ -11,7 +11,7 @@ import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import pandas as pd
-import ripples
+import data_processing
 
 
 def convert_pandas(func):
@@ -31,7 +31,7 @@ def convert_pandas(func):
         elif isinstance(data, list) and isinstance(data[0], pd.DataFrame):
             if is_time:
                 try:
-                    time = data[0].reset_index('time').time.values
+                    time = data[0].index.values
                     kwargs['time'] = time
                 except AttributeError:
                     raise AttributeError(
@@ -134,8 +134,8 @@ def multitaper_spectrogram(data,
         tapers=tapers,
         frequencies=frequencies,
         freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples)).sort_index()
-    )
+        number_of_fft_samples=number_of_fft_samples))
+    ).sort_index()
 
 
 def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_frequency=None,
@@ -393,8 +393,7 @@ def multitaper_coherogram(data,
 
 
 def plot_coherogram(coherogram_dataframe, axis_handle=None,
-                    cmap='viridis', vmin=0.3, vmax=0.7,
-                    time_units='seconds', frequency_units='Hz'):
+                    cmap='viridis', vmin=0.3, vmax=0.7):
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
@@ -405,9 +404,6 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
                                   shading='gouraud',
                                   vmin=vmin,
                                   vmax=vmax)
-    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
-        frequency_units=frequency_units))
-    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
@@ -483,9 +479,11 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     baseline_time_halfbandwidth_product = _match_frequency_resolution(
         time_halfbandwidth_product, time_window_duration, baseline_window)
     baseline_lfp_segments = list(
-        ripples.reshape_to_segments(lfps, times_of_interest, baseline_window, concat_axis=1))
+        data_processing.reshape_to_segments(
+            lfps, times_of_interest, window_offset=baseline_window, concat_axis=1))
     time_of_interest_lfp_segments = list(
-        ripples.reshape_to_segments(lfps, times_of_interest, window_of_interest, concat_axis=1))
+        data_processing.reshape_to_segments(
+            lfps, times_of_interest, window_offset=window_of_interest, concat_axis=1))
     coherence_baseline = multitaper_coherence(
         baseline_lfp_segments,
         sampling_frequency=sampling_frequency,
