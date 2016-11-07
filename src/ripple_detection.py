@@ -96,16 +96,9 @@ def segment_boolean_series(series, minimum_duration=0.015):
             if end_time >= (start_time + minimum_duration)]
 
 
-def create_box(segment, y_low=-5, height=10, alpha=0.3, color='grey'):
-    ''' Convenience function for marking ripple times on a figure. Returns a patches rectangle
-    object.
 def _ripple_bandpass_filter(data):
     ''' Returns a bandpass filtered signal between 150-250 Hz using the Frank lab filter
     '''
-    return patches.Rectangle((segment[0], y_low),
-                             segment[1] - segment[0],
-                             height,
-                             alpha=alpha, color=color)
     filter_numerator, filter_denominator = _get_ripplefilter_kernel()
     return scipy.signal.filtfilt(filter_numerator, filter_denominator, data, axis=0)
 def _get_ripplefilter_kernel():
