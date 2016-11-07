@@ -9,44 +9,6 @@ import pandas as pd
 import matplotlib.patches as patches
 import tqdm
 import src.spectral as spectral
-def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_threshold=3):
-    ''' Returns a pandas dataframe containing the original lfp and the ripple-band (150-250 Hz)
-    score for the lfp according to Karlsson, M.P., Frank, L.M., 2009. Awake replay of remote
-    experiences in the hippocampus. Nature Neuroscience 12, 913–918. doi:10.1038/nn.2344
-    '''
-    filtered_data = _bandpass_filter(lfp['electric_potential'])
-    filtered_data_envelope = abs(scipy.signal.hilbert(filtered_data))
-    smoothed_envelope = scipy.ndimage.filters.gaussian_filter1d(filtered_data_envelope,
-                                                                sigma * sampling_frequency,
-                                                                truncate=8)
-    dataframes = [pd.DataFrame(
-        {'ripple_zscore': _zscore(smoothed_envelope)}), lfp.reset_index()]
-    return (pd.concat(dataframes, axis=1)
-            .set_index('time')
-            .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
-            .assign(is_above_ripple_mean=lambda x: x.ripple_zscore >= 0))
-
-
-def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_product=1,
-                                 time_window_duration=0.020, zscore_threshold=3,
-                                 time_window_step=0.004):
-    ''' Returns a pandas dataframe containing the original lfp and the ripple-band (150-250 Hz)
-    score for the lfp using a tapered power signal centered at 200 Hz. Frequency resolution is
-    100 Hz and time resolution is 20 milliseconds by default.
-    '''
-    spectrogram = spectral.multitaper_spectrogram(
-        lfp,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        time_window_duration=time_window_duration,
-        sampling_frequency=sampling_frequency,
-        time_window_step=time_window_step,
-        desired_frequencies=[150, 250],
-        pad=None)
-    is_200_Hz = spectrogram.frequency == 200
-    return (spectrogram.loc[is_200_Hz, :].drop('frequency', axis=1)
-                                         .set_index('time').assign(ripple_zscore=lambda x: _zscore(x.power))
-                                         .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
-                                         .assign(is_above_ripple_mean=lambda x: x.ripple_zscore >= 0).sort_index())
 import src.data_processing as data_processing
 
 
@@ -180,42 +142,21 @@ def extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_
     return list(set(segments))  # remove duplicate segments
 
 
-def get_segments_frank(lfp_dataframe, sampling_frequency, zscore_threshold=3, sigma=0.004,
-                       minimum_duration=0.015):
-    ''' Returns a list of tuples that correspond to the
-    start and end of the ripple using the method of Loren Frank's lab.
-    '''
-    ripple_frank_df = get_ripple_zscore_frank(lfp_dataframe,
-                                              sampling_frequency,
-                                              zscore_threshold=zscore_threshold,
-                                              sigma=sigma)
-    ripple_above_mean_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_mean,
-                                                        minimum_duration=minimum_duration)
-    ripple_above_threshold_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_threshold,
-                                                             minimum_duration=minimum_duration)
-    return extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments)
+def _get_envelope(data):
+    return np.abs(scipy.signal.hilbert(data, axis=0))
 
 
-def get_segments_multitaper(lfp_dataframe, sampling_frequency, zscore_threshold=3,
-                            minimum_duration=0.015):
-    ''' Returns a list of tuples that correspond to the start and end of the ripple using the
-    zscore of a taper at 200 Hz to extract the ripples.
-    '''
-    ripple_frank_df = get_ripple_zscore_multitaper(lfp_dataframe,
-                                                   sampling_frequency,
-                                                   zscore_threshold=zscore_threshold)
-    ripple_above_mean_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_mean,
-                                                        minimum_duration=minimum_duration)
-    ripple_above_threshold_segments = segment_boolean_series(ripple_frank_df.is_above_ripple_threshold,
-                                                             minimum_duration=minimum_duration)
-    return extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments)
+def _smooth(data, sigma, sampling_frequency):
+    return scipy.ndimage.filters.gaussian_filter1d(
+        data, sigma * sampling_frequency, truncate=8, axis=0)
 
 
-def get_multitaper_ripples_dataframe(tetrode_index, animals, sampling_frequency,
-                                     zscore_threshold=3, minimum_duration=0.015):
-    ''' Given a tetrode index (animal, day, epoch, tetrode #), returns a pandas dataframe
-    with the pre-computed ripples using multitapers labeled according to the ripple number.
-    Non-ripple times are marked as NaN.
+def _threshold_by_zscore(data, zscore_threshold=2):
+    zscored_data = _zscore(data).values.flatten()
+    return pd.DataFrame({'is_above_threshold': zscored_data >= zscore_threshold,
+                         'is_above_mean': zscored_data >= 0}, index=data.index)
+
+
 def _zscore(x):
     ''' Returns an array of the z-score of x
     '''
@@ -292,30 +233,3 @@ def reshape_to_segments(dataframes, segments, window_offset=None, concat_axis=0)
                .sort_index())
 
 
-def get_session_ripples(epoch_index, animals, sampling_frequency, zscore_threshold=2,
-                        minimum_duration=0.015, speed_threshold=4):
-
-    tetrode_info = df.make_tetrode_dataframe(animals)
-    tetrode_index = df.get_dataframe_index(tetrode_info[epoch_index])
-    lfp_data = df.get_LFP_data(tetrode_index, animals)
-    CA1_lfp = df.filter_list_by_pandas_series(
-        lfp_data, tetrode_info[epoch_index].area == 'CA1')
-    segments_multitaper = [get_segments_multitaper(lfp, sampling_frequency,
-                                                   zscore_threshold=zscore_threshold,
-                                                   minimum_duration=minimum_duration)
-                           for lfp in tqdm.tqdm_notebook(CA1_lfp, desc='segments_multitaper')]
-    merged_segments = list(merge_ranges([seg for tetrode in segments_multitaper
-                                         for seg in tetrode]))
-
-    position_dataframe = df.get_position_dataframe(epoch_index, animals)[0]
-    interpolated_position = (pd.concat([lfp_data[0], position_dataframe])
-                             .sort_index()
-                             .interpolate(method='linear')
-                             .reindex(lfp_data[0].index))
-
-    average_speed = [(interpolated_position.loc[segment_start:segment_end, :]
-                      .smoothed_speed
-                      .mean()
-                      .values)
-                     for segment_start, segment_end in merged_segments]
-    return [merged_segments[i] for i in np.where(average_speed <= speed_threshold)[0]]
