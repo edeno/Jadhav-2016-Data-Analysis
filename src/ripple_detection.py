@@ -58,7 +58,9 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
         index_dataframe = dataframe.drop(dataframe.columns, axis=1)
     except AttributeError:
         index_dataframe = dataframe[0].drop(dataframe[0].columns, axis=1)
-    ripple_dataframe = (pd.concat([index_dataframe.loc[start_time:end_time].assign(ripple_number=number)
+    ripple_dataframe = (pd.concat([index_dataframe
+                                   .loc[start_time:end_time]
+                                   .assign(ripple_number=number)
                                    for number, start_time, end_time in ripple_times]))
     try:
         ripple_dataframe = pd.concat([dataframe, ripple_dataframe], axis=1, join_axes=[
@@ -295,7 +297,8 @@ def _merge_ranges(ranges):
     [(1, 2), (3, 4), (5, 6)]
     >>> list(merge_ranges([]))
     []
-    from: http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
+    from:
+        http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
     """
     ranges = iter(sorted(ranges))
     current_start, current_stop = next(ranges)
