@@ -30,12 +30,6 @@ def _bandpass_filter(data):
     return scipy.signal.filtfilt(filter_numerator, filter_denominator, data)
 
 
-def _zscore(x):
-    ''' Returns an array of the z-score of x
-    '''
-    return (x - x.mean()) / x.std()
-
-
 def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_threshold=3):
     ''' Returns a pandas dataframe containing the original lfp and the ripple-band (150-250 Hz)
     score for the lfp according to Karlsson, M.P., Frank, L.M., 2009. Awake replay of remote
@@ -230,6 +224,8 @@ def get_multitaper_ripples_dataframe(tetrode_index, animals, sampling_frequency,
     ''' Given a tetrode index (animal, day, epoch, tetrode #), returns a pandas dataframe
     with the pre-computed ripples using multitapers labeled according to the ripple number.
     Non-ripple times are marked as NaN.
+def _zscore(x):
+    ''' Returns an array of the z-score of x
     '''
     lfp_dataframe = df._get_LFP_dataframe(tetrode_index, animals)
     segments = get_segments_multitaper(lfp_dataframe, sampling_frequency,
