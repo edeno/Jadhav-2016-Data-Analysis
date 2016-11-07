@@ -35,6 +35,19 @@ def get_computed_consensus_ripple_times(epoch_tuple, animals):
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
 
 
+def get_computed_ripples_dataframe(tetrode_index, animals):
+    ''' Given a tetrode index (animal, day, epoch, tetrode #), returns a pandas dataframe
+    with the pre-computed ripples from the Frank lab labeled according to the ripple number.
+    Non-ripple times are marked as NaN.
+    '''
+    ripple_times = _get_computed_ripple_times(tetrode_index, animals)
+    [(ripple_ind + 1, start_time, end_time) for ripple_ind, (start_time, end_time)
+     in enumerate(ripple_times)]
+    lfp_dataframe = data_processing.get_LFP_dataframe(tetrode_index, animals)
+    return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
+            .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
+
+
 def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
     ''' Given a list of ripple time tuples (ripple #, start time, end time) and a dataframe with a
     time index (such as the lfp dataframe), returns a pandas dataframe with a column with the
@@ -54,19 +67,6 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
         ripple_dataframe = pd.concat([pd.concat(
             dataframe, axis=1), ripple_dataframe], axis=1, join_axes=[index_dataframe.index])
     return ripple_dataframe
-
-
-def get_computed_ripples_dataframe(tetrode_index, animals):
-    ''' Given a tetrode index (animal, day, epoch, tetrode #), returns a pandas dataframe
-    with the pre-computed ripples from the Frank lab labeled according to the ripple number.
-    Non-ripple times are marked as NaN.
-    '''
-    ripple_times = _get_computed_ripple_times(tetrode_index, animals)
-    [(ripple_ind + 1, start_time, end_time) for ripple_ind, (start_time, end_time)
-     in enumerate(ripple_times)]
-    lfp_dataframe = df._get_LFP_dataframe(tetrode_index, animals)
-    return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
-            .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
 
 
 def _get_series_start_end_times(series):
