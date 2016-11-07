@@ -12,24 +12,6 @@ import src.spectral as spectral
 import src.data_filter as df
 
 
-def get_ripplefilter_kernel():
-    ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
-    bandpass with 40 db roll off and 10 Hz sidebands.
-    '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
-    ripplefilter = scipy.io.loadmat(
-        '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
-    return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
-
-
-def _bandpass_filter(data):
-    ''' Returns a bandpass filtered signal ('data') between lowcut and highcut
-    '''
-    filter_numerator, filter_denominator = get_ripplefilter_kernel()
-    return scipy.signal.filtfilt(filter_numerator, filter_denominator, data)
-
-
 def get_ripple_zscore_frank(lfp, sampling_frequency, sigma=0.004, zscore_threshold=3):
     ''' Returns a pandas dataframe containing the original lfp and the ripple-band (150-250 Hz)
     score for the lfp according to Karlsson, M.P., Frank, L.M., 2009. Awake replay of remote
@@ -158,11 +140,24 @@ def segment_boolean_series(series, minimum_duration=0.015):
 def create_box(segment, y_low=-5, height=10, alpha=0.3, color='grey'):
     ''' Convenience function for marking ripple times on a figure. Returns a patches rectangle
     object.
+def _ripple_bandpass_filter(data):
+    ''' Returns a bandpass filtered signal between 150-250 Hz using the Frank lab filter
     '''
     return patches.Rectangle((segment[0], y_low),
                              segment[1] - segment[0],
                              height,
                              alpha=alpha, color=color)
+    filter_numerator, filter_denominator = _get_ripplefilter_kernel()
+    return scipy.signal.filtfilt(filter_numerator, filter_denominator, data, axis=0)
+def _get_ripplefilter_kernel():
+    ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
+    bandpass with 40 db roll off and 10 Hz sidebands.
+    '''
+    data_dir = '{working_dir}/Raw-Data'.format(
+        working_dir=os.path.abspath(os.path.pardir))
+    ripplefilter = scipy.io.loadmat(
+        '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
+    return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
 def _find_containing_interval(interval_candidates, target_interval):
