@@ -1,5 +1,11 @@
 import numpy as np
+import pandas as pd
 import scipy.ndimage.filters
+import scipy.linalg
+import scipy.stats
+from tqdm import tqdm_notebook as tqdm
+import patsy
+import statsmodels.api as sm
 import data_processing
 
 
@@ -68,7 +74,8 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
         return likelihood_function(data, **likelihood_kwargs)
 
 
-def empirical_movement_transition_matrix(linear_position, linear_position_grid, speed_up_factor=30):
+def empirical_movement_transition_matrix(linear_position, linear_position_grid,
+                                         speed_up_factor=30):
     ''' Estimates the probablity of the next position based on the movement data.
     '''
     movement_bins, _, _ = np.histogram2d(linear_position, linear_position.shift(1),
@@ -95,3 +102,179 @@ def _fix_zero_bins(movement_bins):
     is_zero_column = np.sum(movement_bins, axis=0) == 0
     movement_bins[:, is_zero_column] = 1
     return movement_bins
+
+
+def decode_ripple(epoch_index, animals, ripple_times,
+                  linear_distance_grid=np.linspace(0, 192, 49),
+                  likelihood_function=instantaneous_poisson_likelihood):
+    print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:\n'.format(*epoch_index))
+    # Include only CA1 neurons with spikes
+    neuron_info = (data_processing.make_neuron_dataframe(animals)[epoch_index]
+                   .dropna()
+                   .query('(numspikes > 0) & (area == "CA1")'))
+
+    # Train on when the rat is moving
+    position_info = data_processing.get_interpolated_position_dataframe(
+        epoch_index, animals)
+    spikes_data = [data_processing.get_spike_indicator_dataframe(neuron_index, animals)
+                   for neuron_index in neuron_info.index]
+    train_position_info = position_info.query('speed > 4')
+    train_spikes_data = [spikes_datum[position_info.speed > 4]
+                         for spikes_datum in spikes_data]
+    linear_distance_grid_centers = _get_grid_centers(linear_distance_grid)
+
+    # Fit encoding model
+    print('\tFitting encoding model...\n')
+    conditional_intensity = get_encoding_model(
+        train_position_info, train_spikes_data, linear_distance_grid_centers)
+
+    # Fit state transition model
+    print('\tFitting state transition model...\n')
+    state_transition = get_state_transition_matrix(train_position_info, linear_distance_grid)
+
+    # Initial Conditions
+    print('\tSetting initial conditions...\n')
+    state_names = ['outbound_forward', 'outbound_reverse',
+                   'inbound_forward', 'inbound_reverse']
+    num_states = len(state_names)
+    initial_conditions = get_initial_conditions(
+        linear_distance_grid, linear_distance_grid_centers, num_states)
+
+    # Decode
+    print('\tDecoding ripples...\n')
+    combined_likelihood_params = dict(
+        likelihood_function=likelihood_function,
+        likelihood_kwargs=dict(conditional_intensity=conditional_intensity)
+        )
+    decoder_params = dict(
+        initial_conditions=initial_conditions,
+        state_transition=state_transition,
+        likelihood_function=combined_likelihood,
+        likelihood_kwargs=combined_likelihood_params
+    )
+    test_spikes = _get_ripple_spikes(spikes_data, ripple_times)
+    posterior_density = [predict_state(ripple_spikes, **decoder_params)
+                         for ripple_spikes in test_spikes]
+    return get_ripple_info(posterior_density, test_spikes, ripple_times, state_names)
+
+
+def _get_ripple_spikes(spikes_data, ripple_times):
+    spike_ripples_df = list(data_processing.reshape_to_segments(
+        spikes_data, ripple_times, concat_axis=1))
+
+    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
+                       for df in spike_ripples_df]).T
+            for ripple_ind in np.arange(len(ripple_times))]
+
+
+def _get_grid_centers(grid):
+    return grid[:-1] + np.diff(grid) / 2
+
+
+def get_initial_conditions(linear_distance_grid, linear_distance_grid_centers,
+                           num_states):
+    linear_distance_grid_bin_size = linear_distance_grid[
+        1] - linear_distance_grid[0]
+
+    outbound_initial_conditions = normalize_to_probability(
+        scipy.stats.norm.pdf(linear_distance_grid_centers, 0, linear_distance_grid_bin_size * 2))
+
+    inbound_initial_conditions = normalize_to_probability(
+        (np.max(outbound_initial_conditions) * np.ones(linear_distance_grid_centers.shape)) -
+        outbound_initial_conditions)
+
+    prior_probability_of_state = 1 / num_states
+    return np.hstack([outbound_initial_conditions,
+                      inbound_initial_conditions,
+                      inbound_initial_conditions,
+                      outbound_initial_conditions]) * prior_probability_of_state
+
+
+def get_state_transition_matrix(train_position_info, linear_distance_grid):
+    inbound_state_transitions = empirical_movement_transition_matrix(
+        train_position_info[train_position_info.trajectory_direction == 'Inbound'].linear_distance,
+        linear_distance_grid)
+    outbound_state_transitions = empirical_movement_transition_matrix(
+        train_position_info[train_position_info.trajectory_direction == 'Outbound'].linear_distance,
+        linear_distance_grid)
+
+    return scipy.linalg.block_diag(outbound_state_transitions,
+                                   inbound_state_transitions,
+                                   inbound_state_transitions,
+                                   outbound_state_transitions)
+
+
+def get_encoding_model(train_position_info, train_spikes_data, linear_distance_grid_centers):
+    formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
+    design_matrix = patsy.dmatrix(
+        formula, train_position_info, return_type='dataframe')
+    fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson()).fit(maxiter=30)
+           for spikes in tqdm(train_spikes_data, desc='Fit')]
+
+    inbound_predict_design_matrix = _predictors_by_trajectory_direction(
+        'Inbound', linear_distance_grid_centers, design_matrix)
+    outbound_predict_design_matrix = _predictors_by_trajectory_direction(
+        'Outbound', linear_distance_grid_centers, design_matrix)
+
+    inbound_conditional_intensity = _get_conditional_intensity(
+        fit, inbound_predict_design_matrix)
+    outbound_conditional_intensity = _get_conditional_intensity(
+        fit, outbound_predict_design_matrix)
+
+    return np.vstack([outbound_conditional_intensity,
+                      outbound_conditional_intensity,
+                      inbound_conditional_intensity,
+                      inbound_conditional_intensity])
+
+
+def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names):
+    num_states = len(state_names)
+    num_ripples = len(ripple_times)
+    decision_state_probability = [_compute_decision_state_probability(density, num_states)
+                                  for density in posterior_density]
+
+    ripple_info = pd.DataFrame([_compute_max_state(probability, state_names)
+                                for probability in decision_state_probability],
+                               columns=['ripple_trajectory', 'ripple_direction',
+                                        'ripple_state_probability'],
+                               index=pd.Index(np.arange(num_ripples) + 1, name='ripple_number'))
+    ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
+    ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
+    ripple_info['number_of_unique_neurons_spiking'] = [_num_unique_neurons_spiking(spikes)
+                                                       for spikes in test_spikes]
+    ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
+                                       for spikes in test_spikes]
+    return ripple_info, decision_state_probability, posterior_density, state_names
+
+
+def _predictors_by_trajectory_direction(trajectory_direction, linear_distance_grid_centers,
+                                        design_matrix):
+    predictors = {'linear_distance': linear_distance_grid_centers,
+                  'trajectory_direction': [trajectory_direction] *
+                  len(linear_distance_grid_centers)}
+    return patsy.build_design_matrices([design_matrix.design_info], predictors)[0]
+
+
+def _get_conditional_intensity(fit, predict_design_matrix):
+    return np.vstack([fitted_model.predict(predict_design_matrix)
+                      for fitted_model in fit]).T
+
+
+def _compute_decision_state_probability(posterior_density, num_states):
+    num_time = len(posterior_density)
+    new_shape = (num_time, num_states, -1)
+    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
+
+
+def _compute_max_state(probability, state_names):
+    end_time_probability = probability[-1, :]
+    return (*state_names[np.argmax(end_time_probability)].split('_'),
+            np.max(end_time_probability))
+
+
+def _num_unique_neurons_spiking(spikes):
+    return spikes.sum(axis=0).nonzero()[0].shape[0]
+
+
+def _num_total_spikes(spikes):
+    return int(spikes.sum(axis=(0, 1)))
