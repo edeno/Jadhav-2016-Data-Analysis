@@ -155,7 +155,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     test_spikes = _get_ripple_spikes(spikes_data, ripple_times)
     posterior_density = [predict_state(ripple_spikes, **decoder_params)
                          for ripple_spikes in test_spikes]
-    return get_ripple_info(posterior_density, test_spikes, ripple_times, state_names)
+    session_time = position_info.index
+    return get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time)
 
 
 def _get_ripple_spikes(spikes_data, ripple_times):
@@ -227,7 +228,7 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_g
                       inbound_conditional_intensity])
 
 
-def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names):
+def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time):
     num_states = len(state_names)
     num_ripples = len(ripple_times)
     decision_state_probability = [_compute_decision_state_probability(density, num_states)
@@ -244,6 +245,8 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names):
                                                        for spikes in test_spikes]
     ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
                                        for spikes in test_spikes]
+    ripple_info['session_time'] = _ripple_session_time(ripple_times, session_time)
+
     return ripple_info, decision_state_probability, posterior_density, state_names
 
 
@@ -278,3 +281,14 @@ def _num_unique_neurons_spiking(spikes):
 
 def _num_total_spikes(spikes):
     return int(spikes.sum(axis=(0, 1)))
+
+
+def _ripple_session_time(ripple_times, session_time):
+    ''' Categorize the ripples by the time in the session in which they occur.
+    This function trichotimizes the session time into early session, middle session,
+    and late session and classifies the ripple by the most prevelant category.
+    '''
+    session_time_categories = pd.Series(pd.cut(
+        session_time, 3, labels=['early', 'middle', 'late'], precision=4), index=session_time)
+    return [session_time_categories.loc[ripple_start:ripple_end].value_counts().argmax()
+            for ripple_start, ripple_end in ripple_times]
