@@ -11,7 +11,6 @@ import nitime.algorithms as tsa
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import pandas as pd
-import ripple_detection
 import data_processing
 
 
