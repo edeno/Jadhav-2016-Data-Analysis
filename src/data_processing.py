@@ -464,5 +464,27 @@ def reshape_to_segments(dataframes, segments, window_offset=None, concat_axis=0)
                          axis=concat_axis)
                .sort_index())
 
+
+def get_tetrode_pair_info(tetrode_info):
+    pair_index = pd.MultiIndex.from_tuples(list(itertools.combinations(tetrode_info.index, 2)),
+                                           names=['tetrode1', 'tetrode2'])
+    no_rename = {'animal_1': 'animal',
+                 'day_1': 'day',
+                 'epoch_ind_1': 'epoch_ind'}
+    tetrode1 = (tetrode_info
+                .loc[pair_index.get_level_values('tetrode1')]
+                .reset_index(drop=True)
+                .add_suffix('_1')
+                .rename(columns=no_rename)
+                )
+    tetrode2 = (tetrode_info
+                .loc[pair_index.get_level_values('tetrode2')]
+                .reset_index(drop=True)
+                .drop(['animal', 'day', 'epoch_ind'], axis=1)
+                .add_suffix('_2')
+                )
+    return (pd.concat([tetrode1, tetrode2], axis=1)
+            .set_index(pair_index))
+
 if __name__ == '__main__':
     sys.exit()
