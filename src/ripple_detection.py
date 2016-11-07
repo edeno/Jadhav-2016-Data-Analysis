@@ -12,18 +12,6 @@ import src.spectral as spectral
 import src.data_filter as df
 
 
-def _equiripple_bandpass(lowcut, highcut, sampling_frequency, transition_width=10, num_taps=318):
-
-    edges = [0,
-             lowcut - transition_width,
-             lowcut, highcut,
-             highcut + transition_width,
-             0.5 * sampling_frequency]
-
-    b = scipy.signal.remez(num_taps, edges, [0, 1, 0], Hz=sampling_frequency)
-    return b, 1
-
-
 def get_ripplefilter_kernel():
     ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
     bandpass with 40 db roll off and 10 Hz sidebands.
