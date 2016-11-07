@@ -134,8 +134,8 @@ def multitaper_spectrogram(data,
         tapers=tapers,
         frequencies=frequencies,
         freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples)).sort_index()
-    )
+        number_of_fft_samples=number_of_fft_samples))
+    ).sort_index()
 
 
 def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_frequency=None,
