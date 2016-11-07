@@ -284,7 +284,7 @@ def _zscore(x):
     return (x - x.mean()) / x.std()
 
 
-def merge_ranges(ranges):
+def _merge_ranges(ranges):
     """
     Merge overlapping and adjacent ranges and yield the merged ranges
     in order. The argument must be an iterable of pairs (start, stop).
