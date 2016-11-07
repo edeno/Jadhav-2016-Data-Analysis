@@ -31,7 +31,7 @@ def convert_pandas(func):
         elif isinstance(data, list) and isinstance(data[0], pd.DataFrame):
             if is_time:
                 try:
-                    time = data[0].reset_index('time').time.values
+                    time = data[0].index.values
                     kwargs['time'] = time
                 except AttributeError:
                     raise AttributeError(
