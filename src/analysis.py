@@ -19,7 +19,7 @@ def coherence_by_ripple_type(epoch_index, animals,
     coherence_by_ripple_type = {ripple_type: _get_coherence_for_all_pairs(lfps, ripples,
                                                                           multitaper_params)
                                 for ripple_type, ripples in ripple_info.groupby('ripple_type')}
-    return coherence_by_ripple_type, get_tetrode_pair_info(tetrode_info)
+    return coherence_by_ripple_type, data_processing.get_tetrode_pair_info(tetrode_info)
 
 
 def _get_coherence_for_all_pairs(lfps, ripples, multitaper_params):
