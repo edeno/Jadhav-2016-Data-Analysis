@@ -5,6 +5,7 @@ Functions for accessing data in the Frank lab format
 
 import os
 import sys
+import itertools
 import scipy.io
 import numpy as np
 import pandas as pd
