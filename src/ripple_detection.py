@@ -96,7 +96,7 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     data structure and calculated according to the Frank Lab criterion.
     '''
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    ripples_data = df.get_data_structure(
+    ripples_data = data_processing.get_data_structure(
         animals[animal], day, 'ripples', 'ripples')
     return zip(ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
                ripples_data[epoch_ind - 1][0][tetrode_number - 1]['endtime'][0, 0].flatten())
@@ -107,7 +107,7 @@ def get_computed_consensus_ripple_times(epoch_tuple, animals):
     (start_time, end_time).
     '''
     animal, day, epoch_ind = epoch_tuple
-    ripples_data = df.get_data_structure(
+    ripples_data = data_processing.get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
 
