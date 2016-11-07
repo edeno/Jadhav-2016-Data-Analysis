@@ -252,7 +252,7 @@ def _find_containing_interval(interval_candidates, target_interval):
     return interval_candidates[closest_start_ind]
 
 
-def extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments):
+def _extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean_segments):
     ''' Returns a list of tuples that extend the
     boundaries of the segments by the ripple threshold (i.e ripple z-score > 3)
     to the boundaries of a containing interval defined by when the z-score
