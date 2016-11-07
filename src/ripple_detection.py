@@ -6,8 +6,6 @@ import scipy.ndimage
 import scipy.io
 import numpy as np
 import pandas as pd
-import matplotlib.patches as patches
-import tqdm
 import src.spectral as spectral
 import src.data_processing as data_processing
 
