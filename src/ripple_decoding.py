@@ -276,10 +276,14 @@ def _compute_max_state(probability, state_names):
 
 
 def _num_unique_neurons_spiking(spikes):
+    ''' Number of units that spike per ripple
+    '''
     return spikes.sum(axis=0).nonzero()[0].shape[0]
 
 
 def _num_total_spikes(spikes):
+    ''' Total number of spikes per ripple
+    '''
     return int(spikes.sum(axis=(0, 1)))
 
 
