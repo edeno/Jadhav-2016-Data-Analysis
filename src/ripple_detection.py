@@ -96,11 +96,131 @@ def segment_boolean_series(series, minimum_duration=0.015):
             if end_time >= (start_time + minimum_duration)]
 
 
+def get_epoch_ripples(epoch_index, animals, sampling_frequency, ripple_detection_function=None,
+                      ripple_detection_kwargs={}, speed_threshold=4):
+    ''' Returns a list of tuples containing the start and end times of ripples. Candidate ripples
+    are computed via the ripple detection function and then filtered to exclude ripples where the
+    animal was still moving.
+    '''
+    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(*epoch_index))
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    # Get cell-layer CA1, CA3 LFPs
+    area_critera = (tetrode_info.area.isin(['CA1', 'CA3']) &
+                    ~tetrode_info.descrip.isin(['CA1Ref', 'CA3Ref']))
+    tetrode_indices = tetrode_info[area_critera].index.tolist()
+    CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
+                for tetrode_index in tetrode_indices]
+    candidate_ripple_times = ripple_detection_function(CA1_lfps, **ripple_detection_kwargs)
+    return _exclude_movement_during_ripples(candidate_ripple_times, epoch_index,
+                                            animals, speed_threshold)
+
+
+def _exclude_movement_during_ripples(ripple_times, epoch_index, animals, speed_threshold):
+    ''' Excludes ripples where the head direction speed is greater than the speed threshold.
+    Only looks at the start of the ripple to determine head movement speed for the ripple.
+    '''
+    position_df = data_processing.get_interpolated_position_dataframe(epoch_index, animals)
+    return [(ripple_start, ripple_end) for ripple_start, ripple_end in ripple_times
+            if position_df.loc[ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
+
+
+def multitaper_Kay_method(lfps, minimum_duration=0.015, sampling_frequency=1500,
+                          zscore_threshold=2, multitaper_kwargs={}):
+    ripple_power = [_get_ripple_power_multitaper(lfp, sampling_frequency, **multitaper_kwargs)
+                    for lfp in lfps]
+    return _get_candidate_ripples_Kay(
+        ripple_power, is_multitaper=True, zscore_threshold=zscore_threshold,
+        minimum_duration=minimum_duration)
+
+
+def mulititaper_Karlsson_method(lfps, minimum_duration=0.015, sampling_frequency=1500,
+                                zscore_threshold=2, multitaper_kwargs={}):
+    ripple_power = [_get_ripple_power_multitaper(lfp, sampling_frequency, **multitaper_kwargs)
+                    for lfp in lfps]
+    return _get_candidate_ripples_Karlsson(ripple_power, minimum_duration=minimum_duration,
+                                           zscore_threshold=zscore_threshold)
+
+
+def Kay_method(lfps, minimum_duration=0.015, zscore_threshold=2,
+               smoothing_sigma=0.004, sampling_frequency=1500):
+    filtered_lfps = [pd.Series(_ripple_bandpass_filter(lfp.values.flatten()), index=lfp.index)
+                     for lfp in lfps]
+    return _get_candidate_ripples_Kay(
+        filtered_lfps, is_multitaper=False, minimum_duration=minimum_duration,
+        zscore_threshold=zscore_threshold, sigma=smoothing_sigma,
+        sampling_frequency=sampling_frequency)
+
+
+def Karlsson_method(lfps, smoothing_sigma=0.004, sampling_frequency=1500,
+                    minimum_duration=0.015, zscore_threshold=2):
+    ripple_envelope = [_get_smoothed_envelope(lfp, smoothing_sigma, sampling_frequency)
+                       for lfp in lfps]
+    return _get_candidate_ripples_Karlsson(ripple_envelope, minimum_duration=minimum_duration,
+                                           zscore_threshold=zscore_threshold)
+
+
+def _get_smoothed_envelope(lfp, sigma, sampling_frequency):
+    ''' Filters the lfp between 150-250 Hz and returns the
+    smoothed envelope of the filtered signal
+    '''
+    return pd.Series(_smooth(_get_envelope(_ripple_bandpass_filter(lfp.values.flatten())),
+                     sigma, sampling_frequency), index=lfp.index)
+
+
+def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False, minimum_duration=0.015,
+                               zscore_threshold=2, sigma=0.004, sampling_frequency=1500):
+    combined_lfps = np.sum(pd.concat(filtered_lfps, axis=1) ** 2, axis=1)
+
+    # Don't need to smooth if using multitaper method
+    if not is_multitaper:
+        smooth_combined_lfps = pd.Series(
+            _smooth(combined_lfps.values.flatten(), sigma, sampling_frequency),
+            index=combined_lfps.index)
+    else:
+        smooth_combined_lfps = combined_lfps
+
+    threshold_df = _threshold_by_zscore(np.sqrt(smooth_combined_lfps),
+                                        zscore_threshold=zscore_threshold)
+    return list(sorted(_extend_threshold_to_mean(
+        threshold_df.is_above_mean, threshold_df.is_above_threshold,
+        minimum_duration=minimum_duration)))
+
+
+def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
+                                    zscore_threshold=2):
+    thresholded_lfps = [_threshold_by_zscore(lfp, zscore_threshold=zscore_threshold)
+                        for lfp in filtered_lfps]
+    extended_lfps = [_extend_threshold_to_mean(threshold_df.is_above_mean,
+                                               threshold_df.is_above_threshold,
+                                               minimum_duration=minimum_duration)
+                     for threshold_df in thresholded_lfps]
+    return list(_merge_ranges(_flatten_list(extended_lfps)))
+
+
+def _flatten_list(original_list):
+    return [item for sublist in original_list for item in sublist]
+
+
+def _get_ripple_power_multitaper(lfp, sampling_frequency, time_halfbandwidth_product=1,
+                                 time_window_duration=0.020,
+                                 time_window_step=0.004):
+    return spectral.multitaper_spectrogram(
+        lfp,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        time_window_duration=time_window_duration,
+        sampling_frequency=sampling_frequency,
+        time_window_step=time_window_step,
+        desired_frequencies=[150, 250],
+        pad=None).loc[200, :]
+
+
 def _ripple_bandpass_filter(data):
     ''' Returns a bandpass filtered signal between 150-250 Hz using the Frank lab filter
     '''
     filter_numerator, filter_denominator = _get_ripplefilter_kernel()
     return scipy.signal.filtfilt(filter_numerator, filter_denominator, data, axis=0)
+
+
 def _get_ripplefilter_kernel():
     ''' Returns the pre-computed ripple filter kernel from the Frank lab. The kernel is 150-250 Hz
     bandpass with 40 db roll off and 10 Hz sidebands.
@@ -110,6 +230,14 @@ def _get_ripplefilter_kernel():
     ripplefilter = scipy.io.loadmat(
         '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
+
+
+def _extend_threshold_to_mean(is_above_mean, is_above_threshold, minimum_duration=0.015):
+    above_mean_segments = segment_boolean_series(is_above_mean,
+                                                 minimum_duration=minimum_duration)
+    above_threshold_segments = segment_boolean_series(is_above_threshold,
+                                                      minimum_duration=minimum_duration)
+    return _extend_segment_intervals(above_threshold_segments, above_mean_segments)
 
 
 def _find_containing_interval(interval_candidates, target_interval):
@@ -153,14 +281,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
 def _zscore(x):
     ''' Returns an array of the z-score of x
     '''
-    lfp_dataframe = df._get_LFP_dataframe(tetrode_index, animals)
-    segments = get_segments_multitaper(lfp_dataframe, sampling_frequency,
-                                       zscore_threshold=zscore_threshold,
-                                       minimum_duration=minimum_duration)
-    ripple_times = [(ind + 1, start_time, end_time)
-                    for ind, (start_time, end_time) in enumerate(segments)]
-    return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
-            .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
+    return (x - x.mean()) / x.std()
 
 
 def merge_ranges(ranges):
