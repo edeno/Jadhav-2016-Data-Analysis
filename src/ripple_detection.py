@@ -86,6 +86,7 @@ def get_ripple_zscore_multitaper(lfp, sampling_frequency, time_halfbandwidth_pro
                                          .set_index('time').assign(ripple_zscore=lambda x: _zscore(x.power))
                                          .assign(is_above_ripple_threshold=lambda x: x.ripple_zscore >= zscore_threshold)
                                          .assign(is_above_ripple_mean=lambda x: x.ripple_zscore >= 0).sort_index())
+import src.data_processing as data_processing
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):

@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.ndimage.filters
+import data_processing
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
