@@ -160,8 +160,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
 
 
 def _get_ripple_spikes(spikes_data, ripple_times):
-    spike_ripples_df = list(data_processing.reshape_to_segments(
-        spikes_data, ripple_times, concat_axis=1))
+    spike_ripples_df = [data_processing.reshape_to_segments(
+        spikes_datum, ripple_times, concat_axis=1)
+                        for spikes_datum in spikes_data]
 
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values
                        for df in spike_ripples_df]).T
