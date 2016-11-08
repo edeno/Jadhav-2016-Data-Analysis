@@ -37,7 +37,7 @@ def get_epochs(animal, day):
     try:
         task_file = scipy.io.loadmat(
             get_data_filename(animal, day, 'task'))
-        return [(animal, day, ind+1) for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
+        return [(animal, day, ind + 1) for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
     except IOError as err:
         print('I/O error({0}): {1}'.format(err.errno, err.strerror))
         sys.exit()
@@ -247,7 +247,8 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind)
               .assign(day=day)
               .assign(epoch_ind=epoch_ind)
               .assign(neuron_id=_get_neuron_id)
-              .set_index(NEURON_INDEX, drop=False)  # set index to identify rows
+            # set index to identify rows
+              .set_index(NEURON_INDEX, drop=False)
               .sort_index()
             )
 
@@ -362,7 +363,8 @@ def get_interpolated_position_dataframe(epoch_index, animals):
     position_continuous = (position
                            .drop(categorical_columns, axis=1)
                            .dropna())
-    new_index = pd.Index(np.sort(np.concatenate((position_continuous.index, time))), name='time')
+    new_index = pd.Index(np.sort(np.concatenate(
+        (position_continuous.index, time))), name='time')
     interpolated_position = (position_continuous
                              .reindex(index=new_index)
                              .interpolate(method='spline', order=3)
@@ -397,12 +399,13 @@ def get_linear_position_structure(epoch_key, animals, trajectory_category=None):
     struct = get_data_structure(
         animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0]['statematrix']
     include_fields = ['time', 'traj', 'lindist']
-    new_names = {'time': 'time', 'traj': 'trajectory_category_ind', 'lindist': 'linear_distance'}
+    new_names = {'time': 'time', 'traj': 'trajectory_category_ind',
+                 'lindist': 'linear_distance'}
     return (pd.DataFrame(
         {new_names[name]: struct[name][0][0].flatten() for name in struct.dtype.names
          if name in include_fields})
-            .set_index('time')
-            )
+        .set_index('time')
+    )
 
 
 def get_spike_indicator_dataframe(neuron_index, animals):
