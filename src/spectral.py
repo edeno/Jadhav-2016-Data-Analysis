@@ -448,22 +448,22 @@ def group_delay_over_time(coherogram_dataframe):
     return coherogram_dataframe.groupby('time').apply(group_delay)
 
 
-def normalize_power_by_baseline(dataframe_of_interest, dataframe_baseline):
+def power_change(dataframe1, dataframe2):
     '''Normalizes a coherence or power dataframe by dividing it by a baseline dataframe.
     The baseline dataframe is assumed to only have a frequency index.'''
-    dropped_baseline = dataframe_baseline.drop(
+    dropped1 = dataframe1.drop(
         ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
-    dropped_doi = dataframe_of_interest.drop(
+    dropped2 = dataframe2.drop(
         ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
-    return dropped_doi / dropped_baseline
+    return dropped2 / dropped1
 
 
-def normalize_coherence_by_baseline(dataframe_of_interest, dataframe_baseline):
-    dropped_baseline = dataframe_baseline.drop(
+def coherence_change(dataframe1, dataframe2):
+    dropped2 = dataframe2.drop(
         ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
-    dropped_doi = dataframe_of_interest.drop(
+    dropped1 = dataframe1.drop(
         ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
-    return dropped_doi - dropped_baseline
+    return dropped2 - dropped1
 
 
 def difference_from_baseline_coherence(lfps, times_of_interest,
@@ -496,7 +496,7 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
         time_window_step=time_window_step,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product)
-    return _normalize_power_coherence_by_baseline(coherogram, coherence_baseline)
+    return power_and_coherence_change(coherence_baseline, coherogram)
 
 
 def _match_frequency_resolution(time_halfbandwidth_product, time_window_duration, baseline_window):
@@ -510,12 +510,10 @@ def _match_frequency_resolution(time_halfbandwidth_product, time_window_duration
         return baseline_time_halfbandwidth_product
 
 
-def _normalize_power_coherence_by_baseline(dataframe_of_interest, dataframe_baseline):
-    normalized_power = normalize_power_by_baseline(dataframe_of_interest,
-                                                   dataframe_baseline)
-    normalized_coherence = normalize_coherence_by_baseline(dataframe_of_interest,
-                                                           dataframe_baseline)
-    return pd.concat([normalized_coherence, normalized_power], axis=1).sort_index()
+def power_and_coherence_change(dataframe1, dataframe2):
+    return (pd.concat([coherence_change(dataframe1, dataframe2),
+                       power_change(dataframe1, dataframe2)], axis=1)
+            .sort_index())
 
 
 def frequency_resolution(time_window_duration=None, time_halfbandwidth_product=None):
