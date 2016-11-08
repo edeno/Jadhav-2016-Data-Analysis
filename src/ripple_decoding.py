@@ -229,6 +229,8 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_g
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time):
+    ''' Summary statistics for ripples
+    '''
     num_states = len(state_names)
     num_ripples = len(ripple_times)
     decision_state_probability = [_compute_decision_state_probability(density, num_states)
