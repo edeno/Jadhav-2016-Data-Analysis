@@ -12,8 +12,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_covariate,
     ripple_times = ripple_detection.get_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency,
         ripple_detection_function=ripple_detection_function)
-    ripple_info, _, _, _, _ = ripple_decoding.decode_ripple(epoch_index, animals,
-                                                            ripple_times, **decoding_params)
+    ripple_info = ripple_decoding.decode_ripple(
+        epoch_index, animals, ripple_times, **decoding_params)[0]
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
 
