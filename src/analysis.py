@@ -8,6 +8,8 @@ import spectral
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate,
                              coherence_name='coherence', multitaper_params={}):
+    '''Computes the coherence at each level of a ripple covariate
+    from the ripple info dataframe and the differences between those levels'''
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
@@ -51,6 +53,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
 
 
 def _get_ripple_times(df):
+    '''Retrieves the ripple times from the ripple_info dataframe'''
     return df.loc[:, ('ripple_start_time', 'ripple_end_time')].values.tolist()
 
 
@@ -98,12 +101,16 @@ def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
 
 
 def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariate, level):
+    '''Given a list of tetrode indices and specifiers for the path,
+    returns a panel object of the corresponding coherence dataframes'''
     return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
                         coherence_name, covariate, level, tetrode1, tetrode2)
                      for tetrode1, tetrode2 in tetrode_pair_index})
 
 
 def get_all_tetrode_pair_info(coherence_name):
+    '''Retrieves all the hdf5 files from the Processed Data directory and returns the tetrode
+    pair info dataframe'''
     file_path = os.path.join(os.path.abspath(os.path.pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob.glob(file_path)
     hdf_path = '/{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
