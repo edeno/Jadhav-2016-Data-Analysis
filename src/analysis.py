@@ -7,15 +7,10 @@ import ripple_decoding
 import spectral
 
 
-def coherence_by_ripple_type(epoch_index, animals, ripple_covariate, coherence_name,
+def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate, coherence_name,
                              ripple_detection_function=ripple_detection.Kay_method,
                              multitaper_params={}, decoding_params={}):
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
-    ripple_times = ripple_detection.get_epoch_ripples(
-        epoch_index, animals, sampling_frequency=multitaper_params['sampling_frequency'],
-        ripple_detection_function=ripple_detection_function)
-    ripple_info = ripple_decoding.decode_ripple(
-        epoch_index, animals, ripple_times, **decoding_params)[0]
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
 
@@ -47,7 +42,6 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_covariate, coherence_n
 
     multitaper_params['window_of_interest'] = window_of_interest
     save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
-    save_ripple_info(epoch_index, ripple_info)
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
