@@ -90,9 +90,11 @@ def save_ripple_info(epoch_index, ripple_info):
 
 
 def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
-    hdf_path = '{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
+    hdf_path = '/{coherence_name}/tetrode_info'.format(coherence_name=coherence_name)
+    hdf_pair_path = '/{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
-        store.put(hdf_path, data_processing.get_tetrode_pair_info(tetrode_info))
+        store.put(hdf_path, tetrode_info)
+        store.put(hdf_pair_path, data_processing.get_tetrode_pair_info(tetrode_info))
 
 
 def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariate, level):
