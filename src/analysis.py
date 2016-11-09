@@ -5,7 +5,7 @@ import ripple_decoding
 import spectral
 
 
-def coherence_by_ripple_type(epoch_index, animals, ripple_covariate,
+def coherence_by_ripple_type(epoch_index, animals, ripple_covariate, coherence_name,
                              ripple_detection_function=ripple_detection.Kay_method,
                              multitaper_params={}, decoding_params={}, sampling_frequency=1500):
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
