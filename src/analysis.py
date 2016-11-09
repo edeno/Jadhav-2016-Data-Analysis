@@ -6,8 +6,8 @@ import data_processing
 import spectral
 
 
-def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate, coherence_name,
-                             multitaper_params={}):
+def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate,
+                             coherence_name='coherence', multitaper_params={}):
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
