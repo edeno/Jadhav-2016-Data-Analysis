@@ -96,3 +96,7 @@ def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
         store.put(hdf_path, data_processing.get_tetrode_pair_info(tetrode_info))
 
 
+def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariate, level):
+    return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
+                        coherence_name, covariate, level, tetrode1, tetrode2)
+                     for tetrode1, tetrode2 in tetrode_pair_index})
