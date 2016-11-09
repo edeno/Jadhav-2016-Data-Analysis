@@ -96,34 +96,6 @@ def segment_boolean_series(series, minimum_duration=0.015):
             if end_time >= (start_time + minimum_duration)]
 
 
-def get_epoch_ripples(epoch_index, animals, sampling_frequency, ripple_detection_function=None,
-                      ripple_detection_kwargs={}, speed_threshold=4):
-    ''' Returns a list of tuples containing the start and end times of ripples. Candidate ripples
-    are computed via the ripple detection function and then filtered to exclude ripples where the
-    animal was still moving.
-    '''
-    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(*epoch_index))
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
-    # Get cell-layer CA1, CA3 LFPs
-    area_critera = (tetrode_info.area.isin(['CA1', 'CA3']) &
-                    ~tetrode_info.descrip.isin(['CA1Ref', 'CA3Ref']))
-    tetrode_indices = tetrode_info[area_critera].index.tolist()
-    CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
-                for tetrode_index in tetrode_indices]
-    candidate_ripple_times = ripple_detection_function(CA1_lfps, **ripple_detection_kwargs)
-    return _exclude_movement_during_ripples(candidate_ripple_times, epoch_index,
-                                            animals, speed_threshold)
-
-
-def _exclude_movement_during_ripples(ripple_times, epoch_index, animals, speed_threshold):
-    ''' Excludes ripples where the head direction speed is greater than the speed threshold.
-    Only looks at the start of the ripple to determine head movement speed for the ripple.
-    '''
-    position_df = data_processing.get_interpolated_position_dataframe(epoch_index, animals)
-    return [(ripple_start, ripple_end) for ripple_start, ripple_end in ripple_times
-            if position_df.loc[ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
-
-
 def multitaper_Kay_method(lfps, minimum_duration=0.015, sampling_frequency=1500,
                           zscore_threshold=2, multitaper_kwargs={}):
     ripple_power = [_get_ripple_power_multitaper(lfp, sampling_frequency, **multitaper_kwargs)
@@ -157,6 +129,35 @@ def Karlsson_method(lfps, smoothing_sigma=0.004, sampling_frequency=1500,
                        for lfp in lfps]
     return _get_candidate_ripples_Karlsson(ripple_envelope, minimum_duration=minimum_duration,
                                            zscore_threshold=zscore_threshold)
+
+
+def get_epoch_ripples(epoch_index, animals, sampling_frequency,
+                      ripple_detection_function=Kay_method,
+                      ripple_detection_kwargs={}, speed_threshold=4):
+    ''' Returns a list of tuples containing the start and end times of ripples. Candidate ripples
+    are computed via the ripple detection function and then filtered to exclude ripples where the
+    animal was still moving.
+    '''
+    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(*epoch_index))
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    # Get cell-layer CA1, CA3 LFPs
+    area_critera = (tetrode_info.area.isin(['CA1', 'CA3']) &
+                    ~tetrode_info.descrip.isin(['CA1Ref', 'CA3Ref']))
+    tetrode_indices = tetrode_info[area_critera].index.tolist()
+    CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
+                for tetrode_index in tetrode_indices]
+    candidate_ripple_times = ripple_detection_function(CA1_lfps, **ripple_detection_kwargs)
+    return _exclude_movement_during_ripples(candidate_ripple_times, epoch_index,
+                                            animals, speed_threshold)
+
+
+def _exclude_movement_during_ripples(ripple_times, epoch_index, animals, speed_threshold):
+    ''' Excludes ripples where the head direction speed is greater than the speed threshold.
+    Only looks at the start of the ripple to determine head movement speed for the ripple.
+    '''
+    position_df = data_processing.get_interpolated_position_dataframe(epoch_index, animals)
+    return [(ripple_start, ripple_end) for ripple_start, ripple_end in ripple_times
+            if position_df.loc[ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
 
 
 def _get_smoothed_envelope(lfp, sigma, sampling_frequency):
