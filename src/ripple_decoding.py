@@ -250,8 +250,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, s
                                        for spikes in test_spikes]
     ripple_info['session_time'] = _ripple_session_time(ripple_times, session_time)
     ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
-                               .map({True: 'is_spike', False: 'no_spike'})
-                               .astype('category'))
+                               .map({True: 'is_spike', False: 'no_spike'}))
 
     return ripple_info, decision_state_probability, posterior_density, state_names
 
