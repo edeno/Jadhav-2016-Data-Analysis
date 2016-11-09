@@ -68,7 +68,7 @@ def get_tetrode_pair_from_hdf(coherence_name, covariate, level, tetrode1, tetrod
 
 
 def tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1, tetrode2):
-    return '{coherence_name}/tetrode{tetrode1}_tetrode{tetrode2}/{covariate}/{level}'.format(
+    return '/{coherence_name}/tetrode{tetrode1}_tetrode{tetrode2}/{covariate}/{level}'.format(
         coherence_name=coherence_name, covariate=covariate,
         level=level, tetrode1=tetrode1, tetrode2=tetrode2)
 
