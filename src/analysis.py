@@ -1,4 +1,5 @@
 import os
+import glob
 import itertools
 import pandas as pd
 import data_processing
@@ -98,3 +99,10 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariat
     return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
                         coherence_name, covariate, level, tetrode1, tetrode2)
                      for tetrode1, tetrode2 in tetrode_pair_index})
+
+
+def get_all_tetrode_pair_info(coherence_name):
+    file_path = os.path.join(os.path.abspath(os.path.pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob.glob(file_path)
+    hdf_path = '/{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
+    return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files])
