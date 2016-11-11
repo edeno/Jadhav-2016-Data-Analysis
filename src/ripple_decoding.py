@@ -105,6 +105,7 @@ def _fix_zero_bins(movement_bins):
 
 
 def decode_ripple(epoch_index, animals, ripple_times,
+                  sampling_frequency=1500,
                   linear_distance_grid=np.linspace(0, 192, 49),
                   likelihood_function=instantaneous_poisson_likelihood):
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(*epoch_index))
