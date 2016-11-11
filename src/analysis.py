@@ -29,7 +29,6 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
             lfps[key], ripple_times_by_group, window_offset=window_of_interest, concat_axis=1)
                          for key in lfps}
         for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
-            print('\t\tTetrode1 {} - Tetrode2 {}'.format(tetrode1, tetrode2))
             coherence_df = spectral.multitaper_coherogram(
                 [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **multitaper_params)
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
@@ -41,7 +40,6 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
         print(
             '\tLevel Difference: {level2} - {level1}'.format(level1=level1, level2=level2))
         for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
-            print('\t\tTetrode1 {} - Tetrode2 {}'.format(tetrode1, tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
                 coherence_name, ripple_covariate, level1, tetrode1, tetrode2)
             level2_coherence_df = get_tetrode_pair_from_hdf(
