@@ -61,14 +61,16 @@ def _get_ripple_times(df):
 
 def save_tetrode_pair(coherence_name, covariate, level, tetrode1, tetrode2, save_df):
     animal, day, epoch = tetrode1[0:3]
-    hdf_path = tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
+    hdf_path = tetrode_pair_hdf_path(
+        coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
     with pd.HDFStore(analysis_file_path(animal, day, epoch)) as store:
         store.put(hdf_path, save_df)
 
 
 def get_tetrode_pair_from_hdf(coherence_name, covariate, level, tetrode1, tetrode2):
     animal, day, epoch = tetrode1[0:3]
-    hdf_path = tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
+    hdf_path = tetrode_pair_hdf_path(
+        coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
     return pd.read_hdf(analysis_file_path(animal, day, epoch), key=hdf_path)
 
 
@@ -79,14 +81,17 @@ def tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1, tetrode2):
 
 
 def analysis_file_path(animal, day, epoch):
-    filename = '{animal}_{day}_{epoch}.h5'.format(animal=animal, day=day, epoch=epoch)
+    filename = '{animal}_{day}_{epoch}.h5'.format(
+        animal=animal, day=day, epoch=epoch)
     return os.path.join(os.path.abspath(os.path.pardir), 'Processed-Data', filename)
 
 
 def save_multitaper_parameters(epoch_index, coherence_name, multitaper_params):
-    coherence_node_name = '/{coherence_name}'.format(coherence_name=coherence_name)
+    coherence_node_name = '/{coherence_name}'.format(
+        coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
-        store.get_node(coherence_node_name)._v_attrs.multitaper_parameters = multitaper_params
+        store.get_node(
+            coherence_node_name)._v_attrs.multitaper_parameters = multitaper_params
 
 
 def save_ripple_info(epoch_index, ripple_info):
@@ -95,8 +100,10 @@ def save_ripple_info(epoch_index, ripple_info):
 
 
 def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
-    hdf_path = '/{coherence_name}/tetrode_info'.format(coherence_name=coherence_name)
-    hdf_pair_path = '/{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
+    hdf_path = '/{coherence_name}/tetrode_info'.format(
+        coherence_name=coherence_name)
+    hdf_pair_path = '/{coherence_name}/tetrode_pair_info'.format(
+        coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
         store.put(hdf_path, tetrode_info)
         store.put(hdf_pair_path, data_processing.get_tetrode_pair_info(tetrode_info))
@@ -106,14 +113,16 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariat
     '''Given a list of tetrode indices and specifiers for the path,
     returns a panel object of the corresponding coherence dataframes'''
     return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
-                        coherence_name, covariate, level, tetrode1, tetrode2)
-                     for tetrode1, tetrode2 in tetrode_pair_index})
+        coherence_name, covariate, level, tetrode1, tetrode2)
+        for tetrode1, tetrode2 in tetrode_pair_index})
 
 
 def get_all_tetrode_pair_info(coherence_name):
     '''Retrieves all the hdf5 files from the Processed Data directory and returns the tetrode
     pair info dataframe'''
-    file_path = os.path.join(os.path.abspath(os.path.pardir), 'Processed-Data', '*.h5')
+    file_path = os.path.join(os.path.abspath(
+        os.path.pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob.glob(file_path)
-    hdf_path = '/{coherence_name}/tetrode_pair_info'.format(coherence_name=coherence_name)
-    return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files])
+    hdf_path = '/{coherence_name}/tetrode_pair_info'.format(
+        coherence_name=coherence_name)
+    return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files]).sort_index()
