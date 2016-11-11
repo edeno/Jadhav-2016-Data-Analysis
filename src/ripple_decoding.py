@@ -107,7 +107,7 @@ def _fix_zero_bins(movement_bins):
 def decode_ripple(epoch_index, animals, ripple_times,
                   linear_distance_grid=np.linspace(0, 192, 49),
                   likelihood_function=instantaneous_poisson_likelihood):
-    print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:\n'.format(*epoch_index))
+    print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(*epoch_index))
     # Include only CA1 neurons with spikes
     neuron_info = (data_processing.make_neuron_dataframe(animals)[epoch_index]
                    .dropna()
@@ -124,16 +124,16 @@ def decode_ripple(epoch_index, animals, ripple_times,
     linear_distance_grid_centers = _get_grid_centers(linear_distance_grid)
 
     # Fit encoding model
-    print('\tFitting encoding model...\n')
+    print('\tFitting encoding model...')
     conditional_intensity = get_encoding_model(
         train_position_info, train_spikes_data, linear_distance_grid_centers)
 
     # Fit state transition model
-    print('\tFitting state transition model...\n')
+    print('\tFitting state transition model...')
     state_transition = get_state_transition_matrix(train_position_info, linear_distance_grid)
 
     # Initial Conditions
-    print('\tSetting initial conditions...\n')
+    print('\tSetting initial conditions...')
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
     num_states = len(state_names)
@@ -141,7 +141,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
         linear_distance_grid, linear_distance_grid_centers, num_states)
 
     # Decode
-    print('\tDecoding ripples...\n')
+    print('\tDecoding ripples...')
     combined_likelihood_params = dict(
         likelihood_function=likelihood_function,
         likelihood_kwargs=dict(conditional_intensity=conditional_intensity)
