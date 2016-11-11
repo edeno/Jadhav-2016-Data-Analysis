@@ -1,10 +1,253 @@
-name: Rothschild-Data-Analysis
+name: Jadhav-2016-Data-Analysis
 channels:
-    - conda-forge
+- conda-forge
+- defaults
 dependencies:
-    - python=3
-    - anaconda
-    - seaborn
-    - nitime
-
-# start python environment by typing 'source activate Rothschild-Data-Analysis'
+- _nb_ext_conf=0.2.0=py35_0
+- alabaster=0.7.8=py35_0
+- anaconda-client=1.4.0=py35_0
+- anaconda=custom=py35_0
+- anaconda-navigator=1.2.1=py35_0
+- anaconda-nb-extensions::ghost.py=0.2.3=py35_0
+- anaconda-nb-extensions::nb_config_manager=0.1.3=py35_0
+- anaconda-nb-extensions::nbbrowserpdf=0.2.2=py35_0
+- anaconda-nb-extensions::pypdf2=1.25.1=py35_0
+- appnope=0.1.0=py35_0
+- appscript=1.0.1=py35_0
+- argcomplete=1.0.0=py35_1
+- astropy=1.2.1=np111py35_0
+- babel=2.3.3=py35_0
+- backports=1.0=py35_0
+- beautifulsoup4=4.4.1=py35_0
+- bitarray=0.8.1=py35_0
+- blaze=0.10.1=py35_0
+- bokeh=0.12.0=py35_0
+- boto=2.40.0=py35_0
+- boto3=1.3.1=py35_0
+- bottleneck=1.1.0=np111py35_0
+- cffi=1.6.0=py35_0
+- chest=0.2.3=py35_0
+- click=6.6=py35_0
+- cloudpickle=0.2.1=py35_0
+- clyent=1.2.2=py35_0
+- colorama=0.3.7=py35_0
+- conda-forge::autopep8=1.2.4=py35_2
+- conda-forge::backports.shutil_get_terminal_size=1.0.0=py35_0
+- conda-forge::blas=1.1=openblas
+- conda-forge::botocore=1.4.49=py35_0
+- conda-forge::dask=0.11.0=py35_0
+- conda-forge::distributed=1.12.1=py35_0
+- conda-forge::flake8=3.0.4=py35_1
+- conda-forge::freetype=2.6.3=1
+- conda-forge::ipykernel=4.5.0=py35_0
+- conda-forge::ipython=5.1.0=py35_1
+- conda-forge::ipywidgets=5.2.2=py35_2
+- conda-forge::jmespath=0.9.0=py35_0
+- conda-forge::jpeg=9b=0
+- conda-forge::jupyter_client=4.4.0=py35_0
+- conda-forge::jupyter_console=5.0.0=py35_0
+- conda-forge::jupyter_core=4.2.0=py35_0
+- conda-forge::libgfortran=3.0.0=0
+- conda-forge::libpng=1.6.24=0
+- conda-forge::libtiff=4.0.6=6
+- conda-forge::line_profiler=1.0=py35_1
+- conda-forge::matplotlib=1.5.3=np111py35_2
+- conda-forge::mccabe=0.5.0=py35_0
+- conda-forge::nitime=0.6=np111py35_0
+- conda-forge::notebook=4.2.3=py35_0
+- conda-forge::numpy=1.11.2=py35_blas_openblas_200
+- conda-forge::openblas=0.2.18=5
+- conda-forge::pandas=0.19.0=np111py35_0
+- conda-forge::pillow=3.4.1=py35_1
+- conda-forge::prompt_toolkit=1.0.8=py35_0
+- conda-forge::pycodestyle=2.0.0=py35_1
+- conda-forge::pyflakes=1.2.3=py35_0
+- conda-forge::pytest=3.0.3=py35_0
+- conda-forge::qtconsole=4.2.1=py35_1
+- conda-forge::s3fs=0.0.7=py35_0
+- conda-forge::scikit-learn=0.18=np111py35_blas_openblas_202
+- conda-forge::scipy=0.18.1=np111py35_blas_openblas_200
+- conda-forge::tqdm=4.8.4=py35_0
+- conda-forge::wcwidth=0.1.7=py35_0
+- conda-forge::widgetsnbextension=1.2.6=py35_3
+- configobj=5.0.6=py35_0
+- contextlib2=0.5.3=py35_0
+- cryptography=1.4=py35_0
+- curl=7.49.0=0
+- cycler=0.10.0=py35_0
+- cython=0.24=py35_0
+- cytoolz=0.8.0=py35_0
+- datashape=0.5.2=py35_0
+- decorator=4.0.10=py35_0
+- dill=0.2.5=py35_0
+- docutils=0.12=py35_2
+- dynd-python=0.7.2=py35_0
+- entrypoints=0.2.2=py35_0
+- et_xmlfile=1.0.1=py35_0
+- fastcache=1.0.2=py35_1
+- flask=0.11.1=py35_0
+- flask-cors=2.1.2=py35_0
+- get_terminal_size=1.0.0=py35_0
+- gevent=1.1.1=py35_0
+- greenlet=0.4.10=py35_0
+- h5py=2.6.0=np111py35_1
+- hdf5=1.8.16=0
+- heapdict=1.0.0=py35_1
+- idna=2.1=py35_0
+- imagesize=0.7.1=py35_0
+- ipython_genutils=0.1.0=py35_0
+- itsdangerous=0.24=py35_0
+- jbig=2.1=0
+- jdcal=1.2=py35_1
+- jedi=0.9.0=py35_1
+- jinja2=2.8=py35_1
+- jsonschema=2.5.1=py35_0
+- jupyter=1.0.0=py35_3
+- libdynd=0.7.2=0
+- libxml2=2.9.2=0
+- libxslt=1.1.28=2
+- llvmlite=0.11.0=py35_0
+- locket=0.2.0=py35_1
+- lxml=3.6.0=py35_0
+- markupsafe=0.23=py35_2
+- mistune=0.7.2=py35_1
+- mkl=11.3.3=0
+- mkl-service=1.1.2=py35_2
+- mpmath=0.19=py35_1
+- msgpack-python=0.4.7=py35_0
+- multipledispatch=0.4.8=py35_0
+- nb_anacondacloud=1.1.0=py35_0
+- nb_conda=1.1.0=py35_0
+- nb_conda_kernels=1.0.3=py35_0
+- nbconvert=4.2.0=py35_0
+- nbformat=4.0.1=py35_0
+- nbpresent=3.0.2=py35_0
+- networkx=1.11=py35_0
+- nltk=3.2.1=py35_0
+- nose=1.3.7=py35_1
+- numba=0.26.0=np111py35_0
+- numexpr=2.6.0=np111py35_0
+- odo=0.5.0=py35_1
+- openpyxl=2.3.2=py35_0
+- openssl=1.0.2h=1
+- partd=0.3.4=py35_0
+- path.py=8.2.1=py35_0
+- pathlib2=2.1.0=py35_0
+- patsy=0.4.1=py35_0
+- pep8=1.7.0=py35_0
+- pexpect=4.0.1=py35_0
+- pickleshare=0.7.2=py35_0
+- pip=8.1.2=py35_0
+- ply=3.8=py35_0
+- psutil=4.3.0=py35_0
+- ptyprocess=0.5.1=py35_0
+- py=1.4.31=py35_0
+- pyasn1=0.1.9=py35_0
+- pycosat=0.6.1=py35_1
+- pycparser=2.14=py35_1
+- pycrypto=2.6.1=py35_4
+- pycurl=7.43.0=py35_0
+- pygments=2.1.3=py35_0
+- pyopenssl=0.16.0=py35_0
+- pyparsing=2.1.4=py35_0
+- pyqt=4.11.4=py35_3
+- pytables=3.2.2=np111py35_4
+- python=3.5.2=0
+- python-dateutil=2.5.3=py35_0
+- python.app=1.2=py35_4
+- pytz=2016.4=py35_0
+- pyyaml=3.11=py35_4
+- pyzmq=15.2.0=py35_1
+- qt=4.8.7=3
+- qtawesome=0.3.3=py35_0
+- qtpy=1.0.2=py35_0
+- readline=6.2=2
+- redis=3.2.0=0
+- redis-py=2.10.5=py35_0
+- requests=2.10.0=py35_0
+- rope=0.9.4=py35_1
+- ruamel_yaml=0.11.7=py35_0
+- scikit-image=0.12.3=np111py35_1
+- seaborn=0.7.1=py35_0
+- setuptools=23.0.0=py35_0
+- simplegeneric=0.8.1=py35_1
+- singledispatch=3.4.0.3=py35_0
+- sip=4.16.9=py35_0
+- six=1.10.0=py35_0
+- snakeviz=0.4.1=py35_0
+- snowballstemmer=1.2.1=py35_0
+- sockjs-tornado=1.0.3=py35_0
+- sphinx=1.4.1=py35_0
+- sphinx_rtd_theme=0.1.9=py35_0
+- spyder=2.3.9=py35_0
+- sqlalchemy=1.0.13=py35_0
+- sqlite=3.13.0=0
+- statsmodels=0.6.1=np111py35_1
+- sympy=1.0=py35_0
+- tblib=1.3.0=py35_0
+- terminado=0.6=py35_0
+- tk=8.5.18=0
+- toolz=0.8.0=py35_0
+- tornado=4.3=py35_1
+- traitlets=4.2.1=py35_0
+- unicodecsv=0.14.1=py35_0
+- werkzeug=0.11.10=py35_0
+- wheel=0.29.0=py35_0
+- xlrd=1.0.0=py35_0
+- xlsxwriter=0.9.2=py35_0
+- xlwings=0.7.2=py35_0
+- xlwt=1.1.2=py35_0
+- xray=0.7.0=py35_0
+- xz=5.2.2=0
+- yaml=0.1.6=0
+- zlib=1.2.8=3
+- pip:
+  - autopep8==1.2.4
+  - backports.shutil-get-terminal-size==1.0.0
+  - botocore==1.4.49
+  - dask==0.11.0
+  - distributed==1.12.1
+  - dynd==0.7.3.dev1
+  - et-xmlfile==1.0.1
+  - flake8==3.0.4
+  - ghost.py==0.2.3
+  - ipykernel==4.5.0
+  - ipython==5.1.0
+  - ipython-genutils==0.1.0
+  - ipywidgets==5.2.2
+  - jadhav-2016-data-analysis==0.1.0.dev0
+  - jmespath==0.9.0
+  - jupyter-client==4.4.0
+  - jupyter-console==5.0.0
+  - jupyter-core==4.2.0
+  - line-profiler==1.0
+  - matplotlib==1.5.3
+  - mccabe==0.5.0
+  - nb-anacondacloud==1.1.0
+  - nb-conda==1.1.0
+  - nb-conda-kernels==1.0.3
+  - nb-config-manager==0.1.3
+  - nbbrowserpdf==0.2.1
+  - nitime==0.6
+  - notebook==4.2.3
+  - numpy==1.11.2
+  - pandas==0.19.0
+  - pfc-hippocampus (/Users/edeno/Documents/GitHub/Jadhav-2016-Data-Analysis)==0.1.0
+  - pillow==3.4.1
+  - prompt-toolkit==1.0.8
+  - pycodestyle==2.0.0
+  - pyflakes==1.2.3
+  - pypdf2==1.25.1
+  - pytest==3.0.3
+  - qtconsole==4.2.1
+  - rope-py3k==0.9.4.post1
+  - ruamel-yaml-==VERSION
+  - s3fs==0.0.7
+  - scikit-learn==0.18
+  - scipy==0.18.1
+  - sphinx-rtd-theme==0.1.9
+  - tables==3.2.2
+  - tqdm==4.8.4
+  - wcwidth==0.1.7
+  - widgetsnbextension==1.2.6
+prefix: /Users/edeno/anaconda3/envs/Jadhav-2016-Data-Analysis
