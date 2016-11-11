@@ -2,6 +2,7 @@
 
 import functools
 import inspect
+import warnings
 import scipy.io
 import scipy.fftpack
 import scipy.signal
@@ -52,7 +53,9 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
 
 def _center_data(x):
     '''Returns the mean-centered data array along the first axis'''
-    return x - np.nanmean(x, axis=0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        return x - np.nanmean(x, axis=0)
 
 
 def _get_window_array(data, time_window_start_ind, time_window_end_ind):
