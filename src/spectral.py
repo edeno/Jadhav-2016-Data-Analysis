@@ -413,19 +413,15 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
 
 
 def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
-                          vmin=-np.pi, vmax=np.pi, time_units='seconds', frequency_units='Hz'):
+                          vmin=-np.pi, vmax=np.pi):
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
     data2D = coherogram_dataframe.reset_index().pivot('frequency', 'time', 'coherence_phase')
     mesh = axis_handle.pcolormesh(time, freq, data2D,
                                   cmap=cmap,
-                                  shading='gouraud',
                                   vmin=vmin,
                                   vmax=vmax)
-    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
-        frequency_units=frequency_units))
-    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
