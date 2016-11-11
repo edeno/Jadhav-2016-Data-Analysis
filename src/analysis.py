@@ -14,6 +14,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
+    num_lfps = len(lfps)
+    num_pairs = int(num_lfps * (num_lfps - 1) / 2)
 
     grouped = ripple_info.groupby(ripple_covariate)
     window_of_interest = multitaper_params.pop('window_of_interest')
