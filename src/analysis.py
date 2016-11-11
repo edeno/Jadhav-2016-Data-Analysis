@@ -17,12 +17,14 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     grouped = ripple_info.groupby(ripple_covariate)
     window_of_interest = multitaper_params.pop('window_of_interest')
 
-    print('\nComputing coherence for each level of the covariate "{covariate}":'
-          .format(covariate=ripple_covariate))
+    print('\nComputing {coherence_name} for each level of the covariate "{covariate}"'
+          '\nfor {num_pairs} pairs of electrodes:'.format(coherence_name=coherence_name,
+                                                          covariate=ripple_covariate,
+                                                          num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
-        print('\tLevel: {level_name}'.format(level_name=level_name))
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        print('\tNumber of Ripples: {}'.format(len(ripple_times_by_group)))
+        print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
+            level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: data_processing.reshape_to_segments(
             lfps[key], ripple_times_by_group, window_offset=window_of_interest, concat_axis=1)
                          for key in lfps}
@@ -34,8 +36,10 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
                               tetrode1, tetrode2, coherence_df)
     print('\nComputing the difference in coherence between all levels:')
     for level1, level2 in itertools.combinations(grouped.groups.keys(), 2):
-        level_difference_name = '{level2}_{level1}'.format(level1=level1, level2=level2)
-        print('\tLevel Difference: {level2} - {level1}'.format(level1=level1, level2=level2))
+        level_difference_name = '{level2}_{level1}'.format(
+            level1=level1, level2=level2)
+        print(
+            '\tLevel Difference: {level2} - {level1}'.format(level1=level1, level2=level2))
         for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
             print('\t\tTetrode1 {} - Tetrode2 {}'.format(tetrode1, tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
