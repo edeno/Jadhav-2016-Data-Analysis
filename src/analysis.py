@@ -139,3 +139,12 @@ def get_all_tetrode_info(coherence_name):
     return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files]).sort_index()
 
 
+def find_power_spectrum_from_pair_index(target_tetrode, coherence_name,
+                                        covariate, level, tetrode_pair_info):
+    tetrode1, tetrode2 = next((tetrode1, tetrode2)
+                              for tetrode1, tetrode2 in tetrode_pair_info.index
+                              if tetrode1 == target_tetrode or tetrode2 == target_tetrode)
+    coherence_df = get_tetrode_pair_from_hdf(
+        coherence_name, covariate, level, tetrode1, tetrode2)
+    power_spectrum_name = 'power_spectrum{}'.format((tetrode1, tetrode2).index(target_tetrode) + 1)
+    return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
