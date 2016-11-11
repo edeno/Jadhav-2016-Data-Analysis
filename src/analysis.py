@@ -29,8 +29,10 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
         print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: data_processing.reshape_to_segments(
-            lfps[key], ripple_times_by_group, window_offset=window_of_interest, concat_axis=1)
-                         for key in lfps}
+            lfps[key], ripple_times_by_group,
+            sampling_frequency=multitaper_params['sampling_frequency'],
+            window_offset=window_of_interest, concat_axis=1)
+            for key in lfps}
         for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
             coherence_df = spectral.multitaper_coherogram(
                 [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **multitaper_params)
