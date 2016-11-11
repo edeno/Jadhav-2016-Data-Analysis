@@ -152,16 +152,16 @@ def decode_ripple(epoch_index, animals, ripple_times,
         likelihood_function=combined_likelihood,
         likelihood_kwargs=combined_likelihood_params
     )
-    test_spikes = _get_ripple_spikes(spikes_data, ripple_times)
+    test_spikes = _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency)
     posterior_density = [predict_state(ripple_spikes, **decoder_params)
                          for ripple_spikes in test_spikes]
     session_time = position_info.index
     return get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time)
 
 
-def _get_ripple_spikes(spikes_data, ripple_times):
+def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     spike_ripples_df = [data_processing.reshape_to_segments(
-        spikes_datum, ripple_times, concat_axis=1)
+        spikes_datum, ripple_times, concat_axis=1, sampling_frequency=sampling_frequency)
                         for spikes_datum in spikes_data]
 
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values

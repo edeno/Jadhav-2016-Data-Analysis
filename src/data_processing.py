@@ -431,34 +431,37 @@ def get_trial_time(index, animals):
     return lfp_df.index
 
 
-def get_windowed_dataframe(dataframe, segments, window_offset):
+def get_windowed_dataframe(dataframe, segments, window_offset, sampling_frequency):
     segments = iter(segments)
     for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index
         segment_start_ind = dataframe.index.get_loc(
             segment_start, method='nearest')
         segment_start = dataframe.iloc[segment_start_ind].name
-        try:
+        if window_offset is not None:
+            window_start_ind = np.max([0, int(segment_start_ind +
+                                       np.fix(window_offset[0] * sampling_frequency))])
+            window_end_ind = np.min([len(dataframe), int(segment_start_ind +
+                                     np.fix(window_offset[1] * sampling_frequency)) + 1])
             yield (dataframe
-                   .loc[segment_start + window_offset[0]:segment_start + window_offset[1], :]
+                   .iloc[window_start_ind:window_end_ind, :]
                    .reset_index()
                    .assign(time=lambda x: np.round(x.time - segment_start, decimals=4))
                    .set_index('time'))
-        except TypeError:
-            segment_end_ind = dataframe.index.get_loc(
-                segment_end, method='nearest')
-            segment_end = dataframe.iloc[segment_end_ind].name
+        else:
             yield (dataframe.loc[segment_start:segment_end, :]
                             .reset_index()
                             .assign(time=lambda x: np.round(x.time - segment_start, decimals=4))
                             .set_index('time'))
 
 
-def reshape_to_segments(dataframe, segments, window_offset=None, concat_axis=0):
+def reshape_to_segments(dataframe, segments, window_offset=None,
+                        sampling_frequency=1500, concat_axis=0):
     segment_label = [(segment_ind + 1, segment_start, segment_end)
                      for segment_ind, (segment_start, segment_end)
                      in enumerate(segments)]
-    return (pd.concat(list(get_windowed_dataframe(dataframe, segments, window_offset)),
+    return (pd.concat(list(get_windowed_dataframe(dataframe, segments,
+                                                  window_offset, sampling_frequency)),
                       keys=segment_label,
                       names=['segment_number',
                              'segment_start', 'segment_end'],
