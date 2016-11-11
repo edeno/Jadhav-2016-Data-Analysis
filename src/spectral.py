@@ -414,7 +414,7 @@ def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
-    data2D = coherogram_dataframe.pivot('frequency', 'time', 'coherence_phase')
+    data2D = coherogram_dataframe.reset_index().pivot('frequency', 'time', 'coherence_phase')
     mesh = axis_handle.pcolormesh(time, freq, data2D,
                                   cmap=cmap,
                                   shading='gouraud',
@@ -445,7 +445,11 @@ def group_delay(coherence_dataframe):
 
 
 def group_delay_over_time(coherogram_dataframe):
-    return coherogram_dataframe.reset_index().groupby('time').apply(group_delay)
+    return (coherogram_dataframe
+            .reset_index()
+            .groupby('time')
+            .apply(group_delay)
+            .reset_index(level=1, drop=True))
 
 
 def power_change(dataframe1, dataframe2):
