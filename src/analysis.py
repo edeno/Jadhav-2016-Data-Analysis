@@ -126,3 +126,16 @@ def get_all_tetrode_pair_info(coherence_name):
     hdf_path = '/{coherence_name}/tetrode_pair_info'.format(
         coherence_name=coherence_name)
     return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files]).sort_index()
+
+
+def get_all_tetrode_info(coherence_name):
+    '''Retrieves all the hdf5 files from the Processed Data directory and returns the tetrode
+    pair info dataframe'''
+    file_path = os.path.join(os.path.abspath(
+        os.path.pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob.glob(file_path)
+    hdf_path = '/{coherence_name}/tetrode_info'.format(
+        coherence_name=coherence_name)
+    return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files]).sort_index()
+
+
