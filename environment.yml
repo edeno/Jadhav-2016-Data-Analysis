@@ -250,4 +250,3 @@ dependencies:
   - tqdm==4.8.4
   - wcwidth==0.1.7
   - widgetsnbextension==1.2.6
-prefix: /Users/edeno/anaconda3/envs/Jadhav-2016-Data-Analysis
