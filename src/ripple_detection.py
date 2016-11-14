@@ -6,8 +6,8 @@ import scipy.ndimage
 import scipy.io
 import numpy as np
 import pandas as pd
-import src.spectral as spectral
-import src.data_processing as data_processing
+import spectral
+import data_processing
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):
