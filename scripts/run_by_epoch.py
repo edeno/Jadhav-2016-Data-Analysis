@@ -45,7 +45,8 @@ def main():
         epoch_index = (sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
     except IndexError:
-        sys.exit('Need three arguments to define epoch. Only gave {}.'.format(len(sys.argv)-1))
+        sys.exit('Need three arguments to define epoch. '
+                 'Only gave {}.'.format(len(sys.argv)-1))
 
 if __name__ == '__main__':
     sys.exit(main())
