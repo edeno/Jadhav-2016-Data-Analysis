@@ -4,7 +4,6 @@ import os
 import sys
 import collections
 import subprocess
-import shlex
 sys.path.append('../src/')
 import data_processing
 
