@@ -3,7 +3,6 @@ import pandas as pd
 import scipy.ndimage.filters
 import scipy.linalg
 import scipy.stats
-from tqdm import tqdm_notebook as tqdm
 import patsy
 import statsmodels.api as sm
 import data_processing
@@ -212,7 +211,7 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_g
     design_matrix = patsy.dmatrix(
         formula, train_position_info, return_type='dataframe')
     fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson()).fit(maxiter=30)
-           for spikes in tqdm(train_spikes_data, desc='Fit')]
+           for spikes in train_spikes_data]
 
     inbound_predict_design_matrix = _predictors_by_trajectory_direction(
         'Inbound', linear_distance_grid_centers, design_matrix)
