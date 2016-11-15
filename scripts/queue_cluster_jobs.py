@@ -43,7 +43,6 @@ def main():
             log_file=os.path.join(log_directory, log_file),
             function_name=function_name)
         script = ' | '.join([python_cmd, queue_cmd])
-        print(script)
         subprocess.run(script, shell=True)
 
 
