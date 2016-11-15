@@ -4,6 +4,7 @@ import os
 import sys
 import collections
 import subprocess
+import shlex
 sys.path.append('../src/')
 import data_processing
 
@@ -28,23 +29,19 @@ def main():
         animal, day, epoch_ind = epoch
         log_file = '{animal}_{day}_{epoch}.txt'.format(
             animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
+        python_cmd = 'echo python {python_function} {animal} {day} {epoch}'.format(
+            python_function=python_function,
+            animal=animal,
+            day=day,
+            epoch=epoch_ind)
+        queue_cmd = 'qsub {directives} -j y -o {log_file} -N {function_name}'.format(
+            directives=directives,
+            log_file=os.path.join(log_directory, log_file),
+            function_name=python_function.replace('.py', ''))
 
-        script = 'echo python {python_function} {animal} {day} {epoch} | qsub {directives}' \
-                 ' -j y -o {log_file} -N {function_name}'.format(
-                     directives=directives,
-                     python_function=python_function,
-                     animal=animal,
-                     day=day,
-                     epoch=epoch_ind,
-                     log_file=os.path.join(log_directory, log_file),
-                     function_name=python_function.replace('.py', ''))
-
-        subprocess.run(script.split(),
-                       check=True,
-                       universal_newlines=True,
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       stdin=subprocess.PIPE)
+        script = ' | '.join([python_cmd, queue_cmd])
+        print(script)
+        subprocess.run(script, shell=True)
 
 
 if __name__ == '__main__':
