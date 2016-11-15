@@ -86,7 +86,7 @@ def tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1, tetrode2):
 
 
 def analysis_file_path(animal, day, epoch):
-    filename = '{animal}_{day}_{epoch}.h5'.format(
+    filename = '{animal}_{day:02d}_{epoch:02d}.h5'.format(
         animal=animal, day=day, epoch=epoch)
     return os.path.join(os.path.abspath(os.path.pardir), 'Processed-Data', filename)
 
