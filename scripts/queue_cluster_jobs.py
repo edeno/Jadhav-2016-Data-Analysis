@@ -29,7 +29,10 @@ def main():
         print(epoch)
         animal, day, epoch_ind = epoch
         log_file = '{animal}_{day:02d}_{epoch:02d}.log'.format(
-            animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
+            animal=animal, day=day, epoch=epoch_ind)
+        function_name = '{function_name}_{animal}_{day:02d}_{epoch:02d}'.format(
+            animal=animal, day=day, epoch=epoch_ind,
+            function_name=python_function.replace('.py'))
         python_cmd = 'echo python {python_function} {animal} {day} {epoch}'.format(
             python_function=python_function,
             animal=animal,
@@ -38,7 +41,7 @@ def main():
         queue_cmd = 'qsub {directives} -j y -o {log_file} -N {function_name}'.format(
             directives=directives,
             log_file=os.path.join(log_directory, log_file),
-            function_name=python_function.replace('.py', ''))
+            function_name=function_name)
         script = ' | '.join([python_cmd, queue_cmd])
         print(script)
         subprocess.run(script, shell=True)
