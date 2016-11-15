@@ -43,6 +43,12 @@ def coherence_by_ripple_type(epoch_index):
     ripple_info = ripple_decoding.decode_ripple(
         epoch_index, animals, ripple_times)[0]
     analysis.save_ripple_info(epoch_index, ripple_info)
+    for covariate in ripple_covariates:
+        for coherence_name in coherence_type:
+            analysis.coherence_by_ripple_type(
+                epoch_index, animals, ripple_info, covariate,
+                coherence_name=coherence_name,
+                multitaper_params=coherence_type[coherence_name])
 
 
 def main():
