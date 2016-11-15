@@ -28,7 +28,7 @@ def main():
     for epoch in epoch_index:
         print(epoch)
         animal, day, epoch_ind = epoch
-        log_file = '{animal}_{day}_{epoch}.log'.format(
+        log_file = '{animal}_{day:02d}_{epoch:02d}.log'.format(
             animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
         python_cmd = 'echo python {python_function} {animal} {day} {epoch}'.format(
             python_function=python_function,
