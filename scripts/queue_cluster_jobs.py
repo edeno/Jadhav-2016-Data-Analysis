@@ -29,7 +29,7 @@ def main():
         log_file = '{animal}_{day}_{epoch}.txt'.format(
             animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
 
-        script = 'qsub python {python_function} {animal} {day} {epoch} {directives}' \
+        script = 'python {python_function} {animal} {day} {epoch} | qsub {directives}' \
                  ' -j y -o {log_file} -N {function_name}'.format(
                      directives=directives,
                      python_function=python_function,
