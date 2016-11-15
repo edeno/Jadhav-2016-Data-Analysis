@@ -32,7 +32,7 @@ def main():
             animal=animal, day=day, epoch=epoch_ind)
         function_name = '{function_name}_{animal}_{day:02d}_{epoch:02d}'.format(
             animal=animal, day=day, epoch=epoch_ind,
-            function_name=python_function.replace('.py'))
+            function_name=python_function.replace('.py', ''))
         python_cmd = 'echo python {python_function} {animal} {day} {epoch}'.format(
             python_function=python_function,
             animal=animal,
