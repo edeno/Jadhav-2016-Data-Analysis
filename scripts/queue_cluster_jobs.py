@@ -9,7 +9,10 @@ import data_processing
 
 
 def main():
-    log_directory = '/usr3/graduate/edeno/logs'
+    log_directory = os.path.join(os.getcwd(), 'logs')
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+
     python_function = 'run_by_epoch.py'
     directives = '-l h_rt=1:00:00 -pe omp 4'
 
