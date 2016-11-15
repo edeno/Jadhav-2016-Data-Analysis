@@ -10,8 +10,7 @@ import data_processing
 
 def main():
     log_directory = os.path.join(os.getcwd(), 'logs')
-    if not os.path.exists(log_directory):
-        os.makedirs(log_directory)
+    os.makedirs(log_directory,  exist_ok=True)
 
     python_function = 'run_by_epoch.py'
     directives = '-l h_rt=1:00:00 -pe omp 4'
