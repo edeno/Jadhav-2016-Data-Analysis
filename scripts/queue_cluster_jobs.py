@@ -28,7 +28,7 @@ def main():
     for epoch in epoch_index:
         print(epoch)
         animal, day, epoch_ind = epoch
-        log_file = '{animal}_{day}_{epoch}.txt'.format(
+        log_file = '{animal}_{day}_{epoch}.log'.format(
             animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
         python_cmd = 'echo python {python_function} {animal} {day} {epoch}'.format(
             python_function=python_function,
@@ -39,7 +39,6 @@ def main():
             directives=directives,
             log_file=os.path.join(log_directory, log_file),
             function_name=python_function.replace('.py', ''))
-
         script = ' | '.join([python_cmd, queue_cmd])
         print(script)
         subprocess.run(script, shell=True)

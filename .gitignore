@@ -19,8 +19,14 @@
 
 notebooks/.ipynb_checkpoints/*.ipynb
 
+# Mac folder files
 .DS_Store
 
+# Matlab files
 *.mat
-
 *.m~
+
+# Ignore log files
+*.log
+
+
