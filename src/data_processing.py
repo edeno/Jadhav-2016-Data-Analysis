@@ -17,13 +17,13 @@ def get_data_filename(animal, day, file_type):
     (DIO, tasks, linpos) Animal is a named tuple. Day is an integer giving the
     recording session day.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
-    return '{data_dir}/{animal.directory}/{animal.short_name}{file_type}{day:02d}.mat'.format(
+    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    filename = '{animal.short_name}{file_type}{day:02d}.mat'.format(
         data_dir=data_dir,
         animal=animal,
         file_type=file_type,
         day=day)
+    return os.path.join(data_dir, animal.directory, filename)
 
 
 def get_epochs(animal, day):
@@ -120,16 +120,16 @@ def get_LFP_filename(tetrode_tuple, animals):
     ''' Given an index tuple (animal, day, epoch, tetrode_number) and the animals dictionary
     return a file name for the tetrode file LFP
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
+    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    return '{data_dir}/{animal.directory}/EEG/{animal.short_name}eeg{day:02d}-{epoch}-{tetrode_number:02d}.mat'.format(
+    filename = '{animal.short_name}eeg{day:02d}-{epoch}-{tetrode_number:02d}.mat'.format(
         data_dir=data_dir,
         animal=animals[animal],
         day=day,
         epoch=epoch_ind,
         tetrode_number=tetrode_number
     )
+    return os.path.join(data_dir, animals[animal].directory, 'EEG', filename)
 
 
 def _get_tetrode_id(dataframe):
@@ -166,11 +166,9 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal, day, epoch_ind
 def get_tetrode_info(animal):
     '''Returns the Matlab tetrodeinfo file name assuming it is in the Raw Data directory.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
-    return '{data_dir}/{animal.directory}/{animal.short_name}tetinfo.mat'.format(
-        data_dir=data_dir,
-        animal=animal)
+    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    filename = '{animal.short_name}tetinfo.mat'.format(animal=animal)
+    return os.path.join(data_dir, animal.directory, filename)
 
 
 def _convert_to_dict(struct_array):
@@ -207,11 +205,9 @@ def _get_LFP_time(start_time, number_samples, sampling_frequency):
 def get_neuron_info(animal):
     '''Returns the Matlab cellinfo file name assuming it is in the Raw Data directory.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
-    return '{data_dir}/{animal.directory}/{animal.short_name}cellinfo.mat'.format(
-        data_dir=data_dir,
-        animal=animal)
+    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    filename = '{animal.short_name}cellinfo.mat'.format(animal=animal)
+    return os.path.join(data_dir, animal.directory, filename)
 
 
 def _get_neuron_id(dataframe):
