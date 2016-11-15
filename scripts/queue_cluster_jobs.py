@@ -11,6 +11,8 @@ import data_processing
 def main():
     log_directory = '/usr3/graduate/edeno/logs'
     python_function = 'run_by_epoch.py'
+    directives = ['-l h_rt=1:00:00']
+    formatted_directives = ' '.join(['#$ {}\n'.format(directive) for directive in directives])
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
     num_days = 8
     days = range(1, num_days + 1)
@@ -27,9 +29,10 @@ def main():
         log_file = '{animal}_{day}_{epoch}.txt'.format(
             animal=animal, day=day, epoch=epoch_ind, log_directory=log_directory)
 
-        script = '''echo python {python_function} {animal} {day} {epoch}
+        script = '''{directives} echo python {python_function} {animal} {day} {epoch}
                  -logfile {log_file} >/dev/null 2>&1 |
                  qsub -j y -o /dev/null -N {function_name} 2>&1'''.format(
+                     directives=formatted_directives,
                      python_function=python_function,
                      animal=animal,
                      day=day,
