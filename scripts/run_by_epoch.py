@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 import sys
 import collections
-sys.path.append('../src/')
+sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
 import ripple_detection
+import ripple_decoding
+import analysis
 
 sampling_frequency = 1500
 Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
@@ -37,13 +40,16 @@ ripple_covariates = ['is_spike', 'session_time', 'ripple_trajectory', 'ripple_di
 def coherence_by_ripple_type(epoch_index):
     ripple_times = ripple_detection.get_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency)
-    print(ripple_times)
+    ripple_info = ripple_decoding.decode_ripple(
+        epoch_index, animals, ripple_times)[0]
+    analysis.save_ripple_info(epoch_index, ripple_info)
 
 
 def main():
     try:
         epoch_index = (sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
+        print(os.getcwd())
     except IndexError:
         sys.exit('Need three arguments to define epoch. '
                  'Only gave {}.'.format(len(sys.argv)-1))
