@@ -4,14 +4,14 @@ import os
 import sys
 import collections
 import subprocess
-sys.path.append('../src/')
+sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
 import data_processing
 
 
 def main():
     log_directory = '/usr3/graduate/edeno/logs'
     python_function = 'run_by_epoch.py'
-    directives = '-l h_rt=1:00:00'
+    directives = '-l h_rt=1:00:00 -pe omp 4'
 
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
     num_days = 8
