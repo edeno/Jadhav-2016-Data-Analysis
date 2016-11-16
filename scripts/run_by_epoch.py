@@ -3,6 +3,7 @@
 import os
 import sys
 import collections
+import datetime
 sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
 import ripple_detection
 import ripple_decoding
@@ -54,9 +55,12 @@ def coherence_by_ripple_type(epoch_index):
 
 def main():
     try:
+        print('\n#############################################')
+        print('Script start time: {}'.format(datetime.datetime.now()))
+        print('#############################################\n')
         epoch_index = (sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
-        print(os.getcwd())
+        print('Script end time: {}'.format(datetime.datetime.now()))
     except IndexError:
         sys.exit('Need three arguments to define epoch. '
                  'Only gave {}.'.format(len(sys.argv)-1))
