@@ -113,7 +113,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     neuron_info = pd.merge(tetrode_info, neuron_info,
                            on=['animal', 'day', 'epoch_ind', 'tetrode_number', 'area'],
-                           how='right', right_index=True)
+                           how='right', right_index=True).set_index(neuron_info.index)
     neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
                               (neuron_info.numspikes > 0) &
                               ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
