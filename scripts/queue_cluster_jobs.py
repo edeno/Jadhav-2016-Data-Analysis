@@ -23,9 +23,8 @@ def main():
                'HPc': Animal(directory='HPc_direct', short_name='HPc')
                }
     epoch_info = data_processing.make_epochs_dataframe(animals, days)
-    epoch_index = (epoch_info
-                   .loc[(['HPb'], [8]), :]
-                   .loc[epoch_info.environment == 'wtr1'].index)
+    epoch_index = epoch_info[(epoch_info.type == 'run') & (epoch_info.environment != 'lin')].index
+
     for epoch in epoch_index:
         print(epoch)
         animal, day, epoch_ind = epoch
