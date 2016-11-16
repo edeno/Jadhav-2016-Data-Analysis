@@ -125,8 +125,10 @@ def decode_ripple(epoch_index, animals, ripple_times,
                    for neuron_index in neuron_info.index]
 
     # Make sure there are spikes in the training data times. Otherwise exclude that neuron
+    MEAN_RATE_THRESHOLD = 0.10 #  in Hz
     spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[position_info.speed > 4].sum().values > 0]
+                   if spikes_datum[position_info.speed > 4].is_spike.mean() *
+                   sampling_frequency > MEAN_RATE_THRESHOLD]
 
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
@@ -220,7 +222,8 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_g
     formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
     design_matrix = patsy.dmatrix(
         formula, train_position_info, return_type='dataframe')
-    fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson()).fit(maxiter=30)
+    fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson(),
+                  drop='missing').fit(maxiter=30)
            for spikes in train_spikes_data]
 
     inbound_predict_design_matrix = _predictors_by_trajectory_direction(
