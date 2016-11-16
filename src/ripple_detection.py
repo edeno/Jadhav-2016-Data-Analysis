@@ -140,9 +140,9 @@ def get_epoch_ripples(epoch_index, animals, sampling_frequency,
     '''
     print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(*epoch_index))
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
-    # Get cell-layer CA1, CA3 LFPs
-                    ~tetrode_info.descrip.isin(['CA1Ref', 'CA3Ref']))
+    # Get cell-layer CA1, iCA1 LFPs
     area_critera = (tetrode_info.area.isin(['CA1', 'iCA1']) &
+                    tetrode_info.descrip.isin(['riptet']))
     tetrode_indices = tetrode_info[area_critera].index.tolist()
     CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
                 for tetrode_index in tetrode_indices]
