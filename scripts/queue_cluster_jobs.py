@@ -13,7 +13,7 @@ def main():
     os.makedirs(log_directory,  exist_ok=True)
 
     python_function = 'run_by_epoch.py'
-    directives = '-l h_rt=2:00:00 -pe omp 8'
+    directives = '-l h_rt=3:00:00 -pe omp 8'
 
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
     num_days = 8
