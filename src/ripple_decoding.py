@@ -116,7 +116,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
                            how='right', right_index=True)
     neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
                               (neuron_info.numspikes > 0) &
-                              ~neuron_info.descrip.str.endswith('Ref')]
+                              ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
 
     # Train on when the rat is moving
     position_info = data_processing.get_interpolated_position_dataframe(
