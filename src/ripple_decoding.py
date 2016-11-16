@@ -111,7 +111,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     # Include only CA1 neurons with spikes
     neuron_info = (data_processing.make_neuron_dataframe(animals)[epoch_index]
                    .dropna()
-                   .query('(numspikes > 0) & (area == "CA1")'))
+                   .query('(numspikes > 0) & (area.isin(["CA1", "iCA1"]))'))
 
     # Train on when the rat is moving
     position_info = data_processing.get_interpolated_position_dataframe(
