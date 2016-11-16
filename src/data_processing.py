@@ -359,8 +359,8 @@ def get_interpolated_position_dataframe(epoch_index, animals):
     position_continuous = (position
                            .drop(categorical_columns, axis=1)
                            .dropna())
-    new_index = pd.Index(np.sort(np.unique(np.concatenate(
-       (position_continuous.index, time)))), name='time')
+    new_index = pd.Index(np.unique(np.concatenate(
+       (position_continuous.index, time))), name='time')
     interpolated_position = (position_continuous
                              .reindex(index=new_index)
                              .interpolate(method='spline', order=3)
