@@ -12,6 +12,7 @@ sampling_frequency = 1500
 Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
 animals = {
     'HPa': Animal(directory='HPa_direct', short_name='HPa'),
+    'HPb': Animal(directory='HPb_direct', short_name='HPb'),
     'HPc': Animal(directory='HPc_direct', short_name='HPc')
 }
 gamma_frequency_params = dict(

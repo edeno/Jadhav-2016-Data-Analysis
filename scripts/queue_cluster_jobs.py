@@ -19,11 +19,12 @@ def main():
     num_days = 8
     days = range(1, num_days + 1)
     animals = {'HPa': Animal(directory='HPa_direct', short_name='HPa'),
+               'HPb': Animal(directory='HPb_direct', short_name='HPb'),
                'HPc': Animal(directory='HPc_direct', short_name='HPc')
                }
     epoch_info = data_processing.make_epochs_dataframe(animals, days)
     epoch_index = (epoch_info
-                   .loc[(['HPa', 'HPc'], [8]), :]
+                   .loc[(['HPb'], [8]), :]
                    .loc[epoch_info.environment == 'wtr1'].index)
     for epoch in epoch_index:
         print(epoch)
