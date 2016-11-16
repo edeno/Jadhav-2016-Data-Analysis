@@ -109,9 +109,14 @@ def decode_ripple(epoch_index, animals, ripple_times,
                   likelihood_function=instantaneous_poisson_likelihood):
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(*epoch_index))
     # Include only CA1 neurons with spikes
-    neuron_info = (data_processing.make_neuron_dataframe(animals)[epoch_index]
-                   .dropna()
-                   .query('(numspikes > 0) & (area.isin(["CA1", "iCA1"]))'))
+    neuron_info = data_processing.make_neuron_dataframe(animals)[epoch_index].dropna()
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    neuron_info = pd.merge(tetrode_info, neuron_info,
+                           on=['animal', 'day', 'epoch_ind', 'tetrode_number', 'area'],
+                           how='right', right_index=True)
+    neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
+                              (neuron_info.numspikes > 0) &
+                              ~neuron_info.descrip.str.endswith('Ref')]
 
     # Train on when the rat is moving
     position_info = data_processing.get_interpolated_position_dataframe(
