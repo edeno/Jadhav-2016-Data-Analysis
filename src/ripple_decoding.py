@@ -125,7 +125,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
                    for neuron_index in neuron_info.index]
 
     # Make sure there are spikes in the training data times. Otherwise exclude that neuron
-    MEAN_RATE_THRESHOLD = 0.10 #  in Hz
+    MEAN_RATE_THRESHOLD = 0.10  # in Hz
     spikes_data = [spikes_datum for spikes_datum in spikes_data
                    if spikes_datum[position_info.speed > 4].is_spike.mean() *
                    sampling_frequency > MEAN_RATE_THRESHOLD]
