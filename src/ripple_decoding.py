@@ -105,7 +105,7 @@ def _fix_zero_bins(movement_bins):
 
 def decode_ripple(epoch_index, animals, ripple_times,
                   sampling_frequency=1500,
-                  linear_distance_grid=np.linspace(0, 192, 49),
+                  linear_distance_grid_num_bins=49,
                   likelihood_function=instantaneous_poisson_likelihood):
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(*epoch_index))
     # Include only CA1 neurons with spikes
@@ -133,6 +133,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
+    linear_distance_grid = np.linspace(np.floor(position_info.linear_distance.min()),
+                                       np.ceil(position_info.linear_distance.max()),
+                                       linear_distance_grid_num_bins)
     linear_distance_grid_centers = _get_grid_centers(linear_distance_grid)
 
     # Fit encoding model
