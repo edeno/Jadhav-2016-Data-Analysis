@@ -222,7 +222,7 @@ def get_state_transition_matrix(train_position_info, linear_distance_grid):
 
 
 def get_encoding_model(train_position_info, train_spikes_data, linear_distance_grid_centers):
-    formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
+    formula = '1 + trajectory_direction * bs(linear_distance, df=5, degree=3)'
     design_matrix = patsy.dmatrix(
         formula, train_position_info, return_type='dataframe')
     fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson(),
