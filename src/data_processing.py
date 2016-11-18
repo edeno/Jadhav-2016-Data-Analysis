@@ -365,6 +365,8 @@ def get_interpolated_position_dataframe(epoch_index, animals):
                              .reindex(index=new_index)
                              .interpolate(method='spline', order=3)
                              .reindex(index=time))
+    interpolated_position.loc[interpolated_position.linear_distance < 0, 'linear_distance'] = 0
+    interpolated_position.loc[interpolated_position.speed < 0, 'speed'] = 0
     return (pd.concat([position_categorical, interpolated_position], axis=1)
             .fillna(method='backfill'))
 
