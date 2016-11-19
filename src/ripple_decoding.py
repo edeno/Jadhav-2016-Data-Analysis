@@ -218,7 +218,8 @@ def get_state_transition_matrix(train_position_info, linear_distance_grid):
 
 def glmfit(spikes, design_matrix, ind):
     try:
-        return sm.GLM(spikes, design_matrix, family=sm.families.Poisson(),
+        return sm.GLM(spikes.reindex(design_matrix.index), design_matrix,
+                      family=sm.families.Poisson(),
                       drop='missing').fit(maxiter=30)
     except np.linalg.linalg.LinAlgError:
         warnings.warn('Data is poorly scaled for neuron #{}'.format(ind+1))
