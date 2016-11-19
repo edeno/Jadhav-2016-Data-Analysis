@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 import scipy.ndimage.filters
@@ -68,7 +69,7 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
     via the likelihood keyword argument ('likelihood_kwargs')
     '''
     try:
-        return np.prod(likelihood_function(data, **likelihood_kwargs), axis=1)
+        return np.nanprod(likelihood_function(data, **likelihood_kwargs), axis=1)
     except ValueError:
         return likelihood_function(data, **likelihood_kwargs)
 
@@ -221,13 +222,21 @@ def get_state_transition_matrix(train_position_info, linear_distance_grid):
                                    outbound_state_transitions)
 
 
+def glmfit(spikes, design_matrix, ind):
+    try:
+        return sm.GLM(spikes, design_matrix, family=sm.families.Poisson(),
+                      drop='missing').fit(maxiter=30)
+    except np.linalg.linalg.LinAlgError:
+        warnings.warn('Data is poorly scaled for neuron #{}'.format(ind+1))
+        return np.nan
+
+
 def get_encoding_model(train_position_info, train_spikes_data, linear_distance_grid_centers):
     formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
     design_matrix = patsy.dmatrix(
         formula, train_position_info, return_type='dataframe')
-    fit = [sm.GLM(spikes, design_matrix, family=sm.families.Poisson(),
-                  drop='missing').fit(maxiter=30)
-           for spikes in train_spikes_data]
+    fit = [glmfit(spikes, design_matrix, ind)
+           for ind, spikes in enumerate(train_spikes_data)]
 
     inbound_predict_design_matrix = _predictors_by_trajectory_direction(
         'Inbound', linear_distance_grid_centers, design_matrix)
@@ -279,8 +288,15 @@ def _predictors_by_trajectory_direction(trajectory_direction, linear_distance_gr
     return patsy.build_design_matrices([design_matrix.design_info], predictors)[0]
 
 
+def glmval(fitted_model, predict_design_matrix):
+    try:
+        return fitted_model.predict(predict_design_matrix)
+    except AttributeError:
+        return np.ones(predict_design_matrix.shape[0]) * np.nan
+
+
 def _get_conditional_intensity(fit, predict_design_matrix):
-    return np.vstack([fitted_model.predict(predict_design_matrix)
+    return np.vstack([glmval(fitted_model, predict_design_matrix)
                       for fitted_model in fit]).T
 
 
