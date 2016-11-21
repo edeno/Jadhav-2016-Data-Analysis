@@ -125,6 +125,10 @@ def decode_ripple(epoch_index, animals, ripple_times,
     spikes_data = [data_processing.get_spike_indicator_dataframe(neuron_index, animals)
                    for neuron_index in neuron_info.index]
 
+    # Make sure there are spikes in the training data times. Otherwise exclude that neuron
+    spikes_data = [spikes_datum for spikes_datum in spikes_data
+                   if spikes_datum[position_info.speed > 4].sum().values > 0]
+
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
