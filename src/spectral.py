@@ -506,6 +506,104 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     return power_and_coherence_change(coherence_baseline, coherogram)
 
 
+def multitaper_canonical_coherence(data,
+                                   sampling_frequency=1000,
+                                   time_halfbandwidth_product=3,
+                                   pad=0,
+                                   tapers=None,
+                                   frequencies=None,
+                                   freq_ind=None,
+                                   number_of_fft_samples=None,
+                                   number_of_tapers=None,
+                                   desired_frequencies=None):
+    area1_lfps, area2_lfps = data[0], data[1]
+    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
+        number_of_time_samples=area1_lfps[0].shape[0],
+        sampling_frequency=sampling_frequency,
+        tapers=tapers,
+        number_of_tapers=number_of_tapers,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        desired_frequencies=desired_frequencies,
+        pad=pad)
+    complex_spectra1 = _get_complex_spectra(
+        area1_lfps, tapers, number_of_fft_samples, sampling_frequency)
+    complex_spectra2 = _get_complex_spectra(
+        area2_lfps, tapers, number_of_fft_samples, sampling_frequency)
+    coh = [_compute_canonical(
+        complex_spectra1, complex_spectra2, freq) for freq in freq_ind]
+
+    return pd.DataFrame({'frequency': frequencies,
+                         'coherence_magnitude': coh,
+                         }).set_index('frequency')
+
+
+def multitaper_canonical_coherogram(data,
+                                    sampling_frequency=1000,
+                                    time_window_duration=1,
+                                    time_window_step=None,
+                                    desired_frequencies=None,
+                                    time_halfbandwidth_product=3,
+                                    number_of_tapers=None,
+                                    pad=0,
+                                    tapers=None,
+                                    time=None):
+    time_step_length, time_window_length = _get_window_lengths(
+        time_window_duration,
+        sampling_frequency,
+        time_window_step)
+    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
+        number_of_time_samples=time_window_length,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration,
+        time_window_step=time_window_duration,
+        tapers=tapers,
+        number_of_tapers=number_of_tapers,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        desired_frequencies=desired_frequencies,
+        pad=pad)
+    return pd.concat(list(_make_sliding_window_dataframe(
+        multitaper_canonical_coherence,
+        data,
+        time_window_duration,
+        time_window_step,
+        time_step_length,
+        time_window_length,
+        time,
+        axis=1,
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        number_of_tapers=number_of_tapers,
+        pad=pad,
+        tapers=tapers,
+        frequencies=frequencies,
+        freq_ind=freq_ind,
+        number_of_fft_samples=number_of_fft_samples,
+    ))).sort_index()
+
+
+def _get_complex_spectra(lfps, tapers, number_of_fft_samples, sampling_frequency):
+    ''' Returns a numpy array of complex spectra (electrode x frequencies x (trials x tapers))
+    for input into the canonical coherence
+    '''
+    centered_lfps = [_center_data(lfp) for lfp in lfps]
+    complex_spectra = [_multitaper_fft(tapers, lfp, number_of_fft_samples, sampling_frequency)
+                       for lfp in centered_lfps]
+    complex_spectra = np.concatenate(
+        [spectra[np.newaxis, ...] for spectra in complex_spectra])
+    return complex_spectra.reshape((complex_spectra.shape[0], complex_spectra.shape[1], -1))
+
+
+def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
+    U1, _, V1 = np.linalg.svd(
+        complex_spectra1[:, freq_ind, :], full_matrices=False)
+    U2, _, V2 = np.linalg.svd(
+        complex_spectra2[:, freq_ind, :], full_matrices=False)
+    Q = np.dot(np.dot(U1, V1), np.dot(U2, V2).conj().transpose())
+    _, s, _ = np.linalg.svd(Q, full_matrices=False)
+    return s[0] ** 2
+
+
 def _match_frequency_resolution(time_halfbandwidth_product, time_window_duration, baseline_window):
     half_bandwidth = time_halfbandwidth_product / time_window_duration
     baseline_time_halfbandwidth_product = half_bandwidth * \
