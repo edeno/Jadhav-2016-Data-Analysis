@@ -13,6 +13,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     from the ripple info dataframe and the differences between those levels'''
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     tetrode_info = tetrode_info[~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)

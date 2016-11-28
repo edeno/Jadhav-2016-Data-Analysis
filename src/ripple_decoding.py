@@ -118,6 +118,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
                               (neuron_info.numspikes > 0) &
                               ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
+    print(neuron_info.loc[:, ['area', 'numspikes']])
 
     # Train on when the rat is moving
     position_info = data_processing.get_interpolated_position_dataframe(
@@ -222,6 +223,7 @@ def get_state_transition_matrix(train_position_info, linear_distance_grid):
 
 def glmfit(spikes, design_matrix, ind):
     try:
+        print('\t\t...Neuron #{}'.format(ind+1))
         return sm.GLM(spikes.reindex(design_matrix.index), design_matrix,
                       family=sm.families.Poisson(),
                       drop='missing').fit(maxiter=30)
