@@ -58,32 +58,31 @@ def _center_data(x):
         return x - np.nanmean(x, axis=0)
 
 
-def _get_window_array(data, time_window_start_ind, time_window_end_ind):
+def _get_window_array(data, time_window_start_ind, time_window_end_ind, axis=0):
     '''Returns the data for a given start and end index'''
-    window_array = [datum[time_window_start_ind:time_window_end_ind, ...]
-                    for datum in data]
+    slc = [slice(None)] * len(data[0].shape)
+    slc[axis] = slice(time_window_start_ind, time_window_end_ind, 1)
+    window_array = [datum[slc] for datum in data]
     if len(window_array) == 1:
         window_array = window_array[0]
     return window_array
 
 
 def _make_sliding_window_dataframe(func, data, time_window_duration, time_window_step,
-                                   time_step_length, time_window_length, time,
+                                   time_step_length, time_window_length, time, axis,
                                    **kwargs):
     ''' Generator function that returns a transformed dataframe (via func) for each sliding
     time window.
     '''
     time_window_start_ind = 0
-
-    while time_window_start_ind + time_window_length <= len(data[0]):
+    while time_window_start_ind + time_window_length <= data[0].shape[axis]:
         try:
             time_window_end_ind = time_window_start_ind + time_window_length
             windowed_arrays = _get_window_array(
-                data, time_window_start_ind, time_window_end_ind)
+                data, time_window_start_ind, time_window_end_ind, axis=axis)
 
             yield (func(windowed_arrays, **kwargs)
-                   .assign(time=_get_window_center(time_window_start_ind, time_window_duration,
-                                                   time))
+                   .assign(time=time[time_window_start_ind])
                    .set_index('time', append=True))
             time_window_start_ind += time_step_length
         except ValueError:
@@ -129,6 +128,7 @@ def multitaper_spectrogram(data,
         time_step_length,
         time_window_length,
         time,
+        axis=0,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
@@ -383,6 +383,7 @@ def multitaper_coherogram(data,
         time_step_length,
         time_window_length,
         time,
+        axis=0,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
