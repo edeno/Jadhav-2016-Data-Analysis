@@ -453,22 +453,22 @@ def group_delay_over_time(coherogram_dataframe):
             .reset_index(level=1, drop=True))
 
 
-def power_change(dataframe1, dataframe2):
+def power_change(baseline_power, power_of_interest):
     '''Normalizes a coherence or power dataframe by dividing it by a baseline dataframe.
     The baseline dataframe is assumed to only have a frequency index.'''
-    dropped1 = dataframe1.drop(
+    baseline_power_dropped = baseline_power.drop(
         ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
-    dropped2 = dataframe2.drop(
+    power_of_interest_dropped = power_of_interest.drop(
         ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
-    return dropped2 / dropped1
+    return power_of_interest_dropped / baseline_power_dropped
 
 
-def coherence_change(dataframe1, dataframe2):
-    dropped2 = dataframe2.drop(
+def coherence_change(baseline_coherence, coherence_of_interest):
+    coherence_of_interest_dropped = coherence_of_interest.drop(
         ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
-    dropped1 = dataframe1.drop(
+    baseline_coherence_dropped = baseline_coherence.drop(
         ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
-    return dropped2 - dropped1
+    return coherence_of_interest_dropped - baseline_coherence_dropped
 
 
 def difference_from_baseline_coherence(lfps, times_of_interest,
