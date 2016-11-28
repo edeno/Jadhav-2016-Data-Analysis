@@ -82,7 +82,8 @@ def _make_sliding_window_dataframe(func, data, time_window_duration, time_window
                 data, time_window_start_ind, time_window_end_ind, axis=axis)
 
             yield (func(windowed_arrays, **kwargs)
-                   .assign(time=time[time_window_start_ind])
+                   .assign(time=_get_window_center(time_window_start_ind, time_window_duration,
+                                                   time))
                    .set_index('time', append=True))
             time_window_start_ind += time_step_length
         except ValueError:
