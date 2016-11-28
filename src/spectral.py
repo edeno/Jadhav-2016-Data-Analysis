@@ -342,10 +342,6 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
                          }).set_index('frequency')
 
 
-def _get_window_center(time_window_start, time_window_duration, time):
-    return time[time_window_start] + (time_window_duration / 2)
-
-
 @convert_pandas
 def multitaper_coherogram(data,
                           sampling_frequency=1000,
