@@ -418,7 +418,8 @@ def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
-    data2D = coherogram_dataframe.reset_index().pivot('frequency', 'time', 'coherence_phase')
+    data2D = coherogram_dataframe.reset_index().pivot(
+        'frequency', 'time', 'coherence_phase')
     mesh = axis_handle.pcolormesh(time, freq, data2D,
                                   cmap=cmap,
                                   vmin=vmin,
@@ -483,13 +484,13 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     baseline_time_halfbandwidth_product = _match_frequency_resolution(
         time_halfbandwidth_product, time_window_duration, baseline_window)
     baseline_lfp_segments = [data_processing.reshape_to_segments(
-            lfp, times_of_interest, window_offset=baseline_window,
-            concat_axis=1, sampling_frequency=sampling_frequency)
-                             for lfp in lfps]
+        lfp, times_of_interest, window_offset=baseline_window,
+        concat_axis=1, sampling_frequency=sampling_frequency)
+        for lfp in lfps]
     time_of_interest_lfp_segments = [data_processing.reshape_to_segments(
-            lfp, times_of_interest, window_offset=window_of_interest,
-            concat_axis=1, sampling_frequency=sampling_frequency)
-                                     for lfp in lfps]
+        lfp, times_of_interest, window_offset=window_of_interest,
+        concat_axis=1, sampling_frequency=sampling_frequency)
+        for lfp in lfps]
     coherence_baseline = multitaper_coherence(
         baseline_lfp_segments,
         sampling_frequency=sampling_frequency,
