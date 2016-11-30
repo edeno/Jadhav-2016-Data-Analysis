@@ -51,11 +51,11 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
                     brain_area=cur_tetrode_info.loc[tetrode_index_tuple, 'area']))
 
 
-def _center_data(x):
+def _center_data(x, axis=0):
     '''Returns the mean-centered data array along the first axis'''
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return x - np.nanmean(x, axis=0)
+        return x - np.nanmean(x, axis=axis, keepdims=True)
 
 
 def _get_window_array(data, time_window_start_ind, time_window_end_ind, axis=0):
@@ -582,9 +582,10 @@ def _get_complex_spectra(lfps, tapers, number_of_fft_samples, sampling_frequency
     ''' Returns a numpy array of complex spectra (electrode x frequencies x (trials x tapers))
     for input into the canonical coherence
     '''
-    centered_lfps = [_center_data(lfp) for lfp in lfps]
-    complex_spectra = [_multitaper_fft(tapers, lfp, number_of_fft_samples, sampling_frequency)
-                       for lfp in centered_lfps]
+    centered_lfps = _center_data(lfps, axis=1)
+    complex_spectra = [_multitaper_fft(tapers, centered_lfps[lfp_ind, ...].squeeze(),
+                                       number_of_fft_samples, sampling_frequency)
+                       for lfp_ind in np.arange(centered_lfps.shape[0])]
     complex_spectra = np.concatenate(
         [spectra[np.newaxis, ...] for spectra in complex_spectra])
     return complex_spectra.reshape((complex_spectra.shape[0], complex_spectra.shape[1], -1))
