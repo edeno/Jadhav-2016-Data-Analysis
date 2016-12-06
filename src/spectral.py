@@ -211,7 +211,6 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     if plot_type is None:
         mesh = axis_handle.pcolormesh(time, freq, data2D,
                                       cmap=cmap,
-                                      shading='gouraud',
                                       vmin=vmin,
                                       vmax=vmax)
     elif plot_type is 'change':
@@ -408,7 +407,6 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
         'frequency', 'time', 'coherence_magnitude')
     mesh = axis_handle.pcolormesh(time, freq, data2D,
                                   cmap=cmap,
-                                  shading='gouraud',
                                   vmin=vmin,
                                   vmax=vmax)
     axis_handle.set_xlim([time.min(), time.max()])
