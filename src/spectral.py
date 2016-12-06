@@ -439,7 +439,7 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
 def group_delay(coherence_dataframe):
     slope, _, correlation, _, _ = scipy.stats.linregress(
         coherence_dataframe.reset_index('frequency').frequency,
-        coherence_dataframe.coherence_phase)
+        np.unwrap(coherence_dataframe.coherence_phase))
     return pd.DataFrame({'correlation': correlation,
                          'number_of_points': len(coherence_dataframe.coherence_phase),
                          'slope': slope,
