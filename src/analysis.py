@@ -61,6 +61,41 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
+def ripple_triggered_coherence(epoch_index, animals, ripple_times,
+                               coherence_name='coherence', multitaper_params={}):
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = tetrode_info[
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
+    lfps = {index: data_processing.get_LFP_dataframe(index, animals)
+            for index in tetrode_info.index}
+    num_lfps = len(lfps)
+    num_pairs = int(num_lfps * (num_lfps - 1) / 2)
+    params = copy.deepcopy(multitaper_params)
+    window_of_interest = params.pop('window_of_interest')
+
+    print('\nComputing ripple-triggered {coherence_name} '
+          'for {num_pairs} pairs of electrodes...'.format(
+            coherence_name=coherence_name,
+            num_pairs=num_pairs))
+
+    reshaped_lfps = {key: data_processing.reshape_to_segments(
+        lfps[key], ripple_times,
+        sampling_frequency=params['sampling_frequency'],
+        window_offset=window_of_interest,
+        concat_axis=1)
+        for key in lfps}
+    for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
+        coherogram = spectral.multitaper_coherogram(
+            [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **params)
+        coherence_baseline = coherogram.xs(
+            coherogram.index.min()[1], level='time')
+        coherence_change = spectral.power_and_coherence_change(
+            coherence_baseline, coherogram)
+        save_tetrode_pair(coherence_name, 'all_ripples', '',
+                          tetrode1, tetrode2, coherence_change)
+
+
 def _get_ripple_times(df):
     '''Retrieves the ripple times from the ripple_info dataframe'''
     return df.loc[:, ('ripple_start_time', 'ripple_end_time')].values.tolist()
