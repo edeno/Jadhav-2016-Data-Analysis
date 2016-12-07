@@ -16,25 +16,52 @@ animals = {
     'HPb': Animal(directory='HPb_direct', short_name='HPb'),
     'HPc': Animal(directory='HPc_direct', short_name='HPc')
 }
-gamma_frequency_params = dict(
+ripple_frequency = dict(
     sampling_frequency=sampling_frequency,
-    time_window_duration=0.600,
-    time_window_step=0.600,
-    desired_frequencies=[20, 100],
-    time_halfbandwidth_product=3,
-    window_of_interest=(-2.100, 2.100)
+    time_window_duration=0.020,
+    time_window_step=0.020,
+    desired_frequencies=(100, 300),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.200, 0.400)
 )
-low_frequency_params = dict(
-    sampling_frequency=1500,
-    time_window_duration=3.000,
-    time_window_step=3.000,
-    desired_frequencies=[3, 20],
-    time_halfbandwidth_product=3,
-    window_of_interest=(-7.500, 7.500)
+gamma_frequency_highTimeRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.050,
+    time_window_step=0.050,
+    desired_frequencies=(20, 100),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.200, 0.400)
+)
+gamma_frequency_highFreqRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.100,
+    time_window_step=0.100,
+    desired_frequencies=(20, 100),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.200, 0.400)
+)
+low_frequency_highTimeRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.100,
+    time_window_step=0.100,
+    desired_frequencies=(0, 20),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.200, 0.400)
+)
+low_frequency_highFreqRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.500,
+    time_window_step=0.500,
+    desired_frequencies=(0, 20),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.500, 0.500)
 )
 coherence_type = {
-    'gamma_coherence': gamma_frequency_params,
-    'low_frequency_coherence': low_frequency_params
+    'gamma_frequency_coherence_highTimeRes': gamma_frequency_highTimeRes,
+    'gamma_frequency_coherence_highFreqRes': gamma_frequency_highFreqRes,
+    'low_frequencies_coherence_highTimeRes': low_frequency_highTimeRes,
+    'low_frequencies_coherence_highFreqRes': low_frequency_highFreqRes,
+    'ripple_frequencies_coherence': ripple_frequency
 }
 ripple_covariates = ['is_spike', 'session_time',
                      'ripple_trajectory', 'ripple_direction']
