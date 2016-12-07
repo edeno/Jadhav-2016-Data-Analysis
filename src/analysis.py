@@ -13,7 +13,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those levels'''
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
-    tetrode_info = tetrode_info[~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    tetrode_info = tetrode_info[
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: data_processing.get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
@@ -315,5 +316,6 @@ def find_power_spectrum_from_pair_index(target_tetrode, coherence_name,
                               if tetrode1 == target_tetrode or tetrode2 == target_tetrode)
     coherence_df = get_tetrode_pair_from_hdf(
         coherence_name, covariate, level, tetrode1, tetrode2)
-    power_spectrum_name = 'power_spectrum{}'.format((tetrode1, tetrode2).index(target_tetrode) + 1)
+    power_spectrum_name = 'power_spectrum{}'.format(
+        (tetrode1, tetrode2).index(target_tetrode) + 1)
     return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
