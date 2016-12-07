@@ -36,7 +36,8 @@ coherence_type = {
     'gamma_coherence': gamma_frequency_params,
     'low_frequency_coherence': low_frequency_params
 }
-ripple_covariates = ['is_spike', 'session_time', 'ripple_trajectory', 'ripple_direction']
+ripple_covariates = ['is_spike', 'session_time',
+                     'ripple_trajectory', 'ripple_direction']
 
 
 def coherence_by_ripple_type(epoch_index):
@@ -53,9 +54,12 @@ def coherence_by_ripple_type(epoch_index):
             epoch_index, animals, ripple_times,
             coherence_name=coherence_name,
             multitaper_params=coherence_type[coherence_name])
+
+    # Compare different types of ripples
     ripple_info = ripple_decoding.decode_ripple(
         epoch_index, animals, ripple_times)[0]
     analysis.save_ripple_info(epoch_index, ripple_info)
+
     for covariate in ripple_covariates:
         for coherence_name in coherence_type:
             analysis.coherence_by_ripple_type(
@@ -73,12 +77,13 @@ def main():
         print('\n#############################################')
         print('Script start time: {}'.format(datetime.datetime.now()))
         print('#############################################\n')
-        epoch_index = (sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))  # animal, day, epoch
+        epoch_index = (sys.argv[1], int(sys.argv[2]),
+                       int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
         print('Script end time: {}'.format(datetime.datetime.now()))
     except IndexError:
         sys.exit('Need three arguments to define epoch. '
-                 'Only gave {}.'.format(len(sys.argv)-1))
+                 'Only gave {}.'.format(len(sys.argv) - 1))
 
 if __name__ == '__main__':
     sys.exit(main())
