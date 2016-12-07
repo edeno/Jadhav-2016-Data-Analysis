@@ -62,6 +62,10 @@ def coherence_by_ripple_type(epoch_index):
                 epoch_index, animals, ripple_info, covariate,
                 coherence_name=coherence_name,
                 multitaper_params=coherence_type[coherence_name])
+            analysis.canonical_coherence_by_ripple_type(
+                epoch_index, animals, ripple_info, covariate,
+                coherence_name=coherence_name,
+                multitaper_params=coherence_type[coherence_name])
 
 
 def main():
