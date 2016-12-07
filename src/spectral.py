@@ -38,6 +38,15 @@ def convert_pandas(func):
                     raise AttributeError(
                         'No time column or index provided in dataframe')
             data = [datum.values for datum in data]
+        elif isinstance(data, list) and isinstance(data[0], pd.Panel):
+            if is_time:
+                try:
+                    time = data[0].axes[1].values
+                    kwargs['time'] = time
+                except AttributeError:
+                    raise AttributeError(
+                        'No time column or index provided in dataframe')
+            data = [datum.values for datum in data]
 
         return func(data, *args, **kwargs)
     return wrapper
@@ -512,6 +521,7 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     return power_and_coherence_change(coherence_baseline, coherogram)
 
 
+@convert_pandas
 def multitaper_canonical_coherence(data,
                                    sampling_frequency=1000,
                                    time_halfbandwidth_product=3,
@@ -543,6 +553,7 @@ def multitaper_canonical_coherence(data,
                          }).set_index('frequency')
 
 
+@convert_pandas
 def multitaper_canonical_coherogram(data,
                                     sampling_frequency=1000,
                                     time_window_duration=1,
