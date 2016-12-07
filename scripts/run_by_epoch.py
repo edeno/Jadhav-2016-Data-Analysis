@@ -42,6 +42,17 @@ ripple_covariates = ['is_spike', 'session_time', 'ripple_trajectory', 'ripple_di
 def coherence_by_ripple_type(epoch_index):
     ripple_times = ripple_detection.get_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency)
+
+    # Compare before ripple to after ripple
+    for coherence_name in coherence_type:
+        analysis.ripple_triggered_coherence(
+            epoch_index, animals, ripple_times,
+            coherence_name=coherence_name,
+            multitaper_params=coherence_type[coherence_name])
+        analysis.ripple_triggered_canonical_coherence(
+            epoch_index, animals, ripple_times,
+            coherence_name=coherence_name,
+            multitaper_params=coherence_type[coherence_name])
     ripple_info = ripple_decoding.decode_ripple(
         epoch_index, animals, ripple_times)[0]
     analysis.save_ripple_info(epoch_index, ripple_info)
