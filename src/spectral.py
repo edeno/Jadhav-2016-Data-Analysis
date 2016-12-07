@@ -641,3 +641,9 @@ def power_and_coherence_change(dataframe1, dataframe2):
 
 def frequency_resolution(time_window_duration=None, time_halfbandwidth_product=None):
     return 2 * time_halfbandwidth_product / time_window_duration
+
+
+def get_lfps_by_area(area, tetrode_info, lfps):
+    '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
+    return pd.Panel({index: lfps[index]
+                     for index in tetrode_info[tetrode_info.area == area].index})
