@@ -1,3 +1,4 @@
+import copy
 import os
 import glob
 import warnings
@@ -20,7 +21,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
 
     grouped = ripple_info.groupby(ripple_covariate)
-    window_of_interest = multitaper_params.pop('window_of_interest')
+    params = copy.deepcopy(multitaper_params)
+    window_of_interest = params.pop('window_of_interest')
 
     print('\nComputing {coherence_name} for each level of the covariate "{covariate}"'
           '\nfor {num_pairs} pairs of electrodes:'.format(coherence_name=coherence_name,
@@ -32,12 +34,12 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: data_processing.reshape_to_segments(
             lfps[key], ripple_times_by_group,
-            sampling_frequency=multitaper_params['sampling_frequency'],
+            sampling_frequency=params['sampling_frequency'],
             window_offset=window_of_interest, concat_axis=1)
             for key in lfps}
         for tetrode1, tetrode2 in itertools.combinations(sorted(reshaped_lfps), 2):
             coherence_df = spectral.multitaper_coherogram(
-                [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **multitaper_params)
+                [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **params)
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
                               tetrode1, tetrode2, coherence_df)
     print('\nComputing the difference in coherence between all levels:')
@@ -56,7 +58,10 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
             save_tetrode_pair(coherence_name, ripple_covariate, level_difference_name,
                               tetrode1, tetrode2, coherence_difference_df)
     print('\nSaving Parameters...')
-    multitaper_params['window_of_interest'] = window_of_interest
+    save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
+    save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
+
+
     save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
