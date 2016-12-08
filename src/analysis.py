@@ -89,7 +89,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
         reshaped_lfps = {key: data_processing.reshape_to_segments(
             lfps[key], ripple_times_by_group,
             sampling_frequency=params['sampling_frequency'],
-            window_offset=window_of_interest, concat_axis=1)
+            window_offset=window_of_interest, concat_axis=1).dropna()
             for key in lfps}
         area_pairs = itertools.combinations(tetrode_info.area.unique(), 2)
         for area1, area2 in area_pairs:
@@ -178,7 +178,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
         lfps[key], ripple_times,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest,
-        concat_axis=1)
+        concat_axis=1).dropna()
         for key in lfps}
 
     area_pairs = itertools.combinations(tetrode_info.area.unique(), 2)
