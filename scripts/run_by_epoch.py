@@ -32,13 +32,29 @@ gamma_frequency_highTimeRes = dict(
     time_halfbandwidth_product=1,
     window_of_interest=(-0.200, 0.400)
 )
-gamma_frequency_highFreqRes = dict(
+gamma_frequency_medFreqRes1 = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.100,
     time_window_step=0.100,
     desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
     window_of_interest=(-0.200, 0.400)
+)
+gamma_frequency_medFreqRes2 = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.200,
+    time_window_step=0.200,
+    desired_frequencies=(20, 125),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.400, 0.400)
+)
+gamma_frequency_highFreqRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.400,
+    time_window_step=0.400,
+    desired_frequencies=(20, 125),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.400, 0.400)
 )
 low_frequency_highTimeRes = dict(
     sampling_frequency=sampling_frequency,
@@ -57,6 +73,8 @@ low_frequency_highFreqRes = dict(
     window_of_interest=(-0.500, 0.500)
 )
 coherence_type = {
+    'gamma_frequency_coherence_medFreqRes1': gamma_frequency_medFreqRes1,
+    'gamma_frequency_coherence_medFreqRes2': gamma_frequency_medFreqRes2,
     'gamma_frequency_coherence_highTimeRes': gamma_frequency_highTimeRes,
     'gamma_frequency_coherence_highFreqRes': gamma_frequency_highFreqRes,
     'low_frequencies_coherence_highTimeRes': low_frequency_highTimeRes,
