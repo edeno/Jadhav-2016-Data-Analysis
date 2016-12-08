@@ -28,7 +28,7 @@ gamma_frequency_highTimeRes = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.050,
     time_window_step=0.050,
-    desired_frequencies=(20, 100),
+    desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
     window_of_interest=(-0.200, 0.400)
 )
@@ -36,7 +36,7 @@ gamma_frequency_highFreqRes = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.100,
     time_window_step=0.100,
-    desired_frequencies=(20, 100),
+    desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
     window_of_interest=(-0.200, 0.400)
 )
