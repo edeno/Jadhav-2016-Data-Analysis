@@ -4,6 +4,7 @@ import os
 import sys
 import collections
 import datetime
+import subprocess
 sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
 import ripple_detection
 import ripple_decoding
@@ -122,6 +123,9 @@ def main():
         print('\n#############################################')
         print('Script start time: {}'.format(datetime.datetime.now()))
         print('#############################################\n')
+        print('Git Hash:')
+        print(subprocess.run(['git', 'rev-parse', 'HEAD'],
+              stdout=subprocess.PIPE, universal_newlines=True).stdout)
         epoch_index = (sys.argv[1], int(sys.argv[2]),
                        int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
