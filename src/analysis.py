@@ -91,7 +91,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
             sampling_frequency=params['sampling_frequency'],
             window_offset=window_of_interest, concat_axis=1).dropna()
             for key in lfps}
-        area_pairs = itertools.combinations(tetrode_info.area.unique(), 2)
+        area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             area1_lfps = spectral.get_lfps_by_area(
@@ -110,7 +110,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
             level1=level1, level2=level2)
         print(
             '\tLevel Difference: {level2} - {level1}'.format(level1=level1, level2=level2))
-        area_pairs = itertools.combinations(tetrode_info.area.unique(), 2)
+        area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
@@ -181,7 +181,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
         concat_axis=1).dropna()
         for key in lfps}
 
-    area_pairs = itertools.combinations(tetrode_info.area.unique(), 2)
+    area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
     print('\nComputing ripple-triggered '
           'canonical {coherence_name}:'.format(coherence_name=coherence_name))
     for area1, area2 in area_pairs:
