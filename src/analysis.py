@@ -79,8 +79,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
     window_of_interest = params.pop('window_of_interest')
     print('\nComputing canonical {coherence_name} for each '
           'level of the covariate "{covariate}":'.format(
-            coherence_name=coherence_name,
-            covariate=ripple_covariate))
+              coherence_name=coherence_name,
+              covariate=ripple_covariate))
 
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
@@ -91,7 +91,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
             sampling_frequency=params['sampling_frequency'],
             window_offset=window_of_interest, concat_axis=1).dropna()
             for key in lfps}
-        area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
+        area_pairs = itertools.combinations(
+            sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             area1_lfps = spectral.get_lfps_by_area(
@@ -110,7 +111,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
             level1=level1, level2=level2)
         print(
             '\tLevel Difference: {level2} - {level1}'.format(level1=level1, level2=level2))
-        area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
+        area_pairs = itertools.combinations(
+            sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
@@ -141,8 +143,8 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
 
     print('\nComputing ripple-triggered {coherence_name} '
           'for {num_pairs} pairs of electrodes...'.format(
-            coherence_name=coherence_name,
-            num_pairs=num_pairs))
+              coherence_name=coherence_name,
+              num_pairs=num_pairs))
 
     reshaped_lfps = {key: data_processing.reshape_to_segments(
         lfps[key], ripple_times,
