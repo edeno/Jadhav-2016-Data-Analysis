@@ -22,7 +22,7 @@ ripple_frequency = dict(
     time_window_step=0.020,
     desired_frequencies=(100, 300),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.200, 0.400)
+    window_of_interest=(-0.420, 0.400)
 )
 gamma_frequency_highTimeRes = dict(
     sampling_frequency=sampling_frequency,
@@ -30,7 +30,7 @@ gamma_frequency_highTimeRes = dict(
     time_window_step=0.050,
     desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.200, 0.400)
+    window_of_interest=(-0.450, 0.400)
 )
 gamma_frequency_medFreqRes1 = dict(
     sampling_frequency=sampling_frequency,
@@ -38,7 +38,7 @@ gamma_frequency_medFreqRes1 = dict(
     time_window_step=0.100,
     desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.200, 0.400)
+    window_of_interest=(-0.500, 0.400)
 )
 gamma_frequency_medFreqRes2 = dict(
     sampling_frequency=sampling_frequency,
@@ -46,7 +46,7 @@ gamma_frequency_medFreqRes2 = dict(
     time_window_step=0.200,
     desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.400, 0.400)
+    window_of_interest=(-0.600, 0.400)
 )
 gamma_frequency_highFreqRes = dict(
     sampling_frequency=sampling_frequency,
@@ -54,7 +54,7 @@ gamma_frequency_highFreqRes = dict(
     time_window_step=0.400,
     desired_frequencies=(20, 125),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.400, 0.400)
+    window_of_interest=(-0.800, 0.400)
 )
 low_frequency_highTimeRes = dict(
     sampling_frequency=sampling_frequency,
@@ -62,7 +62,7 @@ low_frequency_highTimeRes = dict(
     time_window_step=0.100,
     desired_frequencies=(0, 20),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.200, 0.400)
+    window_of_interest=(-0.500, 0.400)
 )
 low_frequency_highFreqRes = dict(
     sampling_frequency=sampling_frequency,
@@ -70,7 +70,7 @@ low_frequency_highFreqRes = dict(
     time_window_step=0.500,
     desired_frequencies=(0, 20),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.500, 0.500)
+    window_of_interest=(-0.1000, 0.500)
 )
 coherence_type = {
     'gamma_frequency_coherence_medFreqRes1': gamma_frequency_medFreqRes1,
