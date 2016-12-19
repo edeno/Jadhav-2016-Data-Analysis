@@ -44,7 +44,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
                               tetrode1, tetrode2, coherence_df)
     print('\nComputing the difference in coherence between all levels:')
-    for level1, level2 in itertools.combinations(grouped.groups.keys(), 2):
+    for level1, level2 in itertools.combinations(sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         print(
@@ -106,7 +106,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
                 area1, area2, coherogram, epoch_index)
 
     print('\nComputing the difference in coherence between all levels:')
-    for level1, level2 in itertools.combinations(grouped.groups.keys(), 2):
+    for level1, level2 in itertools.combinations(sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         print(
