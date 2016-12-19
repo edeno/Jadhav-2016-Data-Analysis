@@ -264,8 +264,8 @@ def _extend_segment_intervals(ripple_above_threshold_segments, ripple_above_mean
     return list(set(segments))  # remove duplicate segments
 
 
-def _get_envelope(data):
-    return np.abs(scipy.signal.hilbert(data, axis=0))
+def _get_envelope(data, axis=0):
+    return np.abs(scipy.signal.hilbert(data, axis=axis))
 
 
 def _smooth(data, sigma, sampling_frequency):
