@@ -43,7 +43,8 @@ def predict_state(data, initial_conditions=None, state_transition=None,
     for time_ind in np.arange(num_time_points):
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
-        likelihood = likelihood_function(data[time_ind, :], **likelihood_kwargs)
+        likelihood = likelihood_function(
+            data[time_ind, :], **likelihood_kwargs)
         posterior = _update_posterior(prior, likelihood)
         if debug:
             likelihood_over_time[time_ind, :] = likelihood
@@ -101,9 +102,11 @@ def empirical_movement_transition_matrix(linear_position, linear_position_grid,
     '''Estimates the probablity of the next position based on the movement data.
     '''
     movement_bins, _, _ = np.histogram2d(linear_position, linear_position.shift(1),
-                                         bins=(linear_position_grid, linear_position_grid),
+                                         bins=(linear_position_grid,
+                                               linear_position_grid),
                                          normed=False)
-    movement_bins_probability = _normalize_column_probability(_fix_zero_bins(movement_bins))
+    movement_bins_probability = _normalize_column_probability(
+        _fix_zero_bins(movement_bins))
     smoothed_movement_bins_probability = scipy.ndimage.filters.gaussian_filter(
         movement_bins_probability, sigma=0.5)
     return _normalize_column_probability(
@@ -158,11 +161,14 @@ def decode_ripple(epoch_index, animals, ripple_times,
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(
         *epoch_index))
     # Include only CA1 neurons with spikes
-    neuron_info = data_processing.make_neuron_dataframe(animals)[epoch_index].dropna()
+    neuron_info = data_processing.make_neuron_dataframe(animals)[
+        epoch_index].dropna()
     tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
     neuron_info = pd.merge(tetrode_info, neuron_info,
-                           on=['animal', 'day', 'epoch_ind', 'tetrode_number', 'area'],
-                           how='right', right_index=True).set_index(neuron_info.index)
+                           on=['animal', 'day', 'epoch_ind',
+                               'tetrode_number', 'area'],
+                           how='right', right_in
+dex=True).set_index(neuron_info.index)
     neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
                               (neuron_info.numspikes > 0) &
                               ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
@@ -183,7 +189,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
     linear_distance_grid = np.linspace(np.floor(position_info.linear_distance.min()),
-                                       np.ceil(position_info.linear_distance.max()),
+                                       np.ceil(
+                                           position_info.linear_distance.max()),
                                        linear_distance_grid_num_bins)
     linear_distance_grid_centers = _get_grid_centers(linear_distance_grid)
 
@@ -194,7 +201,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
 
     # Fit state transition model
     print('\tFitting state transition model...')
-    state_transition = get_state_transition_matrix(train_position_info, linear_distance_grid)
+    state_transition = get_state_transition_matrix(
+        train_position_info, linear_distance_grid)
 
     # Initial Conditions
     print('\tSetting initial conditions...')
@@ -209,14 +217,15 @@ def decode_ripple(epoch_index, animals, ripple_times,
     combined_likelihood_params = dict(
         likelihood_function=likelihood_function,
         likelihood_kwargs=dict(conditional_intensity=conditional_intensity)
-        )
+    )
     decoder_params = dict(
         initial_conditions=initial_conditions,
         state_transition=state_transition,
         likelihood_function=combined_likelihood,
         likelihood_kwargs=combined_likelihood_params
     )
-    test_spikes = _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency)
+    test_spikes = _get_ripple_spikes(
+        spikes_data, ripple_times, sampling_frequency)
     posterior_density = [predict_state(ripple_spikes, **decoder_params)
                          for ripple_spikes in test_spikes]
     session_time = position_info.index
@@ -228,7 +237,7 @@ def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     '''
     spike_ripples_df = [data_processing.reshape_to_segments(
         spikes_datum, ripple_times, concat_axis=1, sampling_frequency=sampling_frequency)
-                        for spikes_datum in spikes_data]
+        for spikes_datum in spikes_data]
 
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values
                        for df in spike_ripples_df]).T
@@ -277,10 +286,12 @@ def get_state_transition_matrix(train_position_info, linear_distance_grid):
     state_transition_matrix : array_like
     '''
     inbound_state_transitions = empirical_movement_transition_matrix(
-        train_position_info[train_position_info.trajectory_direction == 'Inbound'].linear_distance,
+        train_position_info[
+            train_position_info.trajectory_direction == 'Inbound'].linear_distance,
         linear_distance_grid)
     outbound_state_transitions = empirical_movement_transition_matrix(
-        train_position_info[train_position_info.trajectory_direction == 'Outbound'].linear_distance,
+        train_position_info[
+            train_position_info.trajectory_direction == 'Outbound'].linear_distance,
         linear_distance_grid)
 
     return scipy.linalg.block_diag(outbound_state_transitions,
