@@ -67,11 +67,11 @@ low_frequency_highTimeRes = dict(
 )
 low_frequency_highFreqRes = dict(
     sampling_frequency=sampling_frequency,
-    time_window_duration=0.500,
-    time_window_step=0.500,
+    time_window_duration=0.250,
+    time_window_step=0.250,
     desired_frequencies=(0, 20),
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.1000, 0.500)
+    window_of_interest=(-0.750, 0.250)
 )
 coherence_type = {
     'gamma_frequency_coherence_medFreqRes1': gamma_frequency_medFreqRes1,
