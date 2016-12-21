@@ -1,3 +1,5 @@
+'''Finding sharp-wave ripple events (150-250 Hz) from local field potentials'''
+
 import os
 import scipy.io
 import scipy.fftpack

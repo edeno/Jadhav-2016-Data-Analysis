@@ -1,5 +1,11 @@
-# -*- coding: utf-8 -*-
+'''Functions for performing frequency domain analysis including:
 
+- Multi-taper spectral analysis
+- Coherence
+- Group delay
+- Parametric Spectral Granger
+
+'''
 import functools
 import inspect
 import warnings

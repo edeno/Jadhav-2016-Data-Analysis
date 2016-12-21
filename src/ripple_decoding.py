@@ -1,3 +1,13 @@
+'''Classifying sharp-wave ripple replay events from spiking activity
+(e.g. Forward vs. Reverse replay)
+
+Based on:
+Deng, X., Liu, D.F., Karlsson, M.P., Frank, L.M., and Eden, U.T. (2016).
+Rapid classification of hippocampal replay content for real-time applications.
+Journal of Neurophysiology 116, 2221–2235.
+
+'''
+
 import warnings
 import numpy as np
 import pandas as pd
