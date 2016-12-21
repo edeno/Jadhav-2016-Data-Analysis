@@ -125,7 +125,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
                            area1, area2, coherence_difference_df, epoch_index)
     print('\nSaving Parameters...')
     save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
-    save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
+    save_area_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
 def ripple_triggered_coherence(epoch_index, animals, ripple_times,
@@ -200,6 +200,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
             coherence_baseline, coherogram)
         save_area_pair(
             coherence_name, 'all_ripples', '', area1, area2, coherence_change, epoch_index)
+    save_area_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
 def _get_ripple_times(df):
@@ -279,6 +280,16 @@ def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
             store.put(hdf_path, tetrode_info)
             store.put(hdf_pair_path,
                       data_processing.get_tetrode_pair_info(tetrode_info))
+
+
+def save_area_pair_info(epoch_index, coherence_name, tetrode_info):
+    hdf_pair_path = '/{coherence_name}/area_pair_info'.format(
+        coherence_name=coherence_name)
+    with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            store.put(hdf_pair_path,
+                      data_processing.get_area_pair_info(tetrode_info, epoch_index))
 
 
 def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name, covariate, level):

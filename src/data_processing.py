@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Functions for accessing data in the Frank lab format
+Functions for accessing and saving data in the Frank lab format
 '''
 
 import os
@@ -487,6 +487,16 @@ def get_tetrode_pair_info(tetrode_info):
                 )
     return (pd.concat([tetrode1, tetrode2], axis=1)
             .set_index(pair_index))
+
+
+def get_area_pair_info(tetrode_info, epoch_index):
+    area_pairs = area_pairs = list(itertools.combinations(
+            sorted(tetrode_info.area.unique()), 2))
+    return (pd.DataFrame(area_pairs, columns=['area1', 'area2'])
+            .assign(animal=epoch_index[0],
+                    day=epoch_index[1],
+                    epoch=epoch_index[2])
+            .set_index(['animal', 'day', 'epoch', 'area1', 'area2'], drop=False))
 
 if __name__ == '__main__':
     sys.exit()
