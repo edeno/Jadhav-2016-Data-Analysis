@@ -161,6 +161,7 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
             coherence_baseline, coherogram)
         save_tetrode_pair(coherence_name, 'all_ripples', '',
                           tetrode1, tetrode2, coherence_change)
+    save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
 def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
