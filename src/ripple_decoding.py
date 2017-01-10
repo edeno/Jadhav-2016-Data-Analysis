@@ -305,8 +305,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
     linear_distance_bin_edges = np.linspace(np.floor(position_info.linear_distance.min()),
-                                       np.ceil(position_info.linear_distance.max()),
-                                       n_linear_distance_bins+1)
+                                            np.ceil(
+                                                position_info.linear_distance.max()),
+                                            n_linear_distance_bins + 1)
     linear_distance_bin_centers = _get_bin_centers(linear_distance_bin_edges)
 
     # Fit encoding model
