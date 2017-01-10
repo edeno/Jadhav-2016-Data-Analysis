@@ -398,11 +398,11 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_b
     ----------
     train_position_info : pandas dataframe
     train_spikes_data : array_like
-    linear_distance_bin_centers : array_like
+    linear_distance_bin_centers : array_like, shape=(n_parameters,)
 
     Returns
     -------
-    conditional_intensity_by_state : array_like
+    conditional_intensity_by_state : array_like, shape=(n_signals, n_parameters*n_states)
     '''
     formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
     design_matrix = patsy.dmatrix(
