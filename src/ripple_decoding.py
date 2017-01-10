@@ -89,6 +89,21 @@ def _get_prior(posterior, state_transition):
 
 
 def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
+    '''
+    Probability of parameters given spiking at a particular time
+
+    Parameters
+    ----------
+    is_spike : {0, 1}
+        Indicator of spike or no spike at current time.
+    conditional_intensity : array-like, shape=(n_time_points,)
+        Instantaneous probability of observing a spike
+    time_bin_size : float, optional
+
+    Returns
+    -------
+    poisson_likelihood : array-like, shape=(n_parameters,)
+    '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
     return (probability_spike ** is_spike) * probability_no_spike
 
