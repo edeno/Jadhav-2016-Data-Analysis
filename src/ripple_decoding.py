@@ -134,7 +134,6 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
     return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
 
 
-def combined_likelihood(data, likelihood_function=None, likelihood_kwargs=[]):
 def _mark_space_estimator(test_marks, training_marks=None, mark_smoothing=20):
     '''
     Parameters
