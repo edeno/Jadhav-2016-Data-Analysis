@@ -111,7 +111,7 @@ def empirical_movement_transition_matrix(linear_position, linear_position_bin_ed
                                          sequence_compression_factor=16):
     '''Estimates the probablity of the next position based on the movement data.
     '''
-    movement_bins, _, _ = np.histogram2d(linear_position, linear_position.shift(1),
+    movement_bins, _, _ = np.histogram2d(linear_position[1:], linear_position[:-1],
                                          bins=(linear_position_bin_edges,
                                                linear_position_bin_edges),
                                          normed=False)
