@@ -173,6 +173,25 @@ def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None
 
 def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
     '''
+    Applies likelihood function to each signal and returns their product
+
+    If there isn't a column dimension, just returns the likelihood.
+
+    Parameters
+    ----------
+    data : array-like, shape=(n_signals, ...)
+    likelihood_function : function
+        Likelihood function to be applied to each signal.
+        The likelihood function must take data as its first argument.
+        All other arguments for the likelihood should be passed
+        via `likelihood_kwargs`
+    likelihood_kwargs : dict
+        Keyword arguments for the likelihood function
+
+    Returns
+    -------
+    likelihood : array-like, shape=(n_parameters,)
+    '''
     try:
         return np.nanprod(likelihood_function(data, **likelihood_kwargs), axis=0).squeeze()
     except ValueError:
