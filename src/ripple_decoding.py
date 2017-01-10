@@ -105,7 +105,7 @@ def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
     poisson_likelihood : array-like, shape=(n_parameters,)
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
-    return (probability_spike ** is_spike) * probability_no_spike
+    return (conditional_intensity ** is_spike) * probability_no_spike
 
 
 def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
