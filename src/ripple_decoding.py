@@ -457,7 +457,7 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_b
     return np.vstack([outbound_conditional_intensity,
                       outbound_conditional_intensity,
                       inbound_conditional_intensity,
-                      inbound_conditional_intensity])
+                      inbound_conditional_intensity]).T
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time):
