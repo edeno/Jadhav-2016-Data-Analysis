@@ -55,7 +55,7 @@ def predict_state(data, initial_conditions=None, state_transition=None,
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
         likelihood = likelihood_function(
-            data[time_ind, :], **likelihood_kwargs)
+            data[time_ind, ...], **likelihood_kwargs)
         posterior = _update_posterior(prior, likelihood)
         if debug:
             likelihood_over_time[time_ind, :] = likelihood
