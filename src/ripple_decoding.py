@@ -28,7 +28,7 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     Parameters
     ----------
-    data : array_like, shape=(n_times, n_signals)
+    data : array_like, shape=(n_time, n_signals)
     initial_conditions : array_like (n_bins, n_states)
     state_transition : array_like (n_likelihood_bins)
     likelihood_function : function
@@ -45,13 +45,13 @@ def predict_state(data, initial_conditions=None, state_transition=None,
     prior_over_time : array_like, shape=(n_times, n_states)
     '''
     posterior = initial_conditions
-    num_states = len(initial_conditions)
-    num_time_points = data.shape[0]
-    posterior_over_time = np.zeros((num_time_points, num_states))
+    n_states = len(initial_conditions)
+    n_time_points = data.shape[0]
+    posterior_over_time = np.zeros((n_time_points, n_states))
     if debug:
-        likelihood_over_time = np.zeros((num_time_points, num_states))
-        prior_over_time = np.zeros((num_time_points, num_states))
-    for time_ind in np.arange(num_time_points):
+        likelihood_over_time = np.zeros((n_time_points, n_states))
+        prior_over_time = np.zeros((n_time_points, n_states))
+    for time_ind in np.arange(n_time_points):
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
         likelihood = likelihood_function(
@@ -142,8 +142,8 @@ def _fix_zero_bins(movement_bins):
 
 def decode_ripple(epoch_index, animals, ripple_times,
                   sampling_frequency=1500,
-                  linear_distance_grid_num_bins=49,
                   likelihood_function=instantaneous_poisson_likelihood):
+                  n_linear_distance_bins=49,
     '''Labels the ripple by category
 
     Parameters
@@ -159,6 +159,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     sampling_frequency : int, optional
         Sampling frequency of the spikes
     linear_distance_grid_num_bins : int, optional
+    n_linear_distance_bins : int, optional
         Number of bins for the linear distance
     likelihood_function : function, optional
         Converts the conditional intensity of a point process to a likelihood
@@ -201,8 +202,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     linear_distance_grid = np.linspace(np.floor(position_info.linear_distance.min()),
                                        np.ceil(
                                            position_info.linear_distance.max()),
-                                       linear_distance_grid_num_bins)
     linear_distance_grid_centers = _get_grid_centers(linear_distance_grid)
+                                       n_linear_distance_bins+1)
 
     # Fit encoding model
     print('\tFitting encoding model...')
@@ -218,9 +219,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
     print('\tSetting initial conditions...')
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
-    num_states = len(state_names)
+    n_states = len(state_names)
     initial_conditions = get_initial_conditions(
-        linear_distance_grid, linear_distance_grid_centers, num_states)
+        linear_distance_bin_edges, linear_distance_bin_centers, n_states)
 
     # Decode
     print('\tDecoding ripples...')
@@ -272,7 +273,7 @@ def get_initial_conditions(linear_distance_grid, linear_distance_grid_centers,
         (np.max(outbound_initial_conditions) * np.ones(linear_distance_grid_centers.shape)) -
         outbound_initial_conditions)
 
-    prior_probability_of_state = 1 / num_states
+    prior_probability_of_state = 1 / n_states
     return np.hstack([outbound_initial_conditions,
                       inbound_initial_conditions,
                       inbound_initial_conditions,
@@ -390,16 +391,16 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, s
     posterior_density : array_like
     state_names : list of str
     '''
-    num_states = len(state_names)
-    num_ripples = len(ripple_times)
-    decision_state_probability = [_compute_decision_state_probability(density, num_states)
+    n_states = len(state_names)
+    n_ripples = len(ripple_times)
+    decision_state_probability = [_compute_decision_state_probability(density, n_states)
                                   for density in posterior_density]
 
     ripple_info = pd.DataFrame([_compute_max_state(probability, state_names)
                                 for probability in decision_state_probability],
                                columns=['ripple_trajectory', 'ripple_direction',
                                         'ripple_state_probability'],
-                               index=pd.Index(np.arange(num_ripples) + 1, name='ripple_number'))
+                               index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
     ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
     ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
     ripple_info['number_of_unique_neurons_spiking'] = [_num_unique_neurons_spiking(spikes)
@@ -441,11 +442,11 @@ def _get_conditional_intensity(fit, predict_design_matrix):
                       for fitted_model in fit]).T
 
 
-def _compute_decision_state_probability(posterior_density, num_states):
+def _compute_decision_state_probability(posterior_density, n_states):
     '''The marginal probability of a state given the posterior_density
     '''
-    num_time = len(posterior_density)
-    new_shape = (num_time, num_states, -1)
+    n_time = len(posterior_density)
+    new_shape = (n_time, n_states, -1)
     return np.sum(np.reshape(posterior_density, new_shape), axis=2)
 
 
