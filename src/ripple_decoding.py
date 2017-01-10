@@ -109,7 +109,23 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
 
 def empirical_movement_transition_matrix(linear_position, linear_position_bin_edges,
                                          sequence_compression_factor=16):
-    '''Estimates the probablity of the next position based on the movement data.
+    '''Estimate the probablity of the next position based on the movement data, given
+    the movment is sped up by the `sequence_compression_factor`
+
+    Place cell firing during a hippocampal replay event is a "sped-up" version of
+    place cell firing when the animal is actually moving. Here we use the animal's
+    actual movements to constrain which place cell is likely to fire next.
+
+    Parameters
+    ----------
+    linear_position : array-like
+        Linearized position of the animal over time
+    linear_position_bin_edges : array-like
+    sequence_compression_factor : int, optional
+        How much the movement is sped-up during a replay event
+    Returns
+    -------
+    empirical_movement_transition_matrix : array-like, shape=(n_bin_edges-1, n_bin_edges-1)
     '''
     movement_bins, _, _ = np.histogram2d(linear_position[1:], linear_position[:-1],
                                          bins=(linear_position_bin_edges,
