@@ -88,8 +88,7 @@ def _get_prior(posterior, state_transition):
     return np.dot(state_transition, posterior)
 
 
-def instantaneous_poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
-    probability_spike = conditional_intensity
+def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
     return (probability_spike ** is_spike) * probability_no_spike
 
@@ -142,8 +141,8 @@ def _fix_zero_bins(movement_bins):
 
 def decode_ripple(epoch_index, animals, ripple_times,
                   sampling_frequency=1500,
-                  likelihood_function=instantaneous_poisson_likelihood):
                   n_linear_distance_bins=49,
+                  likelihood_function=poisson_likelihood):
     '''Labels the ripple by category
 
     Parameters
