@@ -116,18 +116,18 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
 
     Parameters
     ----------
-    data : array-like, shape=(n_marks+1,)
+    data : array-like, shape=(n_signals, n_marks+1)
         First element is an indicator of spike or no spike i.e. either {0, 1}.
         The subsequent elements correspond to the mark vector.
     joint_mark_intensity : function
         Instantaneous probability of observing a spike with mark vector from data
-    ground_process_intensity : array-like
+    ground_process_intensity : array-like, shape=(n_signals, n_parameters)
         Probability of observing a spike regardless of marks.
     time_bin_size : float, optional
 
     Returns
     -------
-    poisson_mark_likelihood : array-like, shape=(n_parameters,)
+    poisson_mark_likelihood : array-like, shape=(n_signals, n_parameters)
     '''
     is_spike, *marks = data
     probability_no_spike = np.exp(-ground_process_intensity * time_bin_size)
@@ -135,16 +135,51 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
 
 
 def combined_likelihood(data, likelihood_function=None, likelihood_kwargs=[]):
+def _mark_space_estimator(test_marks, training_marks=None, mark_smoothing=20):
+    '''
+    Parameters
+    ----------
+    test_marks : array-like, shape=(n_signals, n_marks)
+    training_marks : array-like, shape=(n_signals, n_marks, n_training_spikes)
+    mark_smoothing : float, optional
 
     If there isn't a column dimension, just return the likelihood.
     The likelihood function must take data as its first argument.
     All other arguments for the likelihood should be passed
     via the likelihood keyword argument (`likelihood_kwargs`)
+    Returns
+    -------
+    mark_space_estimator : array-like, shape=(n_signals, n_training_spikes)
     '''
     try:
         return np.nanprod(likelihood_function(data, **likelihood_kwargs), axis=1)
     except ValueError:
         return likelihood_function(data, **likelihood_kwargs)
+    return np.nanprod(
+        scipy.stats.norm.pdf(np.resize(test_marks, training_marks.shape),
+                             loc=training_marks,
+                             scale=mark_smoothing),
+        axis=1)
+
+
+def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None):
+    '''
+    Parameters
+    ----------
+    marks : array-like, shape=(n_signals, n_marks)
+    place_field_estimator : array-like, shape=(n_signals, n_parameters, n_training_spikes)
+    place_occupancy : array-like, shape=(n_signals, n_parameters)
+
+    Returns
+    -------
+    joint_mark_intensity : array-like, shape=(n_signals, n_parameters)
+    '''
+    mark_space_estimator = _mark_space_estimator(marks)[:, :, np.newaxis]
+    return np.matmul(
+        place_field_estimator, mark_space_estimator
+    ).squeeze() / place_occupancy
+
+
 
 
 def empirical_movement_transition_matrix(linear_position, linear_position_bin_edges,
