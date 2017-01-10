@@ -108,8 +108,33 @@ def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
     return (conditional_intensity ** is_spike) * probability_no_spike
 
 
-def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
-    '''Combine likelihoods over columns.
+def poisson_mark_likelihood(data, joint_mark_intensity=None,
+                            ground_process_intensity=None, time_bin_size=1):
+    '''
+    Probability of parameters given spiking at a particular time
+    and associated marks.
+
+    Parameters
+    ----------
+    data : array-like, shape=(n_marks+1,)
+        First element is an indicator of spike or no spike i.e. either {0, 1}.
+        The subsequent elements correspond to the mark vector.
+    joint_mark_intensity : function
+        Instantaneous probability of observing a spike with mark vector from data
+    ground_process_intensity : array-like
+        Probability of observing a spike regardless of marks.
+    time_bin_size : float, optional
+
+    Returns
+    -------
+    poisson_mark_likelihood : array-like, shape=(n_parameters,)
+    '''
+    is_spike, *marks = data
+    probability_no_spike = np.exp(-ground_process_intensity * time_bin_size)
+    return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
+
+
+def combined_likelihood(data, likelihood_function=None, likelihood_kwargs=[]):
 
     If there isn't a column dimension, just return the likelihood.
     The likelihood function must take data as its first argument.
