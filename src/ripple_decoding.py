@@ -7,7 +7,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
+from statsmodels.api import GLM, families
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
@@ -479,9 +479,9 @@ def glmfit(spikes, design_matrix, ind):
     '''
     try:
         print('\t\t...Neuron #{}'.format(ind + 1))
-        return sm.GLM(spikes.reindex(design_matrix.index), design_matrix,
-                      family=sm.families.Poisson(),
-                      drop='missing').fit(maxiter=30)
+        return GLM(spikes.reindex(design_matrix.index), design_matrix,
+                   family=families.Poisson(),
+                   drop='missing').fit(maxiter=30)
     except np.linalg.linalg.LinAlgError:
         warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
         return np.nan
