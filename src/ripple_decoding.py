@@ -439,13 +439,13 @@ def get_state_transition_matrix(train_position_info,
 
     '''
     inbound_state_transitions = empirical_movement_transition_matrix(
-        train_position_info[
-            (train_position_info.trajectory_direction == 'Inbound']
+        (train_position_info[
+            train_position_info.trajectory_direction == 'Inbound']
             .linear_distance.values),
         linear_distance_bin_edges)
     outbound_state_transitions = empirical_movement_transition_matrix(
-        train_position_info[
-            (train_position_info.trajectory_direction == 'Outbound']
+        (train_position_info[
+            train_position_info.trajectory_direction == 'Outbound']
             .linear_distance.values),
         linear_distance_bin_edges)
 
