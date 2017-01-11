@@ -9,17 +9,19 @@ Journal of Neurophysiology 116, 2221–2235.
 
 '''
 
-import warnings
+from warnings import warn
 
 import numpy as np
 import pandas as pd
-from patsy import dmatrix, build_design_matrices
+import statsmodels.api as sm
+from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import norm
-import statsmodels.api as sm
 
-import data_processing
+from data_processing import (get_interpolated_position_dataframe,
+                             get_spike_indicator_dataframe,
+                             make_neuron_dataframe, reshape_to_segments)
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
@@ -302,9 +304,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(
         *epoch_index))
     # Include only CA1 neurons with spikes
-    neuron_info = data_processing.make_neuron_dataframe(animals)[
+    neuron_info = make_neuron_dataframe(animals)[
         epoch_index].dropna()
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     neuron_info = pd.merge(tetrode_info, neuron_info,
                            on=['animal', 'day', 'epoch_ind',
@@ -317,9 +319,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
     print(neuron_info.loc[:, ['area', 'numspikes']])
 
     # Train on when the rat is moving
-    position_info = data_processing.get_interpolated_position_dataframe(
+    position_info = get_interpolated_position_dataframe(
         epoch_index, animals)
-    spikes_data = [data_processing.get_spike_indicator_dataframe(neuron_index, animals)
+    spikes_data = [get_spike_indicator_dataframe(neuron_index, animals)
                    for neuron_index in neuron_info.index]
 
     # Make sure there are spikes in the training data times. Otherwise exclude
@@ -382,7 +384,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
 def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     '''Given the ripple times, extract the spikes within the ripple
     '''
-    spike_ripples_df = [data_processing.reshape_to_segments(
+    spike_ripples_df = [reshape_to_segments(
         spikes_datum, ripple_times,
         concat_axis=1, sampling_frequency=sampling_frequency)
         for spikes_datum in spikes_data]
@@ -478,8 +480,7 @@ def glmfit(spikes, design_matrix, ind):
                       family=sm.families.Poisson(),
                       drop='missing').fit(maxiter=30)
     except np.linalg.linalg.LinAlgError:
-        warnings.warn(
-            'Data is poorly scaled for neuron #{}'.format(ind + 1))
+        warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
         return np.nan
 
 
