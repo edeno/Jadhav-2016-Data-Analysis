@@ -160,7 +160,9 @@ def _mark_space_estimator(test_marks, training_marks=None,
 
 
 def joint_mark_intensity(marks, place_field_estimator=None,
-                         place_occupancy=None):
+                         place_occupancy=None,
+                         training_marks=None,
+                         mark_smoothing=20):
     '''
     Parameters
     ----------
@@ -173,10 +175,14 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     joint_mark_intensity : array_like, shape=(n_signals, n_parameters)
 
     '''
-    mark_space_estimator = _mark_space_estimator(marks)[:, :, np.newaxis]
-    return np.matmul(
-        place_field_estimator, mark_space_estimator
-    ).squeeze() / place_occupancy
+    mark_space_estimator = _mark_space_estimator(
+        marks,
+        training_marks=training_marks,
+        mark_smoothing=mark_smoothing)
+    return (np.matmul(
+        place_field_estimator,
+        mark_space_estimator[:, :, np.newaxis]).squeeze() /
+        place_occupancy)
 
 
 def combined_likelihood(data, likelihood_function=None,
