@@ -140,13 +140,24 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
 
 def _mark_space_estimator(test_marks, training_marks=None,
                           mark_smoothing=20):
-    '''
+    '''Evaluate the multivariate Gaussian kernel for the mark space
+    given training marks.
+
+    For each mark in the training data (`training_marks`), a univariate
+    Gaussian is placed with its mean at the value of each mark with
+    standard deviation `mark_smoothing`. The product of the Gaussians
+    along the mark dimension yields a multivariate Gaussian kernel
+    evaluated at each training spike with a diagonal coviarance matrix.
+
     Parameters
     ----------
     test_marks : array_like, shape=(n_signals, n_marks)
+        The marks to be evaluated
     training_marks : array_like, shape=(n_signals, n_marks,
                                         n_training_spikes)
+        The marks for each spike when the animal is moving
     mark_smoothing : float, optional
+        The standard deviation of the Gaussian kernel in millivolts
 
     Returns
     -------
@@ -164,13 +175,16 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
                          mark_smoothing=20):
-    '''
+    ''' Evaluate the multivate density function of the marks and place
+    field
+
     Parameters
     ----------
     marks : array_like, shape=(n_signals, n_marks)
     place_field_estimator : array_like, shape=(n_signals, n_parameters,
                                                n_training_spikes)
     place_occupancy : array_like, shape=(n_signals, n_parameters)
+        The probability that the animal is at that position
 
     Returns
     -------
