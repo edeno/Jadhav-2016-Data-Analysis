@@ -440,11 +440,13 @@ def get_state_transition_matrix(train_position_info,
     '''
     inbound_state_transitions = empirical_movement_transition_matrix(
         train_position_info[
-            train_position_info.trajectory_direction == 'Inbound'].linear_distance.values,
+            (train_position_info.trajectory_direction == 'Inbound']
+            .linear_distance.values),
         linear_distance_bin_edges)
     outbound_state_transitions = empirical_movement_transition_matrix(
         train_position_info[
-            train_position_info.trajectory_direction == 'Outbound'].linear_distance.values,
+            (train_position_info.trajectory_direction == 'Outbound']
+            .linear_distance.values),
         linear_distance_bin_edges)
 
     return scipy.linalg.block_diag(outbound_state_transitions,
@@ -636,5 +638,8 @@ def _ripple_session_time(ripple_times, session_time):
             session_time, 3,
             labels=['early', 'middle', 'late'], precision=4),
         index=session_time)
-    return [session_time_categories.loc[ripple_start:ripple_end].value_counts().argmax()
+    return [(session_time_categories
+             .loc[ripple_start:ripple_end]
+             .value_counts()
+             .argmax())
             for ripple_start, ripple_end in ripple_times]
