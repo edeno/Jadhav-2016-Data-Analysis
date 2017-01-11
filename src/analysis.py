@@ -1,9 +1,11 @@
 import copy
-import os
 import glob
-import warnings
 import itertools
+import os
+import warnings
+
 import pandas as pd
+
 import data_processing
 import spectral
 
@@ -12,7 +14,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
                              coherence_name='coherence', multitaper_params={}):
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those levels'''
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
@@ -59,7 +62,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple_covariate
             save_tetrode_pair(coherence_name, ripple_covariate, level_difference_name,
                               tetrode1, tetrode2, coherence_difference_df)
     print('\nSaving Parameters...')
-    save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
+    save_multitaper_parameters(
+        epoch_index, coherence_name, multitaper_params)
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
@@ -67,7 +71,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
                                        coherence_name='coherence', multitaper_params={}):
     '''Computes the canonical coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those levels'''
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
@@ -94,7 +99,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
         area_pairs = itertools.combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
+            print(
+                '\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             area1_lfps = spectral.get_lfps_by_area(
                 area1, tetrode_info, reshaped_lfps)
             area2_lfps = spectral.get_lfps_by_area(
@@ -114,7 +120,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
         area_pairs = itertools.combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            print('\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
+            print(
+                '\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
                 coherence_name, ripple_covariate, level1, area1, area2, epoch_index)
             level2_coherence_df = get_area_pair_from_hdf(
@@ -124,13 +131,15 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info, ripple
             save_area_pair(coherence_name, ripple_covariate, level_difference_name,
                            area1, area2, coherence_difference_df, epoch_index)
     print('\nSaving Parameters...')
-    save_multitaper_parameters(epoch_index, coherence_name, multitaper_params)
+    save_multitaper_parameters(
+        epoch_index, coherence_name, multitaper_params)
     save_area_pair_info(epoch_index, coherence_name, tetrode_info)
 
 
 def ripple_triggered_coherence(epoch_index, animals, ripple_times,
                                coherence_name='coherence', multitaper_params={}):
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
@@ -166,7 +175,8 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
 
 def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
                                          coherence_name='coherence', multitaper_params={}):
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
@@ -184,7 +194,8 @@ def ripple_triggered_canonical_coherence(epoch_index, animals, ripple_times,
         concat_axis=1).dropna(axis=1)
         for key in lfps}
 
-    area_pairs = itertools.combinations(sorted(tetrode_info.area.unique()), 2)
+    area_pairs = itertools.combinations(
+        sorted(tetrode_info.area.unique()), 2)
     print('\nComputing ripple-triggered '
           'canonical {coherence_name}:'.format(coherence_name=coherence_name))
     for area1, area2 in area_pairs:

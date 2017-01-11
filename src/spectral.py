@@ -190,7 +190,8 @@ def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_fre
 
 def _get_window_lengths(time_window_duration, sampling_frequency, time_window_step):
     '''Figures out the number of points per time window and step'''
-    time_window_length = int(np.fix(time_window_duration * sampling_frequency))
+    time_window_length = int(
+        np.fix(time_window_duration * sampling_frequency))
     if time_window_step is None:
         time_window_step = time_window_duration
     time_step_length = int(np.fix(time_window_step * sampling_frequency))
@@ -204,7 +205,8 @@ def _get_unique_time_freq(spectrogram_dataframe):
     half_time_diff = (time[1] - time[0]) / 2
     time = np.append(time - half_time_diff,
                      time[-1] + half_time_diff)
-    frequency = np.unique(spectrogram_dataframe.reset_index().frequency.values)
+    frequency = np.unique(
+        spectrogram_dataframe.reset_index().frequency.values)
     half_frequency_diff = (frequency[1] - frequency[0]) / 2
     frequency = np.append(frequency - half_frequency_diff,
                           frequency[-1] + half_frequency_diff)
@@ -237,7 +239,8 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
 
     axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
         frequency_units=frequency_units))
-    axis_handle.set_xlabel('Time ({time_units})'.format(time_units=time_units))
+    axis_handle.set_xlabel(
+        'Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
