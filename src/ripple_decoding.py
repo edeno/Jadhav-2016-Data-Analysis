@@ -23,7 +23,8 @@ import data_processing
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
-                  likelihood_function=None, likelihood_kwargs={}, debug=False):
+                  likelihood_function=None, likelihood_kwargs={},
+                  debug=False):
     '''Adaptive filter to iteratively calculate the
     posterior probability of a state variable
 
@@ -90,7 +91,8 @@ def _get_prior(posterior, state_transition):
     return np.dot(state_transition, posterior)
 
 
-def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
+def poisson_likelihood(is_spike, conditional_intensity=None,
+                       time_bin_size=1):
     '''Probability of parameters given spiking at a particular time
 
     Parameters
@@ -107,13 +109,15 @@ def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
 
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
-    return (conditional_intensity ** is_spike[:, np.newaxis]) * probability_no_spike
+    return ((conditional_intensity ** is_spike[:, np.newaxis]) *
+            probability_no_spike)
 
 
 def poisson_mark_likelihood(data, joint_mark_intensity=None,
-                            ground_process_intensity=None, time_bin_size=1):
-    '''Probability of parameters given spiking indicator at a particular time
-    and associated marks.
+                            ground_process_intensity=None,
+                            time_bin_size=1):
+    '''Probability of parameters given spiking indicator at a particular
+    time and associated marks.
 
     Parameters
     ----------
@@ -121,7 +125,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
         First column is an indicator of spike or no spike, is_spike={0, 1}.
         The subsequent columns correspond to the mark vector.
     joint_mark_intensity : function
-        Instantaneous probability of observing a spike given mark vector from data
+        Instantaneous probability of observing a spike given mark vector
+        from data
     ground_process_intensity : array_like, shape=(n_signals, n_parameters)
         Probability of observing a spike regardless of marks.
     time_bin_size : float, optional
@@ -137,7 +142,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
     return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
 
 
-def _mark_space_estimator(test_marks, training_marks=None, mark_smoothing=20):
+def _mark_space_estimator(test_marks, training_marks=None,
+                          mark_smoothing=20):
     '''
     Parameters
     ----------
@@ -157,7 +163,8 @@ def _mark_space_estimator(test_marks, training_marks=None, mark_smoothing=20):
         axis=1)
 
 
-def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None):
+def joint_mark_intensity(marks, place_field_estimator=None,
+                         place_occupancy=None):
     '''
     Parameters
     ----------
@@ -176,7 +183,8 @@ def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None
     ).squeeze() / place_occupancy
 
 
-def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
+def combined_likelihood(data, likelihood_function=None,
+                        likelihood_kwargs={}):
     '''Applies likelihood function to each signal and returns their product
 
     If there isn't a column dimension, just returns the likelihood.
@@ -198,19 +206,24 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
 
     '''
     try:
-        return np.nanprod(likelihood_function(data, **likelihood_kwargs), axis=0).squeeze()
+        return np.nanprod(
+            likelihood_function(data, **likelihood_kwargs),
+            axis=0).squeeze()
     except ValueError:
         return likelihood_function(data, **likelihood_kwargs).squeeze()
 
 
-def empirical_movement_transition_matrix(linear_position, linear_position_bin_edges,
+def empirical_movement_transition_matrix(linear_position,
+                                         linear_position_bin_edges,
                                          sequence_compression_factor=16):
-    '''Estimate the probablity of the next position based on the movement data, given
-    the movment is sped up by the `sequence_compression_factor`
+    '''Estimate the probablity of the next position based on the movement
+     data, given the movment is sped up by the
+     `sequence_compression_factor`
 
-    Place cell firing during a hippocampal replay event is a "sped-up" version of
-    place cell firing when the animal is actually moving. Here we use the animal's
-    actual movements to constrain which place cell is likely to fire next.
+    Place cell firing during a hippocampal replay event is a "sped-up"
+    version of place cell firing when the animal is actually moving.
+    Here we use the animal's actual movements to constrain which place
+    cell is likely to fire next.
 
     Parameters
     ----------
@@ -262,7 +275,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     Parameters
     ----------
     epoch_index : 3-element tuple
-        Specifies which epoch to run. (Animal short name, day, epoch_number)
+        Specifies which epoch to run.
+        (Animal short name, day, epoch_number)
     animals : list of named-tuples
         Tuples give information to convert from the animal short name
         to a data directory
@@ -274,7 +288,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     n_linear_distance_bins : int, optional
         Number of bins for the linear distance
     likelihood_function : function, optional
-        Converts the conditional intensity of a point process to a likelihood
+        Converts the conditional intensity of a point process to a
+        likelihood
 
     Returns
     -------
@@ -293,7 +308,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     neuron_info = pd.merge(tetrode_info, neuron_info,
                            on=['animal', 'day', 'epoch_ind',
                                'tetrode_number', 'area'],
-                           how='right', right_index=True).set_index(neuron_info.index)
+                           how='right', right_index=True).set_index(
+        neuron_info.index)
     neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
                               (neuron_info.numspikes > 0) &
                               ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
@@ -356,14 +372,17 @@ def decode_ripple(epoch_index, animals, ripple_times,
     posterior_density = [predict_state(ripple_spikes, **decoder_params)
                          for ripple_spikes in test_spikes]
     session_time = position_info.index
-    return get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time)
+    return get_ripple_info(
+        posterior_density, test_spikes, ripple_times,
+        state_names, session_time)
 
 
 def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     '''Given the ripple times, extract the spikes within the ripple
     '''
     spike_ripples_df = [data_processing.reshape_to_segments(
-        spikes_datum, ripple_times, concat_axis=1, sampling_frequency=sampling_frequency)
+        spikes_datum, ripple_times,
+        concat_axis=1, sampling_frequency=sampling_frequency)
         for spikes_datum in spikes_data]
 
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values
@@ -377,8 +396,8 @@ def _get_bin_centers(bin_edges):
     return bin_edges[:-1] + np.diff(bin_edges) / 2
 
 
-def get_initial_conditions(linear_distance_bin_edges, linear_distance_bin_centers,
-                           n_states):
+def get_initial_conditions(linear_distance_bin_edges,
+                           linear_distance_bin_centers, n_states):
     linear_distance_bin_size = linear_distance_bin_edges[
         1] - linear_distance_bin_edges[0]
 
@@ -396,7 +415,8 @@ def get_initial_conditions(linear_distance_bin_edges, linear_distance_bin_center
                       outbound_initial_conditions]) * prior_probability_of_state
 
 
-def get_state_transition_matrix(train_position_info, linear_distance_bin_edges):
+def get_state_transition_matrix(train_position_info,
+                                linear_distance_bin_edges):
     '''The block-diagonal empirical state transition matrix for each state:
     Outbound-Forward, Outbound-Reverse, Inbound-Forward, Inbound-Reverse
 
@@ -456,7 +476,8 @@ def glmfit(spikes, design_matrix, ind):
         return np.nan
 
 
-def get_encoding_model(train_position_info, train_spikes_data, linear_distance_bin_centers):
+def get_encoding_model(train_position_info, train_spikes_data,
+                       linear_distance_bin_centers):
     '''The conditional intensities for each state (Outbound-Forward,
     Outbound-Reverse, Inbound-Forward, Inbound-Reverse)
 
@@ -493,7 +514,8 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_b
                       inbound_conditional_intensity]).T
 
 
-def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, session_time):
+def get_ripple_info(posterior_density, test_spikes, ripple_times,
+                    state_names, session_time):
     '''Summary statistics for ripple categories
 
     Parameters
@@ -536,14 +558,16 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, s
     return ripple_info, decision_state_probability, posterior_density, state_names
 
 
-def _predictors_by_trajectory_direction(trajectory_direction, linear_distance_bin_centers,
+def _predictors_by_trajectory_direction(trajectory_direction,
+                                        linear_distance_bin_centers,
                                         design_matrix):
     '''The design matrix for a given trajectory direction
     '''
     predictors = {'linear_distance': linear_distance_bin_centers,
                   'trajectory_direction': [trajectory_direction] *
                   len(linear_distance_bin_centers)}
-    return patsy.build_design_matrices([design_matrix.design_info], predictors)[0]
+    return patsy.build_design_matrices(
+        [design_matrix.design_info], predictors)[0]
 
 
 def glmval(fitted_model, predict_design_matrix):
@@ -599,7 +623,10 @@ def _ripple_session_time(ripple_times, session_time):
     session, middle session, and late session and classifies
     the ripple by the most prevelant category.
     '''
-    session_time_categories = pd.Series(pd.cut(
-        session_time, 3, labels=['early', 'middle', 'late'], precision=4), index=session_time)
+    session_time_categories = pd.Series(
+        pd.cut(
+            session_time, 3,
+            labels=['early', 'middle', 'late'], precision=4),
+        index=session_time)
     return [session_time_categories.loc[ripple_start:ripple_end].value_counts().argmax()
             for ripple_start, ripple_end in ripple_times]
