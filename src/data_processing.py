@@ -115,7 +115,8 @@ def get_pulse_position_ind(pulse_times, position_times):
     '''Returns the index of a pulse from the DIO data structure in terms of the
     position structure time.
     '''
-    TIME_CONSTANT = 1E4  # position times from the pos files are already adjusted
+    # position times from the pos files are already adjusted
+    TIME_CONSTANT = 1E4
     return [find_closest_ind(
         position_times, pin_pulse_times[:, 0].flatten() / TIME_CONSTANT)
         for pin_pulse_times in pulse_times]
@@ -338,8 +339,8 @@ def get_spikes_dataframe(neuron_index, animals):
     neuron_file = scipy.io.loadmat(
         get_data_filename(animals[animal], day, 'spikes'))
     try:
-        neuron_data = neuron_file['spikes'][
-            0, -1][0, epoch - 1][0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][:, 0]
+        neuron_data = neuron_file['spikes'][0, -1][0, epoch-1][
+            0, tetrode_number-1][0, neuron_number-1][0]['data'][0][:, 0]
         data_dict = {'time': neuron_data,
                      'is_spike': 1
                      }
@@ -426,7 +427,8 @@ def get_linear_position_structure(epoch_key, animals,
                                   trajectory_category=None):
     animal, day, epoch = epoch_key
     struct = get_data_structure(
-        animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0]['statematrix']
+        animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0][
+            'statematrix']
     include_fields = ['time', 'traj', 'lindist']
     new_names = {'time': 'time', 'traj': 'trajectory_category_ind',
                  'lindist': 'linear_distance'}

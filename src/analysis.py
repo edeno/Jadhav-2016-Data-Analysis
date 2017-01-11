@@ -33,8 +33,9 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     params = copy.deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
-    print('\nComputing {coherence_name} for each level of the covariate "{covariate}"'
-          '\nfor {num_pairs} pairs of electrodes:'.format(
+    print(
+        '\nComputing {coherence_name} for each level of the covariate'
+        '"{covariate}"\nfor {num_pairs} pairs of electrodes:'.format(
               coherence_name=coherence_name, covariate=ripple_covariate,
               num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
@@ -309,7 +310,8 @@ def save_multitaper_parameters(epoch_index, coherence_name,
         coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
         store.get_node(
-            coherence_node_name)._v_attrs.multitaper_parameters = multitaper_params
+            coherence_node_name)._v_attrs.multitaper_parameters = \
+                multitaper_params
 
 
 def save_ripple_info(epoch_index, ripple_info):
@@ -379,10 +381,10 @@ def get_all_tetrode_info(coherence_name):
 def find_power_spectrum_from_pair_index(target_tetrode, coherence_name,
                                         covariate, level,
                                         tetrode_pair_info):
-    tetrode1, tetrode2 = next((tetrode1, tetrode2)
-                              for tetrode1, tetrode2 in tetrode_pair_info.index
-                              if tetrode1 == target_tetrode
-                              or tetrode2 == target_tetrode)
+    tetrode1, tetrode2 = next(
+        (tetrode1, tetrode2) for tetrode1, tetrode2
+        in tetrode_pair_info.index
+        if tetrode1 == target_tetrode or tetrode2 == target_tetrode)
     coherence_df = get_tetrode_pair_from_hdf(
         coherence_name, covariate, level, tetrode1, tetrode2)
     power_spectrum_name = 'power_spectrum{}'.format(
