@@ -10,13 +10,15 @@ Journal of Neurophysiology 116, 2221–2235.
 '''
 
 import warnings
+
 import numpy as np
 import pandas as pd
-import scipy.ndimage.filters
-import scipy.linalg
-import scipy.stats
 import patsy
+import scipy.linalg
+import scipy.ndimage.filters
+import scipy.stats
 import statsmodels.api as sm
+
 import data_processing
 
 
@@ -130,7 +132,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
 
     '''
     is_spike, marks = data[:, 0], data[:, 1:]
-    probability_no_spike = np.exp(-ground_process_intensity * time_bin_size)
+    probability_no_spike = np.exp(-ground_process_intensity *
+                                  time_bin_size)
     return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
 
 
@@ -285,7 +288,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     # Include only CA1 neurons with spikes
     neuron_info = data_processing.make_neuron_dataframe(animals)[
         epoch_index].dropna()
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     neuron_info = pd.merge(tetrode_info, neuron_info,
                            on=['animal', 'day', 'epoch_ind',
                                'tetrode_number', 'area'],
@@ -313,7 +317,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
                                             np.ceil(
                                                 position_info.linear_distance.max()),
                                             n_linear_distance_bins + 1)
-    linear_distance_bin_centers = _get_bin_centers(linear_distance_bin_edges)
+    linear_distance_bin_centers = _get_bin_centers(
+        linear_distance_bin_edges)
 
     # Fit encoding model
     print('\tFitting encoding model...')
@@ -337,7 +342,8 @@ def decode_ripple(epoch_index, animals, ripple_times,
     print('\tDecoding ripples...')
     combined_likelihood_params = dict(
         likelihood_function=likelihood_function,
-        likelihood_kwargs=dict(conditional_intensity=conditional_intensity)
+        likelihood_kwargs=dict(
+            conditional_intensity=conditional_intensity)
     )
     decoder_params = dict(
         initial_conditions=initial_conditions,
@@ -445,7 +451,8 @@ def glmfit(spikes, design_matrix, ind):
                       family=sm.families.Poisson(),
                       drop='missing').fit(maxiter=30)
     except np.linalg.linalg.LinAlgError:
-        warnings.warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
+        warnings.warn(
+            'Data is poorly scaled for neuron #{}'.format(ind + 1))
         return np.nan
 
 
