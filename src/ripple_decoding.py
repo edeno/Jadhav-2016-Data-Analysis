@@ -216,6 +216,7 @@ def empirical_movement_transition_matrix(linear_position, linear_position_bin_ed
     linear_position_bin_edges : array_like
     sequence_compression_factor : int, optional
         How much the movement is sped-up during a replay event
+
     Returns
     -------
     empirical_movement_transition_matrix : array_like, shape=(n_bin_edges-1, n_bin_edges-1)
