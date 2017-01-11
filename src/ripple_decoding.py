@@ -7,11 +7,11 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-from statsmodels.api import GLM, families
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import norm
+from statsmodels.api import GLM, families
 
 from data_processing import (get_interpolated_position_dataframe,
                              get_spike_indicator_dataframe,
