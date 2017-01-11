@@ -22,8 +22,7 @@ import data_processing
 
 def predict_state(data, initial_conditions=None, state_transition=None,
                   likelihood_function=None, likelihood_kwargs={}, debug=False):
-    '''
-    Adaptive filter to iteratively calculate the
+    '''Adaptive filter to iteratively calculate the
     posterior probability of a state variable
 
     Parameters
@@ -40,12 +39,13 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     Returns
     -------
-    posterior_over_time : array_like, shape=(n_times, n_states)
-    likelihood_over_time : array_like, shape=(n_times, n_states)
-    prior_over_time : array_like, shape=(n_times, n_states)
+    posterior_over_time : array_like, shape=(n_time_points, n_states)
+    likelihood_over_time : array_like, shape=(n_time_points, n_states)
+    prior_over_time : array_like, shape=(n_time_points, n_states)
+
     '''
     posterior = initial_conditions
-    n_states = len(initial_conditions)
+    n_states = initial_conditions.shape[1]
     n_time_points = data.shape[0]
     posterior_over_time = np.zeros((n_time_points, n_states))
     if debug:
@@ -89,20 +89,20 @@ def _get_prior(posterior, state_transition):
 
 
 def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
-    '''
-    Probability of parameters given spiking at a particular time
+    '''Probability of parameters given spiking at a particular time
 
     Parameters
     ----------
     is_spike : {0, 1}
         Indicator of spike or no spike at current time.
-    conditional_intensity : array-like, shape=(n_time_points,)
+    conditional_intensity : array_like, shape=(n_time_points,)
         Instantaneous probability of observing a spike
     time_bin_size : float, optional
 
     Returns
     -------
-    poisson_likelihood : array-like, shape=(n_parameters,)
+    poisson_likelihood : array_like, shape=(n_parameters,)
+
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
     return (conditional_intensity ** is_spike) * probability_no_spike
@@ -110,24 +110,24 @@ def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
 
 def poisson_mark_likelihood(data, joint_mark_intensity=None,
                             ground_process_intensity=None, time_bin_size=1):
-    '''
-    Probability of parameters given spiking at a particular time
+    '''Probability of parameters given spiking indicator at a particular time
     and associated marks.
 
     Parameters
     ----------
-    data : array-like, shape=(n_signals, n_marks+1)
-        First element is an indicator of spike or no spike i.e. either {0, 1}.
-        The subsequent elements correspond to the mark vector.
+    data : array_like, shape=(n_signals, n_marks+1)
+        First column is an indicator of spike or no spike, is_spike={0, 1}.
+        The subsequent columns correspond to the mark vector.
     joint_mark_intensity : function
-        Instantaneous probability of observing a spike with mark vector from data
-    ground_process_intensity : array-like, shape=(n_signals, n_parameters)
+        Instantaneous probability of observing a spike given mark vector from data
+    ground_process_intensity : array_like, shape=(n_signals, n_parameters)
         Probability of observing a spike regardless of marks.
     time_bin_size : float, optional
 
     Returns
     -------
-    poisson_mark_likelihood : array-like, shape=(n_signals, n_parameters)
+    poisson_mark_likelihood : array_like, shape=(n_signals, n_parameters)
+
     '''
     is_spike, *marks = data
     probability_no_spike = np.exp(-ground_process_intensity * time_bin_size)
@@ -138,13 +138,14 @@ def _mark_space_estimator(test_marks, training_marks=None, mark_smoothing=20):
     '''
     Parameters
     ----------
-    test_marks : array-like, shape=(n_signals, n_marks)
-    training_marks : array-like, shape=(n_signals, n_marks, n_training_spikes)
+    test_marks : array_like, shape=(n_signals, n_marks)
+    training_marks : array_like, shape=(n_signals, n_marks, n_training_spikes)
     mark_smoothing : float, optional
 
     Returns
     -------
-    mark_space_estimator : array-like, shape=(n_signals, n_training_spikes)
+    mark_space_estimator : array_like, shape=(n_signals, n_training_spikes)
+
     '''
     return np.nanprod(
         scipy.stats.norm.pdf(np.resize(test_marks, training_marks.shape),
@@ -157,13 +158,14 @@ def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None
     '''
     Parameters
     ----------
-    marks : array-like, shape=(n_signals, n_marks)
-    place_field_estimator : array-like, shape=(n_signals, n_parameters, n_training_spikes)
-    place_occupancy : array-like, shape=(n_signals, n_parameters)
+    marks : array_like, shape=(n_signals, n_marks)
+    place_field_estimator : array_like, shape=(n_signals, n_parameters, n_training_spikes)
+    place_occupancy : array_like, shape=(n_signals, n_parameters)
 
     Returns
     -------
-    joint_mark_intensity : array-like, shape=(n_signals, n_parameters)
+    joint_mark_intensity : array_like, shape=(n_signals, n_parameters)
+
     '''
     mark_space_estimator = _mark_space_estimator(marks)[:, :, np.newaxis]
     return np.matmul(
@@ -172,14 +174,13 @@ def joint_mark_intensity(marks, place_field_estimator=None, place_occupancy=None
 
 
 def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
-    '''
-    Applies likelihood function to each signal and returns their product
+    '''Applies likelihood function to each signal and returns their product
 
     If there isn't a column dimension, just returns the likelihood.
 
     Parameters
     ----------
-    data : array-like, shape=(n_signals, ...)
+    data : array_like, shape=(n_signals, ...)
     likelihood_function : function
         Likelihood function to be applied to each signal.
         The likelihood function must take data as its first argument.
@@ -190,7 +191,8 @@ def combined_likelihood(data, likelihood_function=None, likelihood_kwargs={}):
 
     Returns
     -------
-    likelihood : array-like, shape=(n_parameters,)
+    likelihood : array_like, shape=(n_parameters,)
+
     '''
     try:
         return np.nanprod(likelihood_function(data, **likelihood_kwargs), axis=0).squeeze()
@@ -209,14 +211,15 @@ def empirical_movement_transition_matrix(linear_position, linear_position_bin_ed
 
     Parameters
     ----------
-    linear_position : array-like
+    linear_position : array_like
         Linearized position of the animal over time
-    linear_position_bin_edges : array-like
+    linear_position_bin_edges : array_like
     sequence_compression_factor : int, optional
         How much the movement is sped-up during a replay event
     Returns
     -------
-    empirical_movement_transition_matrix : array-like, shape=(n_bin_edges-1, n_bin_edges-1)
+    empirical_movement_transition_matrix : array_like, shape=(n_bin_edges-1, n_bin_edges-1)
+
     '''
     movement_bins, _, _ = np.histogram2d(linear_position[1:], linear_position[:-1],
                                          bins=(linear_position_bin_edges,
@@ -274,6 +277,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     ripple_info : pandas dataframe
         Dataframe containing the categories for each ripple
         and the probability of that category
+
     '''
     print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(
         *epoch_index))
@@ -400,6 +404,7 @@ def get_state_transition_matrix(train_position_info, linear_distance_bin_edges):
     Returns
     -------
     state_transition_matrix : array_like
+
     '''
     inbound_state_transitions = empirical_movement_transition_matrix(
         train_position_info[
@@ -431,6 +436,7 @@ def glmfit(spikes, design_matrix, ind):
         Returns the statsmodel object if successful.
         If the model fails in the weighted fit
         in the IRLS procedure, the model returns NaN.
+
     '''
     try:
         print('\t\t...Neuron #{}'.format(ind + 1))
@@ -455,6 +461,7 @@ def get_encoding_model(train_position_info, train_spikes_data, linear_distance_b
     Returns
     -------
     conditional_intensity_by_state : array_like, shape=(n_signals, n_parameters*n_states)
+
     '''
     formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
     design_matrix = patsy.dmatrix(
@@ -495,6 +502,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times, state_names, s
     decision_state_probability : array_like
     posterior_density : array_like
     state_names : list of str
+
     '''
     n_states = len(state_names)
     n_ripples = len(ripple_times)
