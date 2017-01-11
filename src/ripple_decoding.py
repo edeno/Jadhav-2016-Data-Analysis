@@ -239,7 +239,8 @@ def empirical_movement_transition_matrix(linear_position,
     empirical_movement_transition_matrix : array_like, shape=(n_bin_edges-1, n_bin_edges-1)
 
     '''
-    movement_bins, _, _ = np.histogram2d(linear_position[1:], linear_position[:-1],
+    movement_bins, _, _ = np.histogram2d(linear_position[1:],
+                                         linear_position[:-1],
                                          bins=(linear_position_bin_edges,
                                                linear_position_bin_edges),
                                          normed=False)
@@ -324,10 +325,11 @@ def decode_ripple(epoch_index, animals, ripple_times,
     spikes_data = [get_spike_indicator_dataframe(neuron_index, animals)
                    for neuron_index in neuron_info.index]
 
-    # Make sure there are spikes in the training data times. Otherwise exclude
-    # that neuron
+    # Make sure there are spikes in the training data times. Otherwise
+    # exclude that neuron
     spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[position_info.speed > 4].sum().values > 0]
+                   if spikes_datum[
+                       position_info.speed > 4].sum().values > 0]
 
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
