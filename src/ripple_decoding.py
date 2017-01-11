@@ -246,7 +246,9 @@ def empirical_movement_transition_matrix(linear_position,
     smoothed_movement_bins_probability = scipy.ndimage.filters.gaussian_filter(
         movement_bins_probability, sigma=0.5)
     return _normalize_column_probability(
-        np.linalg.matrix_power(smoothed_movement_bins_probability, sequence_compression_factor))
+        np.linalg.matrix_power(
+            smoothed_movement_bins_probability,
+            sequence_compression_factor))
 
 
 def _normalize_column_probability(x):
@@ -328,17 +330,18 @@ def decode_ripple(epoch_index, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
-    linear_distance_bin_edges = np.linspace(np.floor(position_info.linear_distance.min()),
-                                            np.ceil(
-                                                position_info.linear_distance.max()),
-                                            n_linear_distance_bins + 1)
+    linear_distance_bin_edges = np.linspace(
+        np.floor(position_info.linear_distance.min()),
+        np.ceil(position_info.linear_distance.max()),
+        n_linear_distance_bins + 1)
     linear_distance_bin_centers = _get_bin_centers(
         linear_distance_bin_edges)
 
     # Fit encoding model
     print('\tFitting encoding model...')
     conditional_intensity = get_encoding_model(
-        train_position_info, train_spikes_data, linear_distance_bin_centers)
+        train_position_info, train_spikes_data,
+        linear_distance_bin_centers)
 
     # Fit state transition model
     print('\tFitting state transition model...')
@@ -401,17 +404,20 @@ def get_initial_conditions(linear_distance_bin_edges,
         1] - linear_distance_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
-        scipy.stats.norm.pdf(linear_distance_bin_centers, 0, linear_distance_bin_size * 2))
+        scipy.stats.norm.pdf(
+            linear_distance_bin_centers, 0, linear_distance_bin_size * 2))
 
     inbound_initial_conditions = normalize_to_probability(
-        (np.max(outbound_initial_conditions) * np.ones(linear_distance_bin_centers.shape)) -
+        (np.max(outbound_initial_conditions) *
+         np.ones(linear_distance_bin_centers.shape)) -
         outbound_initial_conditions)
 
     prior_probability_of_state = 1 / n_states
-    return np.hstack([outbound_initial_conditions,
-                      inbound_initial_conditions,
-                      inbound_initial_conditions,
-                      outbound_initial_conditions]) * prior_probability_of_state
+    return (np.hstack([outbound_initial_conditions,
+                       inbound_initial_conditions,
+                       inbound_initial_conditions,
+                       outbound_initial_conditions]) *
+            prior_probability_of_state)
 
 
 def get_state_transition_matrix(train_position_info,
