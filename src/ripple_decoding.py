@@ -175,7 +175,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
                          mark_smoothing=20):
-    ''' Evaluate the multivate density function of the marks and place
+    '''Evaluate the multivate density function of the marks and place
     field
 
     Parameters
@@ -479,7 +479,7 @@ def get_state_transition_matrix(train_position_info,
                       outbound_state_transitions)
 
 
-def glmfit(spikes, design_matrix, ind):
+def glm_fit(spikes, design_matrix, ind):
     '''Fits the Poisson model to the spikes from a neuron
 
     Parameters
@@ -528,7 +528,7 @@ def get_encoding_model(train_position_info, train_spikes_data,
                'bs(linear_distance, df=10, degree=3)')
     design_matrix = dmatrix(
         formula, train_position_info, return_type='dataframe')
-    fit = [glmfit(spikes, design_matrix, ind)
+    fit = [glm_fit(spikes, design_matrix, ind)
            for ind, spikes in enumerate(train_spikes_data)]
 
     inbound_predict_design_matrix = _predictors_by_trajectory_direction(
@@ -606,7 +606,7 @@ def _predictors_by_trajectory_direction(trajectory_direction,
         [design_matrix.design_info], predictors)[0]
 
 
-def glmval(fitted_model, predict_design_matrix):
+def glm_val(fitted_model, predict_design_matrix):
     '''Predict the model's response given a design matrix
     and the model parameters
     '''
@@ -619,7 +619,7 @@ def glmval(fitted_model, predict_design_matrix):
 def _get_conditional_intensity(fit, predict_design_matrix):
     '''The conditional intensity for each model
     '''
-    return np.vstack([glmval(fitted_model, predict_design_matrix)
+    return np.vstack([glm_val(fitted_model, predict_design_matrix)
                       for fitted_model in fit]).T
 
 
