@@ -12,10 +12,10 @@ import scipy.io
 
 
 def get_data_filename(animal, day, file_type):
-    '''Returns the Matlab file name assuming it is in the Raw Data directory.
-    File type is a string that refers to the various data structure names
-    (DIO, tasks, linpos) Animal is a named tuple. Day is an integer giving
-    the recording session day.
+    '''Returns the Matlab file name assuming it is in the Raw Data
+    directory. File type is a string that refers to the various data
+    structure names (DIO, tasks, linpos) Animal is a named tuple.
+    Day is an integer giving the recording session day.
     '''
     data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
     filename = '{animal.short_name}{file_type}{day:02d}.mat'.format(
@@ -27,8 +27,8 @@ def get_data_filename(animal, day, file_type):
 
 
 def get_epochs(animal, day):
-    '''Returns a list of three-element tuples (animal, day, epoch index) that
-    can access the data structure within each Matlab file. Epoch type
+    '''Returns a list of three-element tuples (animal, day, epoch index)
+    that can access the data structure within each Matlab file. Epoch type
     is the task for that epoch (sleep, run, etc.) and environment is
     the type of maze the animal is in (if any). If no epoch type or
     environment is given, returns all epoch types and environments.
@@ -365,8 +365,9 @@ def make_neuron_dataframe(animals):
 
 def get_interpolated_position_dataframe(epoch_index, animals):
     time = get_trial_time(epoch_index, animals)
-    position = (pd.concat([get_linear_position_structure(epoch_index, animals),
-                           get_position_dataframe(epoch_index, animals)], axis=1)
+    position = (pd.concat(
+        [get_linear_position_structure(epoch_index, animals),
+         get_position_dataframe(epoch_index, animals)], axis=1)
                 .assign(trajectory_direction=_trajectory_direction)
                 .assign(trajectory_turn=_trajectory_turn)
                 .assign(trial_number=_trial_number)
@@ -461,7 +462,8 @@ def get_trial_time(index, animals):
     return lfp_df.index
 
 
-def get_windowed_dataframe(dataframe, segments, window_offset, sampling_frequency):
+def get_windowed_dataframe(dataframe, segments, window_offset,
+                           sampling_frequency):
     segments = iter(segments)
     for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index

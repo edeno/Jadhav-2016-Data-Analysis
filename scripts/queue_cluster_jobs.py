@@ -1,9 +1,10 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import os
-import sys
+'''Script for executing run_by_epoch on the cluster
+'''
 import collections
+import os
 import subprocess
+import sys
+
 sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
 import data_processing
 
@@ -23,7 +24,8 @@ def main():
                'HPc': Animal(directory='HPc_direct', short_name='HPc')
                }
     epoch_info = data_processing.make_epochs_dataframe(animals, days)
-    epoch_index = epoch_info[(epoch_info.type == 'run') & (epoch_info.environment != 'lin')].index
+    epoch_index = epoch_info[(epoch_info.type == 'run') & (
+        epoch_info.environment != 'lin')].index
 
     for epoch in epoch_index:
         print(epoch)

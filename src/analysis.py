@@ -137,8 +137,8 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         area_pairs = itertools.combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            print(
-                '\t\t...{area1} - {area2}'.format(area1=area1, area2=area2))
+            print('\t\t...{area1} - {area2}'.format(
+                area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
                 area1, area2, epoch_index)
@@ -265,7 +265,8 @@ def save_area_pair(coherence_name, covariate, level, area1, area2,
         store.put(hdf_path, save_df)
 
 
-def get_tetrode_pair_from_hdf(coherence_name, covariate, level, tetrode1, tetrode2):
+def get_tetrode_pair_from_hdf(coherence_name, covariate, level,
+                              tetrode1, tetrode2):
     animal, day, epoch = tetrode1[0:3]
     hdf_path = tetrode_pair_hdf_path(
         coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
@@ -273,7 +274,8 @@ def get_tetrode_pair_from_hdf(coherence_name, covariate, level, tetrode1, tetrod
         analysis_file_path(animal, day, epoch), key=hdf_path)
 
 
-def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2, epoch_index):
+def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2,
+                           epoch_index):
     animal, day, epoch = epoch_index
     hdf_path = area_pair_hdf_path(
         coherence_name, covariate, level, area1, area2)
@@ -281,7 +283,8 @@ def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2, epoch
         analysis_file_path(animal, day, epoch), key=hdf_path)
 
 
-def tetrode_pair_hdf_path(coherence_name, covariate, level, tetrode1, tetrode2):
+def tetrode_pair_hdf_path(coherence_name, covariate, level,
+                          tetrode1, tetrode2):
     return '/{coherence_name}/tetrode{tetrode1:04d}_tetrode{tetrode2:04d}/{covariate}/{level}'.format(
         coherence_name=coherence_name, covariate=covariate,
         level=level, tetrode1=tetrode1, tetrode2=tetrode2)
@@ -348,14 +351,16 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name,
 
 
 def get_all_tetrode_pair_info(coherence_name):
-    '''Retrieves all the hdf5 files from the Processed Data directory and returns the tetrode
-    pair info dataframe'''
+    '''Retrieves all the hdf5 files from the Processed Data directory and
+    returns the tetrode pair info dataframe'''
     file_path = os.path.join(os.path.abspath(
         os.path.pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob.glob(file_path)
     hdf_path = '/{coherence_name}/tetrode_pair_info'.format(
         coherence_name=coherence_name)
-    return pd.concat([pd.read_hdf(filename, key=hdf_path) for filename in hdf5_files]).sort_index()
+    return pd.concat(
+        [pd.read_hdf(filename, key=hdf_path)
+         for filename in hdf5_files]).sort_index()
 
 
 def get_all_tetrode_info(coherence_name):

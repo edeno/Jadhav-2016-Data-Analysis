@@ -1,14 +1,16 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import os
-import sys
+'''Exectue set of functions for each epoch
+'''
 import collections
 import datetime
+import os
 import subprocess
+import sys
+
 sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
-import ripple_detection
-import ripple_decoding
 import analysis
+import ripple_decoding
+import ripple_detection
+
 
 sampling_frequency = 1500
 Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
@@ -125,7 +127,7 @@ def main():
         print('#############################################\n')
         print('Git Hash:')
         print(subprocess.run(['git', 'rev-parse', 'HEAD'],
-              stdout=subprocess.PIPE, universal_newlines=True).stdout)
+                             stdout=subprocess.PIPE, universal_newlines=True).stdout)
         epoch_index = (sys.argv[1], int(sys.argv[2]),
                        int(sys.argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)

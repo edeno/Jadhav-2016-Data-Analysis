@@ -62,8 +62,10 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
     ''' Returns a string that identifies the tetrode in a semantic way
     '''
     return ('{brain_area} Tetrode #{tetrode_number}'
-            .format(tetrode_number=tetrode_index_tuple[-1],
-                    brain_area=cur_tetrode_info.loc[tetrode_index_tuple, 'area']))
+            .format(
+                tetrode_number=tetrode_index_tuple[-1],
+                brain_area=cur_tetrode_info.loc[
+                    tetrode_index_tuple, 'area']))
 
 
 def _center_data(x, axis=0):
@@ -73,7 +75,8 @@ def _center_data(x, axis=0):
         return x - np.nanmean(x, axis=axis, keepdims=True)
 
 
-def _get_window_array(data, time_window_start_ind, time_window_end_ind, axis=0):
+def _get_window_array(data, time_window_start_ind, time_window_end_ind,
+                      axis=0):
     '''Returns the data for a given start and end index'''
     slc = [slice(None)] * len(data[0].shape)
     slc[axis] = slice(time_window_start_ind, time_window_end_ind, 1)
@@ -83,22 +86,26 @@ def _get_window_array(data, time_window_start_ind, time_window_end_ind, axis=0):
     return window_array
 
 
-def _make_sliding_window_dataframe(func, data, time_window_duration, time_window_step,
-                                   time_step_length, time_window_length, time, axis,
+def _make_sliding_window_dataframe(func, data, time_window_duration,
+                                   time_window_step, time_step_length,
+                                   time_window_length, time, axis,
                                    **kwargs):
-    ''' Generator function that returns a transformed dataframe (via func) for each sliding
-    time window.
+    ''' Generator function that returns a transformed dataframe (via func)
+    for each sliding time window.
     '''
     time_window_start_ind = 0
     while time_window_start_ind + time_window_length <= data[0].shape[axis]:
         try:
-            time_window_end_ind = time_window_start_ind + time_window_length
+            time_window_end_ind = (time_window_start_ind +
+                                   time_window_length)
             windowed_arrays = _get_window_array(
-                data, time_window_start_ind, time_window_end_ind, axis=axis)
+                data, time_window_start_ind, time_window_end_ind,
+                axis=axis)
 
             yield (func(windowed_arrays, **kwargs)
-                   .assign(time=_get_window_center(time_window_start_ind, time_window_duration,
-                                                   time))
+                   .assign(
+                      time=_get_window_center(
+                        time_window_start_ind, time_window_duration, time))
                    .set_index('time', append=True))
             time_window_start_ind += time_step_length
         except ValueError:
@@ -157,15 +164,20 @@ def multitaper_spectrogram(data,
     ).sort_index()
 
 
-def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_frequency=None,
-                                       time_window_step=None, time_window_duration=None,
+def _set_default_multitaper_parameters(number_of_time_samples=None,
+                                       sampling_frequency=None,
+                                       time_window_step=None,
+                                       time_window_duration=None,
                                        tapers=None, number_of_tapers=None,
-                                       time_halfbandwidth_product=None, pad=None,
-                                       number_of_fft_samples=None, frequencies=None,
-                                       freq_ind=None, desired_frequencies=None):
-    '''Function to help set default multitaper parameters given that some subset of them are
-     unset
-     '''
+                                       time_halfbandwidth_product=None,
+                                       pad=None,
+                                       number_of_fft_samples=None,
+                                       frequencies=None,
+                                       freq_ind=None,
+                                       desired_frequencies=None):
+    '''Function to help set default multitaper parameters given that some
+    subset of them are unset
+    '''
     if tapers is None:
         if number_of_tapers is None:
             number_of_tapers = int(
@@ -182,13 +194,14 @@ def _set_default_multitaper_parameters(number_of_time_samples=None, sampling_fre
         number_of_fft_samples = max(
             2 ** (next_exponent + pad), number_of_time_samples)
     if frequencies is None:
-        frequencies, freq_ind = _get_frequencies(sampling_frequency,
-                                                 number_of_fft_samples,
-                                                 desired_frequencies=desired_frequencies)
+        frequencies, freq_ind = _get_frequencies(
+            sampling_frequency, number_of_fft_samples,
+            desired_frequencies=desired_frequencies)
     return tapers, number_of_fft_samples, frequencies, freq_ind
 
 
-def _get_window_lengths(time_window_duration, sampling_frequency, time_window_step):
+def _get_window_lengths(time_window_duration, sampling_frequency,
+                        time_window_step):
     '''Figures out the number of points per time window and step'''
     time_window_length = int(
         np.fix(time_window_duration * sampling_frequency))
@@ -199,8 +212,8 @@ def _get_window_lengths(time_window_duration, sampling_frequency, time_window_st
 
 
 def _get_unique_time_freq(spectrogram_dataframe):
-    '''Returns the unique time and frequency given a spectrogram dataframe with
-    non-unique time and frequency columns'''
+    '''Returns the unique time and frequency given a spectrogram dataframe
+    with non-unique time and frequency columns'''
     time = np.unique(spectrogram_dataframe.reset_index().time.values)
     half_time_diff = (time[1] - time[0]) / 2
     time = np.append(time - half_time_diff,
@@ -235,7 +248,8 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
         mesh = axis_handle.pcolormesh(time, freq, data2D,
                                       cmap=cmap,
                                       shading='gouraud',
-                                      norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+                                      norm=colors.LogNorm(
+                                        vmin=vmin, vmax=vmax))
 
     axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
         frequency_units=frequency_units))
@@ -246,10 +260,12 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     return mesh
 
 
-def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequencies=None):
-    ''' Returns the frequencies and frequency index. Desired frequencies is a two element
-    tuple that defines the range of frequencies returned. If unset, all frequencies from 0
-    to the Nyquist (sampling_frequency / 2) are returned.
+def _get_frequencies(sampling_frequency, number_of_fft_samples,
+                     desired_frequencies=None):
+    ''' Returns the frequencies and frequency index. Desired frequencies is
+    a two element tuple that defines the range of frequencies returned.
+    If unset, all frequencies from 0 to the Nyquist
+    (sampling_frequency / 2) are returned.
     '''
     if desired_frequencies is None:
         desired_frequencies = [0, sampling_frequency / 2]
@@ -260,10 +276,10 @@ def _get_frequencies(sampling_frequency, number_of_fft_samples, desired_frequenc
     return frequencies[frequency_ind], frequency_ind
 
 
-def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_product,
-                number_of_tapers):
-    ''' Returns the Discrete prolate spheroidal sequences (tapers) for multi-taper
-    spectral analysis (time series length x tapers).
+def _get_tapers(time_series_length, sampling_frequency,
+                time_halfbandwidth_product, number_of_tapers):
+    ''' Returns the Discrete prolate spheroidal sequences (tapers) for
+    multi-taper spectral analysis (time series length x tapers).
     '''
     tapers, _ = tsa.spectral.dpss_windows(time_series_length,
                                           time_halfbandwidth_product,
@@ -271,9 +287,11 @@ def _get_tapers(time_series_length, sampling_frequency, time_halfbandwidth_produ
     return tapers.T * np.sqrt(sampling_frequency)
 
 
-def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
-    ''' Projects the data on the tapers and returns the discrete Fourier transform
-    (frequencies x trials x tapers) with len(frequencies) = number of fft samples
+def _multitaper_fft(tapers, data, number_of_fft_samples,
+                    sampling_frequency):
+    ''' Projects the data on the tapers and returns the discrete Fourier
+    transform (frequencies x trials x tapers) with len(frequencies) =
+    number of fft samples.
     '''
     try:
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
@@ -281,19 +299,21 @@ def _multitaper_fft(tapers, data, number_of_fft_samples, sampling_frequency):
         # There are no trials
         projected_data = data[:, np.newaxis,
                               np.newaxis] * tapers[:, :, np.newaxis]
-    return scipy.fftpack.fft(projected_data, n=number_of_fft_samples, axis=0) / sampling_frequency
+    return (scipy.fftpack.fft(
+        projected_data, n=number_of_fft_samples, axis=0) /
+        sampling_frequency)
 
 
 def _nextpower2(n):
-    """Return the next integer exponent of two greater than the given number.
+    '''Return the next integer exponent of two greater than the given number.
     This is useful for ensuring fast FFT sizes.
-    """
+    '''
     return int(np.ceil(np.log2(n)))
 
 
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
-    '''Returns the average cross-spectrum between two spectra. Averages over the 2nd and 3rd
-    dimension'''
+    '''Returns the average cross-spectrum between two spectra. Averages
+    over the 2nd and 3rd dimension'''
     cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
     return np.nanmean(cross_spectrum, axis=(1, 2)).squeeze()
 
@@ -323,7 +343,8 @@ def multitaper_power_spectral_density(data,
         desired_frequencies=desired_frequencies,
         pad=pad)
     complex_spectrum = _multitaper_fft(
-        tapers, _center_data(data), number_of_fft_samples, sampling_frequency)
+        tapers, _center_data(data), number_of_fft_samples,
+        sampling_frequency)
     psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
                                   complex_spectrum[freq_ind, :, :])
                   )
@@ -333,7 +354,8 @@ def multitaper_power_spectral_density(data,
 
 
 @convert_pandas
-def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_product=3, pad=0,
+def multitaper_coherence(data, sampling_frequency=1000,
+                         time_halfbandwidth_product=3, pad=0,
                          number_of_tapers=None, desired_frequencies=None,
                          tapers=None, frequencies=None, freq_ind=None,
                          number_of_fft_samples=None):
@@ -350,7 +372,8 @@ def multitaper_coherence(data, sampling_frequency=1000, time_halfbandwidth_produ
         desired_frequencies=desired_frequencies,
         pad=pad)
     data = [_center_data(datum) for datum in data]
-    complex_spectra = [_multitaper_fft(tapers, datum, number_of_fft_samples, sampling_frequency)
+    complex_spectra = [_multitaper_fft(
+        tapers, datum, number_of_fft_samples, sampling_frequency)
                        for datum in data]
     cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
                                      complex_spectra[1][freq_ind, :, :])
@@ -437,8 +460,8 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
     return mesh
 
 
-def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
-                          vmin=-np.pi, vmax=np.pi):
+def plot_group_delayogram(coherogram_dataframe, axis_handle=None,
+                          cmap='RdBu', vmin=-np.pi, vmax=np.pi):
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
@@ -454,19 +477,20 @@ def plot_group_delayogram(coherogram_dataframe, axis_handle=None, cmap='RdBu',
 
 
 def coherence_title(tetrode_indices, cur_tetrode_info):
-    return '{tetrode1} - {tetrode2}' \
-        .format(tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
-                tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
+    return '{tetrode1} - {tetrode2}'.format(
+        tetrode1=tetrode_title(tetrode_indices[0], cur_tetrode_info),
+        tetrode2=tetrode_title(tetrode_indices[1], cur_tetrode_info))
 
 
 def group_delay(coherence_dataframe):
     slope, _, correlation, _, _ = scipy.stats.linregress(
         coherence_dataframe.reset_index('frequency').frequency,
         np.unwrap(coherence_dataframe.coherence_phase))
-    return pd.DataFrame({'correlation': correlation,
-                         'number_of_points': len(coherence_dataframe.coherence_phase),
-                         'slope': slope,
-                         'delay': slope / 2 * np.pi}, index=[0])
+    return pd.DataFrame(
+        {'correlation': correlation,
+         'number_of_points': len(coherence_dataframe.coherence_phase),
+         'slope': slope,
+         'delay': slope / 2 * np.pi}, index=[0])
 
 
 def group_delay_over_time(coherogram_dataframe):
@@ -478,12 +502,15 @@ def group_delay_over_time(coherogram_dataframe):
 
 
 def power_change(baseline_power, power_of_interest):
-    '''Normalizes a coherence or power dataframe by dividing it by a baseline dataframe.
-    The baseline dataframe is assumed to only have a frequency index.'''
+    '''Normalizes a coherence or power dataframe by dividing it by a
+    baseline dataframe. The baseline dataframe is assumed to only have a
+    frequency index.'''
     baseline_power_dropped = baseline_power.drop(
-        ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
+        ['coherence_magnitude', 'coherence_phase'],
+        axis=1, errors='ignore')
     power_of_interest_dropped = power_of_interest.drop(
-        ['coherence_magnitude', 'coherence_phase'], axis=1, errors='ignore')
+        ['coherence_magnitude', 'coherence_phase'],
+        axis=1, errors='ignore')
     return power_of_interest_dropped / baseline_power_dropped
 
 
@@ -608,17 +635,21 @@ def multitaper_canonical_coherogram(data,
     ))).sort_index()
 
 
-def _get_complex_spectra(lfps, tapers, number_of_fft_samples, sampling_frequency):
-    ''' Returns a numpy array of complex spectra (electrode x frequencies x (trials x tapers))
-    for input into the canonical coherence
+def _get_complex_spectra(lfps, tapers, number_of_fft_samples,
+                         sampling_frequency):
+    ''' Returns a numpy array of complex spectra
+    (electrode x frequencies x (trials x tapers)) for input into the
+    canonical coherence
     '''
     centered_lfps = _center_data(lfps, axis=1)
-    complex_spectra = [_multitaper_fft(tapers, centered_lfps[lfp_ind, ...].squeeze(),
-                                       number_of_fft_samples, sampling_frequency)
+    complex_spectra = [_multitaper_fft(
+        tapers, centered_lfps[lfp_ind, ...].squeeze(),
+        number_of_fft_samples, sampling_frequency)
                        for lfp_ind in np.arange(centered_lfps.shape[0])]
     complex_spectra = np.concatenate(
         [spectra[np.newaxis, ...] for spectra in complex_spectra])
-    return complex_spectra.reshape((complex_spectra.shape[0], complex_spectra.shape[1], -1))
+    return complex_spectra.reshape(
+        (complex_spectra.shape[0], complex_spectra.shape[1], -1))
 
 
 def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
@@ -631,7 +662,8 @@ def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
     return s[0] ** 2
 
 
-def _match_frequency_resolution(time_halfbandwidth_product, time_window_duration, baseline_window):
+def _match_frequency_resolution(time_halfbandwidth_product,
+                                time_window_duration, baseline_window):
     half_bandwidth = time_halfbandwidth_product / time_window_duration
     baseline_time_halfbandwidth_product = half_bandwidth * \
         (baseline_window[1] - baseline_window[0])
@@ -648,7 +680,8 @@ def power_and_coherence_change(dataframe1, dataframe2):
             .sort_index())
 
 
-def frequency_resolution(time_window_duration=None, time_halfbandwidth_product=None):
+def frequency_resolution(time_window_duration=None,
+                         time_halfbandwidth_product=None):
     return 2 * time_halfbandwidth_product / time_window_duration
 
 
