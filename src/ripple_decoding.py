@@ -144,7 +144,8 @@ def _mark_space_estimator(test_marks, training_marks=None,
     Parameters
     ----------
     test_marks : array_like, shape=(n_signals, n_marks)
-    training_marks : array_like, shape=(n_signals, n_marks, n_training_spikes)
+    training_marks : array_like, shape=(n_signals, n_marks,
+                                        n_training_spikes)
     mark_smoothing : float, optional
 
     Returns
@@ -167,7 +168,8 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     Parameters
     ----------
     marks : array_like, shape=(n_signals, n_marks)
-    place_field_estimator : array_like, shape=(n_signals, n_parameters, n_training_spikes)
+    place_field_estimator : array_like, shape=(n_signals, n_parameters,
+                                               n_training_spikes)
     place_occupancy : array_like, shape=(n_signals, n_parameters)
 
     Returns
@@ -237,7 +239,9 @@ def empirical_movement_transition_matrix(linear_position,
 
     Returns
     -------
-    empirical_movement_transition_matrix : array_like, shape=(n_bin_edges-1, n_bin_edges-1)
+    empirical_movement_transition_matrix : array_like,
+                                           shape=(n_bin_edges-1,
+                                           n_bin_edges-1)
 
     '''
     movement_bins, _, _ = np.histogram2d(linear_position[1:],
@@ -315,9 +319,10 @@ def decode_ripple(epoch_index, animals, ripple_times,
                                'tetrode_number', 'area'],
                            how='right', right_index=True).set_index(
         neuron_info.index)
-    neuron_info = neuron_info[neuron_info.area.isin(['CA1', 'iCA1']) &
-                              (neuron_info.numspikes > 0) &
-                              ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
+    neuron_info = neuron_info[
+        neuron_info.area.isin(['CA1', 'iCA1']) &
+        (neuron_info.numspikes > 0) &
+        ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
     print(neuron_info.loc[:, ['area', 'numspikes']])
 
     # Train on when the rat is moving
@@ -500,10 +505,13 @@ def get_encoding_model(train_position_info, train_spikes_data,
 
     Returns
     -------
-    conditional_intensity_by_state : array_like, shape=(n_signals, n_parameters*n_states)
+    conditional_intensity_by_state : array_like, shape=(n_signals,
+                                                        n_parameters *
+                                                        n_states)
 
     '''
-    formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
+    formula = ('1 + trajectory_direction * '
+               'bs(linear_distance, df=10, degree=3)')
     design_matrix = dmatrix(
         formula, train_position_info, return_type='dataframe')
     fit = [glmfit(spikes, design_matrix, ind)
