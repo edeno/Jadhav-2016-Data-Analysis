@@ -25,8 +25,8 @@ import data_processing
 def predict_state(data, initial_conditions=None, state_transition=None,
                   likelihood_function=None, likelihood_kwargs={},
                   debug=False):
-    '''Adaptive filter to iteratively calculate the
-    posterior probability of a state variable
+    '''Adaptive filter to iteratively calculate the posterior probability
+    of a state variable
 
     Parameters
     ----------
@@ -70,23 +70,22 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
 
 def _update_posterior(prior, likelihood):
-    '''The posterior density given the prior state
-    weighted by the observed instantaneous likelihood
+    '''The posterior density given the prior state weighted by the
+    observed instantaneous likelihood
     '''
     return normalize_to_probability(prior * likelihood)
 
 
 def normalize_to_probability(distribution):
-    '''Ensure the distribution integrates to 1
-    so that it is a probability distribution
+    '''Ensure the distribution integrates to 1 so that it is a probability
+    distribution
     '''
     return distribution / np.sum(distribution.flatten())
 
 
 def _get_prior(posterior, state_transition):
-    '''The prior given the current posterior
-    density and a transition matrix indicating the
-    state at the next time step.
+    '''The prior given the current posterior density and a transition
+    matrix indicating the state at the next time step.
     '''
     return np.dot(state_transition, posterior)
 
@@ -258,8 +257,8 @@ def _normalize_column_probability(x):
 
 
 def _fix_zero_bins(movement_bins):
-    '''If there is no data observed for a column, set everything to 1
-    so that it will have equal probability
+    '''If there is no data observed for a column, set everything to 1 so
+    that it will have equal probability
     '''
     is_zero_column = np.sum(movement_bins, axis=0) == 0
     movement_bins[:, is_zero_column] = 1
@@ -536,18 +535,20 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     '''
     n_states = len(state_names)
     n_ripples = len(ripple_times)
-    decision_state_probability = [_compute_decision_state_probability(density, n_states)
-                                  for density in posterior_density]
+    decision_state_probability = [
+        _compute_decision_state_probability(density, n_states)
+        for density in posterior_density]
 
-    ripple_info = pd.DataFrame([_compute_max_state(probability, state_names)
-                                for probability in decision_state_probability],
-                               columns=['ripple_trajectory', 'ripple_direction',
-                                        'ripple_state_probability'],
-                               index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
+    ripple_info = pd.DataFrame(
+        [_compute_max_state(probability, state_names)
+         for probability in decision_state_probability],
+        columns=['ripple_trajectory', 'ripple_direction',
+                 'ripple_state_probability'],
+        index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
     ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
     ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
-    ripple_info['number_of_unique_neurons_spiking'] = [_num_unique_neurons_spiking(spikes)
-                                                       for spikes in test_spikes]
+    ripple_info['number_of_unique_neurons_spiking'] = [
+        _num_unique_neurons_spiking(spikes) for spikes in test_spikes]
     ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
                                        for spikes in test_spikes]
     ripple_info['session_time'] = _ripple_session_time(
@@ -555,7 +556,8 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
                                .map({True: 'isSpike', False: 'noSpike'}))
 
-    return ripple_info, decision_state_probability, posterior_density, state_names
+    return (ripple_info, decision_state_probability,
+            posterior_density, state_names)
 
 
 def _predictors_by_trajectory_direction(trajectory_direction,
@@ -616,12 +618,12 @@ def _num_total_spikes(spikes):
 
 
 def _ripple_session_time(ripple_times, session_time):
-    '''Categorize the ripples by the time in the session
-    in which they occur.
+    '''Categorize the ripples by the time in the session in which they
+    occur.
 
-    This function trichotimizes the session time into early
-    session, middle session, and late session and classifies
-    the ripple by the most prevelant category.
+    This function trichotimizes the session time into early session,
+    middle session, and late session and classifies the ripple by the most
+    prevelant category.
     '''
     session_time_categories = pd.Series(
         pd.cut(
