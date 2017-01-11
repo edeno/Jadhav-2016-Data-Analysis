@@ -2,13 +2,13 @@
 
 '''
 
-import itertools
-import os
 import sys
+from itertools import combinations
+from os.path import abspath, join, pardir
 
 import numpy as np
 import pandas as pd
-import scipy.io
+from scipy.io import loadmat
 
 
 def get_data_filename(animal, day, file_type):
@@ -17,13 +17,13 @@ def get_data_filename(animal, day, file_type):
     structure names (DIO, tasks, linpos) Animal is a named tuple.
     Day is an integer giving the recording session day.
     '''
-    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}{file_type}{day:02d}.mat'.format(
         data_dir=data_dir,
         animal=animal,
         file_type=file_type,
         day=day)
-    return os.path.join(data_dir, animal.directory, filename)
+    return join(data_dir, animal.directory, filename)
 
 
 def get_epochs(animal, day):
@@ -35,7 +35,7 @@ def get_epochs(animal, day):
     Days can be either a single integer day or a list of days.
     '''
     try:
-        task_file = scipy.io.loadmat(
+        task_file = loadmat(
             get_data_filename(animal, day, 'task'))
         return [(animal, day, ind + 1)
                 for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
@@ -49,7 +49,7 @@ def get_data_structure(animal, day, file_type, variable):
     to the animal, day, file_type, epoch specified.
     '''
     epoch = get_epochs(animal, day)
-    file = scipy.io.loadmat(get_data_filename(animal, day, file_type))
+    file = loadmat(get_data_filename(animal, day, file_type))
     try:
         return [file[variable][0, day - 1][0, ind - 1]
                 for _, day, ind in epoch]
@@ -126,7 +126,7 @@ def get_LFP_filename(tetrode_tuple, animals):
     ''' Given an index tuple (animal, day, epoch, tetrode_number) and the
     animals dictionary return a file name for the tetrode file LFP
     '''
-    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    data_dir = join(abspath(pardir), 'Raw-Data')
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
     filename = '{animal.short_name}eeg{day:02d}-{epoch}-{tetrode_number:02d}.mat'.format(
         data_dir=data_dir,
@@ -135,7 +135,7 @@ def get_LFP_filename(tetrode_tuple, animals):
         epoch=epoch_ind,
         tetrode_number=tetrode_number
     )
-    return os.path.join(
+    return join(
         data_dir, animals[animal].directory, 'EEG', filename)
 
 
@@ -176,9 +176,9 @@ def get_tetrode_info(animal):
     '''Returns the Matlab tetrodeinfo file name assuming it is in the
     Raw Data directory.
     '''
-    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}tetinfo.mat'.format(animal=animal)
-    return os.path.join(data_dir, animal.directory, filename)
+    return join(data_dir, animal.directory, filename)
 
 
 def _convert_to_dict(struct_array):
@@ -193,7 +193,7 @@ def get_LFP_dataframe(tetrode_index, animals):
     ''' Given a tetrode index tuple and the animals dictionary,
     return the LFP data and start time
     '''
-    lfp_file = scipy.io.loadmat(get_LFP_filename(tetrode_index, animals))
+    lfp_file = loadmat(get_LFP_filename(tetrode_index, animals))
     lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
     lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0][0],
                              lfp_data['data'][0, 0].size,
@@ -217,9 +217,9 @@ def get_neuron_info(animal):
     '''Returns the Matlab cellinfo file name assuming it is in the Raw Data
     directory.
     '''
-    data_dir = os.path.join(os.path.abspath(os.path.pardir), 'Raw-Data')
+    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}cellinfo.mat'.format(animal=animal)
-    return os.path.join(data_dir, animal.directory, filename)
+    return join(data_dir, animal.directory, filename)
 
 
 def _get_neuron_id(dataframe):
@@ -308,7 +308,7 @@ def make_epochs_dataframe(animals, days):
 def make_tetrode_dataframe(animals):
     tetrode_file_names = [(get_tetrode_info(animals[animal]), animal)
                           for animal in animals]
-    tetrode_data = [(scipy.io.loadmat(file_name[0]), file_name[1])
+    tetrode_data = [(loadmat(file_name[0]), file_name[1])
                     for file_name in tetrode_file_names]
 
     # Make a dictionary with (animal, day, epoch_ind) as the keys
@@ -336,11 +336,11 @@ def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
 
 def get_spikes_dataframe(neuron_index, animals):
     animal, day, epoch, tetrode_number, neuron_number = neuron_index
-    neuron_file = scipy.io.loadmat(
+    neuron_file = loadmat(
         get_data_filename(animals[animal], day, 'spikes'))
     try:
-        neuron_data = neuron_file['spikes'][0, -1][0, epoch-1][
-            0, tetrode_number-1][0, neuron_number-1][0]['data'][0][:, 0]
+        neuron_data = neuron_file['spikes'][0, -1][0, epoch - 1][
+            0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][:, 0]
         data_dict = {'time': neuron_data,
                      'is_spike': 1
                      }
@@ -353,7 +353,7 @@ def get_spikes_dataframe(neuron_index, animals):
 def make_neuron_dataframe(animals):
     neuron_file_names = [(get_neuron_info(animals[animal]), animal)
                          for animal in animals]
-    neuron_data = [(scipy.io.loadmat(file_name[0]), file_name[1])
+    neuron_data = [(loadmat(file_name[0]), file_name[1])
                    for file_name in neuron_file_names]
     return {(animal, day_ind + 1, epoch_ind + 1):
             convert_neuron_epoch_to_dataframe(
@@ -369,11 +369,11 @@ def get_interpolated_position_dataframe(epoch_index, animals):
     position = (pd.concat(
         [get_linear_position_structure(epoch_index, animals),
          get_position_dataframe(epoch_index, animals)], axis=1)
-                .assign(trajectory_direction=_trajectory_direction)
-                .assign(trajectory_turn=_trajectory_turn)
-                .assign(trial_number=_trial_number)
-                .assign(linear_position=_linear_position)
-                )
+        .assign(trajectory_direction=_trajectory_direction)
+        .assign(trajectory_turn=_trajectory_turn)
+        .assign(trial_number=_trial_number)
+        .assign(linear_position=_linear_position)
+    )
     categorical_columns = ['trajectory_category_ind',
                            'trajectory_turn', 'trajectory_direction',
                            'trial_number']
@@ -509,7 +509,7 @@ def reshape_to_segments(dataframe, segments, window_offset=None,
 
 def get_tetrode_pair_info(tetrode_info):
     pair_index = pd.MultiIndex.from_tuples(
-        list(itertools.combinations(tetrode_info.index, 2)),
+        list(combinations(tetrode_info.index, 2)),
         names=['tetrode1', 'tetrode2'])
     no_rename = {'animal_1': 'animal',
                  'day_1': 'day',
@@ -531,7 +531,7 @@ def get_tetrode_pair_info(tetrode_info):
 
 
 def get_area_pair_info(tetrode_info, epoch_index):
-    area_pairs = area_pairs = list(itertools.combinations(
+    area_pairs = area_pairs = list(combinations(
         sorted(tetrode_info.area.unique()), 2))
     return (pd.DataFrame(area_pairs, columns=['area1', 'area2'])
             .assign(animal=epoch_index[0],

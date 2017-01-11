@@ -4,13 +4,14 @@ import os
 
 import numpy as np
 import pandas as pd
-import scipy.fftpack
-import scipy.io
-import scipy.ndimage
-import scipy.signal
+from scipy.io import loadmat
+from scipy.ndimage.filters import gaussian_filter1d
+from scipy.signal import filtfilt, hilbert
 
-import data_processing
-import spectral
+from data_processing import (get_data_structure,
+                             get_interpolated_position_dataframe,
+                             get_LFP_dataframe, make_tetrode_dataframe)
+from spectral import multitaper_spectrogram
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):
@@ -20,7 +21,7 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     data structure and calculated according to the Frank Lab criterion.
     '''
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    ripples_data = data_processing.get_data_structure(
+    ripples_data = get_data_structure(
         animals[animal], day, 'ripples', 'ripples')
     return zip(
         ripples_data[epoch_ind - 1][0][tetrode_number - 1]['starttime'][0, 0].flatten(),
@@ -32,7 +33,7 @@ def get_computed_consensus_ripple_times(epoch_index, animals):
     (start_time, end_time).
     '''
     animal, day, epoch_ind = epoch_index
-    ripples_data = data_processing.get_data_structure(
+    ripples_data = get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
 
@@ -45,7 +46,7 @@ def get_computed_ripples_dataframe(tetrode_index, animals):
     ripple_times = _get_computed_ripple_times(tetrode_index, animals)
     [(ripple_ind + 1, start_time, end_time) for ripple_ind, (start_time, end_time)
      in enumerate(ripple_times)]
-    lfp_dataframe = data_processing.get_LFP_dataframe(
+    lfp_dataframe = get_LFP_dataframe(
         tetrode_index, animals)
     return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
             .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
@@ -144,13 +145,13 @@ def get_epoch_ripples(epoch_index, animals, sampling_frequency,
     '''
     print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(
         *epoch_index))
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     # Get cell-layer CA1, iCA1 LFPs
     area_critera = (tetrode_info.area.isin(['CA1', 'iCA1']) &
                     tetrode_info.descrip.isin(['riptet']))
     tetrode_indices = tetrode_info[area_critera].index.tolist()
-    CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
+    CA1_lfps = [get_LFP_dataframe(tetrode_index, animals)
                 for tetrode_index in tetrode_indices]
     candidate_ripple_times = ripple_detection_function(
         CA1_lfps, **ripple_detection_kwargs)
@@ -162,7 +163,7 @@ def _exclude_movement_during_ripples(ripple_times, epoch_index, animals, speed_t
     '''Excludes ripples where the head direction speed is greater than the speed threshold.
     Only looks at the start of the ripple to determine head movement speed for the ripple.
     '''
-    position_df = data_processing.get_interpolated_position_dataframe(
+    position_df = get_interpolated_position_dataframe(
         epoch_index, animals)
     return [(ripple_start, ripple_end) for ripple_start, ripple_end in ripple_times
             if position_df.loc[ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
@@ -288,7 +289,7 @@ def _get_ripple_power_multitaper(lfp, sampling_frequency,
     ripple_power : Pandas series
 
     '''
-    return spectral.multitaper_spectrogram(
+    return multitaper_spectrogram(
         lfp,
         time_halfbandwidth_product=time_halfbandwidth_product,
         time_window_duration=time_window_duration,
@@ -302,7 +303,7 @@ def _ripple_bandpass_filter(data):
     '''Returns a bandpass filtered signal between 150-250 Hz using the Frank lab filter
     '''
     filter_numerator, filter_denominator = _get_ripplefilter_kernel()
-    return scipy.signal.filtfilt(filter_numerator, filter_denominator, data, axis=0)
+    return filtfilt(filter_numerator, filter_denominator, data, axis=0)
 
 
 def _get_ripplefilter_kernel():
@@ -381,7 +382,7 @@ def _extend_segment(segments_to_extend, containing_segments):
 def _get_envelope(data, axis=0):
     '''Extracts the instantaneous amplitude (envelope) of an analytic signal
     using the Hilbert transform'''
-    return np.abs(scipy.signal.hilbert(data, axis=axis))
+    return np.abs(hilbert(data, axis=axis))
 
 
 def _smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
@@ -404,7 +405,7 @@ def _smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
     smoothed_data : array_like
 
     '''
-    return scipy.ndimage.filters.gaussian_filter1d(
+    return gaussian_filter1d(
         data, sigma * sampling_frequency, truncate=truncate, axis=axis)
 
 

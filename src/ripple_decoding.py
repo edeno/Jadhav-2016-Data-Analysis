@@ -13,10 +13,10 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import patsy
-import scipy.linalg
-import scipy.ndimage.filters
-import scipy.stats
+from patsy import dmatrix, build_design_matrices
+from scipy.linalg import block_diag
+from scipy.ndimage.filters import gaussian_filter
+from scipy.stats import norm
 import statsmodels.api as sm
 
 import data_processing
@@ -156,9 +156,9 @@ def _mark_space_estimator(test_marks, training_marks=None,
 
     '''
     return np.nanprod(
-        scipy.stats.norm.pdf(np.resize(test_marks, training_marks.shape),
-                             loc=training_marks,
-                             scale=mark_smoothing),
+        norm.pdf(np.resize(test_marks, training_marks.shape),
+                 loc=training_marks,
+                 scale=mark_smoothing),
         axis=1)
 
 
@@ -243,7 +243,7 @@ def empirical_movement_transition_matrix(linear_position,
                                          normed=False)
     movement_bins_probability = _normalize_column_probability(
         _fix_zero_bins(movement_bins))
-    smoothed_movement_bins_probability = scipy.ndimage.filters.gaussian_filter(
+    smoothed_movement_bins_probability = gaussian_filter(
         movement_bins_probability, sigma=0.5)
     return _normalize_column_probability(
         np.linalg.matrix_power(
@@ -404,7 +404,7 @@ def get_initial_conditions(linear_distance_bin_edges,
         1] - linear_distance_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
-        scipy.stats.norm.pdf(
+        norm.pdf(
             linear_distance_bin_centers, 0, linear_distance_bin_size * 2))
 
     inbound_initial_conditions = normalize_to_probability(
@@ -449,10 +449,10 @@ def get_state_transition_matrix(train_position_info,
             .linear_distance.values),
         linear_distance_bin_edges)
 
-    return scipy.linalg.block_diag(outbound_state_transitions,
-                                   inbound_state_transitions,
-                                   inbound_state_transitions,
-                                   outbound_state_transitions)
+    return block_diag(outbound_state_transitions,
+                      inbound_state_transitions,
+                      inbound_state_transitions,
+                      outbound_state_transitions)
 
 
 def glmfit(spikes, design_matrix, ind):
@@ -500,7 +500,7 @@ def get_encoding_model(train_position_info, train_spikes_data,
 
     '''
     formula = '1 + trajectory_direction * bs(linear_distance, df=10, degree=3)'
-    design_matrix = patsy.dmatrix(
+    design_matrix = dmatrix(
         formula, train_position_info, return_type='dataframe')
     fit = [glmfit(spikes, design_matrix, ind)
            for ind, spikes in enumerate(train_spikes_data)]
@@ -576,7 +576,7 @@ def _predictors_by_trajectory_direction(trajectory_direction,
     predictors = {'linear_distance': linear_distance_bin_centers,
                   'trajectory_direction': [trajectory_direction] *
                   len(linear_distance_bin_centers)}
-    return patsy.build_design_matrices(
+    return build_design_matrices(
         [design_matrix.design_info], predictors)[0]
 
 

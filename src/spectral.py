@@ -6,27 +6,25 @@
 - Parametric Spectral Granger
 
 '''
-import functools
-import inspect
-import warnings
+from functools import wraps
+from inspect import signature
+from warnings import catch_warnings, simplefilter
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.fftpack
-import scipy.io
-import scipy.signal
-import scipy.stats
+from matplotlib.colors import LogNorm
+from scipy.fftpack import fft
+from scipy.stats import linregress
 
-import data_processing
-import nitime.algorithms as tsa
+from data_processing import reshape_to_segments
+from nitime.algorithms.spectral import dpss_windows
 
 
 def convert_pandas(func):
-    is_time = 'time' in inspect.signature(func).parameters.keys()
+    is_time = 'time' in signature(func).parameters.keys()
 
-    @functools.wraps(func)
+    @wraps(func)
     def wrapper(data, *args, **kwargs):
         if isinstance(data, pd.DataFrame):
             if is_time:
@@ -72,8 +70,8 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
 
 def _center_data(x, axis=0):
     '''Returns the mean-centered data array along the first axis'''
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
+    with catch_warnings():
+        simplefilter("ignore", category=RuntimeWarning)
         return x - np.nanmean(x, axis=axis, keepdims=True)
 
 
@@ -251,8 +249,7 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
         mesh = axis_handle.pcolormesh(time, freq, data2D,
                                       cmap=cmap,
                                       shading='gouraud',
-                                      norm=colors.LogNorm(
-                                          vmin=vmin, vmax=vmax))
+                                      norm=LogNorm(vmin=vmin, vmax=vmax))
 
     axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
         frequency_units=frequency_units))
@@ -284,9 +281,8 @@ def _get_tapers(time_series_length, sampling_frequency,
     ''' Returns the Discrete prolate spheroidal sequences (tapers) for
     multi-taper spectral analysis (time series length x tapers).
     '''
-    tapers, _ = tsa.spectral.dpss_windows(time_series_length,
-                                          time_halfbandwidth_product,
-                                          number_of_tapers)
+    tapers, _ = dpss_windows(
+        time_series_length, time_halfbandwidth_product, number_of_tapers)
     return tapers.T * np.sqrt(sampling_frequency)
 
 
@@ -302,9 +298,8 @@ def _multitaper_fft(tapers, data, number_of_fft_samples,
         # There are no trials
         projected_data = data[:, np.newaxis,
                               np.newaxis] * tapers[:, :, np.newaxis]
-    return (scipy.fftpack.fft(
-        projected_data, n=number_of_fft_samples, axis=0) /
-        sampling_frequency)
+    return (fft(projected_data, n=number_of_fft_samples, axis=0) /
+            sampling_frequency)
 
 
 def _nextpower2(n):
@@ -489,7 +484,7 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
 
 
 def group_delay(coherence_dataframe):
-    slope, _, correlation, _, _ = scipy.stats.linregress(
+    slope, _, correlation, _, _ = linregress(
         coherence_dataframe.reset_index('frequency').frequency,
         np.unwrap(coherence_dataframe.coherence_phase))
     return pd.DataFrame(
@@ -540,11 +535,11 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
     ''''''
     baseline_time_halfbandwidth_product = _match_frequency_resolution(
         time_halfbandwidth_product, time_window_duration, baseline_window)
-    baseline_lfp_segments = [data_processing.reshape_to_segments(
+    baseline_lfp_segments = [reshape_to_segments(
         lfp, times_of_interest, window_offset=baseline_window,
         concat_axis=1, sampling_frequency=sampling_frequency)
         for lfp in lfps]
-    time_of_interest_lfp_segments = [data_processing.reshape_to_segments(
+    time_of_interest_lfp_segments = [reshape_to_segments(
         lfp, times_of_interest, window_offset=window_of_interest,
         concat_axis=1, sampling_frequency=sampling_frequency)
         for lfp in lfps]
