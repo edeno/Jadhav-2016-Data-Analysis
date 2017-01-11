@@ -105,7 +105,7 @@ def poisson_likelihood(is_spike, conditional_intensity=None, time_bin_size=1):
 
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
-    return (conditional_intensity ** is_spike) * probability_no_spike
+    return (conditional_intensity ** is_spike[:, np.newaxis]) * probability_no_spike
 
 
 def poisson_mark_likelihood(data, joint_mark_intensity=None,
