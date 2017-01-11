@@ -1,15 +1,16 @@
 '''Finding sharp-wave ripple events (150-250 Hz) from local field potentials'''
 
 import os
-import scipy.io
-import scipy.fftpack
-import scipy.signal
-import scipy.ndimage
-import scipy.io
+
 import numpy as np
 import pandas as pd
-import spectral
+import scipy.fftpack
+import scipy.io
+import scipy.ndimage
+import scipy.signal
+
 import data_processing
+import spectral
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):
@@ -43,7 +44,8 @@ def get_computed_ripples_dataframe(tetrode_index, animals):
     ripple_times = _get_computed_ripple_times(tetrode_index, animals)
     [(ripple_ind + 1, start_time, end_time) for ripple_ind, (start_time, end_time)
      in enumerate(ripple_times)]
-    lfp_dataframe = data_processing.get_LFP_dataframe(tetrode_index, animals)
+    lfp_dataframe = data_processing.get_LFP_dataframe(
+        tetrode_index, animals)
     return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
             .assign(ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
 
@@ -139,15 +141,18 @@ def get_epoch_ripples(epoch_index, animals, sampling_frequency,
     are computed via the ripple detection function and then filtered to exclude ripples where the
     animal was still moving.
     '''
-    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(*epoch_index))
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[epoch_index]
+    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(
+        *epoch_index))
+    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+        epoch_index]
     # Get cell-layer CA1, iCA1 LFPs
     area_critera = (tetrode_info.area.isin(['CA1', 'iCA1']) &
                     tetrode_info.descrip.isin(['riptet']))
     tetrode_indices = tetrode_info[area_critera].index.tolist()
     CA1_lfps = [data_processing.get_LFP_dataframe(tetrode_index, animals)
                 for tetrode_index in tetrode_indices]
-    candidate_ripple_times = ripple_detection_function(CA1_lfps, **ripple_detection_kwargs)
+    candidate_ripple_times = ripple_detection_function(
+        CA1_lfps, **ripple_detection_kwargs)
     return _exclude_movement_during_ripples(candidate_ripple_times, epoch_index,
                                             animals, speed_threshold)
 
@@ -156,7 +161,8 @@ def _exclude_movement_during_ripples(ripple_times, epoch_index, animals, speed_t
     '''Excludes ripples where the head direction speed is greater than the speed threshold.
     Only looks at the start of the ripple to determine head movement speed for the ripple.
     '''
-    position_df = data_processing.get_interpolated_position_dataframe(epoch_index, animals)
+    position_df = data_processing.get_interpolated_position_dataframe(
+        epoch_index, animals)
     return [(ripple_start, ripple_end) for ripple_start, ripple_end in ripple_times
             if position_df.loc[ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
 
@@ -166,7 +172,7 @@ def _get_smoothed_envelope(lfp, sigma, sampling_frequency):
     smoothed envelope of the filtered signal
     '''
     return pd.Series(_smooth(_get_envelope(_ripple_bandpass_filter(lfp.values.flatten())),
-                     sigma, sampling_frequency), index=lfp.index)
+                             sigma, sampling_frequency), index=lfp.index)
 
 
 def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False, minimum_duration=0.015,
@@ -200,13 +206,15 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False, minimum_durat
     .. [1] Kay, K., Sosa, M., Chung, J.E., Karlsson, M.P., Larkin, M.C., and Frank, L.M. (2016).
     A hippocampal network for spatial coding during immobility and sleep.
     Nature 531, 185–190.
+
     '''
     combined_lfps = np.sum(pd.concat(filtered_lfps, axis=1) ** 2, axis=1)
 
     # Don't need to smooth if using multitaper method
     if not is_multitaper:
         smooth_combined_lfps = pd.Series(
-            _smooth(combined_lfps.values.flatten(), sigma, sampling_frequency),
+            _smooth(combined_lfps.values.flatten(),
+                    sigma, sampling_frequency),
             index=combined_lfps.index)
     else:
         smooth_combined_lfps = combined_lfps
@@ -245,6 +253,7 @@ def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
     .. [1] Karlsson, M.P., and Frank, L.M. (2009).
     Awake replay of remote experiences in the hippocampus.
     Nature Neuroscience 12, 913–918.
+
     '''
     thresholded_lfps = [_threshold_by_zscore(lfp, zscore_threshold=zscore_threshold)
                         for lfp in filtered_lfps]
@@ -276,6 +285,7 @@ def _get_ripple_power_multitaper(lfp, sampling_frequency,
     Returns
     -------
     ripple_power : Pandas series
+
     '''
     return spectral.multitaper_spectrogram(
         lfp,
@@ -322,6 +332,7 @@ def _extend_threshold_to_mean(is_above_mean, is_above_threshold, minimum_duratio
     -------
     extended_segments : list of 2-element tuples
         Elements correspond to the start and end time of segments
+
     '''
     above_mean_segments = segment_boolean_series(is_above_mean,
                                                  minimum_duration=minimum_duration)
@@ -359,6 +370,7 @@ def _extend_segment(segments_to_extend, containing_segments):
     Returns
     -------
     extended_segments : list of 2-element tuples
+
     '''
     segments = [_find_containing_interval(containing_segments, segment)
                 for segment in segments_to_extend]
@@ -389,6 +401,7 @@ def _smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
     Returns
     -------
     smoothed_data : array_like
+
     '''
     return scipy.ndimage.filters.gaussian_filter1d(
         data, sigma * sampling_frequency, truncate=truncate, axis=axis)
@@ -411,6 +424,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
         The other column is an indicator function of zscored data
         where 1 indicates the z-score is above the threshold parameter and
         0 indicates the z-score is below the threshold parameter.
+
     '''
     zscored_data = _zscore(data).values.flatten()
     return pd.DataFrame({'is_above_threshold': zscored_data >= zscore_threshold,
@@ -445,12 +459,14 @@ def _merge_ranges(ranges):
     References
     ----------
     .. [1] http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
+
     """
     ranges = iter(sorted(ranges))
     current_start, current_stop = next(ranges)
     for start, stop in ranges:
         if start > current_stop:
-            # Gap between segments: output current segment and start a new one.
+            # Gap between segments: output current segment and start a new
+            # one.
             yield current_start, current_stop
             current_start, current_stop = start, stop
         else:
