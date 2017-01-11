@@ -9,16 +9,18 @@
 import functools
 import inspect
 import warnings
-import scipy.io
+
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import scipy.fftpack
+import scipy.io
 import scipy.signal
 import scipy.stats
-import numpy as np
-import nitime.algorithms as tsa
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import pandas as pd
+
 import data_processing
+import nitime.algorithms as tsa
 
 
 def convert_pandas(func):
@@ -104,8 +106,8 @@ def _make_sliding_window_dataframe(func, data, time_window_duration,
 
             yield (func(windowed_arrays, **kwargs)
                    .assign(
-                      time=_get_window_center(
-                        time_window_start_ind, time_window_duration, time))
+                time=_get_window_center(
+                    time_window_start_ind, time_window_duration, time))
                    .set_index('time', append=True))
             time_window_start_ind += time_step_length
         except ValueError:
@@ -133,16 +135,17 @@ def multitaper_spectrogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=time_window_length,
-        sampling_frequency=sampling_frequency,
-        time_window_duration=time_window_duration,
-        time_window_step=time_window_duration,
-        tapers=tapers,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=time_window_length,
+            sampling_frequency=sampling_frequency,
+            time_window_duration=time_window_duration,
+            time_window_step=time_window_duration,
+            tapers=tapers,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_power_spectral_density,
         [data],
@@ -249,7 +252,7 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
                                       cmap=cmap,
                                       shading='gouraud',
                                       norm=colors.LogNorm(
-                                        vmin=vmin, vmax=vmax))
+                                          vmin=vmin, vmax=vmax))
 
     axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
         frequency_units=frequency_units))
@@ -331,17 +334,18 @@ def multitaper_power_spectral_density(data,
                                       desired_frequencies=None):
     ''' Returns the multi-taper power spectral density of a time series
     '''
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=data.shape[0],
-        sampling_frequency=sampling_frequency,
-        tapers=tapers,
-        frequencies=frequencies,
-        freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=data.shape[0],
+            sampling_frequency=sampling_frequency,
+            tapers=tapers,
+            frequencies=frequencies,
+            freq_ind=freq_ind,
+            number_of_fft_samples=number_of_fft_samples,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     complex_spectrum = _multitaper_fft(
         tapers, _center_data(data), number_of_fft_samples,
         sampling_frequency)
@@ -363,18 +367,19 @@ def multitaper_coherence(data, sampling_frequency=1000,
     data[0] (time x trials)
     data[1] (time x trials)
     '''
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=data[0].shape[0],
-        sampling_frequency=sampling_frequency,
-        tapers=tapers,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=data[0].shape[0],
+            sampling_frequency=sampling_frequency,
+            tapers=tapers,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     data = [_center_data(datum) for datum in data]
     complex_spectra = [_multitaper_fft(
         tapers, datum, number_of_fft_samples, sampling_frequency)
-                       for datum in data]
+        for datum in data]
     cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
                                      complex_spectra[1][freq_ind, :, :])
     spectrum = [_cross_spectrum(complex_spectrum[freq_ind, :, :],
@@ -413,16 +418,17 @@ def multitaper_coherogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=time_window_length,
-        sampling_frequency=sampling_frequency,
-        time_window_duration=time_window_duration,
-        time_window_step=time_window_duration,
-        tapers=tapers,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=time_window_length,
+            sampling_frequency=sampling_frequency,
+            time_window_duration=time_window_duration,
+            time_window_step=time_window_duration,
+            tapers=tapers,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_coherence,
         data,
@@ -569,14 +575,15 @@ def multitaper_canonical_coherence(data,
                                    number_of_tapers=None,
                                    desired_frequencies=None):
     area1_lfps, area2_lfps = data[0], data[1]
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=area1_lfps[0].shape[0],
-        sampling_frequency=sampling_frequency,
-        tapers=tapers,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=area1_lfps[0].shape[0],
+            sampling_frequency=sampling_frequency,
+            tapers=tapers,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     complex_spectra1 = _get_complex_spectra(
         area1_lfps, tapers, number_of_fft_samples, sampling_frequency)
     complex_spectra2 = _get_complex_spectra(
@@ -604,16 +611,17 @@ def multitaper_canonical_coherogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = _set_default_multitaper_parameters(
-        number_of_time_samples=time_window_length,
-        sampling_frequency=sampling_frequency,
-        time_window_duration=time_window_duration,
-        time_window_step=time_window_duration,
-        tapers=tapers,
-        number_of_tapers=number_of_tapers,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        desired_frequencies=desired_frequencies,
-        pad=pad)
+    tapers, number_of_fft_samples, frequencies, freq_ind = \
+        _set_default_multitaper_parameters(
+            number_of_time_samples=time_window_length,
+            sampling_frequency=sampling_frequency,
+            time_window_duration=time_window_duration,
+            time_window_step=time_window_duration,
+            tapers=tapers,
+            number_of_tapers=number_of_tapers,
+            time_halfbandwidth_product=time_halfbandwidth_product,
+            desired_frequencies=desired_frequencies,
+            pad=pad)
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_canonical_coherence,
         data,
@@ -645,7 +653,7 @@ def _get_complex_spectra(lfps, tapers, number_of_fft_samples,
     complex_spectra = [_multitaper_fft(
         tapers, centered_lfps[lfp_ind, ...].squeeze(),
         number_of_fft_samples, sampling_frequency)
-                       for lfp_ind in np.arange(centered_lfps.shape[0])]
+        for lfp_ind in np.arange(centered_lfps.shape[0])]
     complex_spectra = np.concatenate(
         [spectra[np.newaxis, ...] for spectra in complex_spectra])
     return complex_spectra.reshape(
@@ -669,7 +677,8 @@ def _match_frequency_resolution(time_halfbandwidth_product,
         (baseline_window[1] - baseline_window[0])
     if baseline_time_halfbandwidth_product < 1:
         raise AttributeError(
-            'Baseline time-halfbandwidth product has to be greater than or equal to 1')
+            'Baseline time-halfbandwidth product has to be greater than or'
+            ' equal to 1')
     else:
         return baseline_time_halfbandwidth_product
 
@@ -687,5 +696,6 @@ def frequency_resolution(time_window_duration=None,
 
 def get_lfps_by_area(area, tetrode_info, lfps):
     '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
-    return pd.Panel({index: lfps[index]
-                     for index in tetrode_info[tetrode_info.area == area].index})
+    return pd.Panel(
+        {index: lfps[index]
+         for index in tetrode_info[tetrode_info.area == area].index})
