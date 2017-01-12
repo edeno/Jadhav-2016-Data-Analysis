@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LogNorm
+from nitime.algorithms.spectral import dpss_windows
 from scipy.fftpack import fft
 from scipy.stats import linregress
 
-from nitime.algorithms.spectral import dpss_windows
 from src.data_processing import reshape_to_segments
 
 
