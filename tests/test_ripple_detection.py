@@ -4,7 +4,7 @@ import pytest
 
 from src.ripple_detection import (_find_containing_interval,
                                   _get_series_start_end_times,
-                                  extend_segment_intervals,
+                                  _extend_segment,
                                   segment_boolean_series)
 
 
@@ -75,8 +75,8 @@ def test_find_containing_interval(interval_candidates, target_interval,
                                                           (20, 30)]),
         ([(1, 2), (5, 7), (20, 30)], [(24, 26), (27, 28)], [(20, 30)]),
     ])
-def test_extend_segment_intervals(interval_candidates, target_intervals,
-                                  expected_intervals):
-    test_intervals = extend_segment_intervals(
+def test__extend_segment(interval_candidates, target_intervals,
+                         expected_intervals):
+    test_intervals = _extend_segment(
         target_intervals, interval_candidates)
     assert np.all(test_intervals == expected_intervals)
