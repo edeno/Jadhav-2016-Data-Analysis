@@ -46,8 +46,8 @@ def test_get_series_start_end_times(series, expected_segments):
 ])
 def test_segment_boolean_series(series, expected_segments):
     assert np.all(
-        [(abs(expected_start - test_start) < 1e6) &
-         (abs(expected_end - test_end) < 1e6)
+        [(np.allclose(expected_start, test_start)) &
+         (np.allclose(expected_end, test_end))
          for (test_start, test_end), (expected_start, expected_end)
          in zip(segment_boolean_series(series), expected_segments)])
 
