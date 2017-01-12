@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import src.ripple_detection as ripples
+from src.ripple_detection import (_find_containing_interval,
+                                  _get_series_start_end_times,
+                                  extend_segment_intervals,
+                                  segment_boolean_series)
 
 
 @pytest.mark.parametrize("series, expected_segments", [
@@ -18,7 +21,7 @@ import src.ripple_detection as ripples
      (np.array([0, 2]), np.array([0, 3]))),
 ])
 def test_get_series_start_end_times(series, expected_segments):
-    tup = ripples._get_series_start_end_times(series)
+    tup = _get_series_start_end_times(series)
     try:
         assert np.all(tup[0] == expected_segments[0]) & np.all(
             tup[1] == expected_segments[1])
@@ -46,8 +49,7 @@ def test_segment_boolean_series(series, expected_segments):
         [(abs(expected_start - test_start) < 1e6) &
          (abs(expected_end - test_end) < 1e6)
          for (test_start, test_end), (expected_start, expected_end)
-         in zip(
-            ripples.segment_boolean_series(series), expected_segments)])
+         in zip(segment_boolean_series(series), expected_segments)])
 
 
 @pytest.mark.parametrize(
@@ -59,7 +61,7 @@ def test_segment_boolean_series(series, expected_segments):
     ])
 def test_find_containing_interval(interval_candidates, target_interval,
                                   expected_interval):
-    test_interval = ripples._find_containing_interval(
+    test_interval = _find_containing_interval(
         interval_candidates, target_interval)
     assert np.all(test_interval == expected_interval)
 
@@ -75,6 +77,6 @@ def test_find_containing_interval(interval_candidates, target_interval,
     ])
 def test_extend_segment_intervals(interval_candidates, target_intervals,
                                   expected_intervals):
-    test_intervals = ripples.extend_segment_intervals(
+    test_intervals = extend_segment_intervals(
         target_intervals, interval_candidates)
     assert np.all(test_intervals == expected_intervals)

@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import src.spectral as spectral
+from src.spectral import (_cross_spectrum, _get_frequencies, _get_tapers,
+                          _get_window_lengths, _make_sliding_window_dataframe,
+                          _multitaper_fft, _nextpower2)
 
 
 @pytest.mark.parametrize(
@@ -17,7 +19,7 @@ import src.spectral as spectral
 def test_get_frequencies(sampling_frequency, number_of_fft_samples,
                          desired_frequencies, expected_frequencies,
                          expected_ind):
-    test_frequencies, test_ind = spectral._get_frequencies(
+    test_frequencies, test_ind = _get_frequencies(
         sampling_frequency, number_of_fft_samples,
         desired_frequencies=desired_frequencies)
     assert np.all(test_frequencies == expected_frequencies)
@@ -34,7 +36,7 @@ def test_get_tapers_shape(time_series_length, number_of_tapers,
                           expected_shape):
     SAMPLING_FREQUENCY = 1000
     TIME_HALFBANDWIDTH_PRODUCT = 3
-    tapers = spectral._get_tapers(
+    tapers = _get_tapers(
         time_series_length, SAMPLING_FREQUENCY, TIME_HALFBANDWIDTH_PRODUCT,
         number_of_tapers)
     assert np.all(tapers.shape == expected_shape)
@@ -56,10 +58,10 @@ def test_multitaper_fft_shape(time_series_length, number_of_tapers, data,
                               number_of_fft_samples, expected_shape):
     SAMPLING_FREQUENCY = 1000
     TIME_HALFBANDWIDTH_PRODUCT = 3
-    tapers = spectral._get_tapers(
+    tapers = _get_tapers(
         time_series_length, SAMPLING_FREQUENCY, TIME_HALFBANDWIDTH_PRODUCT,
         number_of_tapers)
-    dft = spectral._multitaper_fft(
+    dft = _multitaper_fft(
         tapers, data, number_of_fft_samples, SAMPLING_FREQUENCY)
     assert np.all(dft.shape == expected_shape)
 
@@ -70,14 +72,14 @@ def test_multitaper_fft_shape(time_series_length, number_of_tapers, data,
     (1, 0),
 ])
 def test_nextpower2(test_number, expected_number):
-    assert spectral._nextpower2(test_number) == expected_number
+    assert _nextpower2(test_number) == expected_number
 
 
 @pytest.mark.parametrize("complex_spectrum, expected_shape", [
     (np.random.normal(MEAN, STD_DEV, (23, 2, 1)), (23,)),
 ])
 def test_cross_spectrum_shape(complex_spectrum, expected_shape):
-    cross_spectrum = spectral._cross_spectrum(
+    cross_spectrum = _cross_spectrum(
         complex_spectrum, complex_spectrum)
     assert np.all(cross_spectrum.shape == expected_shape)
 
@@ -93,24 +95,16 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
     data = np.ones((num_data, 1))
     time = np.linspace(0, num_data / sampling_frequency,
                        num=num_data, endpoint=False)
-    time_step_length, time_window_length = spectral._get_window_lengths(
-        time_window_duration,
-        sampling_frequency,
-        time_window_step)
+    time_step_length, time_window_length = _get_window_lengths(
+        time_window_duration, sampling_frequency, time_window_step)
 
     def test_func(data, **kwargs):
         return pd.DataFrame(kwargs)
 
     kwargs = {'test1': [1, 2]}
-    dataframes = list(spectral._make_sliding_window_dataframe(
-        test_func,
-        [data],
-        time_window_duration,
-        time_window_step,
-        time_step_length,
-        time_window_length,
-        time,
-        **kwargs))
+    dataframes = list(_make_sliding_window_dataframe(
+        test_func, [data], time_window_duration, time_window_step,
+        time_step_length, time_window_length, time, **kwargs))
     expected_time_steps = np.arange(
         time_window_duration / 2, time[-1] + 1 / sampling_frequency,
         time_window_step)

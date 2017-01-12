@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-import src.data_processing as df
+from src.data_processing import find_closest_ind, get_data_filename, get_epochs
 
 
 def test_data_file_name_returns_correct_file():
@@ -14,11 +14,11 @@ def test_data_file_name_returns_correct_file():
     file_type = 'dummy'
 
     day = 2
-    file_name = df.get_data_filename(animal, day, file_type)
+    file_name = get_data_filename(animal, day, file_type)
     assert '/Raw-Data/test_dir/Testdummy02.mat' in file_name
 
     day = 11
-    file_name = df.get_data_filename(animal, day, file_type)
+    file_name = get_data_filename(animal, day, file_type)
     assert '/Raw-Data/test_dir/Testdummy11.mat' in file_name
 
 
@@ -31,7 +31,7 @@ def test_data_file_name_returns_correct_file():
     (np.arange(50, 150), [55, 65, 137], [5, 15, 87]),
 ])
 def test_find_closest_ind(search_array, target, expected_index):
-    assert np.all(df.find_closest_ind(
+    assert np.all(find_closest_ind(
         search_array, target) == expected_index)
 
 # Create a fake 'tasks' data set to test
@@ -64,12 +64,12 @@ mock_cell_array = {'task': np.array([[
         (2, '', 'environTest2', 3),
         ([2, 3], '', '', 10),
         ([2, 3], 'typeTest1', '', 8),
-        ])
+    ])
 def test_get_epochs(mock_loadmat, days, epoch_type, environment,
                     expected_length):
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
     animal = Animal(directory='test_dir', short_name='Test')
     mock_loadmat.return_value = mock_cell_array
 
-    assert len(df.get_epochs(animal, days, epoch_type=epoch_type,
-                             environment=environment)) == expected_length
+    assert len(get_epochs(animal, days, epoch_type=epoch_type,
+                          environment=environment)) == expected_length
