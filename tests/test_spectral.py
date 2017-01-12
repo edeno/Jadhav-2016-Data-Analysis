@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 
 from src.spectral import (_cross_spectrum, _get_frequencies, _get_tapers,
-                          _get_window_lengths, _make_sliding_window_dataframe,
+                          _get_window_lengths,
+                          _make_sliding_window_dataframe,
                           _multitaper_fft, _nextpower2)
 
 
