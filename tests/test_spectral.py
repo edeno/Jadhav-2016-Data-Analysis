@@ -115,4 +115,5 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
 
     assert len(dataframes) == len(expected_time_steps)
     assert np.all([df.test1.values == [1, 2] for df in dataframes])
-    assert np.all(np.array([df.time.values[0] for df in dataframes]) - expected_time_steps < 1E6)
+    assert np.array([df.time.values[0] for df in dataframes]) == \
+        pytest.approx(expected_time_steps)
