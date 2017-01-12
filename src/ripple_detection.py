@@ -8,10 +8,10 @@ from scipy.io import loadmat
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import filtfilt, hilbert
 
-from data_processing import (get_data_structure,
-                             get_interpolated_position_dataframe,
-                             get_LFP_dataframe, make_tetrode_dataframe)
-from spectral import multitaper_spectrogram
+from src.data_processing import (get_data_structure,
+                                 get_interpolated_position_dataframe,
+                                 get_LFP_dataframe, make_tetrode_dataframe)
+from src.spectral import multitaper_spectrogram
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):

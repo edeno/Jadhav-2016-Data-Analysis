@@ -17,8 +17,8 @@ from matplotlib.colors import LogNorm
 from scipy.fftpack import fft
 from scipy.stats import linregress
 
-from data_processing import reshape_to_segments
 from nitime.algorithms.spectral import dpss_windows
+from src.data_processing import reshape_to_segments
 
 
 def convert_pandas(func):

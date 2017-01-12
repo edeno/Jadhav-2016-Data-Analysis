@@ -13,10 +13,11 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import norm
 from statsmodels.api import GLM, families
 
-from data_processing import (get_interpolated_position_dataframe,
-                             get_spike_indicator_dataframe,
-                             make_neuron_dataframe, make_tetrode_dataframe,
-                             reshape_to_segments)
+from src.data_processing import (get_interpolated_position_dataframe,
+                                 get_spike_indicator_dataframe,
+                                 make_neuron_dataframe,
+                                 make_tetrode_dataframe,
+                                 reshape_to_segments)
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
