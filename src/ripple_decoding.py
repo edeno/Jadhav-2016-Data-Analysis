@@ -196,8 +196,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
 
     '''
     mark_space_estimator = _mark_space_estimator(
-        marks,
-        training_marks=training_marks,
+        marks, training_marks=training_marks,
         mark_smoothing=mark_smoothing)
     return (np.matmul(
         place_field_estimator,
