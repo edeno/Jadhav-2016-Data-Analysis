@@ -13,8 +13,8 @@ def test__mark_estimator():
     test_marks[cur_spiking_neuron_ind[0], :] = np.arange(1, 9, 2)
     test_marks[cur_spiking_neuron_ind[1], :] = np.arange(9, 17, 2)
 
-    training_marks = np.zeros((n_signals, n_marks, n_training_spikes))
-    training_marks[cur_spiking_neuron_ind, :, 3] = np.arange(1, 9, 2)
+    training_marks = np.zeros((n_training_spikes, n_signals, n_marks))
+    training_marks[3, cur_spiking_neuron_ind, :] = np.arange(1, 9, 2)
 
     mark_space_estimator = _mark_space_estimator(
         test_marks, training_marks=training_marks,

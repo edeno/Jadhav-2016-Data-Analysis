@@ -154,8 +154,8 @@ def _mark_space_estimator(test_marks, training_marks=None,
     ----------
     test_marks : array_like, shape=(n_signals, n_marks)
         The marks to be evaluated
-    training_marks : array_like, shape=(n_signals, n_marks,
-                                        n_training_spikes)
+    training_marks : array_like, shape=(n_training_spikes, n_signals,
+                                        n_marks)
         The marks for each spike when the animal is moving
     mark_smoothing : float, optional
         The standard deviation of the Gaussian kernel in millivolts
@@ -165,21 +165,18 @@ def _mark_space_estimator(test_marks, training_marks=None,
     mark_space_estimator : array_like, shape=(n_signals, n_training_spikes)
 
     '''
-    n_signals, n_marks, n_training_spikes = training_marks.shape
-    resized_test_marks = np.moveaxis(
-        np.resize(test_marks, (n_training_spikes, n_signals, n_marks)),
-        0, -1)
+    resized_test_marks = np.resize(test_marks, training_marks.shape)
     return np.nanprod(
         norm.pdf(resized_test_marks, loc=training_marks,
                  scale=mark_smoothing),
-        axis=1)
+        axis=2).T
 
 
 def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
                          mark_smoothing=20):
-    '''Evaluate the multivate density function of the marks and place
+    '''Evaluate the multivariate density function of the marks and place
     field
 
     Parameters
