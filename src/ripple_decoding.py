@@ -165,9 +165,12 @@ def _mark_space_estimator(test_marks, training_marks=None,
     mark_space_estimator : array_like, shape=(n_signals, n_training_spikes)
 
     '''
+    n_signals, n_marks, n_training_spikes = training_marks.shape
+    resized_test_marks = np.moveaxis(
+        np.resize(test_marks, (n_training_spikes, n_signals, n_marks)),
+        0, -1)
     return np.nanprod(
-        norm.pdf(np.resize(test_marks, training_marks.shape),
-                 loc=training_marks,
+        norm.pdf(resized_test_marks, loc=training_marks,
                  scale=mark_smoothing),
         axis=1)
 
