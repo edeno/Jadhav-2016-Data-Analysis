@@ -123,7 +123,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
         The subsequent columns correspond to the mark vector.
     joint_mark_intensity : function
         Instantaneous probability of observing a spike given mark vector
-        from data
+        from data. The parameters for this function should already be set,
+        before it is passed to `poisson_mark_likelihood`.
     ground_process_intensity : array_like, shape=(n_signals, n_parameters)
         Probability of observing a spike regardless of marks.
     time_bin_size : float, optional
@@ -182,10 +183,15 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     Parameters
     ----------
     marks : array_like, shape=(n_signals, n_marks)
-    place_field_estimator : array_like, shape=(n_signals, n_parameters,
-                                               n_training_spikes)
-    place_occupancy : array_like, shape=(n_signals, n_parameters)
+    place_field_estimator : n_signal-element list of arrays of
+                            shape=(n_parameters, n_training_spikes)
+    place_occupancy : array_like, shape=(n_parameters,)
         The probability that the animal is at that position
+    training_marks : n_signal-element list of arrays of
+                     shape=(n_training_spikes, n_marks)
+        The marks for each spike when the animal is moving
+    mark_std_deviation : float, optional
+        The standard deviation of the Gaussian kernel in millivolts
 
     Returns
     -------
@@ -490,9 +496,8 @@ def glm_fit(spikes, design_matrix, ind):
     Returns
     -------
     fitted_model : object or NaN
-        Returns the statsmodel object if successful.
-        If the model fails in the weighted fit
-        in the IRLS procedure, the model returns NaN.
+        Returns the statsmodel object if successful. If the model fails in
+        the weighted fit in the IRLS procedure, the model returns NaN.
 
     '''
     try:
