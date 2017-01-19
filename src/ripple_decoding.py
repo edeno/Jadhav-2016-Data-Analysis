@@ -94,9 +94,9 @@ def poisson_likelihood(is_spike, conditional_intensity=None,
 
     Parameters
     ----------
-    is_spike : {0, 1}
+    is_spike : {0, 1}, shape=(n_signals,)
         Indicator of spike or no spike at current time.
-    conditional_intensity : array_like, shape=(n_time_points,)
+    conditional_intensity : array_like, shape=(n_time_points, n_signals)
         Instantaneous probability of observing a spike
     time_bin_size : float, optional
 
