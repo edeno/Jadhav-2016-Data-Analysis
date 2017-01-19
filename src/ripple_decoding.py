@@ -140,7 +140,7 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
     return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
 
 
-def _mark_space_estimator(test_marks, training_marks=None,
+def evaluate_mark_space(test_marks, training_marks=None,
                         mark_std_deviation=20):
     '''Evaluate the multivariate Gaussian kernel for the mark space
     given training marks.
