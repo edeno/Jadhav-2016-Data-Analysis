@@ -5,7 +5,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from src.data_processing import find_closest_ind, get_data_filename, get_epochs
+from src.data_processing import (find_closest_ind,
+                                 get_data_filename, get_epochs)
 
 
 def test_data_file_name_returns_correct_file():
@@ -22,7 +23,7 @@ def test_data_file_name_returns_correct_file():
     assert '/Raw-Data/test_dir/Testdummy11.mat' in file_name
 
 
-@pytest.mark.parametrize("search_array, target, expected_index", [
+@pytest.mark.parametrize('search_array, target, expected_index', [
     (np.arange(50, 150), 66, 16),
     (np.arange(50, 150), 45, 0),
     (np.arange(50, 150), 200, 99),
@@ -53,7 +54,7 @@ mock_cell_array = {'task': np.array([[
 
 @patch('scipy.io.loadmat')
 @pytest.mark.parametrize(
-    "days, epoch_type, environment, expected_length", [
+    'days, epoch_type, environment, expected_length', [
         (2, '', '', 5),
         (2, 'typeTest1', '', 4),
         (2, 'typeTest2', '', 1),
