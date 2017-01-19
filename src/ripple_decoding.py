@@ -153,24 +153,25 @@ def _mark_space_estimator(test_marks, training_marks=None,
 
     Parameters
     ----------
-    test_marks : array_like, shape=(n_signals, n_marks)
+    test_marks : array_like, shape=(n_marks,)
         The marks to be evaluated
-    training_marks : array_like, shape=(n_training_spikes, n_signals,
-                                        n_marks)
+    training_marks : shape=(n_training_spikes, n_marks)
         The marks for each spike when the animal is moving
     mark_std_deviation : float, optional
         The standard deviation of the Gaussian kernel in millivolts
 
     Returns
     -------
-    mark_space_estimator : array_like, shape=(n_signals, n_training_spikes)
+    mark_space_estimator : array_like, shape=(n_training_spikes,)
 
     '''
-    resized_test_marks = np.resize(test_marks, training_marks.shape)
+    n_training_spikes = training_marks.shape[0]
+    test_marks = np.tile(
+        test_marks[:, np.newaxis], (1, n_training_spikes)).T
     return np.nanprod(
-        norm.pdf(resized_test_marks, loc=training_marks,
-        axis=2).T
+        norm.pdf(test_marks, loc=training_marks,
                  scale=mark_std_deviation),
+        axis=1)
 
 
 def joint_mark_intensity(marks, place_field_estimator=None,
