@@ -1,21 +1,21 @@
-function [mark_spikes_to_linear_position_time_bins_index, gaussian_kernel_position_estimator, estimated_rate] = encode_per_tetrode( ...
-    mark_spikes_to_linear_position_time_bins_index, state_index,  position_occupancy, dt, linear_distance_bins, linear_distance, sxker)
+function [spike_times_to_linear_distance_time_bins_index, place_field_estimator, estimated_rate] = encode_per_tetrode( ...
+    spike_times_to_linear_distance_time_bins_index, state_index, linear_distance_occupancy, dt, linear_distance_bins, linear_distance, linear_distance_bin_size)
 
 num_linear_distance_bins = length(linear_distance_bins);
-distance_bins_axis = ones(num_linear_distance_bins, 1);
+linear_distance_bins_axis = ones(num_linear_distance_bins, 1);
 
-position_time_bins_in_state = ismember(mark_spikes_to_linear_position_time_bins_index, state_index);
-mark_spikes_to_linear_position_time_bins_index_Ia = mark_spikes_to_linear_position_time_bins_index(position_time_bins_in_state);
+linear_distance_time_bins_in_state = ismember(spike_times_to_linear_distance_time_bins_index, state_index);
+spike_times_to_linear_distance_time_bins_index_at_state = spike_times_to_linear_distance_time_bins_index(linear_distance_time_bins_in_state);
 
-num_spikes = length(mark_spikes_to_linear_position_time_bins_index_Ia);
+num_spikes = length(spike_times_to_linear_distance_time_bins_index_at_state);
 spikes_axis = ones(1, num_spikes);
 
-mark_spikes_to_linear_position_time_bins_index = find(position_time_bins_in_state);
+spike_times_to_linear_distance_time_bins_index = find(linear_distance_time_bins_in_state);
 
-gaussian_kernel_position_estimator = normpdf(linear_distance_bins' * spikes_axis, ...
-     distance_bins_axis * linear_distance(mark_spikes_to_linear_position_time_bins_index_Ia), ...
-    sxker);
+place_field_estimator = normpdf(linear_distance_bins' * spikes_axis, ...
+    linear_distance_bins_axis * linear_distance(spike_times_to_linear_distance_time_bins_index_at_state), ...
+    linear_distance_bin_size);
 
-estimated_rate = sum(gaussian_kernel_position_estimator, 2) ./ position_occupancy ./ dt; %integral
+estimated_rate = sum(place_field_estimator, 2) ./ linear_distance_occupancy ./ dt; %integral
 estimated_rate = normalize_distribution(estimated_rate);
 end
