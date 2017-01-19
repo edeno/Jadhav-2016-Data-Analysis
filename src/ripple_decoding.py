@@ -78,7 +78,7 @@ def normalize_to_probability(distribution):
     '''Ensure the distribution integrates to 1 so that it is a probability
     distribution
     '''
-    return distribution / np.sum(distribution.flatten())
+    return distribution / distribution.sum()
 
 
 def _get_prior(posterior, state_transition):
@@ -277,15 +277,14 @@ def _normalize_column_probability(x):
     '''Ensure the state transition matrix columns integrate to 1
     so that it is a probability distribution
     '''
-    return np.dot(x, np.diag(1 / np.sum(x, axis=0)))
+    return np.dot(x, np.diag(1 / x.sum(axis=0)))
 
 
 def _fix_zero_bins(movement_bins):
     '''If there is no data observed for a column, set everything to 1 so
     that it will have equal probability
     '''
-    is_zero_column = np.sum(movement_bins, axis=0) == 0
-    movement_bins[:, is_zero_column] = 1
+    movement_bins[:, movement_bins.sum(axis=0) == 0] = 1
     return movement_bins
 
 
