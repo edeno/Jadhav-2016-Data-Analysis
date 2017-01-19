@@ -179,7 +179,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                          training_marks=None,
                          mark_std_deviation=20):
     '''Evaluate the multivariate density function of the marks and place
-    field
+    field for each signal
 
     Parameters
     ----------
