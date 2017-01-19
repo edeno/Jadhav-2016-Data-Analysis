@@ -215,6 +215,134 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     return place_mark_estimator / place_occupancy
 
 
+def estimate_place_field(place_bins, place_at_spike,
+                         place_std_deviation=1):
+    '''Non-parametric estimate of the neuron receptive field with respect
+    to place.
+
+    Puts a Gaussian with a mean at the position the animal is located at
+    when there is a spike
+
+    Parameters
+    ----------
+    place_bins : array_like, shape=(n_parameters,)
+        Evaluate the Gaussian at these bins
+    place_at_spike : array_like, shape=(n_training_spikes,)
+        Position of the animal at spike time
+    place_std_deviation : float, optional
+        Standard deviation of the Gaussian kernel
+
+    Returns
+    -------
+    place_field_estimator : array_like, shape=(n_parameters,
+                                               n_training_spikes)
+
+    '''
+    n_parameters, n_spikes = place_bins.shape[0], place_at_spike.shape[0]
+    place_bins = np.tile(place_bins[:, np.newaxis], (1, n_spikes))
+    place_at_spike = np.tile(
+        place_at_spike[:, np.newaxis], (1, n_parameters)).T
+    return norm.pdf(place_bins, loc=place_at_spike,
+                    scale=place_std_deviation)
+
+
+def estimate_ground_process_intensity(place_field_estimator,
+                                      place_occupancy):
+    '''The probability of observing a spike regardless of mark
+
+    Parameters
+    ----------
+    place_field_estimator : array_like, shape=(n_parameters,
+                                               n_training_spikes)
+    place_occupancy : array_like, shape=(n_parameters,)
+
+    Returns
+    -------
+    ground_process_intensity : array_like, shape=(n_parameters,)
+
+    '''
+    return normalize_to_probability(
+        place_field_estimator.sum(axis=1) / place_occupancy)
+
+
+def estimate_place_occupancy(place_bins, place, place_std_deviation=1):
+    '''A Gaussian smoothed probability that the animal is in a particular
+    position.
+
+    Denominator in equation #12 and #13 of [1]
+
+    Parameters
+    ----------
+    place_bins : array_like, shape=(n_parameters,)
+    place : array_like, shape=(n_places,)
+    place_std_deviation : float, optional
+
+    Returns
+    -------
+    place_occupancy : array_like, shape=(n_parameters,)
+
+    '''
+    n_parameters, n_places = place_bins.shape[0], place.shape[0]
+    place_bins = np.tile(place_bins[:, np.newaxis], (1, n_places))
+    place = np.tile(place[:, np.newaxis], (1, n_parameters)).T
+    return norm.pdf(
+        place_bins, loc=place, scale=place_std_deviation).sum(axis=1)
+
+
+def estimate_marked_encoding_model(place_bins, place, place_at_spike,
+                                   training_marks, place_std_deviation=1):
+    '''
+
+    Parameters
+    ----------
+    place : list, n_states
+    place_at_spike : list of lists of arrays, n_signals x n_states
+    place_bins : array_like, shape=(n_parameters,)
+    training_marks : list of lists of arrays, n_signals x n_states
+    place_std_deviation : float, optional
+
+    Returns
+    -------
+    place_occupancy : array_like
+    ground_process_intensity : list of arrays
+    place_field_estimator : list of arrays
+    training_marks : list of arrays
+
+    '''
+    n_signals, n_states = len(place_at_spike), len(place)
+
+    place_occupancy = [
+        estimate_place_occupancy(
+            place_bins, place[state_ind],
+            place_std_deviation=place_std_deviation)
+        for state_ind in range(n_states)]
+
+    ground_process_intensity = list()
+    place_field_estimator = list()
+    marks = list()
+
+    for signal_ind in range(n_signals):
+        cur_place_field = [
+            estimate_place_field(
+                place_bins, place_at_spike[signal_ind][state_ind],
+                place_std_deviation=place_std_deviation)
+            for state_ind in range(n_states)]
+
+        cur_ground_process_intensity = [
+            estimate_ground_process_intensity(cur_place_field[state_ind],
+                                              place_occupancy[state_ind])
+            for state_ind in range(n_states)]
+
+        place_field_estimator.append(
+            block_diag(cur_place_field))
+        ground_process_intensity.append(
+            np.vstack(cur_ground_process_intensity))
+        marks.append(np.vstack(training_marks[signal_ind]))
+
+    place_occupancy = np.vstack(place_occupancy)
+
+    return (place_occupancy, ground_process_intensity,
+            place_field_estimator, marks)
 
 
 def combined_likelihood(data, likelihood_function=None,
