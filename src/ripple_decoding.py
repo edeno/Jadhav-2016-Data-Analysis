@@ -252,13 +252,13 @@ def estimate_ground_process_intensity(place_field_estimator,
 
     Parameters
     ----------
-    place_field_estimator : array_like, shape=(n_parameters,
+    place_field_estimator : array_like, shape=(n_parameters * n_states,
                                                n_training_spikes)
-    place_occupancy : array_like, shape=(n_parameters,)
+    place_occupancy : array_like, shape=(n_parameters * n_states,)
 
     Returns
     -------
-    ground_process_intensity : array_like, shape=(n_parameters,)
+    ground_process_intensity : array_like, shape=(n_parameters * n_states,)
 
     '''
     return normalize_to_probability(
@@ -296,17 +296,20 @@ def estimate_marked_encoding_model(place_bins, place, place_at_spike,
     Parameters
     ----------
     place : list, n_states
-    place_at_spike : list of lists of arrays, n_signals x n_states
+    place_at_spike : list of lists of arrays, n_signals * n_states
     place_bins : array_like, shape=(n_parameters,)
-    training_marks : list of lists of arrays, n_signals x n_states
+    training_marks : list of lists of arrays, n_signals * n_states
     place_std_deviation : float, optional
 
     Returns
     -------
-    place_occupancy : array_like
-    ground_process_intensity : list of arrays
-    place_field_estimator : list of arrays
-    training_marks : list of arrays
+    place_occupancy : array_like, shape=(n_parameters * n_states,)
+    ground_process_intensity : list of arrays of shape=(n_parameters *
+                                                        n_states,)
+    place_field_estimator : list of arrays of shape=(n_parameters *
+                                                     n_states,
+                                                     n_training_spikes)
+    marks : list of arrays of shape=(n_training_spikes, n_marks)
 
     '''
     n_signals, n_states = len(place_at_spike), len(place)
@@ -364,7 +367,7 @@ def combined_likelihood(data, likelihood_function=None,
 
     Returns
     -------
-    likelihood : array_like, shape=(n_parameters,)
+    likelihood : array_like, shape=(n_parameters * n_states,)
 
     '''
     try:
