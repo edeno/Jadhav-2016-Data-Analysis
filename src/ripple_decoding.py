@@ -322,15 +322,15 @@ def estimate_marked_encoding_model(place_bins, place, place_at_spike,
     marks = list()
 
     for signal_ind in range(n_signals):
-        cur_place_field = [
+        signal_place_field = [
             estimate_place_field(
                 place_bins, place_at_spike[signal_ind][state_ind],
                 place_std_deviation=place_std_deviation)
             for state_ind in range(n_states)]
 
-        cur_ground_process_intensity = [
-            estimate_ground_process_intensity(cur_place_field[state_ind],
-                                              place_occupancy[state_ind])
+        signal_ground_process_intensity = [
+            estimate_ground_process_intensity(
+                signal_place_field[state_ind], place_occupancy[state_ind])
             for state_ind in range(n_states)]
 
         place_field_estimator.append(
