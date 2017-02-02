@@ -114,7 +114,7 @@ def poisson_likelihood(is_spike, conditional_intensity=None,
             probability_no_spike)
 
 
-def poisson_mark_likelihood(data, joint_mark_intensity=None,
+def poisson_mark_likelihood(marks, joint_mark_intensity=None,
                             ground_process_intensity=None,
                             time_bin_size=1):
     '''Probability of parameters given spiking indicator at a particular
@@ -122,9 +122,7 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
 
     Parameters
     ----------
-    data : array_like, shape=(n_signals, n_marks+1)
-        First column is an indicator of spike or no spike, is_spike={0, 1}.
-        The subsequent columns correspond to the mark vector.
+    marks : array_like, shape=(n_signals, n_marks)
     joint_mark_intensity : function
         Instantaneous probability of observing a spike given mark vector
         from data. The parameters for this function should already be set,
