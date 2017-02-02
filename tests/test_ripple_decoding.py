@@ -1,9 +1,6 @@
-from unittest.mock import patch
-
 import numpy as np
 from pytest import mark
 from scipy.stats import multivariate_normal, norm
-from scipy.linalg import block_diag
 
 from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  _normalize_column_probability,
@@ -81,22 +78,6 @@ def test_combined_likelihood(data, exponent, expected):
         combined_likelihood(data, likelihood_function,
                             likelihood_kwargs=dict(exponent=exponent)),
         expected)
-
-
-# @patch('_mark_space_estimator')
-# def test_joint_mark_intensity(mock_mark_space_estimator):
-#     n_signals, n_training_spikes, n_parameters, n_states = 2, 10, 6, 2
-#     mock_mark_space_estimator.return_value = np.ones(
-#         (n_signals, n_training_spikes))
-#     place_field_estimator = np.zeros(
-#         (n_signals, n_training_spikes, n_parameters))
-#     place_field_estimator[0, :, :] = block_diag(
-#         np.ones((n_training_spikes, int(n_parameters / n_states))),
-#         np.ones((n_training_spikes, int(n_parameters / n_states))) * 2)
-#     place_field_estimator[1, :, :] = block_diag(
-#         np.ones((n_training_spikes, int(n_parameters / n_states))) * 3,
-#         np.ones((n_training_spikes, int(n_parameters / n_states))) * 4)
-#     pass
 
 
 def test_get_ground_process_intensity():
