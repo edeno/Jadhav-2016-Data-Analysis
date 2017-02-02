@@ -136,7 +136,7 @@ def test_poisson_mark_likelihood_is_spike():
 
     marks = (np.ones((n_signals, n_marks)) *
              np.arange(0, n_signals)[:, np.newaxis])
-    no_spike_ind = 5
+    no_spike_ind = [5, 8]
     marks[no_spike_ind, :] = np.nan
 
     ground_process_intensity = np.zeros((n_signals, n_parameters))
