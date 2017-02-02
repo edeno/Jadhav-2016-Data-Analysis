@@ -526,7 +526,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     # Fit state transition model
     print('\tFitting state transition model...')
     state_transition = get_state_transition_matrix(
-        train_position_info, linear_distance_bin_edges)
+        train_position_info, place_bin_edges)
 
     # Initial Conditions
     print('\tSetting initial conditions...')
@@ -534,7 +534,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
                    'inbound_forward', 'inbound_reverse']
     n_states = len(state_names)
     initial_conditions = get_initial_conditions(
-        linear_distance_bin_edges, linear_distance_bin_centers, n_states)
+        place_bin_edges, place_bin_centers, n_states)
 
     # Decode
     print('\tDecoding ripples...')
