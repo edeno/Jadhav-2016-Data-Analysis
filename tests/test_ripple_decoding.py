@@ -144,6 +144,9 @@ def test_poisson_mark_likelihood_is_spike():
     likelihood = poisson_mark_likelihood(
         marks, joint_mark_intensity=identity,
         ground_process_intensity=ground_process_intensity)
+
     expected_likelihood = np.copy(marks)
     expected_likelihood[no_spike_ind, :] = 1
+
+    assert np.allclose(likelihood, expected_likelihood)
     assert np.allclose(likelihood, expected_likelihood)
