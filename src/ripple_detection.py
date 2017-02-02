@@ -312,7 +312,7 @@ def _get_ripplefilter_kernel():
     '''
     data_dir = '{working_dir}/Raw-Data'.format(
         working_dir=os.path.abspath(os.path.pardir))
-    ripplefilter = scipy.io.loadmat(
+    ripplefilter = loadmat(
         '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
