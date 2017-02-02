@@ -211,7 +211,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
         place_mark_estimator[signal_ind, :] = np.dot(
             place_field_estimator[signal_ind],
             evaluate_mark_space(
-                marks[signal_ind, :],
+                marks[signal_ind],
                 training_marks=training_marks[signal_ind],
                 mark_std_deviation=mark_std_deviation)
             )
