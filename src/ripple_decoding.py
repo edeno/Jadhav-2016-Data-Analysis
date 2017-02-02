@@ -352,7 +352,7 @@ def estimate_marked_encoding_model(place_bin_centers, place,
             block_diag(*signal_place_field))
         ground_process_intensity.append(
             np.hstack(signal_ground_process_intensity))
-        marks.append(np.hstack(training_marks[signal_ind]))
+        marks.append(np.vstack(training_marks[signal_ind]))
 
     place_occupancy = np.hstack(place_occupancy)
 
