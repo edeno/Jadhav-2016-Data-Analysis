@@ -396,3 +396,50 @@ def find_power_spectrum_from_pair_index(target_tetrode, coherence_name,
     power_spectrum_name = 'power_spectrum{}'.format(
         (tetrode1, tetrode2).index(target_tetrode) + 1)
     return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
+
+
+def merge_symmetric_key_pairs(pair_dict):
+    '''If a 2-element key is the same except for the order, merge the
+    Pandas index corresponding to the key.
+
+    For example, a dictionary with keys ('a', 'b') and ('b', 'a') will be
+    combined into a key ('a', 'b')
+
+    Parameters
+    ----------
+    pair_dict : dict
+        A dictionary with keys that are 2-element tuples and values that
+        are a Pandas index.
+
+    Returns
+    -------
+    merged_dict : dict
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> test_dict = {('a', 'a'): pd.Index([1, 2, 3]),
+                     ('a', 'b'): pd.Index([4, 5, 6]),
+                     ('b', 'a'): pd.Index([7, 8, 9]),
+                     ('b', 'c'): pd.Index([10, 11, 12])}
+    >>> merge_symmetric_key_pairs(test_dict)
+    {('a', 'a'): Int64Index([1, 2, 3], dtype='int64'),
+     ('a', 'b'): Int64Index([4, 5, 6, 7, 8, 9], dtype='int64'),
+     ('b', 'c'): Int64Index([10, 11, 12], dtype='int64')}
+
+    '''
+    skip_list = list()
+    merged_dict = dict()
+
+    for area1, area2 in pair_dict:
+        if area1 == area2:
+            merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
+        elif ((area2, area1) in pair_dict and
+              (area1, area2) not in skip_list):
+            skip_list.append((area2, area1))
+            merged_dict[(area1, area2)] = pair_dict[
+                (area1, area2)].union(pair_dict[(area2, area1)])
+        elif (area1, area2) not in skip_list:
+            merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
+
+    return merged_dict
