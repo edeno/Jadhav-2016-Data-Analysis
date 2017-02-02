@@ -389,9 +389,9 @@ def combined_likelihood(data, likelihood_function=None,
         return likelihood_function(data, **likelihood_kwargs).squeeze()
 
 
-def empirical_movement_transition_matrix(linear_position,
-                                         linear_position_bin_edges,
-                                         sequence_compression_factor=16):
+def empirical_movement_transition_matrix(place,
+                                         place_bin_edges,
+                                         sequence_compression_factor=33):
     '''Estimate the probablity of the next position based on the movement
      data, given the movment is sped up by the
      `sequence_compression_factor`
@@ -403,9 +403,9 @@ def empirical_movement_transition_matrix(linear_position,
 
     Parameters
     ----------
-    linear_position : array_like
+    place : array_like
         Linearized position of the animal over time
-    linear_position_bin_edges : array_like
+    place_bin_edges : array_like
     sequence_compression_factor : int, optional
         How much the movement is sped-up during a replay event
 
@@ -416,10 +416,10 @@ def empirical_movement_transition_matrix(linear_position,
                                            n_bin_edges-1)
 
     '''
-    movement_bins, _, _ = np.histogram2d(linear_position[1:],
-                                         linear_position[:-1],
-                                         bins=(linear_position_bin_edges,
-                                               linear_position_bin_edges),
+    movement_bins, _, _ = np.histogram2d(place[1:],
+                                         place[:-1],
+                                         bins=(place_bin_edges,
+                                               place_bin_edges),
                                          normed=False)
     smoothed_movement_bins_probability = gaussian_filter(
         _normalize_column_probability(
@@ -447,7 +447,7 @@ def _fix_zero_bins(movement_bins):
 
 def decode_ripple(epoch_index, animals, ripple_times,
                   sampling_frequency=1500,
-                  n_linear_distance_bins=49,
+                  n_place_bins=49,
                   likelihood_function=poisson_likelihood):
     '''Labels the ripple by category
 
@@ -464,7 +464,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
         Second element of the tuple is the end time of the ripple
     sampling_frequency : int, optional
         Sampling frequency of the spikes
-    n_linear_distance_bins : int, optional
+    n_place_bins : int, optional
         Number of bins for the linear distance
     likelihood_function : function, optional
         Converts the conditional intensity of a point process to a
@@ -510,18 +510,18 @@ def decode_ripple(epoch_index, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
-    linear_distance_bin_edges = np.linspace(
+    place_bin_edges = np.linspace(
         np.floor(position_info.linear_distance.min()),
         np.ceil(position_info.linear_distance.max()),
-        n_linear_distance_bins + 1)
-    linear_distance_bin_centers = _get_bin_centers(
-        linear_distance_bin_edges)
+        n_place_bins + 1)
+    place_bin_centers = _get_bin_centers(
+        place_bin_edges)
 
     # Fit encoding model
     print('\tFitting encoding model...')
     conditional_intensity = get_encoding_model(
         train_position_info, train_spikes_data,
-        linear_distance_bin_centers)
+        place_bin_centers)
 
     # Fit state transition model
     print('\tFitting state transition model...')
@@ -578,18 +578,18 @@ def _get_bin_centers(bin_edges):
     return bin_edges[:-1] + np.diff(bin_edges) / 2
 
 
-def get_initial_conditions(linear_distance_bin_edges,
-                           linear_distance_bin_centers, n_states):
-    linear_distance_bin_size = linear_distance_bin_edges[
-        1] - linear_distance_bin_edges[0]
+def get_initial_conditions(place_bin_edges,
+                           place_bin_centers, n_states):
+    place_bin_size = place_bin_edges[
+        1] - place_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
         norm.pdf(
-            linear_distance_bin_centers, 0, linear_distance_bin_size * 2))
+            place_bin_centers, 0, place_bin_size * 2))
 
     inbound_initial_conditions = normalize_to_probability(
         (np.max(outbound_initial_conditions) *
-         np.ones(linear_distance_bin_centers.shape)) -
+         np.ones(place_bin_centers.shape)) -
         outbound_initial_conditions)
 
     prior_probability_of_state = 1 / n_states
@@ -602,6 +602,7 @@ def get_initial_conditions(linear_distance_bin_edges,
 
 def get_state_transition_matrix(train_position_info,
                                 linear_distance_bin_edges):
+                              place_bin_edges):
     '''The block-diagonal empirical state transition matrix for each state:
     Outbound-Forward, Outbound-Reverse, Inbound-Forward, Inbound-Reverse
 
@@ -610,7 +611,7 @@ def get_state_transition_matrix(train_position_info,
     train_position_info : pandas dataframe
         The animal's linear distance from the center well
         for each trajectory direction while the animal is moving
-    linear_distance_bin_edges : array_like, shape=(n_bins+1,)
+    place_bin_edges : array_like, shape=(n_bins+1,)
         bin endpoints to partition the linear distances
 
     Returns
@@ -622,12 +623,12 @@ def get_state_transition_matrix(train_position_info,
         (train_position_info[
             train_position_info.trajectory_direction == 'Inbound']
             .linear_distance.values),
-        linear_distance_bin_edges)
+        place_bin_edges)
     outbound_state_transitions = empirical_movement_transition_matrix(
         (train_position_info[
             train_position_info.trajectory_direction == 'Outbound']
             .linear_distance.values),
-        linear_distance_bin_edges)
+        place_bin_edges)
 
     return block_diag(outbound_state_transitions,
                       inbound_state_transitions,
@@ -662,7 +663,7 @@ def glm_fit(spikes, design_matrix, ind):
 
 
 def get_encoding_model(train_position_info, train_spikes_data,
-                       linear_distance_bin_centers):
+                       place_bin_centers):
     '''The conditional intensities for each state (Outbound-Forward,
     Outbound-Reverse, Inbound-Forward, Inbound-Reverse)
 
@@ -670,7 +671,7 @@ def get_encoding_model(train_position_info, train_spikes_data,
     ----------
     train_position_info : pandas dataframe
     train_spikes_data : array_like
-    linear_distance_bin_centers : array_like, shape=(n_parameters,)
+    place_bin_centers : array_like, shape=(n_parameters,)
 
     Returns
     -------
@@ -687,9 +688,9 @@ def get_encoding_model(train_position_info, train_spikes_data,
            for ind, spikes in enumerate(train_spikes_data)]
 
     inbound_predict_design_matrix = _predictors_by_trajectory_direction(
-        'Inbound', linear_distance_bin_centers, design_matrix)
+        'Inbound', place_bin_centers, design_matrix)
     outbound_predict_design_matrix = _predictors_by_trajectory_direction(
-        'Outbound', linear_distance_bin_centers, design_matrix)
+        'Outbound', place_bin_centers, design_matrix)
 
     inbound_conditional_intensity = _get_conditional_intensity(
         fit, inbound_predict_design_matrix)
@@ -750,13 +751,13 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
 
 
 def _predictors_by_trajectory_direction(trajectory_direction,
-                                        linear_distance_bin_centers,
+                                        place_bin_centers,
                                         design_matrix):
     '''The design matrix for a given trajectory direction
     '''
-    predictors = {'linear_distance': linear_distance_bin_centers,
+    predictors = {'linear_distance': place_bin_centers,
                   'trajectory_direction': [trajectory_direction] *
-                  len(linear_distance_bin_centers)}
+                  len(place_bin_centers)}
     return build_design_matrices(
         [design_matrix.design_info], predictors)[0]
 
