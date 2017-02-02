@@ -149,4 +149,30 @@ def test_poisson_mark_likelihood_is_spike():
     expected_likelihood[no_spike_ind, :] = 1
 
     assert np.allclose(likelihood, expected_likelihood)
+
+
+def test_poisson_mark_likelihood_ground_process_intensity():
+    def identity(marks):
+        return marks
+
+    n_signals, n_marks, n_parameters = 10, 4, 4
+
+    marks = (np.ones((n_signals, n_marks)) *
+             np.arange(0, n_signals)[:, np.newaxis])
+
+    ground_process_intensity = np.zeros((n_signals, n_parameters))
+    altered_signal_ind = 3
+    ground_process_intensity[altered_signal_ind, :2] = -np.log(0.25)
+    ground_process_intensity[altered_signal_ind, 2:] = -np.log(0.75)
+
+    likelihood = poisson_mark_likelihood(
+        marks, joint_mark_intensity=identity,
+        ground_process_intensity=ground_process_intensity)
+
+    expected_likelihood = np.copy(marks)
+    expected_likelihood[altered_signal_ind, :2] = (
+        marks[altered_signal_ind, :2] * 0.25)
+    expected_likelihood[altered_signal_ind, 2:] = (
+        marks[altered_signal_ind, 2:] * 0.75)
+
     assert np.allclose(likelihood, expected_likelihood)
