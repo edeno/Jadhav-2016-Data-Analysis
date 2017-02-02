@@ -581,7 +581,26 @@ def _get_bin_centers(bin_edges):
 
 
 def set_initial_conditions(place_bin_edges,
-                           place_bin_centers, n_states):
+                           place_bin_centers, n_states=4):
+    '''Sets the prior for each state (Outbound-Forward, Outbound-Reverse,
+    Inbound-Forward, Inbound-Reverse).
+
+    Inbound states have greater weight on starting at the center arm.
+    Outbound states have weight everywhere else.
+
+    Parameters
+    ----------
+    place_bin_edges : array_like, shape=(n_parameters,)
+        Histogram bin edges of the place measure
+    place_bin_centers : array_like, shape=(n_parameters,)
+        Histogram bin centers of the place measure
+    n_states : int, optional
+
+    Returns
+    -------
+    initial_conditions : array_like, shape=(n_parameters * n_states,)
+        Initial conditions for each state are stacked row-wise.
+    '''
     place_bin_size = place_bin_edges[
         1] - place_bin_edges[0]
 
