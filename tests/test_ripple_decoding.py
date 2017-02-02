@@ -13,6 +13,9 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
 
 
 def test_evaluate_mark_space():
+    '''Tests that the mark space estimator puts a multivariate Gaussian
+    at each mark.
+    '''
     n_marks, n_training_spikes, mark_std_deviation = 4, 10, 1
 
     test_marks = np.arange(1, 9, 2)
@@ -99,6 +102,9 @@ def test_get_ground_process_intensity():
 
 
 def test_estimate_place_field():
+    '''Tests that there is a Gaussian centered around each given place
+    at spike
+    '''
     place_bins = np.linspace(0, 150, 61)
     place_at_spike = np.asarray([25, 100])
     place_std_deviation = 20
@@ -116,6 +122,8 @@ def test_estimate_place_field():
 
 
 def test_estimate_place_occupancy():
+    '''Tests that there is a Gaussian centered around each given place
+    '''
     place_bins = np.linspace(0, 150, 61)
     place = np.asarray([25, 100])
     place_std_deviation = 20
@@ -129,6 +137,8 @@ def test_estimate_place_occupancy():
 
 
 def test_poisson_mark_likelihood_is_spike():
+    '''Tests that a mark vector with all NaNs are counted as not spiking.
+    '''
     def identity(marks):
         return marks
 
@@ -152,6 +162,8 @@ def test_poisson_mark_likelihood_is_spike():
 
 
 def test_poisson_mark_likelihood_ground_process_intensity():
+    '''Tests that the ground process intensity is independent
+    for each parameter and signal'''
     def identity(marks):
         return marks
 
