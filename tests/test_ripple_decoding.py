@@ -8,7 +8,8 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  normalize_to_probability,
                                  estimate_place_field,
                                  estimate_ground_process_intensity,
-                                 estimate_place_occupancy)
+                                 estimate_place_occupancy,
+                                 poisson_mark_likelihood)
 
 
 def test_evaluate_mark_space():
@@ -125,3 +126,24 @@ def test_estimate_place_occupancy():
     expected2 = norm.pdf(
         place_bins, place[1], place_std_deviation)
     assert np.allclose(place_occupancy, expected1 + expected2)
+
+
+def test_poisson_mark_likelihood_is_spike():
+    def identity(marks):
+        return marks
+
+    n_signals, n_marks, n_parameters = 10, 4, 4
+
+    marks = (np.ones((n_signals, n_marks)) *
+             np.arange(0, n_signals)[:, np.newaxis])
+    no_spike_ind = 5
+    marks[no_spike_ind, :] = np.nan
+
+    ground_process_intensity = np.zeros((n_signals, n_parameters))
+
+    likelihood = poisson_mark_likelihood(
+        marks, joint_mark_intensity=identity,
+        ground_process_intensity=ground_process_intensity)
+    expected_likelihood = np.copy(marks)
+    expected_likelihood[no_spike_ind, :] = 1
+    assert np.allclose(likelihood, expected_likelihood)
