@@ -1,16 +1,22 @@
 '''Higher level functions for analyzing the data
 
 '''
-import copy
-import glob
-import itertools
-import os
-import warnings
+from copy import deepcopy
+from glob import glob
+from itertools import combinations
+from os.path import abspath, join, pardir
+from warnings import catch_warnings, simplefilter
 
 import pandas as pd
 
-import data_processing
-import spectral
+from src.data_processing import (get_area_pair_info, get_LFP_dataframe,
+                                 get_tetrode_pair_info,
+                                 make_tetrode_dataframe,
+                                 reshape_to_segments)
+from src.spectral import (get_lfps_by_area,
+                          multitaper_canonical_coherogram,
+                          multitaper_coherogram,
+                          power_and_coherence_change)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
@@ -19,49 +25,49 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: data_processing.get_LFP_dataframe(index, animals)
+    lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
 
     grouped = ripple_info.groupby(ripple_covariate)
-    params = copy.deepcopy(multitaper_params)
+    params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
     print(
         '\nComputing {coherence_name} for each level of the covariate'
         '"{covariate}"\nfor {num_pairs} pairs of electrodes:'.format(
-              coherence_name=coherence_name, covariate=ripple_covariate,
-              num_pairs=num_pairs))
+            coherence_name=coherence_name, covariate=ripple_covariate,
+            num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
         print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
-        reshaped_lfps = {key: data_processing.reshape_to_segments(
+        reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
             sampling_frequency=params['sampling_frequency'],
             window_offset=window_of_interest, concat_axis=1)
             for key in lfps}
-        for tetrode1, tetrode2 in itertools.combinations(
+        for tetrode1, tetrode2 in combinations(
                 sorted(reshaped_lfps), 2):
-            coherence_df = spectral.multitaper_coherogram(
+            coherence_df = multitaper_coherogram(
                 [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]],
                 **params)
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
                               tetrode1, tetrode2, coherence_df)
     print('\nComputing the difference in coherence between all levels:')
-    for level1, level2 in itertools.combinations(
+    for level1, level2 in combinations(
             sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         print('\tLevel Difference: {level2} - {level1}'.format(
             level1=level1, level2=level2))
-        for tetrode1, tetrode2 in itertools.combinations(
+        for tetrode1, tetrode2 in combinations(
                 sorted(reshaped_lfps), 2):
             level1_coherence_df = get_tetrode_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
@@ -69,7 +75,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
             level2_coherence_df = get_tetrode_pair_from_hdf(
                 coherence_name, ripple_covariate, level2,
                 tetrode1, tetrode2)
-            coherence_difference_df = spectral.power_and_coherence_change(
+            coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_tetrode_pair(
                 coherence_name, ripple_covariate, level_difference_name,
@@ -87,16 +93,16 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
     '''Computes the canonical coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: data_processing.get_LFP_dataframe(index, animals)
+    lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
 
     grouped = ripple_info.groupby(ripple_covariate)
-    params = copy.deepcopy(multitaper_params)
+    params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
     print('\nComputing canonical {coherence_name} for each '
           'level of the covariate "{covariate}":'.format(
@@ -107,35 +113,35 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         ripple_times_by_group = _get_ripple_times(ripples_df)
         print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
-        reshaped_lfps = {key: data_processing.reshape_to_segments(
+        reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
             sampling_frequency=params['sampling_frequency'],
             window_offset=window_of_interest, concat_axis=1).dropna(axis=1)
             for key in lfps}
-        area_pairs = itertools.combinations(
+        area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(
                 area1=area1, area2=area2))
-            area1_lfps = spectral.get_lfps_by_area(
+            area1_lfps = get_lfps_by_area(
                 area1, tetrode_info, reshaped_lfps)
-            area2_lfps = spectral.get_lfps_by_area(
+            area2_lfps = get_lfps_by_area(
                 area2, tetrode_info, reshaped_lfps)
-            coherogram = spectral.multitaper_canonical_coherogram(
+            coherogram = multitaper_canonical_coherogram(
                 [area1_lfps, area2_lfps], **params)
             save_area_pair(
                 coherence_name, ripple_covariate, level_name,
                 area1, area2, coherogram, epoch_index)
 
     print('\nComputing the difference in coherence between all levels:')
-    for level1, level2 in itertools.combinations(
+    for level1, level2 in combinations(
             sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         print(
             '\tLevel Difference: {level2} - {level1}'.format(
                 level1=level1, level2=level2))
-        area_pairs = itertools.combinations(
+        area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             print('\t\t...{area1} - {area2}'.format(
@@ -146,7 +152,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
             level2_coherence_df = get_area_pair_from_hdf(
                 coherence_name, ripple_covariate, level2,
                 area1, area2, epoch_index)
-            coherence_difference_df = spectral.power_and_coherence_change(
+            coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_area_pair(
                 coherence_name, ripple_covariate, level_difference_name,
@@ -160,16 +166,16 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
 def ripple_triggered_coherence(epoch_index, animals, ripple_times,
                                coherence_name='coherence',
                                multitaper_params={}):
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: data_processing.get_LFP_dataframe(index, animals)
+    lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
-    params = copy.deepcopy(multitaper_params)
+    params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
     print('\nComputing ripple-triggered {coherence_name} '
@@ -177,19 +183,19 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
               coherence_name=coherence_name,
               num_pairs=num_pairs))
 
-    reshaped_lfps = {key: data_processing.reshape_to_segments(
+    reshaped_lfps = {key: reshape_to_segments(
         lfps[key], ripple_times,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest,
         concat_axis=1)
         for key in lfps}
-    for tetrode1, tetrode2 in itertools.combinations(
+    for tetrode1, tetrode2 in combinations(
             sorted(reshaped_lfps), 2):
-        coherogram = spectral.multitaper_coherogram(
+        coherogram = multitaper_coherogram(
             [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **params)
         coherence_baseline = coherogram.xs(
             coherogram.index.min()[1], level='time')
-        coherence_change = spectral.power_and_coherence_change(
+        coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_tetrode_pair(coherence_name, 'all_ripples', '',
                           tetrode1, tetrode2, coherence_change)
@@ -200,41 +206,41 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
                                          ripple_times,
                                          coherence_name='coherence',
                                          multitaper_params={}):
-    tetrode_info = data_processing.make_tetrode_dataframe(animals)[
+    tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     print('Number of tetrodes per area:')
     print(tetrode_info.area.value_counts())
-    lfps = {index: data_processing.get_LFP_dataframe(index, animals)
+    lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
-    params = copy.deepcopy(multitaper_params)
+    params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
-    reshaped_lfps = {key: data_processing.reshape_to_segments(
+    reshaped_lfps = {key: reshape_to_segments(
         lfps[key], ripple_times,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest,
         concat_axis=1).dropna(axis=1)
         for key in lfps}
 
-    area_pairs = itertools.combinations(
+    area_pairs = combinations(
         sorted(tetrode_info.area.unique()), 2)
     print('\nComputing ripple-triggered '
           'canonical {coherence_name}:'.format(
               coherence_name=coherence_name))
     for area1, area2 in area_pairs:
         print('\t{area1} - {area2}'.format(area1=area1, area2=area2))
-        area1_lfps = spectral.get_lfps_by_area(
+        area1_lfps = get_lfps_by_area(
             area1, tetrode_info, reshaped_lfps)
-        area2_lfps = spectral.get_lfps_by_area(
+        area2_lfps = get_lfps_by_area(
             area2, tetrode_info, reshaped_lfps)
-        coherogram = spectral.multitaper_canonical_coherogram(
+        coherogram = multitaper_canonical_coherogram(
             [area1_lfps, area2_lfps], **params)
         coherence_baseline = coherogram.xs(
             coherogram.index.min()[1], level='time')
-        coherence_change = spectral.power_and_coherence_change(
+        coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_area_pair(
             coherence_name, 'all_ripples', '', area1, area2,
@@ -300,8 +306,8 @@ def area_pair_hdf_path(coherence_name, covariate, level, area1, area2):
 def analysis_file_path(animal, day, epoch):
     filename = '{animal}_{day:02d}_{epoch:02d}.h5'.format(
         animal=animal, day=day, epoch=epoch)
-    return os.path.join(
-        os.path.abspath(os.path.pardir), 'Processed-Data', filename)
+    return join(
+        abspath(pardir), 'Processed-Data', filename)
 
 
 def save_multitaper_parameters(epoch_index, coherence_name,
@@ -311,7 +317,7 @@ def save_multitaper_parameters(epoch_index, coherence_name,
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
         store.get_node(
             coherence_node_name)._v_attrs.multitaper_parameters = \
-                multitaper_params
+            multitaper_params
 
 
 def save_ripple_info(epoch_index, ripple_info):
@@ -325,21 +331,21 @@ def save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info):
     hdf_pair_path = '/{coherence_name}/tetrode_pair_info'.format(
         coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+        with catch_warnings():
+            simplefilter('ignore')
             store.put(hdf_path, tetrode_info)
             store.put(hdf_pair_path,
-                      data_processing.get_tetrode_pair_info(tetrode_info))
+                      get_tetrode_pair_info(tetrode_info))
 
 
 def save_area_pair_info(epoch_index, coherence_name, tetrode_info):
     hdf_pair_path = '/{coherence_name}/area_pair_info'.format(
         coherence_name=coherence_name)
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+        with catch_warnings():
+            simplefilter('ignore')
             store.put(
-                hdf_pair_path, data_processing.get_area_pair_info(
+                hdf_pair_path, get_area_pair_info(
                     tetrode_info, epoch_index))
 
 
@@ -355,9 +361,9 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_index, coherence_name,
 def get_all_tetrode_pair_info(coherence_name):
     '''Retrieves all the hdf5 files from the Processed Data directory and
     returns the tetrode pair info dataframe'''
-    file_path = os.path.join(os.path.abspath(
-        os.path.pardir), 'Processed-Data', '*.h5')
-    hdf5_files = glob.glob(file_path)
+    file_path = join(abspath(
+        pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob(file_path)
     hdf_path = '/{coherence_name}/tetrode_pair_info'.format(
         coherence_name=coherence_name)
     return pd.concat(
@@ -368,9 +374,9 @@ def get_all_tetrode_pair_info(coherence_name):
 def get_all_tetrode_info(coherence_name):
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = os.path.join(os.path.abspath(
-        os.path.pardir), 'Processed-Data', '*.h5')
-    hdf5_files = glob.glob(file_path)
+    file_path = join(abspath(
+        pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob(file_path)
     hdf_path = '/{coherence_name}/tetrode_info'.format(
         coherence_name=coherence_name)
     return pd.concat(
