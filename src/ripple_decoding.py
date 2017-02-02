@@ -28,9 +28,10 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     Parameters
     ----------
-    data : array_like, shape=(n_time, n_signals)
-    initial_conditions : array_like (n_bins, n_states)
-    state_transition : array_like (n_likelihood_bins)
+    data : array_like, shape=(n_time, n_signals, ...)
+    initial_conditions : array_like (n_parameters * n_states,)
+    state_transition : array_like (n_parameters * n_states,
+                                   n_parameters * n_states)
     likelihood_function : function
     likelihood_kwargs: dict, optional
         Additional arguments to the likelihood function
@@ -40,9 +41,12 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     Returns
     -------
-    posterior_over_time : array_like, shape=(n_time_points, n_states)
-    likelihood_over_time : array_like, shape=(n_time_points, n_states)
-    prior_over_time : array_like, shape=(n_time_points, n_states)
+    posterior_over_time : array_like, shape=(n_time_points,
+                                             n_parameters * n_states)
+    likelihood_over_time : array_like, shape=(n_time_points,
+                                              n_parameters * n_states)
+    prior_over_time : array_like, shape=(n_time_points,
+                                         n_parameters * n_states)
 
     '''
     posterior = initial_conditions
@@ -125,7 +129,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
         Instantaneous probability of observing a spike given mark vector
         from data. The parameters for this function should already be set,
         before it is passed to `poisson_mark_likelihood`.
-    ground_process_intensity : array_like, shape=(n_signals, n_parameters)
+    ground_process_intensity : array_like, shape=(n_signals,
+                                                  n_parameters * n_states)
         Probability of observing a spike regardless of marks.
     time_bin_size : float, optional
 
@@ -305,8 +310,9 @@ def estimate_marked_encoding_model(place_bins, place, place_at_spike,
     Returns
     -------
     place_occupancy : array_like, shape=(n_parameters * n_states,)
-    ground_process_intensity : list of arrays of shape=(n_parameters *
-                                                        n_states,)
+    ground_process_intensity : array_like, shape=(n_signals,
+                                                  n_parameters *
+                                                  n_states)
     place_field_estimator : list of arrays of shape=(n_parameters *
                                                      n_states,
                                                      n_training_spikes)
