@@ -525,7 +525,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
 
     # Fit state transition model
     print('\tFitting state transition model...')
-    state_transition = get_state_transition_matrix(
+    state_transition = estimate_state_transition(
         train_position_info, place_bin_edges)
 
     # Initial Conditions
@@ -600,8 +600,7 @@ def get_initial_conditions(place_bin_edges,
             prior_probability_of_state)
 
 
-def get_state_transition_matrix(train_position_info,
-                                linear_distance_bin_edges):
+def estimate_state_transition(train_position_info,
                               place_bin_edges):
     '''The block-diagonal empirical state transition matrix for each state:
     Outbound-Forward, Outbound-Reverse, Inbound-Forward, Inbound-Reverse
