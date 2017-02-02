@@ -137,7 +137,8 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
     is_spike = np.all(~np.isnan(marks), axis=1).flatten()
     probability_no_spike = np.exp(-ground_process_intensity *
                                   time_bin_size)
-    return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
+    return (joint_mark_intensity(marks) ** is_spike[:, np.newaxis] *
+            probability_no_spike)
 
 
 def evaluate_mark_space(test_marks, training_marks=None,
