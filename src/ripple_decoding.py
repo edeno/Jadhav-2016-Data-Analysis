@@ -535,7 +535,7 @@ def decode_ripple(epoch_index, animals, ripple_times,
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
     n_states = len(state_names)
-    initial_conditions = get_initial_conditions(
+    initial_conditions = set_initial_conditions(
         place_bin_edges, place_bin_centers, n_states)
 
     # Decode
@@ -580,7 +580,7 @@ def _get_bin_centers(bin_edges):
     return bin_edges[:-1] + np.diff(bin_edges) / 2
 
 
-def get_initial_conditions(place_bin_edges,
+def set_initial_conditions(place_bin_edges,
                            place_bin_centers, n_states):
     place_bin_size = place_bin_edges[
         1] - place_bin_edges[0]
