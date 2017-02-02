@@ -208,7 +208,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     n_signals = len(place_field_estimator)
     place_mark_estimator = np.zeros((n_signals, n_parameters))
 
-    for signal_ind in np.arange(0, n_signals):
+    for signal_ind in range(n_signals):
         place_mark_estimator[signal_ind, :] = np.dot(
             place_field_estimator[signal_ind],
             evaluate_mark_space(
