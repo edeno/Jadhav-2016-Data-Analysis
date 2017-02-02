@@ -134,7 +134,7 @@ def poisson_mark_likelihood(data, joint_mark_intensity=None,
     poisson_mark_likelihood : array_like, shape=(n_signals, n_parameters)
 
     '''
-    is_spike, marks = data[:, 0], data[:, 1:]
+    is_spike = np.all(~np.isnan(marks), axis=1).flatten()
     probability_no_spike = np.exp(-ground_process_intensity *
                                   time_bin_size)
     return (joint_mark_intensity(marks) ** is_spike) * probability_no_spike
