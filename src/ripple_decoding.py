@@ -50,12 +50,12 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     '''
     posterior = initial_conditions
-    n_states = initial_conditions.shape[1]
+    n_parameters = initial_conditions.shape[0]
     n_time_points = data.shape[0]
-    posterior_over_time = np.zeros((n_time_points, n_states))
+    posterior_over_time = np.zeros((n_time_points, n_parameters))
     if debug:
-        likelihood_over_time = np.zeros((n_time_points, n_states))
-        prior_over_time = np.zeros((n_time_points, n_states))
+        likelihood_over_time = np.zeros((n_time_points, n_parameters))
+        prior_over_time = np.zeros((n_time_points, n_parameters))
     for time_ind in np.arange(n_time_points):
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
