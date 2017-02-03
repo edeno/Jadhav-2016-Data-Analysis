@@ -583,12 +583,15 @@ def multitaper_canonical_coherence(data,
         area1_lfps, tapers, number_of_fft_samples, sampling_frequency)
     complex_spectra2 = _get_complex_spectra(
         area2_lfps, tapers, number_of_fft_samples, sampling_frequency)
-    coh = [_compute_canonical(
-        complex_spectra1, complex_spectra2, freq) for freq in freq_ind]
+    canonical_coherency = np.asarray(
+        [_compute_canonical(complex_spectra1, complex_spectra2, freq)
+         for freq in freq_ind], dtype=np.complex128)
 
-    return pd.DataFrame({'frequency': frequencies,
-                         'coherence_magnitude': coh,
-                         }).set_index('frequency')
+    return pd.DataFrame(
+        {'frequency': frequencies,
+         'coherence_magnitude': canonical_coherency ** 2,
+         'coherence_phase': np.angle(canonical_coherency)
+         }).set_index('frequency')
 
 
 @convert_pandas
@@ -662,7 +665,7 @@ def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
         complex_spectra2[:, freq_ind, :], full_matrices=False)
     Q = np.dot(np.dot(U1, V1), np.dot(U2, V2).conj().transpose())
     _, s, _ = np.linalg.svd(Q, full_matrices=False)
-    return s[0] ** 2
+    return s[0]
 
 
 def _match_frequency_resolution(time_halfbandwidth_product,
