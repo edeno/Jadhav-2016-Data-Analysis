@@ -197,7 +197,12 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
             coherogram.index.min()[1], level='time')
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
-        save_tetrode_pair(coherence_name, 'all_ripples', '',
+        save_tetrode_pair(coherence_name, 'all_ripples', 'baseline',
+                          tetrode1, tetrode2, coherence_baseline)
+        save_tetrode_pair(coherence_name, 'all_ripples', 'ripple_locked',
+                          tetrode1, tetrode2, coherogram)
+        save_tetrode_pair(coherence_name, 'all_ripples',
+                          'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
 
@@ -243,7 +248,14 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_area_pair(
-            coherence_name, 'all_ripples', '', area1, area2,
+            coherence_baseline, 'all_ripples', 'baseline', area1, area2,
+            coherogram, epoch_index)
+        save_area_pair(
+            coherence_name, 'all_ripples', 'ripple_locked', area1, area2,
+            coherogram, epoch_index)
+        save_area_pair(
+            coherence_name, 'all_ripples',
+            'ripple_difference_from_baseline', area1, area2,
             coherence_change, epoch_index)
     save_area_pair_info(epoch_index, coherence_name, tetrode_info)
 
