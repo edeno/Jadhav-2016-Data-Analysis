@@ -589,7 +589,7 @@ def multitaper_canonical_coherence(data,
 
     return pd.DataFrame(
         {'frequency': frequencies,
-         'coherence_magnitude': canonical_coherency ** 2,
+         'coherence_magnitude': np.abs(canonical_coherency),
          'coherence_phase': np.angle(canonical_coherency)
          }).set_index('frequency')
 
