@@ -1,19 +1,19 @@
 '''Exectue set of functions for each epoch
 '''
-import collections
-import datetime
-import os
-import subprocess
-import sys
+from collections import namedtuple
+from datetime.datetime import now
+from subprocess import PIPE, run
+from sys import argv, exit
 
-sys.path.append(os.path.join(os.path.abspath(os.path.pardir), 'src'))
-import analysis
-import ripple_decoding
-import ripple_detection
-
+from analysis import (canonical_coherence_by_ripple_type,
+                      coherence_by_ripple_type,
+                      ripple_triggered_canonical_coherence,
+                      ripple_triggered_coherence, save_ripple_info)
+from ripple_decoding import decode_ripple
+from ripple_detection import get_epoch_ripples
 
 sampling_frequency = 1500
-Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
+Animal = namedtuple('Animal', {'directory', 'short_name'})
 animals = {
     'HPa': Animal(directory='HPa_direct', short_name='HPa'),
     'HPb': Animal(directory='HPb_direct', short_name='HPb'),
@@ -89,32 +89,32 @@ ripple_covariates = ['is_spike', 'session_time',
 
 
 def coherence_by_ripple_type(epoch_index):
-    ripple_times = ripple_detection.get_epoch_ripples(
+    ripple_times = get_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency)
 
     # Compare before ripple to after ripple
     for coherence_name in coherence_type:
-        analysis.ripple_triggered_coherence(
+        ripple_triggered_coherence(
             epoch_index, animals, ripple_times,
             coherence_name=coherence_name,
             multitaper_params=coherence_type[coherence_name])
-        analysis.ripple_triggered_canonical_coherence(
+        ripple_triggered_canonical_coherence(
             epoch_index, animals, ripple_times,
             coherence_name=coherence_name,
             multitaper_params=coherence_type[coherence_name])
 
     # Compare different types of ripples
-    ripple_info = ripple_decoding.decode_ripple(
+    ripple_info = decode_ripple(
         epoch_index, animals, ripple_times)[0]
-    analysis.save_ripple_info(epoch_index, ripple_info)
+    save_ripple_info(epoch_index, ripple_info)
 
     for covariate in ripple_covariates:
         for coherence_name in coherence_type:
-            analysis.coherence_by_ripple_type(
+            coherence_by_ripple_type(
                 epoch_index, animals, ripple_info, covariate,
                 coherence_name=coherence_name,
                 multitaper_params=coherence_type[coherence_name])
-            analysis.canonical_coherence_by_ripple_type(
+            canonical_coherence_by_ripple_type(
                 epoch_index, animals, ripple_info, covariate,
                 coherence_name=coherence_name,
                 multitaper_params=coherence_type[coherence_name])
@@ -123,18 +123,18 @@ def coherence_by_ripple_type(epoch_index):
 def main():
     try:
         print('\n#############################################')
-        print('Script start time: {}'.format(datetime.datetime.now()))
+        print('Script start time: {}'.format(now()))
         print('#############################################\n')
         print('Git Hash:')
-        print(subprocess.run(['git', 'rev-parse', 'HEAD'],
-                             stdout=subprocess.PIPE, universal_newlines=True).stdout)
-        epoch_index = (sys.argv[1], int(sys.argv[2]),
-                       int(sys.argv[3]))  # animal, day, epoch
+        print(run(['git', 'rev-parse', 'HEAD'],
+                  stdout=PIPE, universal_newlines=True).stdout)
+        epoch_index = (argv[1], int(argv[2]),
+                       int(argv[3]))  # animal, day, epoch
         coherence_by_ripple_type(epoch_index)
-        print('Script end time: {}'.format(datetime.datetime.now()))
+        print('Script end time: {}'.format(now()))
     except IndexError:
-        sys.exit('Need three arguments to define epoch. '
-                 'Only gave {}.'.format(len(sys.argv) - 1))
+        exit('Need three arguments to define epoch. '
+             'Only gave {}.'.format(len(argv) - 1))
 
 if __name__ == '__main__':
-    sys.exit(main())
+    exit(main())
