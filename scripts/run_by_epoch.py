@@ -88,7 +88,7 @@ ripple_covariates = ['is_spike', 'session_time',
                      'ripple_trajectory', 'ripple_direction']
 
 
-def coherence_by_ripple_type(epoch_index):
+def estimate_ripple_coherence(epoch_index):
     ripple_times = get_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency)
 
