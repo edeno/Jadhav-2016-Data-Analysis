@@ -1,7 +1,7 @@
 '''Exectue set of functions for each epoch
 '''
 from collections import namedtuple
-from datetime.datetime import now
+from datetime import datetime
 from subprocess import PIPE, run
 from sys import argv, exit
 
@@ -123,15 +123,15 @@ def coherence_by_ripple_type(epoch_index):
 def main():
     try:
         print('\n#############################################')
-        print('Script start time: {}'.format(now()))
+        print('Script start time: {}'.format(datetime.now()))
         print('#############################################\n')
         print('Git Hash:')
         print(run(['git', 'rev-parse', 'HEAD'],
                   stdout=PIPE, universal_newlines=True).stdout)
         epoch_index = (argv[1], int(argv[2]),
                        int(argv[3]))  # animal, day, epoch
-        coherence_by_ripple_type(epoch_index)
-        print('Script end time: {}'.format(now()))
+        estimate_ripple_coherence(epoch_index)
+        print('Script end time: {}'.format(datetime.now()))
     except IndexError:
         exit('Need three arguments to define epoch. '
              'Only gave {}.'.format(len(argv) - 1))
