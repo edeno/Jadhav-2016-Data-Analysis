@@ -2,9 +2,9 @@
 
 '''
 
-import sys
 from itertools import combinations
 from os.path import abspath, join, pardir
+from sys import exit
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ def get_epochs(animal, day):
                 for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
     except IOError as err:
         print('I/O error({0}): {1}'.format(err.errno, err.strerror))
-        sys.exit()
+        exit()
 
 
 def get_data_structure(animal, day, file_type, variable):
@@ -593,7 +593,3 @@ def get_mark_indicator_dataframe(tetrode_index, animals):
     mark_dataframe.index = time[
         find_closest_ind(time, mark_dataframe.index.values)]
     return mark_dataframe.reindex(index=time, fill_value=np.nan)
-
-
-if __name__ == '__main__':
-    sys.exit()
