@@ -5,12 +5,12 @@ from datetime.datetime import now
 from subprocess import PIPE, run
 from sys import argv, exit
 
-from analysis import (canonical_coherence_by_ripple_type,
-                      coherence_by_ripple_type,
-                      ripple_triggered_canonical_coherence,
-                      ripple_triggered_coherence, save_ripple_info)
-from ripple_decoding import decode_ripple
-from ripple_detection import get_epoch_ripples
+from src.analysis import (canonical_coherence_by_ripple_type,
+                          coherence_by_ripple_type,
+                          ripple_triggered_canonical_coherence,
+                          ripple_triggered_coherence, save_ripple_info)
+from src.ripple_decoding import decode_ripple
+from src.ripple_detection import get_epoch_ripples
 
 sampling_frequency = 1500
 Animal = namedtuple('Animal', {'directory', 'short_name'})
