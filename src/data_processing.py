@@ -27,12 +27,31 @@ def get_data_filename(animal, day, file_type):
 
 
 def get_epochs(animal, day):
-    '''Returns a list of three-element tuples (animal, day, epoch index)
-    that can access the data structure within each Matlab file. Epoch type
-    is the task for that epoch (sleep, run, etc.) and environment is
-    the type of maze the animal is in (if any). If no epoch type or
-    environment is given, returns all epoch types and environments.
-    Days can be either a single integer day or a list of days.
+    '''For a given recording day and animal, get the three-element tuples
+    that uniquely identify a recording epoch in that day.
+
+    Parameters
+    ----------
+    animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
+    day : int
+        Day of the recording.
+
+    Returns
+    -------
+    epochs : list of tuples
+         A list of three-element tuples (animal, day, epoch index) that
+         uniquely identify a recording epoch in that day.
+
+    Examples
+    --------
+    >>> from collections import namedtuple
+    >>> Animal = namedtuple('Animal', {'directory', 'short_name'})
+    >>> animal = Animal(directory='test_dir', short_name='Test')
+    >>> day = 2
+    >>> get_epochs(animal, day)
+
     '''
     try:
         task_file = loadmat(
