@@ -27,8 +27,8 @@ def get_data_filename(animal, day, file_type):
 
 
 def get_epochs(animal, day):
-    '''For a given recording day and animal, get the three-element tuples
-    that uniquely identify a recording epoch in that day.
+    '''For a given recording day and animal, get the three-element epoch
+    index that uniquely identifys the recording epochs in that day.
 
     Parameters
     ----------
@@ -42,7 +42,7 @@ def get_epochs(animal, day):
     -------
     epochs : list of tuples
          A list of three-element tuples (animal, day, epoch index) that
-         uniquely identify a recording epoch in that day.
+         uniquely identifys the recording epochs in that day.
 
     Examples
     --------
