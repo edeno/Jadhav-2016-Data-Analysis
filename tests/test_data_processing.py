@@ -51,25 +51,11 @@ mock_cell_array = {'task': np.array([[
 }
 
 
-@patch('scipy.io.loadmat')
-@pytest.mark.parametrize(
-    'days, epoch_type, environment, expected_length', [
-        (2, '', '', 5),
-        (2, 'typeTest1', '', 4),
-        (2, 'typeTest2', '', 1),
-        (2, 'typeTest1', 'environTest1', 2),
-        (2, 'typeTest1', 'environTest2', 2),
-        (2, 'typeTest2', 'environTest1', 0),
-        (2, 'typeTest2', 'environTest3', 0),
-        (2, '', 'environTest2', 3),
-        ([2, 3], '', '', 10),
-        ([2, 3], 'typeTest1', '', 8),
-    ])
-def test_get_epochs(mock_loadmat, days, epoch_type, environment,
-                    expected_length):
-    Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
+@patch('src.data_processing.loadmat', return_value=mock_cell_array)
+def test_get_epochs(mock_loadmat):
+    Animal = namedtuple('Animal', {'directory', 'short_name'})
     animal = Animal(directory='test_dir', short_name='Test')
-    mock_loadmat.return_value = mock_cell_array
+    day = 2
+    expected_length = 5
 
-    assert len(get_epochs(animal, days, epoch_type=epoch_type,
-                          environment=environment)) == expected_length
+    assert len(get_epochs(animal, day)) == expected_length
