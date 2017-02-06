@@ -9,19 +9,17 @@ from src.data_processing import (find_closest_ind,
                                  get_data_filename, get_epochs)
 
 
-def test_data_file_name_returns_correct_file():
-    Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
+@pytest.mark.parametrize('day, expected_name', [
+    (2, '/Raw-Data/test_dir/Testdummy02.mat'),
+    (11, '/Raw-Data/test_dir/Testdummy11.mat'),
+])
+def test_data_file_name_returns_correct_file(day, expected_name):
     Animal = namedtuple('Animal', {'directory', 'short_name'})
     animal = Animal(directory='test_dir', short_name='Test')
     file_type = 'dummy'
 
-    day = 2
     file_name = get_data_filename(animal, day, file_type)
-    assert '/Raw-Data/test_dir/Testdummy02.mat' in file_name
-
-    day = 11
-    file_name = get_data_filename(animal, day, file_type)
-    assert '/Raw-Data/test_dir/Testdummy11.mat' in file_name
+    assert expected_name in file_name
 
 
 @pytest.mark.parametrize('search_array, target, expected_index', [
