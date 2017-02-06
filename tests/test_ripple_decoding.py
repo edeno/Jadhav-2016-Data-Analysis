@@ -9,7 +9,8 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  estimate_place_field,
                                  estimate_ground_process_intensity,
                                  estimate_place_occupancy,
-                                 poisson_mark_likelihood)
+                                 poisson_mark_likelihood,
+                                 _normal_pdf)
 
 
 def test_evaluate_mark_space():
@@ -188,3 +189,16 @@ def test_poisson_mark_likelihood_ground_process_intensity():
         marks[altered_signal_ind, 2:] * 0.75)
 
     assert np.allclose(likelihood, expected_likelihood)
+
+
+@mark.parametrize('x, mean, std_deviation', [
+    (np.asarray([-1, 1, 100]), 0, 1),
+    (np.asarray([-1, 1, 100]), 100, 25),
+    (np.asarray([-1, 1, 100]), np.asarray([0, 100, 10]),
+     np.asarray([2, 5, 3])),
+])
+def test__normal_pdf(x, mean, std_deviation):
+    expected = norm.pdf(x, loc=mean, scale=std_deviation)
+    assert np.allclose(
+        _normal_pdf(x, mean=mean, std_deviation=std_deviation),
+        expected)

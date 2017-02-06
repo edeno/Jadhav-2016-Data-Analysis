@@ -10,7 +10,6 @@ import pandas as pd
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
-from scipy.stats import norm
 from statsmodels.api import GLM, families
 
 from src.data_processing import (get_interpolated_position_dataframe,
@@ -173,8 +172,8 @@ def evaluate_mark_space(test_marks, training_marks=None,
     test_marks = np.tile(
         test_marks[:, np.newaxis], (1, n_training_spikes)).T
     return np.nanprod(
-        norm.pdf(test_marks, loc=training_marks,
-                 scale=mark_std_deviation),
+        _normal_pdf(test_marks, mean=training_marks,
+                    std_deviation=mark_std_deviation),
         axis=1)
 
 
@@ -249,8 +248,8 @@ def estimate_place_field(place_bin_centers, place_at_spike,
                                 (1, n_spikes))
     place_at_spike = np.tile(
         place_at_spike[:, np.newaxis], (1, n_parameters)).T
-    return norm.pdf(place_bin_centers, loc=place_at_spike,
-                    scale=place_std_deviation)
+    return _normal_pdf(place_bin_centers, mean=place_at_spike,
+                       std_deviation=place_std_deviation)
 
 
 def estimate_ground_process_intensity(place_field_estimator,
@@ -294,9 +293,8 @@ def estimate_place_occupancy(place_bin_centers, place,
     place_bin_centers = np.tile(place_bin_centers[:, np.newaxis],
                                 (1, n_places))
     place = np.tile(place[:, np.newaxis], (1, n_parameters)).T
-    return norm.pdf(
-        place_bin_centers, loc=place,
-        scale=place_std_deviation).sum(axis=1)
+    return _normal_pdf(place_bin_centers, mean=place,
+                       std_deviation=place_std_deviation).sum(axis=1)
 
 
 def estimate_marked_encoding_model(place_bin_centers, place,
@@ -605,8 +603,8 @@ def set_initial_conditions(place_bin_edges,
         1] - place_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
-        norm.pdf(
-            place_bin_centers, 0, place_bin_size * 2))
+        _normal_pdf(place_bin_centers, mean=0,
+                    std_deviation=place_bin_size * 2))
 
     inbound_initial_conditions = normalize_to_probability(
         (np.max(outbound_initial_conditions) *
@@ -845,3 +843,27 @@ def _ripple_session_time(ripple_times, session_time):
              .value_counts()
              .argmax())
             for ripple_start, ripple_end in ripple_times]
+
+
+def _normal_pdf(x, mean=0, std_deviation=1):
+    '''Evaluate the normal probability density function at specified points.
+
+    Unlike the `scipy.norm.pdf`, this function is not general and does not
+    do any sanity checking of the inputs. As a result it is a much faster
+    function, but you should be sure of your inputs before using.
+
+    Parameters
+    ----------
+    x : array_like
+        The normal probability function will be evaluated
+    mean : float or array_like, optional
+    std_deviation : float or array_like
+
+    Returns
+    -------
+    probability_density
+        The normal probability density function evaluated at `x`
+
+    '''
+    u = (x - mean) / std_deviation
+    return np.exp(-0.5 * u ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
