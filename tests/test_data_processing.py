@@ -1,5 +1,5 @@
 ''' Testing for the data processing module. '''
-import collections
+from collections import namedtuple
 from unittest.mock import patch
 
 import numpy as np
@@ -11,6 +11,7 @@ from src.data_processing import (find_closest_ind,
 
 def test_data_file_name_returns_correct_file():
     Animal = collections.namedtuple('Animal', {'directory', 'short_name'})
+    Animal = namedtuple('Animal', {'directory', 'short_name'})
     animal = Animal(directory='test_dir', short_name='Test')
     file_type = 'dummy'
 
