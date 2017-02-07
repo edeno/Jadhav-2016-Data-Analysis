@@ -15,5 +15,6 @@ install:
   - conda env create -f environment.yml
   - source activate Jadhav-2016-Data-Analysis
   - pip install -e .
-
 script: pytest
+after_success:
+    - coveralls
