@@ -10,6 +10,4 @@ setup(
         author='Eric Denovellis',
         author_email='edeno@bu.edu',
         packages=['src'],
-        setup_requires=['pytest-runner'],
-        tests_require=['pytest']
       )
