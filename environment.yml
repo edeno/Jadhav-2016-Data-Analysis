@@ -19,3 +19,4 @@ dependencies:
 - xray=0.7.0=py35_0
 - coveralls
 - matplotlib
+- icu=56.1
