@@ -9,7 +9,7 @@ setup(
         description='Exploratory analysis of data from Jadhav 2016',
         author='Eric Denovellis',
         author_email='edeno@bu.edu',
-        packages=['src'],
+        packages=[''],
         setup_requires=['pytest-runner'],
         tests_require=['pytest']
       )
