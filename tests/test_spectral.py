@@ -98,6 +98,7 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
                        num=num_data, endpoint=False)
     time_step_length, time_window_length = _get_window_lengths(
         time_window_duration, sampling_frequency, time_window_step)
+    axis = 0
 
     def test_func(data, **kwargs):
         return pd.DataFrame(kwargs)
@@ -105,7 +106,7 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
     kwargs = {'test1': [1, 2]}
     dataframes = list(_make_sliding_window_dataframe(
         test_func, [data], time_window_duration, time_window_step,
-        time_step_length, time_window_length, time, **kwargs))
+        time_step_length, time_window_length, time, axis, **kwargs))
     expected_time_steps = np.arange(
         time_window_duration / 2, time[-1] + 1 / sampling_frequency,
         time_window_step)
@@ -115,5 +116,5 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
 
     assert len(dataframes) == len(expected_time_steps)
     assert np.all([df.test1.values == [1, 2] for df in dataframes])
-    assert np.allclose([df.time.values[0] for df in dataframes],
-                       expected_time_steps)
+    assert np.allclose(
+        [df.index.values[0][1] for df in dataframes], expected_time_steps)
