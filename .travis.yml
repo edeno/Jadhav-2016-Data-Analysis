@@ -14,6 +14,6 @@ install:
   - conda info -a
   - conda env create -f environment.yml
   - source activate Jadhav-2016-Data-Analysis
-  - python setup.py install
+  - pip install -e .
 
 script: pytest
