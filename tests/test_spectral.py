@@ -9,8 +9,8 @@ from src.spectral import (_cross_spectrum, _get_frequencies, _get_tapers,
 
 
 @pytest.mark.parametrize(
-    "sampling_frequency, number_of_fft_samples, desired_frequencies, \
-     expected_frequencies, expected_ind", [
+    'sampling_frequency, number_of_fft_samples, desired_frequencies, \
+     expected_frequencies, expected_ind', [
         (1000, 10, None, [0, 100, 200, 300, 400, 500], [0, 1, 2, 3, 4, 5]),
         (1500, 10, None, [0, 150, 300, 450, 600, 750], [0, 1, 2, 3, 4, 5]),
         (1500, 10, [100, 200], [150], [1]),
@@ -28,7 +28,7 @@ def test_get_frequencies(sampling_frequency, number_of_fft_samples,
 
 
 @pytest.mark.parametrize(
-    "time_series_length, number_of_tapers, expected_shape", [
+    'time_series_length, number_of_tapers, expected_shape', [
         (23, 1, (23, 1)),
         (23, 5, (23, 5)),
         (8, 3, (8, 3)),
@@ -47,8 +47,8 @@ STD_DEV = 2
 
 
 @pytest.mark.parametrize(
-    "time_series_length, number_of_tapers, data, number_of_fft_samples, \
-     expected_shape", [
+    'time_series_length, number_of_tapers, data, number_of_fft_samples, \
+     expected_shape', [
         (23, 1, np.random.normal(MEAN, STD_DEV, (23, 1)), 8, (8, 1, 1)),
         (23, 3, np.random.normal(MEAN, STD_DEV, (23, 1)), 8, (8, 1, 3)),
         (23, 1, np.random.normal(MEAN, STD_DEV, (23, 2)), 8, (8, 2, 1)),
@@ -67,7 +67,7 @@ def test_multitaper_fft_shape(time_series_length, number_of_tapers, data,
     assert np.all(dft.shape == expected_shape)
 
 
-@pytest.mark.parametrize("test_number, expected_number", [
+@pytest.mark.parametrize('test_number, expected_number', [
     (3, 2),
     (17, 5),
     (1, 0),
@@ -76,7 +76,7 @@ def test_nextpower2(test_number, expected_number):
     assert _nextpower2(test_number) == expected_number
 
 
-@pytest.mark.parametrize("complex_spectrum, expected_shape", [
+@pytest.mark.parametrize('complex_spectrum, expected_shape', [
     (np.random.normal(MEAN, STD_DEV, (23, 2, 1)), (23,)),
 ])
 def test_cross_spectrum_shape(complex_spectrum, expected_shape):
@@ -86,7 +86,7 @@ def test_cross_spectrum_shape(complex_spectrum, expected_shape):
 
 
 @pytest.mark.parametrize(
-    "num_data, time_window_duration, time_window_step, sampling_frequency",
+    'num_data, time_window_duration, time_window_step, sampling_frequency',
     [(1000, 0.1, 0.1, 1000), (1000, 0.1, 0.05, 1000),
      (1000, 0.1, 0.3, 1000), (1000, 0.1, 0.3, 1500),
      (1500, 0.1, 0.3, 1500)])
@@ -110,8 +110,8 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
     expected_time_steps = np.arange(
         time_window_duration / 2, time[-1] + 1 / sampling_frequency,
         time_window_step)
-    if time_step_length * (len(expected_time_steps) - 1) + \
-       time_window_length > num_data:
+    if (time_step_length * (len(expected_time_steps) - 1) +
+            time_window_length > num_data):
         expected_time_steps = expected_time_steps[:-1]
 
     assert len(dataframes) == len(expected_time_steps)
