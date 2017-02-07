@@ -442,8 +442,9 @@ def merge_symmetric_key_pairs(pair_dict):
     '''
     skip_list = list()
     merged_dict = dict()
+    print(pair_dict)
 
-    for area1, area2 in pair_dict:
+    for area1, area2 in sorted(pair_dict):
         if area1 == area2:
             merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
         elif ((area2, area1) in pair_dict and
