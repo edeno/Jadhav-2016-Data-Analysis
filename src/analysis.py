@@ -39,7 +39,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     window_of_interest = params.pop('window_of_interest')
 
     print(
-        '\nComputing {coherence_name} for each level of the covariate'
+        '\nComputing {coherence_name} for each level of the covariate '
         '"{covariate}"\nfor {num_pairs} pairs of electrodes:'.format(
             coherence_name=coherence_name, covariate=ripple_covariate,
             num_pairs=num_pairs))
