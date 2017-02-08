@@ -2,21 +2,29 @@
 
 '''
 from copy import deepcopy
+from functools import partial, wraps
 from glob import glob
 from itertools import combinations
 from os.path import abspath, join, pardir
 from warnings import catch_warnings, simplefilter
 
+import numpy as np
 import pandas as pd
 
-from src.data_processing import (get_area_pair_info, get_LFP_dataframe,
-                                 get_tetrode_pair_info,
-                                 make_tetrode_dataframe,
+from src.data_processing import (get_area_pair_info,
+                                 get_interpolated_position_dataframe,
+                                 get_LFP_dataframe,
+                                 get_mark_indicator_dataframe,
+                                 get_tetrode_pair_info, make_tetrode_dataframe,
                                  reshape_to_segments)
-from src.spectral import (get_lfps_by_area,
-                          multitaper_canonical_coherogram,
-                          multitaper_coherogram,
-                          power_and_coherence_change)
+from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
+                                 estimate_marked_encoding_model,
+                                 estimate_state_transition,
+                                 set_initial_conditions, get_ripple_info,
+                                 joint_mark_intensity, poisson_mark_likelihood,
+                                 predict_state)
+from src.spectral import (get_lfps_by_area, multitaper_canonical_coherogram,
+                          multitaper_coherogram, power_and_coherence_change)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
@@ -450,3 +458,143 @@ def merge_symmetric_key_pairs(pair_dict):
             merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
 
     return merged_dict
+
+
+def decode_ripple_clusterless(epoch_index, animals, ripple_times,
+                              sampling_frequency=1500,
+                              n_place_bins=61,
+                              place_std_deviation=None,
+                              mark_std_deviation=20):
+    # Encode
+    tetrode_info = make_tetrode_dataframe(animals)[
+        epoch_index]
+
+    mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
+                      'channel_4_max']
+    tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
+                      .loc[:, mark_variables])
+                     for tetrode_index in tetrode_info.loc[
+        tetrode_info.area.isin(['CA1', 'iCA1']) &
+        (tetrode_info.descrip != 'CA1Ref'), :]]
+
+    position_variables = ['linear_distance', 'trajectory_direction',
+                          'speed']
+    position_info = (get_interpolated_position_dataframe(
+        epoch_index, animals).loc[:, position_variables])
+
+    train_position_info = position_info.query('speed > 4')
+
+    place = _get_place(train_position_info)
+    place_at_spike = [_get_place_at_spike(mark_tetrode_data,
+                                          train_position_info)
+                      for mark_tetrode_data in tetrode_marks]
+    training_marks = [_get_training_marks(mark_tetrode_data,
+                                          train_position_info,
+                                          mark_variables)
+                      for mark_tetrode_data in tetrode_marks]
+
+    place_bin_edges = np.linspace(
+        np.floor(position_info.linear_distance.min()),
+        np.ceil(position_info.linear_distance.max()),
+        n_place_bins + 1)
+    place_bin_centers = _get_bin_centers(place_bin_edges)
+
+    if place_std_deviation is None:
+        place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
+
+    (place_occupancy, ground_process_intensity, place_field_estimator,
+     training_marks) = estimate_marked_encoding_model(
+        place_bin_centers, place, place_at_spike, training_marks,
+        place_std_deviation=place_std_deviation)
+
+    fixed_joint_mark_intensity = partial(
+        joint_mark_intensity, place_field_estimator=place_field_estimator,
+        place_occupancy=place_occupancy, training_marks=training_marks,
+        mark_std_deviation=mark_std_deviation)
+
+    combined_likelihood_kwargs = dict(
+        likelihood_function=poisson_mark_likelihood,
+        likelihood_kwargs=dict(
+            joint_mark_intensity=fixed_joint_mark_intensity,
+            ground_process_intensity=ground_process_intensity)
+    )
+
+    # Fit state transition model
+    print('\tFitting state transition model...')
+    state_transition = estimate_state_transition(
+        train_position_info, place_bin_edges)
+
+    # Initial Conditions
+    print('\tSetting initial conditions...')
+    state_names = ['outbound_forward', 'outbound_reverse',
+                   'inbound_forward', 'inbound_reverse']
+    n_states = len(state_names)
+    initial_conditions = set_initial_conditions(
+        place_bin_edges, place_bin_centers, n_states)
+
+    # Decode
+    decoder_kwargs = dict(
+        initial_conditions=initial_conditions,
+        state_transition=state_transition,
+        likelihood_function=combined_likelihood,
+        likelihood_kwargs=combined_likelihood_kwargs
+    )
+
+    test_marks = _get_ripple_marks(
+        tetrode_marks, ripple_times, sampling_frequency)
+
+    posterior_density = [predict_state(ripple_marks, **decoder_kwargs)
+                         for ripple_marks in test_marks]
+    return get_ripple_info(
+        posterior_density, test_marks, ripple_times,
+        state_names, session_time)
+
+
+def _convert_to_states(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        d = function(*args, **kwargs)
+        return [d['Outbound'], d['Outbound'],
+                d['Inbound'], d['Inbound']]
+    return wrapper
+
+
+@_convert_to_states
+def _get_place(train_position_info, place_measure='linear_distance'):
+    return {trajectory_direction: grouped.loc[:, place_measure].values
+            for trajectory_direction, grouped
+            in (train_position_info
+                .groupby('trajectory_direction'))}
+
+
+@_convert_to_states
+def _get_place_at_spike(mark_tetrode_data, train_position_info,
+                        place_measure='linear_distance'):
+    return {trajectory_direction: (grouped.dropna()
+                                   .loc[:, place_measure].values)
+            for trajectory_direction, grouped
+            in (mark_tetrode_data
+                .join(train_position_info)
+                .groupby('trajectory_direction'))}
+
+
+@_convert_to_states
+def _get_training_marks(mark_tetrode_data, train_position_info,
+                        mark_variables):
+    return {trajectory_direction: (grouped.dropna()
+                                   .loc[:, mark_variables].values)
+            for trajectory_direction, grouped
+            in (mark_tetrode_data
+                .join(train_position_info)
+                .groupby('trajectory_direction'))}
+
+
+def _get_ripple_marks(tetrode_marks, ripple_times, sampling_frequency):
+    mark_ripples = [reshape_to_segments(
+        mark_tetrode_data, ripple_times,
+        concat_axis=0, sampling_frequency=sampling_frequency)
+        for mark_tetrode_data in tetrode_marks]
+
+    return [np.stack([df.loc[ripple_ind + 1, :].values
+                      for df in mark_ripples], axis=1)
+            for ripple_ind in np.arange(len(ripple_times))]
