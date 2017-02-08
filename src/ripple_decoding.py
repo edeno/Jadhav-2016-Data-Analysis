@@ -391,7 +391,7 @@ def combined_likelihood(data, likelihood_function=None,
 
 def empirical_movement_transition_matrix(place,
                                          place_bin_edges,
-                                         sequence_compression_factor=33):
+                                         sequence_compression_factor=16):
     '''Estimate the probablity of the next position based on the movement
      data, given the movment is sped up by the
      `sequence_compression_factor`
