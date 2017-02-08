@@ -29,7 +29,6 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
@@ -97,7 +96,6 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
 
@@ -170,7 +168,6 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
@@ -215,9 +212,6 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    print(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    print('Number of tetrodes per area:')
-    print(tetrode_info.area.value_counts())
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     params = deepcopy(multitaper_params)
