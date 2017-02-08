@@ -2,6 +2,7 @@
 
 - Multi-taper spectral analysis
 - Coherence
+- Canonical Coherence
 - Group delay
 - Parametric Spectral Granger
 
@@ -121,10 +122,10 @@ def multitaper_spectrogram(data,
                            pad=0,
                            time_window_step=None,
                            desired_frequencies=None,
-                           number_of_tapers=None,
+                           n_tapers=None,
                            tapers=None,
                            time=None,
-                           number_of_fft_samples=None):
+                           n_fft_samples=None):
     ''' Returns a pandas dataframe with columns time, frequency, power
 
 
@@ -133,14 +134,14 @@ def multitaper_spectrogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=time_window_length,
+            n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency,
             time_window_duration=time_window_duration,
             time_window_step=time_window_duration,
             tapers=tapers,
-            number_of_tapers=number_of_tapers,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
@@ -156,23 +157,23 @@ def multitaper_spectrogram(data,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
-        number_of_tapers=number_of_tapers,
+        n_tapers=n_tapers,
         pad=pad,
         tapers=tapers,
         frequencies=frequencies,
         freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples))
+        n_fft_samples=n_fft_samples))
     ).sort_index()
 
 
-def _set_default_multitaper_parameters(number_of_time_samples=None,
+def _set_default_multitaper_parameters(n_time_samples=None,
                                        sampling_frequency=None,
                                        time_window_step=None,
                                        time_window_duration=None,
-                                       tapers=None, number_of_tapers=None,
+                                       tapers=None, n_tapers=None,
                                        time_halfbandwidth_product=None,
                                        pad=None,
-                                       number_of_fft_samples=None,
+                                       n_fft_samples=None,
                                        frequencies=None,
                                        freq_ind=None,
                                        desired_frequencies=None):
@@ -180,25 +181,25 @@ def _set_default_multitaper_parameters(number_of_time_samples=None,
     subset of them are unset
     '''
     if tapers is None:
-        if number_of_tapers is None:
-            number_of_tapers = int(
+        if n_tapers is None:
+            n_tapers = int(
                 np.floor(2 * time_halfbandwidth_product - 1))
 
-        tapers = _get_tapers(number_of_time_samples,
+        tapers = _get_tapers(n_time_samples,
                              sampling_frequency,
                              time_halfbandwidth_product,
-                             number_of_tapers)
+                             n_tapers)
     if pad is None:
         pad = -1
-    if number_of_fft_samples is None:
-        next_exponent = _nextpower2(number_of_time_samples)
-        number_of_fft_samples = max(
-            2 ** (next_exponent + pad), number_of_time_samples)
+    if n_fft_samples is None:
+        next_exponent = _nextpower2(n_time_samples)
+        n_fft_samples = max(
+            2 ** (next_exponent + pad), n_time_samples)
     if frequencies is None:
         frequencies, freq_ind = _get_frequencies(
-            sampling_frequency, number_of_fft_samples,
+            sampling_frequency, n_fft_samples,
             desired_frequencies=desired_frequencies)
-    return tapers, number_of_fft_samples, frequencies, freq_ind
+    return tapers, n_fft_samples, frequencies, freq_ind
 
 
 def _get_window_lengths(time_window_duration, sampling_frequency,
@@ -260,7 +261,7 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     return mesh
 
 
-def _get_frequencies(sampling_frequency, number_of_fft_samples,
+def _get_frequencies(sampling_frequency, n_fft_samples,
                      desired_frequencies=None):
     ''' Returns the frequencies and frequency index. Desired frequencies is
     a two element tuple that defines the range of frequencies returned.
@@ -270,23 +271,23 @@ def _get_frequencies(sampling_frequency, number_of_fft_samples,
     if desired_frequencies is None:
         desired_frequencies = [0, sampling_frequency / 2]
     frequencies = np.linspace(0, sampling_frequency,
-                              num=number_of_fft_samples + 1)
+                              num=n_fft_samples + 1)
     frequency_ind = np.where((desired_frequencies[0] <= frequencies) &
                              (frequencies <= desired_frequencies[1]))[0]
     return frequencies[frequency_ind], frequency_ind
 
 
 def _get_tapers(time_series_length, sampling_frequency,
-                time_halfbandwidth_product, number_of_tapers):
+                time_halfbandwidth_product, n_tapers):
     ''' Returns the Discrete prolate spheroidal sequences (tapers) for
     multi-taper spectral analysis (time series length x tapers).
     '''
     tapers, _ = dpss_windows(
-        time_series_length, time_halfbandwidth_product, number_of_tapers)
+        time_series_length, time_halfbandwidth_product, n_tapers)
     return tapers.T * np.sqrt(sampling_frequency)
 
 
-def _multitaper_fft(tapers, data, number_of_fft_samples,
+def _multitaper_fft(tapers, data, n_fft_samples,
                     sampling_frequency):
     ''' Projects the data on the tapers and returns the discrete Fourier
     transform (frequencies x trials x tapers) with len(frequencies) =
@@ -298,7 +299,7 @@ def _multitaper_fft(tapers, data, number_of_fft_samples,
         # There are no trials
         projected_data = data[:, np.newaxis,
                               np.newaxis] * tapers[:, :, np.newaxis]
-    return (fft(projected_data, n=number_of_fft_samples, axis=0) /
+    return (fft(projected_data, n=n_fft_samples, axis=0) /
             sampling_frequency)
 
 
@@ -324,25 +325,70 @@ def multitaper_power_spectral_density(data,
                                       tapers=None,
                                       frequencies=None,
                                       freq_ind=None,
-                                      number_of_fft_samples=None,
-                                      number_of_tapers=None,
+                                      n_fft_samples=None,
+                                      n_tapers=None,
                                       desired_frequencies=None):
-    ''' Returns the multi-taper power spectral density of a time series
+    '''Estimates the power spectral density of a time series using the
+    multitaper method.
+
+    Data is automatically centered.
+
+    Parameters
+    ----------
+    data : array_like, shape=(n_time_samples, n_trials)
+        A time series of data.
+    sampling_frequency : int, optional
+        Number of samples per second
+    time_halfbandwidth_product : float, optional
+        Controls the amount of smoothing in the time and frequency domains.
+        It is equal to the duration of the time window multiplied by the
+        desired half-bandwidth frequency resolution. If `n_tapers` is not
+        set, then the number of tapers will be (2 *
+        time_halfbandwidth_product) - 1.
+    pad : int, optional
+        Zero-pad the fft to the next power of two for computational
+        efficiency. Setting this value to -1 results in no padding of the
+        fft. The default (0) returns the Fourier frequencies.
+    n_tapers : int, optional
+        The number of tapers.
+    desired_frequencies : array_like, optional
+        A two-element array (low_frequency, high_frequency) that specifies
+        the pass band of the returned power spectral density.
+
+    Returns
+    -------
+    multitaper_power_spectral_density : Pandas Dataframe
+        The spectral density as a function of frequency. Frequency is set
+        as the index of the Dataframe.
+
+    Other Parameters
+    ----------------
+    tapers : array_like, optional
+        Allows the user to pass a pre-computed taper.
+    frequencies : array_like, optional
+        Allows the user to pass a pre-computed frequencies for the fft.
+    freq_ind : array_like, optional
+        Allows the user to pass a frequency index to limit the returned
+        fft frequencies. This can be computed by setting the
+        `desired_frequencies` parameter.
+    n_fft_samples : int, optional
+        Allows the user to specify the number of fft samples.
+
     '''
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=data.shape[0],
+            n_time_samples=data.shape[0],
             sampling_frequency=sampling_frequency,
             tapers=tapers,
             frequencies=frequencies,
             freq_ind=freq_ind,
-            number_of_fft_samples=number_of_fft_samples,
-            number_of_tapers=number_of_tapers,
+            n_fft_samples=n_fft_samples,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
     complex_spectrum = _multitaper_fft(
-        tapers, _center_data(data), number_of_fft_samples,
+        tapers, _center_data(data), n_fft_samples,
         sampling_frequency)
     psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
                                   complex_spectrum[freq_ind, :, :])
@@ -355,25 +401,68 @@ def multitaper_power_spectral_density(data,
 @convert_pandas
 def multitaper_coherence(data, sampling_frequency=1000,
                          time_halfbandwidth_product=3, pad=0,
-                         number_of_tapers=None, desired_frequencies=None,
+                         n_tapers=None, desired_frequencies=None,
                          tapers=None, frequencies=None, freq_ind=None,
-                         number_of_fft_samples=None):
-    ''' Returns the multi-taper coherency of two time series
-    data[0] (time x trials)
-    data[1] (time x trials)
+                         n_fft_samples=None):
+    '''Estimates the frequency domain correlation of two time series
+
+    The data is automatically centered.
+
+    Parameters
+    ----------
+    data : 2-element list of arrays of shape=(n_time_samples, n_trials)
+        Two time series of equal duration.
+    sampling_frequency : int, optional
+        Number of samples per second
+    time_halfbandwidth_product : float, optional
+        Controls the amount of smoothing in the time and frequency domains.
+        It is equal to the duration of the time window multiplied by the
+        desired half-bandwidth frequency resolution. If `n_tapers` is not
+        set, then the number of tapers will be (2 *
+        time_halfbandwidth_product) - 1.
+    pad : int, optional
+        Zero-pad the fft to the next power of two for computational
+        efficiency. Setting this value to -1 results in no padding of the
+        fft. The default (0) returns the Fourier frequencies.
+    n_tapers : int, optional
+        The number of tapers.
+    desired_frequencies : array_like, optional
+        A two-element array (low_frequency, high_frequency) that specifies
+        the pass band of the returned coherence.
+
+    Returns
+    -------
+    multitaper_coherence : Pandas DataFrame
+        The DataFrame contains the magnitude of the coherence (not the
+        magnitude-squared coherence), the phase of the coherence, and the
+        power spectra of both signals. The index is frequency.
+
+    Other Parameters
+    ----------------
+    tapers : array_like, optional
+        Allows the user to pass a pre-computed taper.
+    frequencies : array_like, optional
+        Allows the user to pass a pre-computed frequencies for the fft.
+    freq_ind : array_like, optional
+        Allows the user to pass a frequency index to limit the returned
+        fft frequencies. This can be computed by setting the
+        `desired_frequencies` parameter.
+    n_fft_samples : int, optional
+        Allows the user to specify the number of fft samples.
+
     '''
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=data[0].shape[0],
+            n_time_samples=data[0].shape[0],
             sampling_frequency=sampling_frequency,
             tapers=tapers,
-            number_of_tapers=number_of_tapers,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
     data = [_center_data(datum) for datum in data]
     complex_spectra = [_multitaper_fft(
-        tapers, datum, number_of_fft_samples, sampling_frequency)
+        tapers, datum, n_fft_samples, sampling_frequency)
         for datum in data]
     cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
                                      complex_spectra[1][freq_ind, :, :])
@@ -399,28 +488,70 @@ def multitaper_coherogram(data,
                           sampling_frequency=1000,
                           time_window_duration=1,
                           time_window_step=None,
-                          desired_frequencies=None,
                           time_halfbandwidth_product=3,
-                          number_of_tapers=None,
                           pad=0,
+                          n_tapers=None,
+                          desired_frequencies=None,
                           tapers=None,
                           time=None):
-    ''' Returns a pandas dataframe with the information for a coherogram.
-    Sampling frequency and frequency resolution inputs are given in Hertz.
-    Time window duration and steps are given in seconds.
+    '''Estimates the frequency domain correlation of two time series
+    over sliding time windows.
+
+    The data is automatically centered for each time window
+
+    Parameters
+    ----------
+    data : 2-element list of arrays of shape=(n_time_samples, n_trials)
+        Two time series of equal duration.
+    sampling_frequency : int, optional
+        Number of samples per second
+    time_window_duration : float
+        The duration of the sliding time window.
+    time_window_step : float
+        The amount the sliding time window advances.
+    time_halfbandwidth_product : float, optional
+        Controls the amount of smoothing in the time and frequency domains.
+        It is equal to the duration of the time window multiplied by the
+        desired half-bandwidth frequency resolution. If `n_tapers` is not
+        set, then the number of tapers will be (2 *
+        time_halfbandwidth_product) - 1.
+    pad : int, optional
+        Zero-pad the fft to the next power of two for computational
+        efficiency. Setting this value to -1 results in no padding of the
+        fft. The default (0) returns the Fourier frequencies.
+    n_tapers : int, optional
+        The number of tapers.
+    desired_frequencies : array_like, optional
+        A two-element array (low_frequency, high_frequency) that specifies
+        the pass band of the returned coherence.
+
+    Returns
+    -------
+    multitaper_coherogram : Pandas DataFrame
+        The DataFrame contains the magnitude of the coherence (not the
+        magnitude-squared coherence), the phase of the coherence, and the
+        power spectra of both signals. The index is time and frequency.
+
+    Other Parameters
+    ----------------
+    tapers : array_like, optional
+        Allows the user to pass a pre-computed taper.
+    time : array_like, optional
+        The labels for the time axis.
+
     '''
     time_step_length, time_window_length = _get_window_lengths(
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=time_window_length,
+            n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency,
             time_window_duration=time_window_duration,
             time_window_step=time_window_duration,
             tapers=tapers,
-            number_of_tapers=number_of_tapers,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
@@ -436,12 +567,12 @@ def multitaper_coherogram(data,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
-        number_of_tapers=number_of_tapers,
+        n_tapers=n_tapers,
         pad=pad,
         tapers=tapers,
         frequencies=frequencies,
         freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples,
+        n_fft_samples=n_fft_samples,
     ))).sort_index()
 
 
@@ -531,7 +662,7 @@ def difference_from_baseline_coherence(lfps, times_of_interest,
                                        time_window_step=None,
                                        desired_frequencies=None,
                                        time_halfbandwidth_product=3,
-                                       number_of_tapers=None):
+                                       n_tapers=None):
     ''''''
     baseline_time_halfbandwidth_product = _match_frequency_resolution(
         time_halfbandwidth_product, time_window_duration, baseline_window)
@@ -566,23 +697,23 @@ def multitaper_canonical_coherence(data,
                                    tapers=None,
                                    frequencies=None,
                                    freq_ind=None,
-                                   number_of_fft_samples=None,
-                                   number_of_tapers=None,
+                                   n_fft_samples=None,
+                                   n_tapers=None,
                                    desired_frequencies=None):
     area1_lfps, area2_lfps = data[0], data[1]
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=area1_lfps[0].shape[0],
+            n_time_samples=area1_lfps[0].shape[0],
             sampling_frequency=sampling_frequency,
             tapers=tapers,
-            number_of_tapers=number_of_tapers,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
     complex_spectra1 = _get_complex_spectra(
-        area1_lfps, tapers, number_of_fft_samples, sampling_frequency)
+        area1_lfps, tapers, n_fft_samples, sampling_frequency)
     complex_spectra2 = _get_complex_spectra(
-        area2_lfps, tapers, number_of_fft_samples, sampling_frequency)
+        area2_lfps, tapers, n_fft_samples, sampling_frequency)
     canonical_coherency = np.asarray(
         [_compute_canonical(complex_spectra1, complex_spectra2, freq)
          for freq in freq_ind], dtype=np.complex128)
@@ -601,7 +732,7 @@ def multitaper_canonical_coherogram(data,
                                     time_window_step=None,
                                     desired_frequencies=None,
                                     time_halfbandwidth_product=3,
-                                    number_of_tapers=None,
+                                    n_tapers=None,
                                     pad=0,
                                     tapers=None,
                                     time=None):
@@ -609,14 +740,14 @@ def multitaper_canonical_coherogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, number_of_fft_samples, frequencies, freq_ind = \
+    tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
-            number_of_time_samples=time_window_length,
+            n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency,
             time_window_duration=time_window_duration,
             time_window_step=time_window_duration,
             tapers=tapers,
-            number_of_tapers=number_of_tapers,
+            n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
@@ -632,16 +763,16 @@ def multitaper_canonical_coherogram(data,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
-        number_of_tapers=number_of_tapers,
+        n_tapers=n_tapers,
         pad=pad,
         tapers=tapers,
         frequencies=frequencies,
         freq_ind=freq_ind,
-        number_of_fft_samples=number_of_fft_samples,
+        n_fft_samples=n_fft_samples,
     ))).sort_index()
 
 
-def _get_complex_spectra(lfps, tapers, number_of_fft_samples,
+def _get_complex_spectra(lfps, tapers, n_fft_samples,
                          sampling_frequency):
     ''' Returns a numpy array of complex spectra
     (electrode x frequencies x (trials x tapers)) for input into the
@@ -650,7 +781,7 @@ def _get_complex_spectra(lfps, tapers, number_of_fft_samples,
     centered_lfps = _center_data(lfps, axis=1)
     complex_spectra = [_multitaper_fft(
         tapers, centered_lfps[lfp_ind, ...].squeeze(),
-        number_of_fft_samples, sampling_frequency)
+        n_fft_samples, sampling_frequency)
         for lfp_ind in np.arange(centered_lfps.shape[0])]
     complex_spectra = np.concatenate(
         [spectra[np.newaxis, ...] for spectra in complex_spectra])
