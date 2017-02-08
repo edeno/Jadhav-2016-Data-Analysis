@@ -15,10 +15,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LogNorm
-from nitime.algorithms.spectral import dpss_windows
 from scipy.fftpack import fft
 from scipy.stats import linregress
 
+from nitime.algorithms.spectral import dpss_windows
 from src.data_processing import reshape_to_segments
 
 
@@ -119,15 +119,58 @@ def multitaper_spectrogram(data,
                            sampling_frequency=1000,
                            time_halfbandwidth_product=3,
                            time_window_duration=1,
-                           pad=0,
                            time_window_step=None,
-                           desired_frequencies=None,
+                           pad=0,
                            n_tapers=None,
+                           desired_frequencies=None,
                            tapers=None,
                            time=None,
                            n_fft_samples=None):
-    ''' Returns a pandas dataframe with columns time, frequency, power
+    '''Estimates the power spectral density of a time series using the
+    multitaper method over time.
 
+    Data is automatically centered.
+
+    Parameters
+    ----------
+    data : array_like, shape=(n_time_samples, n_trials)
+        A time series of data.
+    sampling_frequency : int, optional
+        Number of samples per second
+    time_halfbandwidth_product : float, optional
+        Controls the amount of smoothing in the time and frequency domains.
+        It is equal to the duration of the time window multiplied by the
+        desired half-bandwidth frequency resolution. If `n_tapers` is not
+        set, then the number of tapers will be (2 *
+        time_halfbandwidth_product) - 1.
+    time_window_duration : float
+        The duration of the sliding time window.
+    time_window_step : float
+        The amount the sliding time window advances.
+    pad : int, optional
+        Zero-pad the fft to the next power of two for computational
+        efficiency. Setting this value to -1 results in no padding of the
+        fft. The default (0) returns the Fourier frequencies.
+    n_tapers : int, optional
+        The number of tapers.
+    desired_frequencies : array_like, optional
+        A two-element array (low_frequency, high_frequency) that specifies
+        the pass band of the returned power spectral density.
+
+    Returns
+    -------
+    multitaper_spectrogram : Pandas Dataframe
+        The spectral density as a function of frequency and time. Frequency
+         and time are set as the index of the Dataframe.
+
+    Other Parameters
+    ----------------
+    tapers : array_like, optional
+        Allows the user to pass a pre-computed taper.
+    time : array_like, optional
+        The labels for the time axis.
+    n_fft_samples : int, optional
+        Allows the user to specify the number of fft samples.
 
     '''
     time_step_length, time_window_length = _get_window_lengths(
@@ -700,6 +743,55 @@ def multitaper_canonical_coherence(data,
                                    n_fft_samples=None,
                                    n_tapers=None,
                                    desired_frequencies=None):
+    '''Given two sets of signals, finds weights for each set of signals
+    such that the linear combination of the signals is maximally coherent
+    at a frequency.
+
+
+    Parameters
+    ----------
+    data : list of arrays, shape (n_signals, n_time_samples, n_trials)
+        A two-element list that correspond to each set of signals
+        respectively.
+    sampling_frequency : int, optional
+        Number of samples per second
+    time_halfbandwidth_product : float, optional
+        Controls the amount of smoothing in the time and frequency domains.
+        It is equal to the duration of the time window multiplied by the
+        desired half-bandwidth frequency resolution. If `n_tapers` is not
+        set, then the number of tapers will be (2 *
+        time_halfbandwidth_product) - 1.
+    pad : int, optional
+        Zero-pad the fft to the next power of two for computational
+        efficiency. Setting this value to -1 results in no padding of the
+        fft. The default (0) returns the Fourier frequencies.
+    n_tapers : int, optional
+        The number of tapers.
+    desired_frequencies : array_like, optional
+        A two-element array (low_frequency, high_frequency) that specifies
+        the pass band of the returned coherence.
+
+    Returns
+    -------
+    multitaper_canonical_coherence : Pandas DataFrame
+        The DataFrame contains the magnitude of the coherence (not the
+        magnitude-squared coherence), the phase of the coherence, and the
+        power spectra of both signals. The index is frequency.
+
+    Other Parameters
+    ----------------
+    tapers : array_like, optional
+        Allows the user to pass a pre-computed taper.
+    frequencies : array_like, optional
+        Allows the user to pass a pre-computed frequencies for the fft.
+    freq_ind : array_like, optional
+        Allows the user to pass a frequency index to limit the returned
+        fft frequencies. This can be computed by setting the
+        `desired_frequencies` parameter.
+    n_fft_samples : int, optional
+        Allows the user to specify the number of fft samples.
+
+    '''
     area1_lfps, area2_lfps = data[0], data[1]
     tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
