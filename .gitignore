@@ -30,3 +30,5 @@ notebooks/.ipynb_checkpoints/*.ipynb
 *.log
 
 
+
+.coverage

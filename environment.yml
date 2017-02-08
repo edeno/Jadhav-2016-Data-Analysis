@@ -20,3 +20,4 @@ dependencies:
 - coveralls
 - matplotlib
 - icu=56.1
+- pytest-cov
