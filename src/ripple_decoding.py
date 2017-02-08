@@ -5,6 +5,7 @@
 
 from warnings import warn
 
+from numba import jit
 import numpy as np
 import pandas as pd
 from patsy import build_design_matrices, dmatrix
@@ -177,6 +178,7 @@ def evaluate_mark_space(test_marks, training_marks=None,
         axis=1)
 
 
+@jit(nopython=True)
 def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
@@ -844,6 +846,7 @@ def _ripple_session_time(ripple_times, session_time):
             for ripple_start, ripple_end in ripple_times]
 
 
+@jit(nopython=True)
 def _normal_pdf(x, mean=0, std_deviation=1):
     '''Evaluate the normal probability density function at specified points.
 
