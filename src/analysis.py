@@ -242,7 +242,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_area_pair(
-            coherence_baseline, 'all_ripples', 'baseline', area1, area2,
+            coherence_name, 'all_ripples', 'baseline', area1, area2,
             coherence_baseline, epoch_index)
         save_area_pair(
             coherence_name, 'all_ripples', 'ripple_locked', area1, area2,
