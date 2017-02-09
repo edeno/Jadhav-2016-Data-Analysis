@@ -554,10 +554,9 @@ def decode_ripple(epoch_index, animals, ripple_times,
         spikes_data, ripple_times, sampling_frequency)
     posterior_density = [predict_state(ripple_spikes, **decoder_params)
                          for ripple_spikes in test_spikes]
-    session_time = position_info.index
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, session_time)
+        state_names, position_info.index)
 
 
 def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
