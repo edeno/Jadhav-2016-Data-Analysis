@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.ripple_detection import (_find_containing_interval,
+from src.ripple_detection import (_extend_segment,
+                                  _find_containing_interval,
                                   _get_series_start_end_times,
-                                  _extend_segment,
-                                  segment_boolean_series, _merge_ranges)
+                                  _merge_ranges,
+                                  segment_boolean_series)
 
 
 @pytest.mark.parametrize('series, expected_segments', [
