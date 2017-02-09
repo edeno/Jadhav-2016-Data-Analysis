@@ -455,7 +455,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
 
     Parameters
     ----------
-    data : Pandas series
+    data : array_like or Pandas series
     zscore_threshold : int, optional
 
     Returns
