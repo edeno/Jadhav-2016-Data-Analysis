@@ -142,7 +142,7 @@ def Kay_method(lfps, minimum_duration=0.015, zscore_threshold=2,
                smoothing_sigma=0.004, sampling_frequency=1500):
     filtered_lfps = [pd.Series(
         _ripple_bandpass_filter(lfp.values.flatten()), index=lfp.index)
-                     for lfp in lfps]
+        for lfp in lfps]
     return _get_candidate_ripples_Kay(
         filtered_lfps, is_multitaper=False,
         minimum_duration=minimum_duration,
@@ -293,11 +293,11 @@ def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
     '''
     thresholded_lfps = [_threshold_by_zscore(
         lfp, zscore_threshold=zscore_threshold)
-                        for lfp in filtered_lfps]
+        for lfp in filtered_lfps]
     extended_lfps = [_extend_threshold_to_mean(
         threshold_df.is_above_mean, threshold_df.is_above_threshold,
         minimum_duration=minimum_duration)
-                     for threshold_df in thresholded_lfps]
+        for threshold_df in thresholded_lfps]
     return list(_merge_ranges(_flatten_list(extended_lfps)))
 
 
