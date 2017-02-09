@@ -5,10 +5,10 @@ import pytest
 from src.ripple_detection import (_find_containing_interval,
                                   _get_series_start_end_times,
                                   _extend_segment,
-                                  segment_boolean_series)
+                                  segment_boolean_series, _merge_ranges)
 
 
-@pytest.mark.parametrize("series, expected_segments", [
+@pytest.mark.parametrize('series, expected_segments', [
     (pd.Series([False, False, True, True, False]),
      (np.array([2]), np.array([3]))),
     (pd.Series([False, False, True, True, False, True, False]),
@@ -29,7 +29,7 @@ def test_get_series_start_end_times(series, expected_segments):
         assert tup == expected_segments
 
 
-@pytest.mark.parametrize("series, expected_segments", [
+@pytest.mark.parametrize('series, expected_segments', [
     (pd.Series([False, True, True, True, False],
                index=np.linspace(0, 0.020, 5)), [(0.005, 0.015)]),
     (pd.Series([False, False, True, True, False, True, False],
@@ -53,7 +53,7 @@ def test_segment_boolean_series(series, expected_segments):
 
 
 @pytest.mark.parametrize(
-    "interval_candidates, target_interval, expected_interval", [
+    'interval_candidates, target_interval, expected_interval', [
         ([(1, 2), (5, 7)], (6, 7), (5, 7)),
         ([(1, 2), (5, 7)], (1, 2), (1, 2)),
         ([(1, 2), (5, 7), (20, 30)], (5, 6), (5, 7)),
@@ -67,7 +67,7 @@ def test_find_containing_interval(interval_candidates, target_interval,
 
 
 @pytest.mark.parametrize(
-    "interval_candidates, target_intervals, expected_intervals", [
+    'interval_candidates, target_intervals, expected_intervals', [
         ([(1, 2), (5, 7)], [(6, 7)], [(5, 7)]),
         ([(1, 2), (5, 7)], [(1, 2)], [(1, 2)]),
         ([(1, 2), (5, 7), (20, 30)], [(5, 6)], [(5, 7)]),
