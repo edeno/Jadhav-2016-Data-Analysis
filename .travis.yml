@@ -17,5 +17,4 @@ install:
   - python setup.py install
 script: pytest --cov=src tests/ src/
 after_success:
-    - ls -a
     - coveralls
