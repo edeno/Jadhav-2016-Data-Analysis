@@ -469,7 +469,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
         below the threshold parameter.
 
     '''
-    zscored_data = zscore(data).values.flatten()
+    zscored_data = zscore(data)
     return pd.DataFrame(
         {'is_above_threshold': zscored_data >= zscore_threshold,
          'is_above_mean': zscored_data >= 0}, index=data.index)
