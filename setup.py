@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
         name='Jadhav-2016-Data-Analysis',
@@ -9,5 +9,5 @@ setup(
         description='Exploratory analysis of data from Jadhav 2016',
         author='Eric Denovellis',
         author_email='edeno@bu.edu',
-        packages=['src'],
+        packages=find_packages(),
       )
