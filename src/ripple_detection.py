@@ -493,11 +493,11 @@ def _merge_ranges(ranges):
         Element 1 is the start of the merged range.
         Element 2 is the end of the merged range.
 
-    >>> list(merge_ranges([(5,7), (3,5), (-1,3)]))
+    >>> list(_merge_ranges([(5,7), (3,5), (-1,3)]))
     [(-1, 7)]
-    >>> list(merge_ranges([(5,6), (3,4), (1,2)]))
+    >>> list(_merge_ranges([(5,6), (3,4), (1,2)]))
     [(1, 2), (3, 4), (5, 6)]
-    >>> list(merge_ranges([]))
+    >>> list(_merge_ranges([]))
     []
 
     References
