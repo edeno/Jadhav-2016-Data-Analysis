@@ -444,7 +444,6 @@ def merge_symmetric_key_pairs(pair_dict):
     '''
     skip_list = list()
     merged_dict = dict()
-    print(pair_dict)
 
     for area1, area2 in sorted(pair_dict):
         if area1 == area2:
@@ -545,9 +544,12 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
 
     posterior_density = [predict_state(ripple_marks, **decoder_kwargs)
                          for ripple_marks in test_marks]
+    test_spikes = [np.mean(~np.isnan(marks), axis=2)
+                   for marks in test_marks]
+
     return get_ripple_info(
-        posterior_density, test_marks, ripple_times,
-        state_names, session_time)
+        posterior_density, test_spikes, ripple_times,
+        state_names, position_info.index)
 
 
 def _convert_to_states(function):
