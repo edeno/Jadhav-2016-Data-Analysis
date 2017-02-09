@@ -6,7 +6,8 @@ from src.ripple_detection import (_extend_segment,
                                   _find_containing_interval,
                                   _get_series_start_end_times,
                                   _merge_ranges,
-                                  segment_boolean_series)
+                                  segment_boolean_series,
+                                  _threshold_by_zscore)
 
 
 @pytest.mark.parametrize('series, expected_segments', [
@@ -91,3 +92,14 @@ def test__extend_segment(interval_candidates, target_intervals,
     ])
 def test_merge_ranges(ranges, expected_ranges):
     assert list(_merge_ranges(ranges)) == expected_ranges
+
+
+def test__threshold_by_zscore():
+    index = ['a', 'b', 'c', 'd', 'e']
+    data = pd.Series(np.arange(0, 5), index=index)
+    zscore_df = _threshold_by_zscore(data, zscore_threshold=1)
+    assert zscore_df.index.tolist() == index
+    assert (zscore_df.is_above_threshold.tolist() ==
+            [False, False, False, False, True])
+    assert (zscore_df.is_above_mean.tolist() ==
+            [False, False, True, True, True])
