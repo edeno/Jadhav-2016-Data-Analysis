@@ -80,3 +80,13 @@ def test__extend_segment(interval_candidates, target_intervals,
     test_intervals = _extend_segment(
         target_intervals, interval_candidates)
     assert np.all(test_intervals == expected_intervals)
+
+
+@pytest.mark.parametrize(
+    'ranges, expected_ranges', [
+        ([(5, 7), (3, 5), (-1, 3)], [(-1, 7)]),
+        ([(5, 6), (3, 4), (1, 2)], [(1, 2), (3, 4), (5, 6)]),
+        ([], []),
+    ])
+def test_merge_ranges(ranges, expected_ranges):
+    assert list(_merge_ranges(ranges)) == expected_ranges
