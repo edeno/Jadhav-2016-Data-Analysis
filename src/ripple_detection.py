@@ -246,7 +246,6 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False,
     '''
     combined_lfps = np.sum(pd.concat(filtered_lfps, axis=1) ** 2, axis=1)
 
-    # Don't need to smooth if using multitaper method
     if not is_multitaper:
         smooth_combined_lfps = pd.Series(
             _smooth(combined_lfps.values.flatten(),
