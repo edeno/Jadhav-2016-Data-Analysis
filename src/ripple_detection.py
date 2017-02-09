@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.io import loadmat
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import filtfilt, hilbert
+from scipy.stats import zscore
 
 from src.data_processing import (get_data_structure,
                                  get_interpolated_position_dataframe,
@@ -468,15 +469,10 @@ def _threshold_by_zscore(data, zscore_threshold=2):
         below the threshold parameter.
 
     '''
-    zscored_data = _zscore(data).values.flatten()
+    zscored_data = zscore(data).values.flatten()
     return pd.DataFrame(
         {'is_above_threshold': zscored_data >= zscore_threshold,
          'is_above_mean': zscored_data >= 0}, index=data.index)
-
-
-def _zscore(x):
-    '''The standardized score of x'''
-    return (x - x.mean()) / x.std()
 
 
 def _merge_ranges(ranges):
