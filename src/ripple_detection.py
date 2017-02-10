@@ -246,13 +246,9 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False,
     '''
     combined_lfps = _squared_sum(pd.concat(filtered_lfps, axis=1), axis=1)
 
-    if not is_multitaper:
-        smooth_combined_lfps = pd.Series(
-            _smooth(combined_lfps.values.flatten(),
-                    sigma, sampling_frequency),
-            index=combined_lfps.index)
-    else:
-        smooth_combined_lfps = combined_lfps
+    smooth_combined_lfps = combined_lfps if is_multitaper else pd.Series(
+        _smooth(combined_lfps.values.flatten(), sigma, sampling_frequency),
+        index=combined_lfps.index)
 
     threshold_df = _threshold_by_zscore(np.sqrt(smooth_combined_lfps),
                                         zscore_threshold=zscore_threshold)
