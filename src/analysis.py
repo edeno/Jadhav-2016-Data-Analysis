@@ -296,10 +296,10 @@ def get_tetrode_pair_from_hdf(coherence_name, covariate, level,
             analysis_file_path(animal, day, epoch), key=hdf_path)
     except KeyError:
         print('Could not load tetrode pair:'
-              'animal={animal}, day={day}, epoch={epoch}'
+              'animal={animal}, day={day}, epoch={epoch}\n'
               'tetrode {tetrode1} - tetrode {tetrode2}\n'.format(
-                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
-                tetrode2=tetrode2
+                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1[-1],
+                tetrode2=tetrode2[-1]
               ))
 
 
