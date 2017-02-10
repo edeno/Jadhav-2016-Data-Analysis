@@ -178,7 +178,6 @@ def evaluate_mark_space(test_marks, training_marks=None,
         axis=1)
 
 
-@jit(nopython=True)
 def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
