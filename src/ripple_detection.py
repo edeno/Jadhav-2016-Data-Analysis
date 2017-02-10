@@ -250,10 +250,11 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False,
         _smooth(combined_lfps.values.flatten(), sigma, sampling_frequency),
         index=combined_lfps.index)
 
-    threshold_df = _threshold_by_zscore(np.sqrt(smooth_combined_lfps),
-                                        zscore_threshold=zscore_threshold)
+    thresholded_combined_lfps = _threshold_by_zscore(
+        np.sqrt(smooth_combined_lfps), zscore_threshold=zscore_threshold)
     return list(sorted(_extend_threshold_to_mean(
-        threshold_df.is_above_mean, threshold_df.is_above_threshold,
+        thresholded_combined_lfps.is_above_mean,
+        thresholded_combined_lfps.is_above_threshold,
         minimum_duration=minimum_duration)))
 
 
@@ -293,11 +294,12 @@ def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
     thresholded_lfps = [_threshold_by_zscore(
         lfp, zscore_threshold=zscore_threshold)
         for lfp in filtered_lfps]
-    extended_lfps = [_extend_threshold_to_mean(
-        threshold_df.is_above_mean, threshold_df.is_above_threshold,
+    candidate_ripple_times = [_extend_threshold_to_mean(
+        lfp.is_above_mean, lfp.is_above_threshold,
         minimum_duration=minimum_duration)
-        for threshold_df in thresholded_lfps]
-    return list(_merge_ranges(_flatten_list(extended_lfps)))
+        for lfp in thresholded_lfps]
+    return list(_merge_overlapping_ranges(
+        _flatten_list(candidate_ripple_times)))
 
 
 def _flatten_list(original_list):
