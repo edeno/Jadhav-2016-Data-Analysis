@@ -291,8 +291,16 @@ def get_tetrode_pair_from_hdf(coherence_name, covariate, level,
     animal, day, epoch = tetrode1[0:3]
     hdf_path = tetrode_pair_hdf_path(
         coherence_name, covariate, level, tetrode1[-1], tetrode2[-1])
-    return pd.read_hdf(
-        analysis_file_path(animal, day, epoch), key=hdf_path)
+    try:
+        return pd.read_hdf(
+            analysis_file_path(animal, day, epoch), key=hdf_path)
+    except KeyError:
+        print('Could not load tetrode pair:'
+              'animal={animal}, day={day}, epoch={epoch}'
+              'tetrode {tetrode1} - tetrode {tetrode2}\n'.format(
+                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
+                tetrode2=tetrode2
+              ))
 
 
 def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2,
