@@ -283,12 +283,10 @@ def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
     ripple_times : list of 2-element tuples
         The elements correspond to the start and stop times of the ripple
 
-
     References
     ----------
-    .. [1] Karlsson, M.P., and Frank, L.M. (2009).
-    Awake replay of remote experiences in the hippocampus.
-    Nature Neuroscience 12, 913-918.
+    .. [1] Karlsson, M.P., and Frank, L.M. (2009). Awake replay of remote
+    experiences in the hippocampus. Nature Neuroscience 12, 913-918.
 
     '''
     thresholded_lfps = [_threshold_by_zscore(
@@ -311,8 +309,8 @@ def _get_ripple_power_multitaper(lfp, sampling_frequency,
                                  time_halfbandwidth_product=1,
                                  time_window_duration=0.020,
                                  time_window_step=0.004):
-    '''Extracts the smoothed spectral power time course
-    in the ripple frequency band (150-250 Hz)
+    '''Extracts the smoothed spectral power time course in the ripple
+    frequency band (150-250 Hz)
 
     Parameters
     ----------
