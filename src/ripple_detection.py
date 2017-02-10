@@ -474,7 +474,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
          'is_above_mean': zscored_data >= 0}, index=data.index)
 
 
-def _merge_ranges(ranges):
+def _merge_overlapping_ranges(ranges):
     '''Merge overlapping and adjacent ranges
 
     Parameters
@@ -488,11 +488,11 @@ def _merge_ranges(ranges):
         Element 1 is the start of the merged range.
         Element 2 is the end of the merged range.
 
-    >>> list(_merge_ranges([(5,7), (3,5), (-1,3)]))
+    >>> list(_merge_overlapping_ranges([(5,7), (3,5), (-1,3)]))
     [(-1, 7)]
-    >>> list(_merge_ranges([(5,6), (3,4), (1,2)]))
+    >>> list(_merge_overlapping_ranges([(5,6), (3,4), (1,2)]))
     [(1, 2), (3, 4), (5, 6)]
-    >>> list(_merge_ranges([]))
+    >>> list(_merge_overlapping_ranges([]))
     []
 
     References

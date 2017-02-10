@@ -5,7 +5,7 @@ import pytest
 from src.ripple_detection import (_extend_segment,
                                   _find_containing_interval,
                                   _get_series_start_end_times,
-                                  _merge_ranges,
+                                  _merge_overlapping_ranges,
                                   segment_boolean_series,
                                   _threshold_by_zscore)
 
@@ -90,8 +90,8 @@ def test__extend_segment(interval_candidates, target_intervals,
         ([(5, 6), (3, 4), (1, 2)], [(1, 2), (3, 4), (5, 6)]),
         ([], []),
     ])
-def test_merge_ranges(ranges, expected_ranges):
-    assert list(_merge_ranges(ranges)) == expected_ranges
+def test_merge_overlapping_ranges(ranges, expected_ranges):
+    assert list(_merge_overlapping_ranges(ranges)) == expected_ranges
 
 
 def test__threshold_by_zscore():
