@@ -244,7 +244,7 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False,
     immobility and sleep. Nature 531, 185-190.
 
     '''
-    combined_lfps = np.sum(pd.concat(filtered_lfps, axis=1) ** 2, axis=1)
+    combined_lfps = _squared_sum(pd.concat(filtered_lfps, axis=1), axis=1)
 
     if not is_multitaper:
         smooth_combined_lfps = pd.Series(
@@ -259,6 +259,10 @@ def _get_candidate_ripples_Kay(filtered_lfps, is_multitaper=False,
     return list(sorted(_extend_threshold_to_mean(
         threshold_df.is_above_mean, threshold_df.is_above_threshold,
         minimum_duration=minimum_duration)))
+
+
+def _squared_sum(data, axis=1):
+    return np.sum(data, axis=axis) ** 2
 
 
 def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
