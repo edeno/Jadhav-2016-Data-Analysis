@@ -209,17 +209,11 @@ def multitaper_spectrogram(data,
     ).sort_index()
 
 
-def _set_default_multitaper_parameters(n_time_samples=None,
-                                       sampling_frequency=None,
-                                       time_window_step=None,
-                                       time_window_duration=None,
-                                       tapers=None, n_tapers=None,
-                                       time_halfbandwidth_product=None,
-                                       pad=None,
-                                       n_fft_samples=None,
-                                       frequencies=None,
-                                       freq_ind=None,
-                                       desired_frequencies=None):
+def _set_default_multitaper_parameters(
+    n_time_samples=None, sampling_frequency=None, time_window_step=None,
+        time_window_duration=None, tapers=None, n_tapers=None,
+        time_halfbandwidth_product=None, pad=None, n_fft_samples=None,
+        frequencies=None, freq_ind=None, desired_frequencies=None):
     '''Function to help set default multitaper parameters given that some
     subset of them are unset
     '''
@@ -361,16 +355,10 @@ def _cross_spectrum(complex_spectrum1, complex_spectrum2):
 
 
 @convert_pandas
-def multitaper_power_spectral_density(data,
-                                      sampling_frequency=1000,
-                                      time_halfbandwidth_product=3,
-                                      pad=0,
-                                      tapers=None,
-                                      frequencies=None,
-                                      freq_ind=None,
-                                      n_fft_samples=None,
-                                      n_tapers=None,
-                                      desired_frequencies=None):
+def multitaper_power_spectral_density(
+    data, sampling_frequency=1000, time_halfbandwidth_product=3, pad=0,
+        tapers=None, frequencies=None, freq_ind=None, n_fft_samples=None,
+        n_tapers=None, desired_frequencies=None):
     '''Estimates the power spectral density of a time series using the
     multitaper method.
 
