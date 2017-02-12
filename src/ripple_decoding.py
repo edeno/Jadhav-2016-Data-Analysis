@@ -14,11 +14,6 @@ from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from statsmodels.api import GLM, families
 
-from src.data_processing import (get_interpolated_position_dataframe,
-                                 get_spike_indicator_dataframe,
-                                 make_neuron_dataframe, make_tetrode_dataframe,
-                                 reshape_to_segments)
-
 
 def predict_state(data, initial_conditions=None, state_transition=None,
                   likelihood_function=None, likelihood_kwargs={},
@@ -452,117 +447,6 @@ def _fix_zero_bins(movement_bins):
     '''
     movement_bins[:, movement_bins.sum(axis=0) == 0] = 1
     return movement_bins
-
-
-def decode_ripple(epoch_index, animals, ripple_times,
-                  sampling_frequency=1500,
-                  n_place_bins=49):
-    '''Labels the ripple by category
-
-    Parameters
-    ----------
-    epoch_index : 3-element tuple
-        Specifies which epoch to run.
-        (Animal short name, day, epoch_number)
-    animals : list of named-tuples
-        Tuples give information to convert from the animal short name
-        to a data directory
-    ripple_times : list of 2-element tuples
-        The first element of the tuple is the start time of the ripple.
-        Second element of the tuple is the end time of the ripple
-    sampling_frequency : int, optional
-        Sampling frequency of the spikes
-    n_place_bins : int, optional
-        Number of bins for the linear distance
-
-    Returns
-    -------
-    ripple_info : pandas dataframe
-        Dataframe containing the categories for each ripple
-        and the probability of that category
-
-    '''
-    print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(
-        *epoch_index))
-    # Include only CA1 neurons with spikes
-    neuron_info = make_neuron_dataframe(animals)[
-        epoch_index].dropna()
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    neuron_info = pd.merge(tetrode_info, neuron_info,
-                           on=['animal', 'day', 'epoch_ind',
-                               'tetrode_number', 'area'],
-                           how='right', right_index=True).set_index(
-        neuron_info.index)
-    neuron_info = neuron_info[
-        neuron_info.area.isin(['CA1', 'iCA1']) &
-        (neuron_info.numspikes > 0) &
-        ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
-
-    # Train on when the rat is moving
-    position_info = get_interpolated_position_dataframe(
-        epoch_index, animals)
-    spikes_data = [get_spike_indicator_dataframe(neuron_index, animals)
-                   for neuron_index in neuron_info.index]
-
-    # Make sure there are spikes in the training data times. Otherwise
-    # exclude that neuron
-    spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[
-                       position_info.speed > 4].sum().values > 0]
-
-    train_position_info = position_info.query('speed > 4')
-    train_spikes_data = [spikes_datum[position_info.speed > 4]
-                         for spikes_datum in spikes_data]
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = _get_bin_centers(
-        place_bin_edges)
-
-    print('\tFitting encoding model...')
-    combined_likelihood_kwargs = estimate_sorted_spike_encoding_model(
-        train_position_info, train_spikes_data, place_bin_centers)
-
-    print('\tFitting state transition model...')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    print('\tSetting initial conditions...')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    print('\tDecoding ripples...')
-    decoder_params = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_kwargs
-    )
-    test_spikes = _get_ripple_spikes(
-        spikes_data, ripple_times, sampling_frequency)
-    posterior_density = [predict_state(ripple_spikes, **decoder_params)
-                         for ripple_spikes in test_spikes]
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index)
-
-
-def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
-    '''Given the ripple times, extract the spikes within the ripple
-    '''
-    spike_ripples_df = [reshape_to_segments(
-        spikes_datum, ripple_times,
-        concat_axis=1, sampling_frequency=sampling_frequency)
-        for spikes_datum in spikes_data]
-
-    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
-                       for df in spike_ripples_df]).T
-            for ripple_ind in np.arange(len(ripple_times))]
 
 
 def _get_bin_centers(bin_edges):

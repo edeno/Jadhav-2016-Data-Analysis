@@ -9,7 +9,7 @@ from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
                           ripple_triggered_canonical_coherence,
                           ripple_triggered_coherence, save_ripple_info)
-from src.ripple_decoding import decode_ripple
+from src.ripple_decoding import decode_ripple_sorted_spikes
 from src.ripple_detection import get_epoch_ripples
 
 sampling_frequency = 1500
@@ -104,7 +104,7 @@ def estimate_ripple_coherence(epoch_index):
             multitaper_params=coherence_type[coherence_name])
 
     # Compare different types of ripples
-    ripple_info = decode_ripple(
+    ripple_info = decode_ripple_sorted_spikes(
         epoch_index, animals, ripple_times)[0]
     save_ripple_info(epoch_index, ripple_info)
 
