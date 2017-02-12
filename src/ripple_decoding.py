@@ -16,8 +16,7 @@ from statsmodels.api import GLM, families
 
 from src.data_processing import (get_interpolated_position_dataframe,
                                  get_spike_indicator_dataframe,
-                                 make_neuron_dataframe,
-                                 make_tetrode_dataframe,
+                                 make_neuron_dataframe, make_tetrode_dataframe,
                                  reshape_to_segments)
 
 
@@ -457,8 +456,7 @@ def _fix_zero_bins(movement_bins):
 
 def decode_ripple(epoch_index, animals, ripple_times,
                   sampling_frequency=1500,
-                  n_place_bins=49,
-                  likelihood_function=poisson_likelihood):
+                  n_place_bins=49):
     '''Labels the ripple by category
 
     Parameters
@@ -476,9 +474,6 @@ def decode_ripple(epoch_index, animals, ripple_times,
         Sampling frequency of the spikes
     n_place_bins : int, optional
         Number of bins for the linear distance
-    likelihood_function : function, optional
-        Converts the conditional intensity of a point process to a
-        likelihood
 
     Returns
     -------
@@ -526,18 +521,14 @@ def decode_ripple(epoch_index, animals, ripple_times,
     place_bin_centers = _get_bin_centers(
         place_bin_edges)
 
-    # Fit encoding model
     print('\tFitting encoding model...')
-    conditional_intensity = get_encoding_model(
-        train_position_info, train_spikes_data,
-        place_bin_centers)
+    combined_likelihood_kwargs = estimate_sorted_spike_encoding_model(
+        train_position_info, train_spikes_data, place_bin_centers)
 
-    # Fit state transition model
     print('\tFitting state transition model...')
     state_transition = estimate_state_transition(
         train_position_info, place_bin_edges)
 
-    # Initial Conditions
     print('\tSetting initial conditions...')
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
@@ -545,18 +536,12 @@ def decode_ripple(epoch_index, animals, ripple_times,
     initial_conditions = set_initial_conditions(
         place_bin_edges, place_bin_centers, n_states)
 
-    # Decode
     print('\tDecoding ripples...')
-    combined_likelihood_params = dict(
-        likelihood_function=likelihood_function,
-        likelihood_kwargs=dict(
-            conditional_intensity=conditional_intensity)
-    )
     decoder_params = dict(
         initial_conditions=initial_conditions,
         state_transition=state_transition,
         likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_params
+        likelihood_kwargs=combined_likelihood_kwargs
     )
     test_spikes = _get_ripple_spikes(
         spikes_data, ripple_times, sampling_frequency)
@@ -688,8 +673,9 @@ def glm_fit(spikes, design_matrix, ind):
         return np.nan
 
 
-def get_encoding_model(train_position_info, train_spikes_data,
-                       place_bin_centers):
+def estimate_sorted_spike_encoding_model(train_position_info,
+                                         train_spikes_data,
+                                         place_bin_centers):
     '''The conditional intensities for each state (Outbound-Forward,
     Outbound-Reverse, Inbound-Forward, Inbound-Reverse)
 
@@ -701,9 +687,7 @@ def get_encoding_model(train_position_info, train_spikes_data,
 
     Returns
     -------
-    conditional_intensity_by_state : array_like, shape=(n_signals,
-                                                        n_parameters *
-                                                        n_states)
+    combined_likelihood_kwargs : dict
 
     '''
     formula = ('1 + trajectory_direction * '
@@ -723,10 +707,17 @@ def get_encoding_model(train_position_info, train_spikes_data,
     outbound_conditional_intensity = _get_conditional_intensity(
         fit, outbound_predict_design_matrix)
 
-    return np.vstack([outbound_conditional_intensity,
-                      outbound_conditional_intensity,
-                      inbound_conditional_intensity,
-                      inbound_conditional_intensity]).T
+    conditional_intensity = np.vstack(
+        [outbound_conditional_intensity,
+         outbound_conditional_intensity,
+         inbound_conditional_intensity,
+         inbound_conditional_intensity]).T
+
+    return dict(
+        likelihood_function=poisson_likelihood,
+        likelihood_kwargs=dict(
+            conditional_intensity=conditional_intensity)
+    )
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
