@@ -7,10 +7,9 @@ from sys import argv, exit
 
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
+                          decode_ripple_sorted_spikes, get_epoch_ripples,
                           ripple_triggered_canonical_coherence,
                           ripple_triggered_coherence, save_ripple_info)
-from src.ripple_decoding import decode_ripple_sorted_spikes
-from src.ripple_detection import get_epoch_ripples
 
 sampling_frequency = 1500
 Animal = namedtuple('Animal', {'directory', 'short_name'})

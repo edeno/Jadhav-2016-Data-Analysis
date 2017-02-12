@@ -24,8 +24,9 @@ from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  estimate_marked_encoding_model,
                                  estimate_sorted_spike_encoding_model,
                                  estimate_state_transition,
-                                 get_ripple_info,
-                                 predict_state, set_initial_conditions)
+                                 get_ripple_info, predict_state,
+                                 set_initial_conditions)
+from src.ripple_detection import Kay_method
 from src.spectral import (get_lfps_by_area,
                           multitaper_canonical_coherogram,
                           multitaper_coherogram,
@@ -472,6 +473,30 @@ def merge_symmetric_key_pairs(pair_dict):
     return merged_dict
 
 
+def get_epoch_ripples(epoch_index, animals, sampling_frequency,
+                      ripple_detection_function=Kay_method,
+                      ripple_detection_kwargs={}, speed_threshold=4):
+    '''Returns a list of tuples containing the start and end times of
+    ripples. Candidate ripples are computed via the ripple detection
+    function and then filtered to exclude ripples where the animal was
+    still moving.
+    '''
+    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(
+        *epoch_index))
+    tetrode_info = make_tetrode_dataframe(animals)[
+        epoch_index]
+    # Get cell-layer CA1, iCA1 LFPs
+    area_critera = (tetrode_info.area.isin(['CA1', 'iCA1']) &
+                    tetrode_info.descrip.isin(['riptet']))
+    tetrode_indices = tetrode_info[area_critera].index.tolist()
+    CA1_lfps = [get_LFP_dataframe(tetrode_index, animals)
+                for tetrode_index in tetrode_indices]
+    candidate_ripple_times = ripple_detection_function(
+        CA1_lfps, **ripple_detection_kwargs)
+    return exclude_movement_during_ripples(
+        candidate_ripple_times, epoch_index, animals, speed_threshold)
+
+
 def decode_ripple_sorted_spikes(epoch_index, animals, ripple_times,
                                 sampling_frequency=1500,
                                 n_place_bins=49):
@@ -708,3 +733,17 @@ def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values
                        for df in spike_ripples_df]).T
             for ripple_ind in np.arange(len(ripple_times))]
+
+
+def exclude_movement_during_ripples(ripple_times, epoch_index, animals,
+                                    speed_threshold):
+    '''Excludes ripples where the head direction speed is greater than the
+    speed threshold. Only looks at the start of the ripple to determine
+    head movement speed for the ripple.
+    '''
+    position_df = get_interpolated_position_dataframe(
+        epoch_index, animals)
+    return [(ripple_start, ripple_end)
+            for ripple_start, ripple_end in ripple_times
+            if position_df.loc[
+                ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
