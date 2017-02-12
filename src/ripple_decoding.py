@@ -3,11 +3,12 @@
 
 '''
 
+from functools import partial
 from warnings import warn
 
-from numba import jit
 import numpy as np
 import pandas as pd
+from numba import jit
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
@@ -215,7 +216,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                 marks[signal_ind],
                 training_marks=training_marks[signal_ind],
                 mark_std_deviation=mark_std_deviation)
-            )
+        )
 
     return place_mark_estimator / place_occupancy
 
@@ -300,8 +301,12 @@ def estimate_place_occupancy(place_bin_centers, place,
 
 def estimate_marked_encoding_model(place_bin_centers, place,
                                    place_at_spike, training_marks,
-                                   place_std_deviation=1):
-    '''
+                                   place_std_deviation=4,
+                                   mark_std_deviation=20):
+    '''Non-parametric estimatation of place fields based on marks
+
+    A Gaussian kernel is placed at each mark and place the animal is at
+    when a spike occurs.
 
     Parameters
     ----------
@@ -313,14 +318,9 @@ def estimate_marked_encoding_model(place_bin_centers, place,
 
     Returns
     -------
-    place_occupancy : array_like, shape=(n_parameters * n_states,)
-    ground_process_intensity : array_like, shape=(n_signals,
-                                                  n_parameters *
-                                                  n_states)
-    place_field_estimator : list of arrays of shape=(n_parameters *
-                                                     n_states,
-                                                     n_training_spikes)
-    marks : list of arrays of shape=(n_training_spikes, n_marks)
+    combined_likelihood_kwargs : dict
+        Keyword arguments for the `combined_likelihood`
+        function.
 
     '''
     n_signals, n_states = len(place_at_spike), len(place)
@@ -356,8 +356,17 @@ def estimate_marked_encoding_model(place_bin_centers, place,
     place_occupancy = np.hstack(place_occupancy)
     ground_process_intensity = np.stack(ground_process_intensity)
 
-    return (place_occupancy, ground_process_intensity,
-            place_field_estimator, marks)
+    fixed_joint_mark_intensity = partial(
+        joint_mark_intensity, place_field_estimator=place_field_estimator,
+        place_occupancy=place_occupancy, training_marks=training_marks,
+        mark_std_deviation=mark_std_deviation)
+
+    return dict(
+        likelihood_function=poisson_mark_likelihood,
+        likelihood_kwargs=dict(
+            joint_mark_intensity=fixed_joint_mark_intensity,
+            ground_process_intensity=ground_process_intensity)
+    )
 
 
 def combined_likelihood(data, likelihood_function=None,

@@ -2,7 +2,7 @@
 
 '''
 from copy import deepcopy
-from functools import partial, wraps
+from functools import wraps
 from glob import glob
 from itertools import combinations
 from os.path import abspath, join, pardir
@@ -15,16 +15,18 @@ from src.data_processing import (get_area_pair_info,
                                  get_interpolated_position_dataframe,
                                  get_LFP_dataframe,
                                  get_mark_indicator_dataframe,
-                                 get_tetrode_pair_info, make_tetrode_dataframe,
+                                 get_tetrode_pair_info,
+                                 make_tetrode_dataframe,
                                  reshape_to_segments)
 from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  estimate_marked_encoding_model,
                                  estimate_state_transition,
                                  set_initial_conditions, get_ripple_info,
-                                 joint_mark_intensity, poisson_mark_likelihood,
                                  predict_state)
-from src.spectral import (get_lfps_by_area, multitaper_canonical_coherogram,
-                          multitaper_coherogram, power_and_coherence_change)
+from src.spectral import (get_lfps_by_area,
+                          multitaper_canonical_coherogram,
+                          multitaper_coherogram,
+                          power_and_coherence_change)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
@@ -472,17 +474,16 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
                               n_place_bins=61,
                               place_std_deviation=None,
                               mark_std_deviation=20):
-    # Encode
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
-
     mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
                       'channel_4_max']
+    hippocampal_tetrodes = tetrode_info.loc[
+            tetrode_info.area.isin(['CA1', 'iCA1']) &
+            (tetrode_info.descrip != 'CA1Ref'), :]
     tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
                       .loc[:, mark_variables])
-                     for tetrode_index in tetrode_info.loc[
-        tetrode_info.area.isin(['CA1', 'iCA1']) &
-        (tetrode_info.descrip != 'CA1Ref'), :]]
+                     for tetrode_index in hippocampal_tetrodes]
 
     position_variables = ['linear_distance', 'trajectory_direction',
                           'speed']
@@ -509,29 +510,15 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     if place_std_deviation is None:
         place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
 
-    (place_occupancy, ground_process_intensity, place_field_estimator,
-     training_marks) = estimate_marked_encoding_model(
+    combined_likelihood_kwargs = estimate_marked_encoding_model(
         place_bin_centers, place, place_at_spike, training_marks,
-        place_std_deviation=place_std_deviation)
-
-    fixed_joint_mark_intensity = partial(
-        joint_mark_intensity, place_field_estimator=place_field_estimator,
-        place_occupancy=place_occupancy, training_marks=training_marks,
+        place_std_deviation=place_std_deviation,
         mark_std_deviation=mark_std_deviation)
 
-    combined_likelihood_kwargs = dict(
-        likelihood_function=poisson_mark_likelihood,
-        likelihood_kwargs=dict(
-            joint_mark_intensity=fixed_joint_mark_intensity,
-            ground_process_intensity=ground_process_intensity)
-    )
-
-    # Fit state transition model
     print('\tFitting state transition model...')
     state_transition = estimate_state_transition(
         train_position_info, place_bin_edges)
 
-    # Initial Conditions
     print('\tSetting initial conditions...')
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
@@ -539,7 +526,6 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     initial_conditions = set_initial_conditions(
         place_bin_edges, place_bin_centers, n_states)
 
-    # Decode
     decoder_kwargs = dict(
         initial_conditions=initial_conditions,
         state_transition=state_transition,
