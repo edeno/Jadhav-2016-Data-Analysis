@@ -327,7 +327,7 @@ def estimate_marked_encoding_model(place_bin_centers, place,
 
     ground_process_intensity = list()
     place_field_estimator = list()
-    marks = list()
+    stacked_marks = list()
 
     for signal_ind in range(n_signals):
         signal_place_field = [
@@ -345,14 +345,14 @@ def estimate_marked_encoding_model(place_bin_centers, place,
             block_diag(*signal_place_field))
         ground_process_intensity.append(
             np.hstack(signal_ground_process_intensity))
-        marks.append(np.vstack(training_marks[signal_ind]))
+        stacked_marks.append(np.vstack(training_marks[signal_ind]))
 
     place_occupancy = np.hstack(place_occupancy)
     ground_process_intensity = np.stack(ground_process_intensity)
 
     fixed_joint_mark_intensity = partial(
         joint_mark_intensity, place_field_estimator=place_field_estimator,
-        place_occupancy=place_occupancy, training_marks=training_marks,
+        place_occupancy=place_occupancy, training_marks=stacked_marks,
         mark_std_deviation=mark_std_deviation)
 
     return dict(
