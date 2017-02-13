@@ -609,7 +609,7 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
         (tetrode_info.descrip != 'CA1Ref'), :]
     tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
                       .loc[:, mark_variables])
-                     for tetrode_index in hippocampal_tetrodes]
+                     for tetrode_index in hippocampal_tetrodes.index]
 
     position_variables = ['linear_distance', 'trajectory_direction',
                           'speed']
