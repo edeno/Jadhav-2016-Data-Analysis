@@ -779,6 +779,13 @@ def multitaper_canonical_coherence(data,
     n_fft_samples : int, optional
         Allows the user to specify the number of fft samples.
 
+    References
+    ----------
+    ..[1] Stephen, Emily Patricia. 2015. “Characterizing Dynamically
+    Evolving Functional Networks in Humans with Application to Speech.”
+    Order No. 3733680, Boston University.
+    http://search.proquest.com/docview/1731940762.
+
     '''
     area1_lfps, area2_lfps = data[0], data[1]
     tapers, n_fft_samples, frequencies, freq_ind = \
