@@ -636,6 +636,7 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     if place_std_deviation is None:
         place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
 
+    print('\tFitting encoding model...')
     combined_likelihood_kwargs = estimate_marked_encoding_model(
         place_bin_centers, place, place_at_spike, training_marks,
         place_std_deviation=place_std_deviation,
@@ -652,6 +653,7 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     initial_conditions = set_initial_conditions(
         place_bin_edges, place_bin_centers, n_states)
 
+    print('\tDecoding ripples...')
     decoder_kwargs = dict(
         initial_conditions=initial_conditions,
         state_transition=state_transition,
