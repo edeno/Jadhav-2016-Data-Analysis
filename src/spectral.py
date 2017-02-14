@@ -882,8 +882,7 @@ def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
     U2, _, V2 = np.linalg.svd(
         complex_spectra2[:, freq_ind, :], full_matrices=False)
     Q = np.dot(np.dot(U1, V1), np.dot(U2, V2).conj().transpose())
-    _, s, _ = np.linalg.svd(Q, full_matrices=False)
-    return s[0]
+    return np.linalg.svd(Q, full_matrices=False, compute_uv=False)[0]
 
 
 def _match_frequency_resolution(time_halfbandwidth_product,
