@@ -123,8 +123,9 @@ def estimate_ripple_coherence(epoch_index):
 def get_command_line_arguments():
     parser = ArgumentParser()
     parser.add_argument('Animal', type=str, help='Short name of animal')
-    parser.add_argument('Day', type=int)
-    parser.add_argument('Epoch', type=int)
+    parser.add_argument('Day', type=int, help='Day of recording session')
+    parser.add_argument('Epoch', type=int,
+                        help='Epoch number of recording session')
     parser.add_argument(
         '-d', '--debug',
         help='Print lots of debugging statements',
