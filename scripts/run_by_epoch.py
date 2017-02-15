@@ -152,21 +152,17 @@ def main():
     logger = get_logger()
     logger.setLevel(args.log_level)
 
-    try:
-        epoch_index = (args.Animal, args.Day, args.Epoch)
-        logger.info(
-            'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
-                *epoch_index))
-        git_hash = run(['git', 'rev-parse', 'HEAD'],
-                       stdout=PIPE, universal_newlines=True).stdout
-        logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash))
+    epoch_index = (args.Animal, args.Day, args.Epoch)
+    logger.info(
+        'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
+            *epoch_index))
+    git_hash = run(['git', 'rev-parse', 'HEAD'],
+                   stdout=PIPE, universal_newlines=True).stdout
+    logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash))
 
-        estimate_ripple_coherence(epoch_index)
+    estimate_ripple_coherence(epoch_index)
 
-        logger.info('Finished Processing')
-    except IndexError:
-        exit('Need three arguments to define epoch. '
-             'Only gave {}.'.format(len(argv) - 1))
+    logger.info('Finished Processing')
 
 if __name__ == '__main__':
     exit(main())
