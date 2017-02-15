@@ -13,7 +13,6 @@ from logging import getLogger
 from warnings import warn
 
 import numpy as np
-import pandas as pd
 from numba import jit
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
@@ -614,53 +613,6 @@ def estimate_sorted_spike_encoding_model(train_position_info,
     )
 
 
-def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, session_time):
-    '''Summary statistics for ripple categories
-
-    Parameters
-    ----------
-    posterior_density : array_like
-    test_spikes : array_like
-    ripple_times : list of tuples
-    state_names : list of str
-    session_time : array_like
-
-    Returns
-    -------
-    ripple_info : pandas dataframe
-    decision_state_probability : array_like
-    posterior_density : array_like
-    state_names : list of str
-
-    '''
-    n_states = len(state_names)
-    n_ripples = len(ripple_times)
-    decision_state_probability = [
-        _compute_decision_state_probability(density, n_states)
-        for density in posterior_density]
-
-    ripple_info = pd.DataFrame(
-        [_compute_max_state(probability, state_names)
-         for probability in decision_state_probability],
-        columns=['ripple_trajectory', 'ripple_direction',
-                 'ripple_state_probability'],
-        index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
-    ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
-    ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
-    ripple_info['number_of_unique_neurons_spiking'] = [
-        _num_unique_neurons_spiking(spikes) for spikes in test_spikes]
-    ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
-                                       for spikes in test_spikes]
-    ripple_info['session_time'] = _ripple_session_time(
-        ripple_times, session_time)
-    ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
-                               .map({True: 'isSpike', False: 'noSpike'}))
-
-    return (ripple_info, decision_state_probability,
-            posterior_density, state_names)
-
-
 def _predictors_by_trajectory_direction(trajectory_direction,
                                         place_bin_centers,
                                         design_matrix):
@@ -688,54 +640,6 @@ def _get_conditional_intensity(fit, predict_design_matrix):
     '''
     return np.vstack([glm_val(fitted_model, predict_design_matrix)
                       for fitted_model in fit]).T
-
-
-def _compute_decision_state_probability(posterior_density, n_states):
-    '''The marginal probability of a state given the posterior_density
-    '''
-    n_time = len(posterior_density)
-    new_shape = (n_time, n_states, -1)
-    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
-
-
-def _compute_max_state(probability, state_names):
-    '''The discrete state with the highest probability at the last time
-    '''
-    end_time_probability = probability[-1, :]
-    return (*state_names[np.argmax(end_time_probability)].split('_'),
-            np.max(end_time_probability))
-
-
-def _num_unique_neurons_spiking(spikes):
-    '''Number of units that spike per ripple
-    '''
-    return spikes.sum(axis=0).nonzero()[0].shape[0]
-
-
-def _num_total_spikes(spikes):
-    '''Total number of spikes per ripple
-    '''
-    return int(spikes.sum(axis=(0, 1)))
-
-
-def _ripple_session_time(ripple_times, session_time):
-    '''Categorize the ripples by the time in the session in which they
-    occur.
-
-    This function trichotimizes the session time into early session,
-    middle session, and late session and classifies the ripple by the most
-    prevelant category.
-    '''
-    session_time_categories = pd.Series(
-        pd.cut(
-            session_time, 3,
-            labels=['early', 'middle', 'late'], precision=4),
-        index=session_time)
-    return [(session_time_categories
-             .loc[ripple_start:ripple_end]
-             .value_counts()
-             .argmax())
-            for ripple_start, ripple_end in ripple_times]
 
 
 @jit(nopython=True)
