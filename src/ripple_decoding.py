@@ -209,6 +209,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
 
     n_parameters = place_occupancy.shape[0]
     n_signals = len(place_field_estimator)
+    n_marks = marks.shape[1]
     place_mark_estimator = np.zeros((n_signals, n_parameters))
 
     for signal_ind in range(n_signals):
@@ -220,7 +221,8 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                 mark_std_deviation=mark_std_deviation)
         )
 
-    return place_mark_estimator / place_occupancy
+    return (place_mark_estimator / place_occupancy
+            / (mark_std_deviation * n_marks))
 
 
 def estimate_place_field(place_bin_centers, place_at_spike,
