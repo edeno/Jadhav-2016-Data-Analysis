@@ -128,7 +128,7 @@ def get_command_line_arguments():
                         help='Epoch number of recording session')
     parser.add_argument(
         '-d', '--debug',
-        help='Print lots of debugging statements',
+        help='More verbose output for debugging',
         action='store_const',
         dest='log_level',
         const=DEBUG,
