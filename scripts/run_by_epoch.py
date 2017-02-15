@@ -1,7 +1,8 @@
 '''Exectue set of functions for each epoch
 '''
-import logging
+from argparse import ArgumentParser
 from collections import namedtuple
+from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from subprocess import PIPE, run
 from sys import argv, exit, stdout
 
@@ -119,23 +120,48 @@ def estimate_ripple_coherence(epoch_index):
                 multitaper_params=coherence_type[coherence_name])
 
 
-def main():
-    formatter = logging.Formatter(
+def get_command_line_arguments():
+    parser = ArgumentParser()
+    parser.add_argument('Animal', type=str, help='Short name of animal')
+    parser.add_argument('Day', type=int)
+    parser.add_argument('Epoch', type=int)
+    parser.add_argument(
+        '-d', '--debug',
+        help='Print lots of debugging statements',
+        action='store_const',
+        dest='log_level',
+        const=DEBUG,
+        default=INFO,
+    )
+    return parser.parse_args()
+
+
+def get_logger():
+    formatter = Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler = logging.StreamHandler(stream=stdout)
+    handler = StreamHandler(stream=stdout)
     handler.setFormatter(formatter)
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger = getLogger()
     logger.addHandler(handler)
+    return logger
+
+
+def main():
+    args = get_command_line_arguments()
+    logger = get_logger()
+    logger.setLevel(args.log_level)
+
     try:
-        epoch_index = (argv[1], int(argv[2]), int(argv[3]))
+        epoch_index = (args.Animal, args.Day, args.Epoch)
         logger.info(
             'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
                 *epoch_index))
         git_hash = run(['git', 'rev-parse', 'HEAD'],
                        stdout=PIPE, universal_newlines=True).stdout
         logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash))
+
         estimate_ripple_coherence(epoch_index)
+
         logger.info('Finished Processing')
     except IndexError:
         exit('Need three arguments to define epoch. '
