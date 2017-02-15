@@ -14,6 +14,8 @@ from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from statsmodels.api import GLM, families
 
+from . import logger
+
 
 def predict_state(data, initial_conditions=None, state_transition=None,
                   likelihood_function=None, likelihood_kwargs={},
@@ -548,7 +550,7 @@ def glm_fit(spikes, design_matrix, ind):
 
     '''
     try:
-        print('\t\t...Neuron #{}'.format(ind + 1))
+        logger.debug('\t\t...Neuron #{}'.format(ind + 1))
         return GLM(spikes.reindex(design_matrix.index), design_matrix,
                    family=families.Poisson(),
                    drop='missing').fit(maxiter=30)

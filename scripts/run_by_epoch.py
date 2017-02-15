@@ -1,9 +1,9 @@
 '''Exectue set of functions for each epoch
 '''
+import logging
 from collections import namedtuple
-from datetime import datetime
 from subprocess import PIPE, run
-from sys import argv, exit
+from sys import argv, exit, stdout
 
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
@@ -120,17 +120,23 @@ def estimate_ripple_coherence(epoch_index):
 
 
 def main():
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler = logging.StreamHandler(stream=stdout)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
     try:
-        print('\n#############################################')
-        print('Script start time: {}'.format(datetime.now()))
-        print('#############################################\n')
-        print('Git Hash:')
-        print(run(['git', 'rev-parse', 'HEAD'],
-                  stdout=PIPE, universal_newlines=True).stdout)
-        epoch_index = (argv[1], int(argv[2]),
-                       int(argv[3]))  # animal, day, epoch
+        epoch_index = (argv[1], int(argv[2]), int(argv[3]))
+        logger.info(
+            'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
+                *epoch_index))
+        git_hash = run(['git', 'rev-parse', 'HEAD'],
+                       stdout=PIPE, universal_newlines=True).stdout
+        logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash))
         estimate_ripple_coherence(epoch_index)
-        print('Script end time: {}'.format(datetime.now()))
+        logger.info('Finished Processing')
     except IndexError:
         exit('Need three arguments to define epoch. '
              'Only gave {}.'.format(len(argv) - 1))
