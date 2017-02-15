@@ -258,7 +258,8 @@ def estimate_place_field(place_bin_centers, place_at_spike,
 
 def estimate_ground_process_intensity(place_field_estimator,
                                       place_occupancy):
-    '''The probability of observing a spike regardless of mark
+    '''The probability of observing a spike regardless of mark. Marginalize
+    the joint mark intensity over the mark space.
 
     Parameters
     ----------
