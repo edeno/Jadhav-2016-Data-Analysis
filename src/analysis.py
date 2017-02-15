@@ -1,7 +1,8 @@
 '''Higher level functions for analyzing the data
 
 '''
-import logging
+from logging import getLogger
+
 from copy import deepcopy
 from functools import wraps
 from glob import glob
@@ -33,7 +34,7 @@ from src.spectral import (get_lfps_by_area,
                           multitaper_coherogram,
                           power_and_coherence_change)
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
