@@ -103,7 +103,8 @@ def _make_sliding_window_dataframe(func, data, time_window_duration,
     for each sliding time window.
     '''
     time_window_start_ind = 0
-    while time_window_start_ind + time_window_length <= data[0].shape[axis]:
+    while (time_window_start_ind +
+           time_window_length) <= data[0].shape[axis]:
         try:
             time_window_end_ind = (time_window_start_ind +
                                    time_window_length)

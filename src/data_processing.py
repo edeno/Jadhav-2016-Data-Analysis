@@ -147,12 +147,10 @@ def get_LFP_filename(tetrode_tuple, animals):
     '''
     data_dir = join(abspath(pardir), 'Raw-Data')
     animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    filename = '{animal.short_name}eeg{day:02d}-{epoch}-{tetrode_number:02d}.mat'.format(
-        data_dir=data_dir,
-        animal=animals[animal],
-        day=day,
-        epoch=epoch_ind,
-        tetrode_number=tetrode_number
+    filename = ('{animal.short_name}eeg{day:02d}-{epoch}-'
+                '{tetrode_number:02d}.mat').format(
+                    data_dir=data_dir, animal=animals[animal],
+                    day=day, epoch=epoch_ind, tetrode_number=tetrode_number
     )
     return join(
         data_dir, animals[animal].directory, 'EEG', filename)
@@ -595,7 +593,8 @@ def get_mark_filename(tetrode_index, animals):
     '''
     data_dir = join(abspath(pardir), 'Raw-Data')
     animal, day, _, tetrode_number = tetrode_index
-    filename = '{animal.short_name}marks{day:02d}-{tetrode_number:02d}.mat'.format(
+    filename = ('{animal.short_name}marks{day:02d}-'
+                '{tetrode_number:02d}.mat').format(
         data_dir=data_dir,
         animal=animals[animal],
         day=day,
