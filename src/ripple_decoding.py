@@ -274,8 +274,7 @@ def estimate_ground_process_intensity(place_field_estimator,
     ground_process_intensity : array_like, shape=(n_parameters * n_states,)
 
     '''
-    return normalize_to_probability(
-        place_field_estimator.sum(axis=1) / place_occupancy)
+    return place_field_estimator.sum(axis=1) / place_occupancy
 
 
 def estimate_place_occupancy(place_bin_centers, place,
