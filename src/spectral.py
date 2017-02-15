@@ -6,6 +6,14 @@
 - Group delay
 - Parametric Spectral Granger
 
+Multi-taper code is based on the Matlab library Chronux [1].
+
+References
+----------
+.. [1] Bokil, H., Andrews, P., Kulkarni, J.E., Mehta, S., and Mitra, P.P.
+   (2010). Chronux: a platform for analyzing neural signals.
+   Journal of Neuroscience Methods 192, 146-151
+
 '''
 from functools import wraps
 from inspect import signature
@@ -781,12 +789,13 @@ def multitaper_canonical_coherence(data,
 
     References
     ----------
-    ..[1] Stephen, Emily Patricia. 2015. “Characterizing Dynamically
-    Evolving Functional Networks in Humans with Application to Speech.”
-    Order No. 3733680, Boston University.
-    http://search.proquest.com/docview/1731940762.
+    .. [1] Stephen, Emily Patricia. 2015. "Characterizing Dynamically
+       Evolving Functional Networks in Humans with Application to Speech."
+       Order No. 3733680, Boston University.
+       http://search.proquest.com/docview/1731940762.
 
     '''
+
     area1_lfps, area2_lfps = data[0], data[1]
     tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(

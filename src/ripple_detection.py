@@ -2,7 +2,6 @@
 potentials
 
 '''
-
 import os
 
 import numpy as np
