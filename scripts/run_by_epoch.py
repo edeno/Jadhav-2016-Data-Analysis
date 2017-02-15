@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from collections import namedtuple
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from subprocess import PIPE, run
-from sys import argv, exit, stdout
+from sys import exit, stdout
 
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
