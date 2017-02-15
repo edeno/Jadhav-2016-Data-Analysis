@@ -388,7 +388,8 @@ def _merge_overlapping_ranges(ranges):
 
     References
     ----------
-    .. [1] http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
+    .. [1] http://codereview.stackexchange.com/questions/21307/consolidate-
+    list-of-ranges-that-overlap
 
     '''
     ranges = iter(sorted(ranges))
