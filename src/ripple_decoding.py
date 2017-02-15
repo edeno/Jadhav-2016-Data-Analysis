@@ -2,7 +2,7 @@
 (e.g. Forward vs. Reverse replay)
 
 '''
-
+import logging
 from functools import partial
 from warnings import warn
 
@@ -14,7 +14,7 @@ from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from statsmodels.api import GLM, families
 
-from . import logger
+logger = logging.getLogger(__name__)
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
