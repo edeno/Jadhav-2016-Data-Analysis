@@ -6,6 +6,14 @@
 - Group delay
 - Parametric Spectral Granger
 
+Multi-taper code is based on the Matlab library Chronux [1].
+
+References
+----------
+.. [1] Bokil, H., Andrews, P., Kulkarni, J.E., Mehta, S., and Mitra, P.P.
+   (2010). Chronux: a platform for analyzing neural signals.
+   Journal of Neuroscience Methods 192, 146-151
+
 '''
 from functools import wraps
 from inspect import signature
@@ -95,7 +103,8 @@ def _make_sliding_window_dataframe(func, data, time_window_duration,
     for each sliding time window.
     '''
     time_window_start_ind = 0
-    while time_window_start_ind + time_window_length <= data[0].shape[axis]:
+    while (time_window_start_ind +
+           time_window_length) <= data[0].shape[axis]:
         try:
             time_window_end_ind = (time_window_start_ind +
                                    time_window_length)
@@ -209,17 +218,11 @@ def multitaper_spectrogram(data,
     ).sort_index()
 
 
-def _set_default_multitaper_parameters(n_time_samples=None,
-                                       sampling_frequency=None,
-                                       time_window_step=None,
-                                       time_window_duration=None,
-                                       tapers=None, n_tapers=None,
-                                       time_halfbandwidth_product=None,
-                                       pad=None,
-                                       n_fft_samples=None,
-                                       frequencies=None,
-                                       freq_ind=None,
-                                       desired_frequencies=None):
+def _set_default_multitaper_parameters(
+    n_time_samples=None, sampling_frequency=None, time_window_step=None,
+        time_window_duration=None, tapers=None, n_tapers=None,
+        time_halfbandwidth_product=None, pad=None, n_fft_samples=None,
+        frequencies=None, freq_ind=None, desired_frequencies=None):
     '''Function to help set default multitaper parameters given that some
     subset of them are unset
     '''
@@ -361,16 +364,10 @@ def _cross_spectrum(complex_spectrum1, complex_spectrum2):
 
 
 @convert_pandas
-def multitaper_power_spectral_density(data,
-                                      sampling_frequency=1000,
-                                      time_halfbandwidth_product=3,
-                                      pad=0,
-                                      tapers=None,
-                                      frequencies=None,
-                                      freq_ind=None,
-                                      n_fft_samples=None,
-                                      n_tapers=None,
-                                      desired_frequencies=None):
+def multitaper_power_spectral_density(
+    data, sampling_frequency=1000, time_halfbandwidth_product=3, pad=0,
+        tapers=None, frequencies=None, freq_ind=None, n_fft_samples=None,
+        n_tapers=None, desired_frequencies=None):
     '''Estimates the power spectral density of a time series using the
     multitaper method.
 
@@ -791,7 +788,15 @@ def multitaper_canonical_coherence(data,
     n_fft_samples : int, optional
         Allows the user to specify the number of fft samples.
 
+    References
+    ----------
+    .. [1] Stephen, Emily Patricia. 2015. "Characterizing Dynamically
+       Evolving Functional Networks in Humans with Application to Speech."
+       Order No. 3733680, Boston University.
+       http://search.proquest.com/docview/1731940762.
+
     '''
+
     area1_lfps, area2_lfps = data[0], data[1]
     tapers, n_fft_samples, frequencies, freq_ind = \
         _set_default_multitaper_parameters(
@@ -887,8 +892,7 @@ def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
     U2, _, V2 = np.linalg.svd(
         complex_spectra2[:, freq_ind, :], full_matrices=False)
     Q = np.dot(np.dot(U1, V1), np.dot(U2, V2).conj().transpose())
-    _, s, _ = np.linalg.svd(Q, full_matrices=False)
-    return s[0]
+    return np.linalg.svd(Q, full_matrices=False, compute_uv=False)[0]
 
 
 def _match_frequency_resolution(time_halfbandwidth_product,

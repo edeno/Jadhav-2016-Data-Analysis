@@ -2,7 +2,6 @@
 potentials
 
 '''
-
 import os
 
 import numpy as np
@@ -12,78 +11,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import filtfilt, hilbert
 from scipy.stats import zscore
 
-from src.data_processing import (get_data_structure,
-                                 get_interpolated_position_dataframe,
-                                 get_LFP_dataframe, make_tetrode_dataframe)
 from src.spectral import multitaper_spectrogram
-
-
-def _get_computed_ripple_times(tetrode_tuple, animals):
-    '''Returns a list of tuples for a given tetrode in the format
-    (start_index, end_index). The indexes are relative
-    to the trial time for that session. Data is extracted from the ripples
-    data structure and calculated according to the Frank Lab criterion.
-    '''
-    animal, day, epoch_ind, tetrode_number = tetrode_tuple
-    ripples_data = get_data_structure(
-        animals[animal], day, 'ripples', 'ripples')
-    return zip(
-        ripples_data[epoch_ind - 1][0][tetrode_number -
-                                       1]['starttime'][0, 0].flatten(),
-        ripples_data[epoch_ind - 1][0][tetrode_number
-                                       - 1]['endtime'][0, 0].flatten())
-
-
-def get_computed_consensus_ripple_times(epoch_index, animals):
-    '''Returns a list of tuples for a given epoch in the format
-    (start_time, end_time).
-    '''
-    animal, day, epoch_ind = epoch_index
-    ripples_data = get_data_structure(
-        animals[animal], day, 'candripples', 'candripples')
-    return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
-
-
-def get_computed_ripples_dataframe(tetrode_index, animals):
-    '''Given a tetrode index (animal, day, epoch, tetrode #), returns a
-    pandas dataframe with the pre-computed ripples from the Frank lab
-     labeled according to the ripple number. Non-ripple times are marked as
-     NaN.
-    '''
-    ripple_times = _get_computed_ripple_times(tetrode_index, animals)
-    [(ripple_ind + 1, start_time, end_time)
-     for ripple_ind, (start_time, end_time) in enumerate(ripple_times)]
-    lfp_dataframe = get_LFP_dataframe(
-        tetrode_index, animals)
-    return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
-            .assign(
-                ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
-
-
-def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
-    '''Given a list of ripple time tuples (ripple #, start time, end time)
-    and a dataframe with a time index (such as the lfp dataframe), returns
-    a pandas dataframe with a column with the timestamps of each ripple
-    labeled according to the ripple number. Non-ripple times are marked as
-    NaN.
-    '''
-    try:
-        index_dataframe = dataframe.drop(dataframe.columns, axis=1)
-    except AttributeError:
-        index_dataframe = dataframe[0].drop(dataframe[0].columns, axis=1)
-    ripple_dataframe = (pd.concat(
-        [index_dataframe.loc[start_time:end_time].assign(
-            ripple_number=number)
-         for number, start_time, end_time in ripple_times]))
-    try:
-        ripple_dataframe = pd.concat(
-            [dataframe, ripple_dataframe], axis=1,
-            join_axes=[index_dataframe.index])
-    except TypeError:
-        ripple_dataframe = pd.concat(
-            [pd.concat(dataframe, axis=1), ripple_dataframe],
-            axis=1, join_axes=[index_dataframe.index])
-    return ripple_dataframe
 
 
 def _get_series_start_end_times(series):
@@ -158,44 +86,6 @@ def Karlsson_method(lfps, smoothing_sigma=0.004, sampling_frequency=1500,
     return _get_candidate_ripples_Karlsson(
         ripple_envelope, minimum_duration=minimum_duration,
         zscore_threshold=zscore_threshold)
-
-
-def get_epoch_ripples(epoch_index, animals, sampling_frequency,
-                      ripple_detection_function=Kay_method,
-                      ripple_detection_kwargs={}, speed_threshold=4):
-    '''Returns a list of tuples containing the start and end times of
-    ripples. Candidate ripples are computed via the ripple detection
-    function and then filtered to exclude ripples where the animal was
-    still moving.
-    '''
-    print('\nDetecting ripples for Animal {0}, Day {1}, Epoch #{2}...\n'.format(
-        *epoch_index))
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    # Get cell-layer CA1, iCA1 LFPs
-    area_critera = (tetrode_info.area.isin(['CA1', 'iCA1']) &
-                    tetrode_info.descrip.isin(['riptet']))
-    tetrode_indices = tetrode_info[area_critera].index.tolist()
-    CA1_lfps = [get_LFP_dataframe(tetrode_index, animals)
-                for tetrode_index in tetrode_indices]
-    candidate_ripple_times = ripple_detection_function(
-        CA1_lfps, **ripple_detection_kwargs)
-    return _exclude_movement_during_ripples(
-        candidate_ripple_times, epoch_index, animals, speed_threshold)
-
-
-def _exclude_movement_during_ripples(ripple_times, epoch_index, animals,
-                                     speed_threshold):
-    '''Excludes ripples where the head direction speed is greater than the
-    speed threshold. Only looks at the start of the ripple to determine
-    head movement speed for the ripple.
-    '''
-    position_df = get_interpolated_position_dataframe(
-        epoch_index, animals)
-    return [(ripple_start, ripple_end)
-            for ripple_start, ripple_end in ripple_times
-            if position_df.loc[
-                ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
 
 
 def _get_smoothed_envelope(lfp, sigma, sampling_frequency):
@@ -497,7 +387,8 @@ def _merge_overlapping_ranges(ranges):
 
     References
     ----------
-    .. [1] http://codereview.stackexchange.com/questions/21307/consolidate-list-of-ranges-that-overlap
+    .. [1] http://codereview.stackexchange.com/questions/21307/consolidate-
+    list-of-ranges-that-overlap
 
     '''
     ranges = iter(sorted(ranges))

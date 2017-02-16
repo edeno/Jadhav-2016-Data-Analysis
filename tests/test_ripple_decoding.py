@@ -88,6 +88,7 @@ def test_combined_likelihood(data, exponent, expected):
 def test_get_ground_process_intensity():
     place_field_estimator = np.zeros((61, 2))
     place_field_estimator[30, 0] = 1
+    place_field_estimator[31, 0] = 1
     place_field_estimator[31, 1] = 1
 
     place_occupancy = np.ones((61,))
@@ -96,8 +97,8 @@ def test_get_ground_process_intensity():
         place_field_estimator, place_occupancy)
 
     expected = np.zeros((61,))
-    expected[30] = 0.8
-    expected[31] = 0.2
+    expected[30] = 1
+    expected[31] = 0.50
 
     assert np.allclose(ground_process_intensity, expected)
 

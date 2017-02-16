@@ -1,8 +1,10 @@
 '''Higher level functions for analyzing the data
 
 '''
+from logging import getLogger
+
 from copy import deepcopy
-from functools import partial, wraps
+from functools import wraps
 from glob import glob
 from itertools import combinations
 from os.path import abspath, join, pardir
@@ -10,21 +12,29 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
+from dask import delayed, compute, async
 
 from src.data_processing import (get_area_pair_info,
                                  get_interpolated_position_dataframe,
                                  get_LFP_dataframe,
                                  get_mark_indicator_dataframe,
-                                 get_tetrode_pair_info, make_tetrode_dataframe,
+                                 get_spike_indicator_dataframe,
+                                 get_tetrode_pair_info,
+                                 make_neuron_dataframe,
+                                 make_tetrode_dataframe,
                                  reshape_to_segments)
 from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  estimate_marked_encoding_model,
-                                 estimate_state_transition,
-                                 set_initial_conditions, get_ripple_info,
-                                 joint_mark_intensity, poisson_mark_likelihood,
-                                 predict_state)
-from src.spectral import (get_lfps_by_area, multitaper_canonical_coherogram,
-                          multitaper_coherogram, power_and_coherence_change)
+                                 estimate_sorted_spike_encoding_model,
+                                 estimate_state_transition, predict_state,
+                                 set_initial_conditions)
+from src.ripple_detection import Kay_method
+from src.spectral import (get_lfps_by_area,
+                          multitaper_canonical_coherogram,
+                          multitaper_coherogram,
+                          power_and_coherence_change)
+
+logger = getLogger(__name__)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
@@ -37,6 +47,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
@@ -46,14 +57,14 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
-    print(
-        '\nComputing {coherence_name} for each level of the covariate '
-        '"{covariate}"\nfor {num_pairs} pairs of electrodes:'.format(
+    logger.info(
+        'Computing {coherence_name} for each level of the covariate '
+        '"{covariate}"for {num_pairs} pairs of electrodes:'.format(
             coherence_name=coherence_name, covariate=ripple_covariate,
             num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
+        logger.info('Level: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
@@ -67,15 +78,19 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 **params)
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
                               tetrode1, tetrode2, coherence_df)
-    print('\nComputing the difference in coherence between all levels:')
+    logger.info(
+        'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
             sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
-        print('\tLevel Difference: {level2} - {level1}'.format(
+        logger.info('Level Difference: {level2} - {level1}'.format(
             level1=level1, level2=level2))
         for tetrode1, tetrode2 in combinations(
                 sorted(reshaped_lfps), 2):
+            logger.debug('...Tetrode Pair: {tetrode1} - {tetrode2}'.format(
+                tetrode1=tetrode1, tetrode2=tetrode2
+            ))
             level1_coherence_df = get_tetrode_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
                 tetrode1, tetrode2)
@@ -87,7 +102,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
             save_tetrode_pair(
                 coherence_name, ripple_covariate, level_difference_name,
                 tetrode1, tetrode2, coherence_difference_df)
-    print('\nSaving Parameters...')
+    logger.info('Saving Parameters')
     save_multitaper_parameters(
         epoch_index, coherence_name, multitaper_params)
     save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
@@ -104,20 +119,21 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
 
     grouped = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
-    print('\nComputing canonical {coherence_name} for each '
-          'level of the covariate "{covariate}":'.format(
-              coherence_name=coherence_name,
-              covariate=ripple_covariate))
+    logger.info('Computing canonical {coherence_name} for each '
+                'level of the covariate "{covariate}":'.format(
+                    coherence_name=coherence_name,
+                    covariate=ripple_covariate))
 
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        print('\tLevel: {level_name} ({num_ripples} ripples)'.format(
+        logger.info('Level: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
@@ -127,7 +143,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            print('\t\t...{area1} - {area2}'.format(
+            logger.debug('...Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             area1_lfps = get_lfps_by_area(
                 area1, tetrode_info, reshaped_lfps)
@@ -139,18 +155,19 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 coherence_name, ripple_covariate, level_name,
                 area1, area2, coherogram, epoch_index)
 
-    print('\nComputing the difference in coherence between all levels:')
+    logger.info(
+        'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
             sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
-        print(
-            '\tLevel Difference: {level2} - {level1}'.format(
+        logger.info(
+            'Level Difference: {level2} - {level1}'.format(
                 level1=level1, level2=level2))
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            print('\t\t...{area1} - {area2}'.format(
+            logger.debug('...Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
@@ -163,7 +180,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
             save_area_pair(
                 coherence_name, ripple_covariate, level_difference_name,
                 area1, area2, coherence_difference_df, epoch_index)
-    print('\nSaving Parameters...')
+    logger.info('Saving Parameters')
     save_multitaper_parameters(
         epoch_index, coherence_name, multitaper_params)
     save_area_pair_info(epoch_index, coherence_name, tetrode_info)
@@ -176,6 +193,7 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     num_lfps = len(lfps)
@@ -183,10 +201,10 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
 
-    print('\nComputing ripple-triggered {coherence_name} '
-          'for {num_pairs} pairs of electrodes...'.format(
-              coherence_name=coherence_name,
-              num_pairs=num_pairs))
+    logger.info('Computing ripple-triggered {coherence_name} '
+                'for {num_pairs} pairs of electrodes'.format(
+                    coherence_name=coherence_name,
+                    num_pairs=num_pairs))
 
     reshaped_lfps = {key: reshape_to_segments(
         lfps[key], ripple_times,
@@ -196,6 +214,9 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
         for key in lfps}
     for tetrode1, tetrode2 in combinations(
             sorted(reshaped_lfps), 2):
+        logger.debug('...Tetrode Pair: {tetrode1} - {tetrode2}'.format(
+            tetrode1=tetrode1, tetrode2=tetrode2
+        ))
         coherogram = multitaper_coherogram(
             [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **params)
         coherence_baseline = coherogram.xs(
@@ -220,6 +241,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         epoch_index]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
     lfps = {index: get_LFP_dataframe(index, animals)
             for index in tetrode_info.index}
     params = deepcopy(multitaper_params)
@@ -234,11 +256,12 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
 
     area_pairs = combinations(
         sorted(tetrode_info.area.unique()), 2)
-    print('\nComputing ripple-triggered '
-          'canonical {coherence_name}:'.format(
-              coherence_name=coherence_name))
+    logger.info('Computing ripple-triggered '
+                'canonical {coherence_name}:'.format(
+                    coherence_name=coherence_name))
     for area1, area2 in area_pairs:
-        print('\t{area1} - {area2}'.format(area1=area1, area2=area2))
+        logger.debug('...Area Pair: {area1} - {area2}'.format(
+            area1=area1, area2=area2))
         area1_lfps = get_lfps_by_area(
             area1, tetrode_info, reshaped_lfps)
         area2_lfps = get_lfps_by_area(
@@ -295,12 +318,13 @@ def get_tetrode_pair_from_hdf(coherence_name, covariate, level,
         return pd.read_hdf(
             analysis_file_path(animal, day, epoch), key=hdf_path)
     except KeyError:
-        print('Could not load tetrode pair:\n'
-              '\tanimal={animal}, day={day}, epoch={epoch}\n'
-              '\ttetrode {tetrode1} - tetrode {tetrode2}\n'.format(
-                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1[-1],
-                tetrode2=tetrode2[-1]
-              ))
+        logger.warn(
+            'Could not load tetrode pair:'
+            'animal={animal}, day={day}, epoch={epoch}'
+            'tetrode {tetrode1} - tetrode {tetrode2}'.format(
+                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
+                tetrode2=tetrode2
+            ))
 
 
 def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2,
@@ -308,13 +332,23 @@ def get_area_pair_from_hdf(coherence_name, covariate, level, area1, area2,
     animal, day, epoch = epoch_index
     hdf_path = area_pair_hdf_path(
         coherence_name, covariate, level, area1, area2)
-    return pd.read_hdf(
-        analysis_file_path(animal, day, epoch), key=hdf_path)
+    try:
+        return pd.read_hdf(
+            analysis_file_path(animal, day, epoch), key=hdf_path)
+    except KeyError:
+        logger.warn(
+            'Could not load brain area pair:'
+            'animal={animal}, day={day}, epoch={epoch}'
+            'area {area1} - area {area2}'.format(
+                animal=animal, day=day, epoch=epoch, area1=area1,
+                area2=area2
+            ))
 
 
 def tetrode_pair_hdf_path(coherence_name, covariate, level,
                           tetrode1, tetrode2):
-    return '/{coherence_name}/tetrode{tetrode1:04d}_tetrode{tetrode2:04d}/{covariate}/{level}'.format(
+    return ('/{coherence_name}/tetrode{tetrode1:04d}_tetrode{tetrode2:04d}'
+            '/{covariate}/{level}').format(
         coherence_name=coherence_name, covariate=covariate,
         level=level, tetrode1=tetrode1, tetrode2=tetrode2)
 
@@ -467,22 +501,149 @@ def merge_symmetric_key_pairs(pair_dict):
     return merged_dict
 
 
+def detect_epoch_ripples(epoch_index, animals, sampling_frequency,
+                         ripple_detection_function=Kay_method,
+                         ripple_detection_kwargs={}, speed_threshold=4):
+    '''Returns a list of tuples containing the start and end times of
+    ripples. Candidate ripples are computed via the ripple detection
+    function and then filtered to exclude ripples where the animal was
+    still moving.
+    '''
+    logger.info('Detecting ripples')
+    tetrode_info = make_tetrode_dataframe(animals)[
+        epoch_index]
+    # Get cell-layer CA1, iCA1 LFPs
+    is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1']) &
+                      tetrode_info.descrip.isin(['riptet']))
+    logger.debug(tetrode_info[is_hippocampal]
+                 .loc[:, ['area', 'depth', 'descrip']])
+    tetrode_indices = tetrode_info[is_hippocampal].index.tolist()
+    CA1_lfps = [get_LFP_dataframe(tetrode_index, animals)
+                for tetrode_index in tetrode_indices]
+    candidate_ripple_times = ripple_detection_function(
+        CA1_lfps, **ripple_detection_kwargs)
+    return exclude_movement_during_ripples(
+        candidate_ripple_times, epoch_index, animals, speed_threshold)
+
+
+def decode_ripple_sorted_spikes(epoch_index, animals, ripple_times,
+                                sampling_frequency=1500,
+                                n_place_bins=49):
+    '''Labels the ripple by category
+
+    Parameters
+    ----------
+    epoch_index : 3-element tuple
+        Specifies which epoch to run.
+        (Animal short name, day, epoch_number)
+    animals : list of named-tuples
+        Tuples give information to convert from the animal short name
+        to a data directory
+    ripple_times : list of 2-element tuples
+        The first element of the tuple is the start time of the ripple.
+        Second element of the tuple is the end time of the ripple
+    sampling_frequency : int, optional
+        Sampling frequency of the spikes
+    n_place_bins : int, optional
+        Number of bins for the linear distance
+
+    Returns
+    -------
+    ripple_info : pandas dataframe
+        Dataframe containing the categories for each ripple
+        and the probability of that category
+
+    '''
+    logger.info('Decoding ripples')
+    # Include only CA1 neurons with spikes
+    neuron_info = make_neuron_dataframe(animals)[
+        epoch_index].dropna()
+    tetrode_info = make_tetrode_dataframe(animals)[
+        epoch_index]
+    neuron_info = pd.merge(tetrode_info, neuron_info,
+                           on=['animal', 'day', 'epoch_ind',
+                               'tetrode_number', 'area'],
+                           how='right', right_index=True).set_index(
+        neuron_info.index)
+    neuron_info = neuron_info[
+        neuron_info.area.isin(['CA1', 'iCA1']) &
+        (neuron_info.numspikes > 0) &
+        ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(neuron_info.loc[:, ['area', 'numspikes']])
+
+    # Train on when the rat is moving
+    position_info = get_interpolated_position_dataframe(
+        epoch_index, animals)
+    spikes_data = [get_spike_indicator_dataframe(neuron_index, animals)
+                   for neuron_index in neuron_info.index]
+
+    # Make sure there are spikes in the training data times. Otherwise
+    # exclude that neuron
+    spikes_data = [spikes_datum for spikes_datum in spikes_data
+                   if spikes_datum[
+                       position_info.speed > 4].sum().values > 0]
+
+    train_position_info = position_info.query('speed > 4')
+    train_spikes_data = [spikes_datum[position_info.speed > 4]
+                         for spikes_datum in spikes_data]
+    place_bin_edges = np.linspace(
+        np.floor(position_info.linear_distance.min()),
+        np.ceil(position_info.linear_distance.max()),
+        n_place_bins + 1)
+    place_bin_centers = _get_bin_centers(
+        place_bin_edges)
+
+    logger.info('...Fitting encoding model')
+    combined_likelihood_kwargs = estimate_sorted_spike_encoding_model(
+        train_position_info, train_spikes_data, place_bin_centers)
+
+    logger.info('...Fitting state transition model')
+    state_transition = estimate_state_transition(
+        train_position_info, place_bin_edges)
+
+    logger.info('...Setting initial conditions')
+    state_names = ['outbound_forward', 'outbound_reverse',
+                   'inbound_forward', 'inbound_reverse']
+    n_states = len(state_names)
+    initial_conditions = set_initial_conditions(
+        place_bin_edges, place_bin_centers, n_states)
+
+    logger.info('...Decoding ripples')
+    decoder_params = dict(
+        initial_conditions=initial_conditions,
+        state_transition=state_transition,
+        likelihood_function=combined_likelihood,
+        likelihood_kwargs=combined_likelihood_kwargs
+    )
+    test_spikes = _get_ripple_spikes(
+        spikes_data, ripple_times, sampling_frequency)
+    posterior_density = [predict_state(ripple_spikes, **decoder_params)
+                         for ripple_spikes in test_spikes]
+    return get_ripple_info(
+        posterior_density, test_spikes, ripple_times,
+        state_names, position_info.index)
+
+
 def decode_ripple_clusterless(epoch_index, animals, ripple_times,
                               sampling_frequency=1500,
                               n_place_bins=61,
                               place_std_deviation=None,
-                              mark_std_deviation=20):
-    # Encode
+                              mark_std_deviation=20,
+                              scheduler=async.get_sync,
+                              scheduler_kwargs={}):
+    logger.info('Decoding ripples')
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
-
     mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
                       'channel_4_max']
+    hippocampal_tetrodes = tetrode_info.loc[
+        tetrode_info.area.isin(['CA1', 'iCA1']) &
+        (tetrode_info.descrip != 'CA1Ref'), :]
+    logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
+
     tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
                       .loc[:, mark_variables])
-                     for tetrode_index in tetrode_info.loc[
-        tetrode_info.area.isin(['CA1', 'iCA1']) &
-        (tetrode_info.descrip != 'CA1Ref'), :]]
+                     for tetrode_index in hippocampal_tetrodes.index]
 
     position_variables = ['linear_distance', 'trajectory_direction',
                           'speed']
@@ -509,37 +670,24 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     if place_std_deviation is None:
         place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
 
-    (place_occupancy, ground_process_intensity, place_field_estimator,
-     training_marks) = estimate_marked_encoding_model(
+    logger.info('...Fitting encoding model')
+    combined_likelihood_kwargs = estimate_marked_encoding_model(
         place_bin_centers, place, place_at_spike, training_marks,
-        place_std_deviation=place_std_deviation)
-
-    fixed_joint_mark_intensity = partial(
-        joint_mark_intensity, place_field_estimator=place_field_estimator,
-        place_occupancy=place_occupancy, training_marks=training_marks,
+        place_std_deviation=place_std_deviation,
         mark_std_deviation=mark_std_deviation)
 
-    combined_likelihood_kwargs = dict(
-        likelihood_function=poisson_mark_likelihood,
-        likelihood_kwargs=dict(
-            joint_mark_intensity=fixed_joint_mark_intensity,
-            ground_process_intensity=ground_process_intensity)
-    )
-
-    # Fit state transition model
-    print('\tFitting state transition model...')
+    logger.info('...Fitting state transition model')
     state_transition = estimate_state_transition(
         train_position_info, place_bin_edges)
 
-    # Initial Conditions
-    print('\tSetting initial conditions...')
+    logger.info('...Setting initial conditions')
     state_names = ['outbound_forward', 'outbound_reverse',
                    'inbound_forward', 'inbound_reverse']
     n_states = len(state_names)
     initial_conditions = set_initial_conditions(
         place_bin_edges, place_bin_centers, n_states)
 
-    # Decode
+    logger.info('...Decoding ripples')
     decoder_kwargs = dict(
         initial_conditions=initial_conditions,
         state_transition=state_transition,
@@ -550,8 +698,11 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     test_marks = _get_ripple_marks(
         tetrode_marks, ripple_times, sampling_frequency)
 
-    posterior_density = [predict_state(ripple_marks, **decoder_kwargs)
-                         for ripple_marks in test_marks]
+    posterior_density = [
+        delayed(predict_state, pure=True)(ripple_marks, **decoder_kwargs)
+        for ripple_marks in test_marks]
+    posterior_density = compute(
+        *posterior_density, get=scheduler, **scheduler_kwargs)
     test_spikes = [np.mean(~np.isnan(marks), axis=2)
                    for marks in test_marks]
 
@@ -608,3 +759,125 @@ def _get_ripple_marks(tetrode_marks, ripple_times, sampling_frequency):
     return [np.stack([df.loc[ripple_ind + 1, :].values
                       for df in mark_ripples], axis=1)
             for ripple_ind in np.arange(len(ripple_times))]
+
+
+def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
+    '''Given the ripple times, extract the spikes within the ripple
+    '''
+    spike_ripples_df = [reshape_to_segments(
+        spikes_datum, ripple_times,
+        concat_axis=1, sampling_frequency=sampling_frequency)
+        for spikes_datum in spikes_data]
+
+    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
+                       for df in spike_ripples_df]).T
+            for ripple_ind in np.arange(len(ripple_times))]
+
+
+def exclude_movement_during_ripples(ripple_times, epoch_index, animals,
+                                    speed_threshold):
+    '''Excludes ripples where the head direction speed is greater than the
+    speed threshold. Only looks at the start of the ripple to determine
+    head movement speed for the ripple.
+    '''
+    position_df = get_interpolated_position_dataframe(
+        epoch_index, animals)
+    return [(ripple_start, ripple_end)
+            for ripple_start, ripple_end in ripple_times
+            if position_df.loc[
+                ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
+
+
+def get_ripple_info(posterior_density, test_spikes, ripple_times,
+                    state_names, session_time):
+    '''Summary statistics for ripple categories
+
+    Parameters
+    ----------
+    posterior_density : array_like
+    test_spikes : array_like
+    ripple_times : list of tuples
+    state_names : list of str
+    session_time : array_like
+
+    Returns
+    -------
+    ripple_info : pandas dataframe
+    decision_state_probability : array_like
+    posterior_density : array_like
+    state_names : list of str
+
+    '''
+    n_states = len(state_names)
+    n_ripples = len(ripple_times)
+    decision_state_probability = [
+        _compute_decision_state_probability(density, n_states)
+        for density in posterior_density]
+
+    ripple_info = pd.DataFrame(
+        [_compute_max_state(probability, state_names)
+         for probability in decision_state_probability],
+        columns=['ripple_trajectory', 'ripple_direction',
+                 'ripple_state_probability'],
+        index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
+    ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
+    ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
+    ripple_info['number_of_unique_neurons_spiking'] = [
+        _num_unique_neurons_spiking(spikes) for spikes in test_spikes]
+    ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
+                                       for spikes in test_spikes]
+    ripple_info['session_time'] = _ripple_session_time(
+        ripple_times, session_time)
+    ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
+                               .map({True: 'isSpike', False: 'noSpike'}))
+
+    return (ripple_info, decision_state_probability,
+            posterior_density, state_names)
+
+
+def _compute_decision_state_probability(posterior_density, n_states):
+    '''The marginal probability of a state given the posterior_density
+    '''
+    n_time = len(posterior_density)
+    new_shape = (n_time, n_states, -1)
+    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
+
+
+def _compute_max_state(probability, state_names):
+    '''The discrete state with the highest probability at the last time
+    '''
+    end_time_probability = probability[-1, :]
+    return (*state_names[np.argmax(end_time_probability)].split('_'),
+            np.max(end_time_probability))
+
+
+def _num_unique_neurons_spiking(spikes):
+    '''Number of units that spike per ripple
+    '''
+    return spikes.sum(axis=0).nonzero()[0].shape[0]
+
+
+def _num_total_spikes(spikes):
+    '''Total number of spikes per ripple
+    '''
+    return int(spikes.sum(axis=(0, 1)))
+
+
+def _ripple_session_time(ripple_times, session_time):
+    '''Categorize the ripples by the time in the session in which they
+    occur.
+
+    This function trichotimizes the session time into early session,
+    middle session, and late session and classifies the ripple by the most
+    prevelant category.
+    '''
+    session_time_categories = pd.Series(
+        pd.cut(
+            session_time, 3,
+            labels=['early', 'middle', 'late'], precision=4),
+        index=session_time)
+    return [(session_time_categories
+             .loc[ripple_start:ripple_end]
+             .value_counts()
+             .argmax())
+            for ripple_start, ripple_end in ripple_times]

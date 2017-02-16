@@ -1,23 +1,25 @@
 '''Classifying sharp-wave ripple replay events from spiking activity
 (e.g. Forward vs. Reverse replay)
 
-'''
+References
+----------
+.. [1] Deng, X., Liu, D.F., Karlsson, M.P., Frank, L.M., and Eden, U.T.
+       (2016). Rapid classification of hippocampal replay content for
+       real-time applications. Journal of Neurophysiology 116, 2221-2235.
 
+'''
+from functools import partial
+from logging import getLogger
 from warnings import warn
 
-from numba import jit
 import numpy as np
-import pandas as pd
+from numba import jit
 from patsy import build_design_matrices, dmatrix
 from scipy.linalg import block_diag
 from scipy.ndimage.filters import gaussian_filter
 from statsmodels.api import GLM, families
 
-from src.data_processing import (get_interpolated_position_dataframe,
-                                 get_spike_indicator_dataframe,
-                                 make_neuron_dataframe,
-                                 make_tetrode_dataframe,
-                                 reshape_to_segments)
+logger = getLogger(__name__)
 
 
 def predict_state(data, initial_conditions=None, state_transition=None,
@@ -178,7 +180,6 @@ def evaluate_mark_space(test_marks, training_marks=None,
         axis=1)
 
 
-@jit(nopython=True)
 def joint_mark_intensity(marks, place_field_estimator=None,
                          place_occupancy=None,
                          training_marks=None,
@@ -207,6 +208,7 @@ def joint_mark_intensity(marks, place_field_estimator=None,
 
     n_parameters = place_occupancy.shape[0]
     n_signals = len(place_field_estimator)
+    n_marks = marks.shape[1]
     place_mark_estimator = np.zeros((n_signals, n_parameters))
 
     for signal_ind in range(n_signals):
@@ -216,9 +218,10 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                 marks[signal_ind],
                 training_marks=training_marks[signal_ind],
                 mark_std_deviation=mark_std_deviation)
-            )
+        )
 
-    return place_mark_estimator / place_occupancy
+    return (place_mark_estimator / place_occupancy
+            / (mark_std_deviation * n_marks))
 
 
 def estimate_place_field(place_bin_centers, place_at_spike,
@@ -256,7 +259,8 @@ def estimate_place_field(place_bin_centers, place_at_spike,
 
 def estimate_ground_process_intensity(place_field_estimator,
                                       place_occupancy):
-    '''The probability of observing a spike regardless of mark
+    '''The probability of observing a spike regardless of mark. Marginalize
+    the joint mark intensity over the mark space.
 
     Parameters
     ----------
@@ -269,8 +273,7 @@ def estimate_ground_process_intensity(place_field_estimator,
     ground_process_intensity : array_like, shape=(n_parameters * n_states,)
 
     '''
-    return normalize_to_probability(
-        place_field_estimator.sum(axis=1) / place_occupancy)
+    return place_field_estimator.sum(axis=1) / place_occupancy
 
 
 def estimate_place_occupancy(place_bin_centers, place,
@@ -301,8 +304,12 @@ def estimate_place_occupancy(place_bin_centers, place,
 
 def estimate_marked_encoding_model(place_bin_centers, place,
                                    place_at_spike, training_marks,
-                                   place_std_deviation=1):
-    '''
+                                   place_std_deviation=4,
+                                   mark_std_deviation=20):
+    '''Non-parametric estimatation of place fields based on marks
+
+    A Gaussian kernel is placed at each mark and place the animal is at
+    when a spike occurs.
 
     Parameters
     ----------
@@ -314,14 +321,9 @@ def estimate_marked_encoding_model(place_bin_centers, place,
 
     Returns
     -------
-    place_occupancy : array_like, shape=(n_parameters * n_states,)
-    ground_process_intensity : array_like, shape=(n_signals,
-                                                  n_parameters *
-                                                  n_states)
-    place_field_estimator : list of arrays of shape=(n_parameters *
-                                                     n_states,
-                                                     n_training_spikes)
-    marks : list of arrays of shape=(n_training_spikes, n_marks)
+    combined_likelihood_kwargs : dict
+        Keyword arguments for the `combined_likelihood`
+        function.
 
     '''
     n_signals, n_states = len(place_at_spike), len(place)
@@ -334,7 +336,7 @@ def estimate_marked_encoding_model(place_bin_centers, place,
 
     ground_process_intensity = list()
     place_field_estimator = list()
-    marks = list()
+    stacked_marks = list()
 
     for signal_ind in range(n_signals):
         signal_place_field = [
@@ -352,13 +354,22 @@ def estimate_marked_encoding_model(place_bin_centers, place,
             block_diag(*signal_place_field))
         ground_process_intensity.append(
             np.hstack(signal_ground_process_intensity))
-        marks.append(np.vstack(training_marks[signal_ind]))
+        stacked_marks.append(np.vstack(training_marks[signal_ind]))
 
     place_occupancy = np.hstack(place_occupancy)
     ground_process_intensity = np.stack(ground_process_intensity)
 
-    return (place_occupancy, ground_process_intensity,
-            place_field_estimator, marks)
+    fixed_joint_mark_intensity = partial(
+        joint_mark_intensity, place_field_estimator=place_field_estimator,
+        place_occupancy=place_occupancy, training_marks=stacked_marks,
+        mark_std_deviation=mark_std_deviation)
+
+    return dict(
+        likelihood_function=poisson_mark_likelihood,
+        likelihood_kwargs=dict(
+            joint_mark_intensity=fixed_joint_mark_intensity,
+            ground_process_intensity=ground_process_intensity)
+    )
 
 
 def combined_likelihood(data, likelihood_function=None,
@@ -445,131 +456,6 @@ def _fix_zero_bins(movement_bins):
     '''
     movement_bins[:, movement_bins.sum(axis=0) == 0] = 1
     return movement_bins
-
-
-def decode_ripple(epoch_index, animals, ripple_times,
-                  sampling_frequency=1500,
-                  n_place_bins=49,
-                  likelihood_function=poisson_likelihood):
-    '''Labels the ripple by category
-
-    Parameters
-    ----------
-    epoch_index : 3-element tuple
-        Specifies which epoch to run.
-        (Animal short name, day, epoch_number)
-    animals : list of named-tuples
-        Tuples give information to convert from the animal short name
-        to a data directory
-    ripple_times : list of 2-element tuples
-        The first element of the tuple is the start time of the ripple.
-        Second element of the tuple is the end time of the ripple
-    sampling_frequency : int, optional
-        Sampling frequency of the spikes
-    n_place_bins : int, optional
-        Number of bins for the linear distance
-    likelihood_function : function, optional
-        Converts the conditional intensity of a point process to a
-        likelihood
-
-    Returns
-    -------
-    ripple_info : pandas dataframe
-        Dataframe containing the categories for each ripple
-        and the probability of that category
-
-    '''
-    print('\nDecoding ripples for Animal {0}, Day {1}, Epoch #{2}:'.format(
-        *epoch_index))
-    # Include only CA1 neurons with spikes
-    neuron_info = make_neuron_dataframe(animals)[
-        epoch_index].dropna()
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    neuron_info = pd.merge(tetrode_info, neuron_info,
-                           on=['animal', 'day', 'epoch_ind',
-                               'tetrode_number', 'area'],
-                           how='right', right_index=True).set_index(
-        neuron_info.index)
-    neuron_info = neuron_info[
-        neuron_info.area.isin(['CA1', 'iCA1']) &
-        (neuron_info.numspikes > 0) &
-        ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
-
-    # Train on when the rat is moving
-    position_info = get_interpolated_position_dataframe(
-        epoch_index, animals)
-    spikes_data = [get_spike_indicator_dataframe(neuron_index, animals)
-                   for neuron_index in neuron_info.index]
-
-    # Make sure there are spikes in the training data times. Otherwise
-    # exclude that neuron
-    spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[
-                       position_info.speed > 4].sum().values > 0]
-
-    train_position_info = position_info.query('speed > 4')
-    train_spikes_data = [spikes_datum[position_info.speed > 4]
-                         for spikes_datum in spikes_data]
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = _get_bin_centers(
-        place_bin_edges)
-
-    # Fit encoding model
-    print('\tFitting encoding model...')
-    conditional_intensity = get_encoding_model(
-        train_position_info, train_spikes_data,
-        place_bin_centers)
-
-    # Fit state transition model
-    print('\tFitting state transition model...')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    # Initial Conditions
-    print('\tSetting initial conditions...')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    # Decode
-    print('\tDecoding ripples...')
-    combined_likelihood_params = dict(
-        likelihood_function=likelihood_function,
-        likelihood_kwargs=dict(
-            conditional_intensity=conditional_intensity)
-    )
-    decoder_params = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_params
-    )
-    test_spikes = _get_ripple_spikes(
-        spikes_data, ripple_times, sampling_frequency)
-    posterior_density = [predict_state(ripple_spikes, **decoder_params)
-                         for ripple_spikes in test_spikes]
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index)
-
-
-def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
-    '''Given the ripple times, extract the spikes within the ripple
-    '''
-    spike_ripples_df = [reshape_to_segments(
-        spikes_datum, ripple_times,
-        concat_axis=1, sampling_frequency=sampling_frequency)
-        for spikes_datum in spikes_data]
-
-    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
-                       for df in spike_ripples_df]).T
-            for ripple_ind in np.arange(len(ripple_times))]
 
 
 def _get_bin_centers(bin_edges):
@@ -671,7 +557,7 @@ def glm_fit(spikes, design_matrix, ind):
 
     '''
     try:
-        print('\t\t...Neuron #{}'.format(ind + 1))
+        logger.debug('\t\t...Neuron #{}'.format(ind + 1))
         return GLM(spikes.reindex(design_matrix.index), design_matrix,
                    family=families.Poisson(),
                    drop='missing').fit(maxiter=30)
@@ -680,8 +566,9 @@ def glm_fit(spikes, design_matrix, ind):
         return np.nan
 
 
-def get_encoding_model(train_position_info, train_spikes_data,
-                       place_bin_centers):
+def estimate_sorted_spike_encoding_model(train_position_info,
+                                         train_spikes_data,
+                                         place_bin_centers):
     '''The conditional intensities for each state (Outbound-Forward,
     Outbound-Reverse, Inbound-Forward, Inbound-Reverse)
 
@@ -693,9 +580,7 @@ def get_encoding_model(train_position_info, train_spikes_data,
 
     Returns
     -------
-    conditional_intensity_by_state : array_like, shape=(n_signals,
-                                                        n_parameters *
-                                                        n_states)
+    combined_likelihood_kwargs : dict
 
     '''
     formula = ('1 + trajectory_direction * '
@@ -715,57 +600,17 @@ def get_encoding_model(train_position_info, train_spikes_data,
     outbound_conditional_intensity = _get_conditional_intensity(
         fit, outbound_predict_design_matrix)
 
-    return np.vstack([outbound_conditional_intensity,
-                      outbound_conditional_intensity,
-                      inbound_conditional_intensity,
-                      inbound_conditional_intensity]).T
+    conditional_intensity = np.vstack(
+        [outbound_conditional_intensity,
+         outbound_conditional_intensity,
+         inbound_conditional_intensity,
+         inbound_conditional_intensity]).T
 
-
-def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, session_time):
-    '''Summary statistics for ripple categories
-
-    Parameters
-    ----------
-    posterior_density : array_like
-    test_spikes : array_like
-    ripple_times : list of tuples
-    state_names : list of str
-    session_time : array_like
-
-    Returns
-    -------
-    ripple_info : pandas dataframe
-    decision_state_probability : array_like
-    posterior_density : array_like
-    state_names : list of str
-
-    '''
-    n_states = len(state_names)
-    n_ripples = len(ripple_times)
-    decision_state_probability = [
-        _compute_decision_state_probability(density, n_states)
-        for density in posterior_density]
-
-    ripple_info = pd.DataFrame(
-        [_compute_max_state(probability, state_names)
-         for probability in decision_state_probability],
-        columns=['ripple_trajectory', 'ripple_direction',
-                 'ripple_state_probability'],
-        index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
-    ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
-    ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
-    ripple_info['number_of_unique_neurons_spiking'] = [
-        _num_unique_neurons_spiking(spikes) for spikes in test_spikes]
-    ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
-                                       for spikes in test_spikes]
-    ripple_info['session_time'] = _ripple_session_time(
-        ripple_times, session_time)
-    ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
-                               .map({True: 'isSpike', False: 'noSpike'}))
-
-    return (ripple_info, decision_state_probability,
-            posterior_density, state_names)
+    return dict(
+        likelihood_function=poisson_likelihood,
+        likelihood_kwargs=dict(
+            conditional_intensity=conditional_intensity)
+    )
 
 
 def _predictors_by_trajectory_direction(trajectory_direction,
@@ -795,54 +640,6 @@ def _get_conditional_intensity(fit, predict_design_matrix):
     '''
     return np.vstack([glm_val(fitted_model, predict_design_matrix)
                       for fitted_model in fit]).T
-
-
-def _compute_decision_state_probability(posterior_density, n_states):
-    '''The marginal probability of a state given the posterior_density
-    '''
-    n_time = len(posterior_density)
-    new_shape = (n_time, n_states, -1)
-    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
-
-
-def _compute_max_state(probability, state_names):
-    '''The discrete state with the highest probability at the last time
-    '''
-    end_time_probability = probability[-1, :]
-    return (*state_names[np.argmax(end_time_probability)].split('_'),
-            np.max(end_time_probability))
-
-
-def _num_unique_neurons_spiking(spikes):
-    '''Number of units that spike per ripple
-    '''
-    return spikes.sum(axis=0).nonzero()[0].shape[0]
-
-
-def _num_total_spikes(spikes):
-    '''Total number of spikes per ripple
-    '''
-    return int(spikes.sum(axis=(0, 1)))
-
-
-def _ripple_session_time(ripple_times, session_time):
-    '''Categorize the ripples by the time in the session in which they
-    occur.
-
-    This function trichotimizes the session time into early session,
-    middle session, and late session and classifies the ripple by the most
-    prevelant category.
-    '''
-    session_time_categories = pd.Series(
-        pd.cut(
-            session_time, 3,
-            labels=['early', 'middle', 'late'], precision=4),
-        index=session_time)
-    return [(session_time_categories
-             .loc[ripple_start:ripple_end]
-             .value_counts()
-             .argmax())
-            for ripple_start, ripple_end in ripple_times]
 
 
 @jit(nopython=True)
