@@ -65,7 +65,7 @@ low_frequency_highTimeRes = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.100,
     time_window_step=0.100,
-    desired_frequencies=(0, 20),
+    desired_frequencies=(0, 30),
     time_halfbandwidth_product=1,
     window_of_interest=(-0.500, 0.400)
 )
@@ -73,7 +73,7 @@ low_frequency_highFreqRes = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.250,
     time_window_step=0.250,
-    desired_frequencies=(0, 20),
+    desired_frequencies=(0, 30),
     time_halfbandwidth_product=1,
     window_of_interest=(-0.750, 0.250)
 )
