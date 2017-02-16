@@ -12,6 +12,7 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
+from dask import delayed, compute, async
 
 from src.data_processing import (get_area_pair_info,
                                  get_interpolated_position_dataframe,
@@ -627,7 +628,9 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
                               sampling_frequency=1500,
                               n_place_bins=61,
                               place_std_deviation=None,
-                              mark_std_deviation=20):
+                              mark_std_deviation=20,
+                              scheduler=async.get_sync,
+                              scheduler_kwargs={}):
     logger.info('Decoding ripples')
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
@@ -695,8 +698,11 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     test_marks = _get_ripple_marks(
         tetrode_marks, ripple_times, sampling_frequency)
 
-    posterior_density = [predict_state(ripple_marks, **decoder_kwargs)
-                         for ripple_marks in test_marks]
+    posterior_density = [
+        delayed(predict_state, pure=True)(ripple_marks, **decoder_kwargs)
+        for ripple_marks in test_marks]
+    posterior_density = compute(
+        *posterior_density, get=scheduler, **scheduler_kwargs)
     test_spikes = [np.mean(~np.isnan(marks), axis=2)
                    for marks in test_marks]
 
