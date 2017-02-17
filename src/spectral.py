@@ -356,10 +356,9 @@ def _multitaper_fft(tapers, data, n_fft_samples,
     '''
     try:
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
-    except IndexError:
-        # There are no trials
-        projected_data = data[:, np.newaxis,
-                              np.newaxis] * tapers[:, :, np.newaxis]
+    except IndexError:  # There are no trials
+        projected_data = (data[:, np.newaxis, np.newaxis] *
+                          tapers[:, :, np.newaxis])
     return (fft(projected_data, n=n_fft_samples, axis=0) /
             sampling_frequency)
 
