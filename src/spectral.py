@@ -608,7 +608,7 @@ def multitaper_coherogram(data,
 
 
 def plot_coherogram(coherogram_dataframe, axis_handle=None,
-                    cmap='viridis', vmin=0.3, vmax=0.7):
+                    cmap='viridis', vmin=0, vmax=1):
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
