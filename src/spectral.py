@@ -316,8 +316,20 @@ def _get_frequencies(sampling_frequency, n_fft_samples,
 
 def _get_tapers(n_time_samples, sampling_frequency,
                 time_halfbandwidth_product, n_tapers):
-    ''' Returns the Discrete prolate spheroidal sequences (tapers) for
-    multi-taper spectral analysis (time series length x tapers).
+    '''Returns the Discrete prolate spheroidal sequences (tapers) for
+    multi-taper spectral analysis.
+
+    Parameters
+    ----------
+    n_time_samples : int
+    sampling_frequency : int
+    time_halfbandwidth_product : float
+    n_tapers : int
+
+    Returns
+    -------
+    tapers : array_like, shape (n_time_samples, n_tapers)
+
     '''
     tapers, _ = dpss_windows(
         n_time_samples, time_halfbandwidth_product, n_tapers)
@@ -326,9 +338,21 @@ def _get_tapers(n_time_samples, sampling_frequency,
 
 def _multitaper_fft(tapers, data, n_fft_samples,
                     sampling_frequency):
-    ''' Projects the data on the tapers and returns the discrete Fourier
-    transform (frequencies x trials x tapers) with len(frequencies) =
-    number of fft samples.
+    '''Projects the data on the tapers and returns the discrete Fourier
+    transform
+
+    Parameters
+    ----------
+    tapers : array_like, shape (n_time_samples, n_tapers)
+    data : array_like, shape (n_time_samples, n_trials)
+    n_fft_samples : int
+    sampling_frequency : int
+
+    Returns
+    -------
+    discrete_fourier_transform : array_like, shape (n_fft_samples,
+                                                    n_trials, n_tapers)
+
     '''
     try:
         projected_data = data[:, :, np.newaxis] * tapers[:, np.newaxis, :]
