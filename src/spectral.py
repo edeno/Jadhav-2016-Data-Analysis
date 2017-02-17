@@ -348,10 +348,8 @@ def _nextpower2(n):
 
 
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
-    '''Returns the average cross-spectrum between two spectra. Averages
-    over the 2nd and 3rd dimension'''
-    cross_spectrum = np.conj(complex_spectrum1) * complex_spectrum2
-    return np.nanmean(cross_spectrum, axis=(1, 2)).squeeze()
+    '''Returns the average cross-spectrum between two spectra'''
+    return np.conj(complex_spectrum1) * complex_spectrum2
 
 
 @convert_pandas
@@ -421,12 +419,19 @@ def multitaper_power_spectral_density(
     complex_spectrum = _multitaper_fft(
         tapers, _center_data(data), n_fft_samples,
         sampling_frequency)
-    psd = np.real(_cross_spectrum(complex_spectrum[freq_ind, :, :],
-                                  complex_spectrum[freq_ind, :, :])
-                  )
-    return pd.DataFrame({'power': psd,
+    average_cross_spectrum = _average_over_trials_and_tapers(
+        _cross_spectrum(complex_spectrum[freq_ind, :, :],
+                        complex_spectrum[freq_ind, :, :]))
+    return pd.DataFrame({'power': np.real(average_cross_spectrum),
                          'frequency': frequencies
                          }).set_index('frequency')
+
+
+def _average_over_trials_and_tapers(data):
+    '''Takes the average over trials (2nd dimension) and tapers
+    (3rd dimension)
+    '''
+    return np.nanmean(data, axis=(1, 2)).squeeze()
 
 
 @convert_pandas
@@ -495,10 +500,12 @@ def multitaper_coherence(data, sampling_frequency=1000,
     complex_spectra = [_multitaper_fft(
         tapers, datum, n_fft_samples, sampling_frequency)
         for datum in data]
-    cross_spectrum = _cross_spectrum(complex_spectra[0][freq_ind, :, :],
-                                     complex_spectra[1][freq_ind, :, :])
-    spectrum = [_cross_spectrum(complex_spectrum[freq_ind, :, :],
-                                complex_spectrum[freq_ind, :, :])
+    cross_spectrum = _average_over_trials_and_tapers(
+        _cross_spectrum(complex_spectra[0][freq_ind, :, :],
+                        complex_spectra[1][freq_ind, :, :]))
+    spectrum = [_average_over_trials_and_tapers(
+                    _cross_spectrum(complex_spectrum[freq_ind, :, :],
+                                    complex_spectrum[freq_ind, :, :]))
                 for complex_spectrum in complex_spectra]
 
     coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
