@@ -288,14 +288,10 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     data2D = spectrogram_dataframe.reset_index().pivot(
         'frequency', 'time', spectrum_name)
     if plot_type is None:
-        mesh = axis_handle.pcolormesh(time, freq, data2D,
-                                      cmap=cmap,
-                                      vmin=vmin,
-                                      vmax=vmax)
+        mesh = axis_handle.pcolormesh(time, freq, data2D, cmap=cmap,
+                                      vmin=vmin, vmax=vmax)
     elif plot_type is 'change':
-        mesh = axis_handle.pcolormesh(time, freq, data2D,
-                                      cmap=cmap,
-                                      shading='gouraud',
+        mesh = axis_handle.pcolormesh(time, freq, data2D, cmap=cmap,
                                       norm=LogNorm(vmin=vmin, vmax=vmax))
 
     axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
