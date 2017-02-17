@@ -293,11 +293,6 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     elif plot_type is 'change':
         mesh = axis_handle.pcolormesh(time, freq, data2D, cmap=cmap,
                                       norm=LogNorm(vmin=vmin, vmax=vmax))
-
-    axis_handle.set_ylabel('Frequency ({frequency_units})'.format(
-        frequency_units=frequency_units))
-    axis_handle.set_xlabel(
-        'Time ({time_units})'.format(time_units=time_units))
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
     return mesh
