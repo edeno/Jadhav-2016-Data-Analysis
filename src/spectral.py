@@ -946,9 +946,10 @@ def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
 
 def _match_frequency_resolution(time_halfbandwidth_product,
                                 time_window_duration, baseline_window):
-    half_bandwidth = time_halfbandwidth_product / time_window_duration
-    baseline_time_halfbandwidth_product = half_bandwidth * \
-        (baseline_window[1] - baseline_window[0])
+    half_bandwidth = get_frequency_resolution(
+        time_window_duration, time_halfbandwidth_product)
+    baseline_time_halfbandwidth_product = (
+        half_bandwidth * (baseline_window[1] - baseline_window[0]))
     if baseline_time_halfbandwidth_product < 1:
         raise AttributeError(
             'Baseline time-halfbandwidth product has to be greater than or'
@@ -965,10 +966,13 @@ def power_and_coherence_change(dataframe1, dataframe2):
             .assign(n_trials_2=dataframe2.n_trials))
 
 
+def get_frequency_resolution(time_window_duration,
+                             time_halfbandwidth_product):
+    '''Calculates the half-bandwith frequency resolution [-W, W].
 
-def frequency_resolution(time_window_duration=None,
-                         time_halfbandwidth_product=None):
-    return 2 * time_halfbandwidth_product / time_window_duration
+    Points within the bandwidth are indistinguishable from each other.
+    '''
+    return time_halfbandwidth_product / time_window_duration
 
 
 def get_lfps_by_area(area, tetrode_info, lfps):
