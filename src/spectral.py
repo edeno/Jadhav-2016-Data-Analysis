@@ -219,12 +219,33 @@ def multitaper_spectrogram(data,
 
 
 def _set_default_multitaper_parameters(
-    '''Function to help set default multitaper parameters given that some
-    subset of them are unset
     n_time_samples=None, sampling_frequency=None, tapers=None,
     n_tapers=None, time_halfbandwidth_product=None, pad=None,
     n_fft_samples=None, frequencies=None, freq_ind=None,
         desired_frequencies=None):
+    '''Sets default multitaper parameters given that some
+    subset of them are unset.
+
+    Parameters
+    ----------
+    n_time_samples : int, optional
+    sampling_frequency : int, optional
+    tapers : array_like, optional
+    n_tapers : int, optional
+    time_halfbandwidth_product : float, optional
+    pad : int, optional
+    n_fft_samples : int, optional
+    frequencies : array_like, optional
+    freq_ind : array_like, optional
+    desired_frequencies : array_like, optional
+
+    Returns
+    -------
+    tapers : array_like
+    n_fft_samples : int
+    frequencies : array_like
+    freq_ind : array_like
+
     '''
     if tapers is None:
         if n_tapers is None:
