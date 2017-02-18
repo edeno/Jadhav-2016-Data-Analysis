@@ -536,12 +536,21 @@ def multitaper_coherence(data, sampling_frequency=1000,
                          'coherence_magnitude': np.abs(coherency),
                          'coherence_phase': np.angle(coherency),
                          'power_spectrum1': np.real(spectrum[0]),
-                         'power_spectrum2': np.real(spectrum[1])
+                         'power_spectrum2': np.real(spectrum[1]),
+                         'n_trials': _get_number_of_trials(data),
+                         'n_tapers': tapers.shape[1]
                          }).set_index('frequency')
 
 
 def _get_window_center(time_window_start, time_window_duration, time):
     return time[time_window_start] + (time_window_duration / 2)
+
+
+def _get_number_of_trials(data):
+    try:
+        return data[0].shape[1]
+    except IndexError:
+        return 1
 
 
 @convert_pandas
@@ -699,19 +708,21 @@ def power_change(baseline_power, power_of_interest):
     baseline dataframe. The baseline dataframe is assumed to only have a
     frequency index.'''
     baseline_power_dropped = baseline_power.drop(
-        ['coherence_magnitude', 'coherence_phase'],
+        ['coherence_magnitude', 'coherence_phase', 'n_trials', 'n_tapers'],
         axis=1, errors='ignore')
     power_of_interest_dropped = power_of_interest.drop(
-        ['coherence_magnitude', 'coherence_phase'],
+        ['coherence_magnitude', 'coherence_phase', 'n_trials', 'n_tapers'],
         axis=1, errors='ignore')
     return power_of_interest_dropped / baseline_power_dropped
 
 
 def coherence_change(baseline_coherence, coherence_of_interest):
     coherence_of_interest_dropped = coherence_of_interest.drop(
-        ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
+        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers'],
+        axis=1, errors='ignore')
     baseline_coherence_dropped = baseline_coherence.drop(
-        ['power_spectrum1', 'power_spectrum2'], axis=1, errors='ignore')
+        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers'],
+        axis=1, errors='ignore')
     return coherence_of_interest_dropped - baseline_coherence_dropped
 
 
@@ -932,7 +943,10 @@ def _match_frequency_resolution(time_halfbandwidth_product,
 def power_and_coherence_change(dataframe1, dataframe2):
     return (pd.concat([coherence_change(dataframe1, dataframe2),
                        power_change(dataframe1, dataframe2)], axis=1)
-            .sort_index())
+            .sort_index()
+            .assign(n_trials_1=dataframe1.n_trials)
+            .assign(n_trials_2=dataframe2.n_trials))
+
 
 
 def frequency_resolution(time_window_duration=None,
