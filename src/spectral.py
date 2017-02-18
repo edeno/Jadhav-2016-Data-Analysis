@@ -249,19 +249,15 @@ def _set_default_multitaper_parameters(
     '''
     if tapers is None:
         if n_tapers is None:
-            n_tapers = int(
-                np.floor(2 * time_halfbandwidth_product - 1))
+            n_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
 
-        tapers = _get_tapers(n_time_samples,
-                             sampling_frequency,
-                             time_halfbandwidth_product,
-                             n_tapers)
+        tapers = _get_tapers(n_time_samples, sampling_frequency,
+                             time_halfbandwidth_product, n_tapers)
     if pad is None:
         pad = -1
     if n_fft_samples is None:
         next_exponent = _nextpower2(n_time_samples)
-        n_fft_samples = max(
-            2 ** (next_exponent + pad), n_time_samples)
+        n_fft_samples = max(2 ** (next_exponent + pad), n_time_samples)
     if frequencies is None:
         frequencies, freq_ind = _get_frequencies(
             sampling_frequency, n_fft_samples,
