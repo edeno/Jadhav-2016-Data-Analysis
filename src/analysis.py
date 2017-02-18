@@ -881,3 +881,33 @@ def _ripple_session_time(ripple_times, session_time):
              .value_counts()
              .argmax())
             for ripple_start, ripple_end in ripple_times]
+
+
+def false_discovery_rate(p_values, alpha=0.05):
+    '''Returns the significant p-values according to the Benjamini-Hochberg
+    procedure.
+
+    Parameters
+    ----------
+    p_values : array_like
+    alpha : float, optional
+        The expected proportion of false positive tests.
+
+    Returns
+    -------
+    is_significant : boolean nd-array
+        A boolean array the same shape as `p_values` indicating whether the
+        p-value exceeded the threshold.
+
+    '''
+    p_values = np.asarray(p_values)
+    threshold_line = (alpha * np.arange(1, p_values.size + 1) /
+                      p_values.size)
+    sorted_p_values = np.sort(p_values.flatten())
+    try:
+        threshold_ind = np.max(
+            np.where(sorted_p_values <= threshold_line)[0])
+        threshold = sorted_p_values[threshold_ind]
+    except ValueError:  # There are no values below threshold
+        threshold = 0
+    return p_values < threshold
