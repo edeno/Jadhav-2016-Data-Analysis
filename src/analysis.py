@@ -913,3 +913,35 @@ def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
     except ValueError:  # There are no values below threshold
         threshold = 0
     return p_values <= threshold
+
+
+def Bonferroni_correction(p_values, alpha=0.05):
+    p_values = np.asarray(p_values)
+    return p_values <= alpha / p_values.size
+
+
+def adjust_for_multiple_comparisons(p_values, alpha=0.05,
+                                    method='Benjamini_Hochberg_procedure'):
+    '''Corrects for multiple comparisons and returns the significant
+    p-values.
+
+    Parameters
+    ----------
+    p_values : array_like
+    alpha : float, optional
+        The expected proportion of false positive tests.
+    method : string, optional
+        Name of the method to use to correct for multiple comparisons.
+
+    Returns
+    -------
+    is_significant : boolean nd-array
+        A boolean array the same shape as `p_values` indicating whether the
+        null hypothesis has been rejected (True) or failed to reject
+        (False).'''
+    methods = dict(
+        Benjamini_Hochberg_procedure=Benjamini_Hochberg_procedure,
+        Bonferroni_correction=Bonferroni_correction
+        )
+
+    return methods[method](p_values, alpha=alpha)
