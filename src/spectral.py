@@ -975,7 +975,9 @@ def get_frequency_resolution(time_window_duration,
                              time_halfbandwidth_product):
     '''Calculates the half-bandwith frequency resolution [-W, W].
 
-    Points within the bandwidth are indistinguishable from each other.
+    Given a frequency, other frequencies +/- the bandwidth are
+    indistinguishable from each other due to the uncertainty principle.
+
     '''
     return time_halfbandwidth_product / time_window_duration
 
