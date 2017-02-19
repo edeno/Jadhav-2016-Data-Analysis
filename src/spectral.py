@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import LogNorm
 from scipy.fftpack import fft
-from scipy.stats import linregress
+from scipy.stats import linregress, norm
 
 from nitime.algorithms.spectral import dpss_windows
 from src.data_processing import reshape_to_segments
@@ -985,3 +985,65 @@ def get_lfps_by_area(area, tetrode_info, lfps):
     return pd.Panel(
         {index: lfps[index]
          for index in tetrode_info[tetrode_info.area == area].index})
+
+
+def _get_normal_distribution_p_values(data, mean=0, std_deviation=1):
+        return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
+
+
+def _get_multitaper_bias(n_trials, n_tapers):
+    '''The bias from performing `n_trials` * `n_tapers` estimates.
+
+    In multitaper analysis, each trial and taper is an independent Fourier
+    transform.
+
+    Parameters
+    ----------
+    n_trials : int
+        Number of trials.
+    n_tapers : int
+        Number of tapers.
+
+    Returns
+    -------
+    bias : int
+
+    '''
+    degrees_of_freedom = 2 * n_trials * n_tapers
+    return 1 / (degrees_of_freedom - 2)
+
+
+def fisher_z_transform(coherence_df):
+    '''Transforms the coherence magnitude into an approximately
+    standard normal test statistic, corrected for multitaper bias.
+    '''
+    bias = _get_multitaper_bias(coherence_df.n_trials,
+                                coherence_df.n_tapers)
+    test_statistic = (np.arctanh(coherence_df.coherence_magnitude) -
+                      bias) / np.sqrt(bias)
+    return pd.DataFrame(
+        {'fisher_z': test_statistic,
+         'p_value': _get_normal_distribution_p_values(test_statistic)
+         })
+
+
+def fisher_z_transform_difference(coherence_df1, coherence_df2):
+    '''Compare the difference between coherence magnitudes.
+    '''
+    bias1 = _get_multitaper_bias(coherence_df1.n_trials,
+                                 coherence_df1.n_tapers)
+    bias2 = _get_multitaper_bias(coherence_df2.n_trials,
+                                 coherence_df2.n_tapers)
+
+    fisher_z_coherence1 = (np.arctanh(coherence_df1.coherence_magnitude) -
+                           bias1)
+    fisher_z_coherence2 = (np.arctanh(coherence_df2.coherence_magnitude) -
+                           bias2)
+
+    test_statistic = ((fisher_z_coherence2 - fisher_z_coherence1) /
+                      np.sqrt(bias2 + bias1))
+
+    return pd.DataFrame(
+        {'fisher_z': test_statistic,
+         'p_value': _get_normal_distribution_p_values(test_statistic)
+         })
