@@ -555,7 +555,10 @@ def multitaper_coherence(data, sampling_frequency=1000,
                          'power_spectrum1': np.real(spectrum[0]),
                          'power_spectrum2': np.real(spectrum[1]),
                          'n_trials': _get_number_of_trials(data),
-                         'n_tapers': tapers.shape[1]
+                         'n_tapers': tapers.shape[1],
+                         'frequency_resolution': get_frequency_resolution(
+                             data[0].shape[0] / sampling_frequency,
+                             time_halfbandwidth_product)
                          }).set_index('frequency')
 
 
