@@ -679,3 +679,10 @@ def get_computed_consensus_ripple_times(epoch_index, animals):
     ripples_data = get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
+
+
+def get_lfps_by_area(area, tetrode_info, lfps):
+    '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
+    return pd.Panel(
+        {index: lfps[index]
+         for index in tetrode_info[tetrode_info.area == area].index})

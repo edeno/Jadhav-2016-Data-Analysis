@@ -980,13 +980,6 @@ def get_frequency_resolution(time_window_duration,
     return time_halfbandwidth_product / time_window_duration
 
 
-def get_lfps_by_area(area, tetrode_info, lfps):
-    '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
-    return pd.Panel(
-        {index: lfps[index]
-         for index in tetrode_info[tetrode_info.area == area].index})
-
-
 def _get_normal_distribution_p_values(data, mean=0, std_deviation=1):
         return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
 
