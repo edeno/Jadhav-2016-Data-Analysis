@@ -883,9 +883,10 @@ def _ripple_session_time(ripple_times, session_time):
             for ripple_start, ripple_end in ripple_times]
 
 
-def false_discovery_rate(p_values, alpha=0.05):
-    '''Returns the significant p-values according to the Benjamini-Hochberg
-    procedure.
+def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
+    '''Corrects for multiple comparisons and returns the significant
+    p-values by controlling the false discovery rate at level `alpha`
+    using the Benjamani-Hochberg procedure.
 
     Parameters
     ----------
@@ -897,7 +898,8 @@ def false_discovery_rate(p_values, alpha=0.05):
     -------
     is_significant : boolean nd-array
         A boolean array the same shape as `p_values` indicating whether the
-        p-value exceeded the threshold.
+        null hypothesis has been rejected (True) or failed to reject
+        (False).
 
     '''
     p_values = np.asarray(p_values)
