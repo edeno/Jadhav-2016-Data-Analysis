@@ -549,8 +549,12 @@ def multitaper_coherence(data, sampling_frequency=1000,
                 for complex_spectrum in complex_spectra]
 
     coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
+    coherence_magnitude = np.abs(coherency)
+    coherence_magnitude[
+        np.where(coherence_magnitude >= 1)] = 1.0 - np.finfo(float).eps
+
     return pd.DataFrame({'frequency': frequencies,
-                         'coherence_magnitude': np.abs(coherency),
+                         'coherence_magnitude': coherence_magnitude,
                          'coherence_phase': np.angle(coherency),
                          'power_spectrum1': np.real(spectrum[0]),
                          'power_spectrum2': np.real(spectrum[1]),
