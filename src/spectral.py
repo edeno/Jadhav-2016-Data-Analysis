@@ -38,8 +38,8 @@ def convert_pandas(func):
         if isinstance(data, pd.DataFrame):
             if is_time:
                 try:
-                    time = data.reset_index('time').time.values
-                    kwargs['time'] = time
+                    kwargs['time'] = (data.index.get_level_values('time')
+                                      .values)
                 except AttributeError:
                     raise AttributeError(
                         'No time column or index provided in dataframe')
@@ -279,12 +279,12 @@ def _get_window_lengths(time_window_duration, sampling_frequency,
 def _get_unique_time_freq(spectrogram_dataframe):
     '''Returns the unique time and frequency given a spectrogram dataframe
     with non-unique time and frequency columns'''
-    time = np.unique(spectrogram_dataframe.reset_index().time.values)
+    time = np.unique(spectrogram_dataframe.index.get_level_values('time'))
     half_time_diff = (time[1] - time[0]) / 2
     time = np.append(time - half_time_diff,
                      time[-1] + half_time_diff)
     frequency = np.unique(
-        spectrogram_dataframe.reset_index().frequency.values)
+        spectrogram_dataframe.index.get_level_values('frequency'))
     half_frequency_diff = (frequency[1] - frequency[0]) / 2
     frequency = np.append(frequency - half_frequency_diff,
                           frequency[-1] + half_frequency_diff)
@@ -703,7 +703,7 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
 
 def group_delay(coherence_dataframe):
     slope, _, correlation, _, _ = linregress(
-        coherence_dataframe.reset_index('frequency').frequency,
+        coherence_dataframe.index.get_level_values('frequency'),
         np.unwrap(coherence_dataframe.coherence_phase))
     return pd.DataFrame(
         {'correlation': correlation,
