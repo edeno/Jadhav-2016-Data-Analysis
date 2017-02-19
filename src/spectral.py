@@ -709,14 +709,16 @@ def coherence_title(tetrode_indices, cur_tetrode_info):
 
 
 def group_delay(coherence_dataframe):
-    slope, _, correlation, _, _ = linregress(
-        coherence_dataframe.index.get_level_values('frequency'),
-        np.unwrap(coherence_dataframe.coherence_phase))
-    return pd.DataFrame(
-        {'correlation': correlation,
-         'number_of_points': len(coherence_dataframe.coherence_phase),
-         'slope': slope,
-         'delay': slope / (2 * np.pi)}, index=[0])
+    coherence_dataframe = coherence_dataframe.dropna()
+    frequency = coherence_dataframe.index.get_level_values('frequency')
+    coherence_phase = np.unwrap(coherence_dataframe.coherence_phase)
+    slope, _, correlation, _, _ = linregress(frequency, coherence_phase)
+    return pd.DataFrame({
+        'correlation': correlation,
+        'number_of_points': coherence_dataframe.shape[0],
+        'slope': slope,
+        'delay': slope / (2 * np.pi)
+        }, index=[0])
 
 
 def group_delay_over_time(coherogram_dataframe):
