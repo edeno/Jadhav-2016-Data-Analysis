@@ -912,4 +912,4 @@ def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
         threshold = sorted_p_values[threshold_ind]
     except ValueError:  # There are no values below threshold
         threshold = 0
-    return p_values < threshold
+    return p_values <= threshold
