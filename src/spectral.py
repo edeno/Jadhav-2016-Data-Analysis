@@ -724,7 +724,8 @@ def group_delay(coherence_dataframe):
 def group_delay_over_time(coherogram_dataframe):
     return (coherogram_dataframe
             .groupby(level='time')
-            .apply(group_delay))
+            .apply(group_delay)
+            .reset_index(level=1, drop=True))
 
 
 def power_change(baseline_power, power_of_interest):
