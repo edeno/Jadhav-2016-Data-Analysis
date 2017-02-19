@@ -709,7 +709,7 @@ def group_delay(coherence_dataframe):
         {'correlation': correlation,
          'number_of_points': len(coherence_dataframe.coherence_phase),
          'slope': slope,
-         'delay': slope / 2 * np.pi}, index=[0])
+         'delay': slope / (2 * np.pi)}, index=[0])
 
 
 def group_delay_over_time(coherogram_dataframe):
