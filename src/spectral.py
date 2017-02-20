@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import LogNorm
 from scipy.fftpack import fft
+from scipy.ndimage import measurements
 from scipy.stats import linregress, norm
 
 from nitime.algorithms.spectral import dpss_windows
@@ -997,3 +998,63 @@ def fisher_z_transform_difference(coherence_df1, coherence_df2):
         {'fisher_z': test_statistic,
          'p_value': _get_normal_distribution_p_values(test_statistic)
          })
+
+
+def filter_significant_groups_less_than_frequency_resolution(
+        is_significant, frequency_resolution):
+    '''Finds clusters of statistical significance and ensures that they
+    are greater than the frequency resolution.
+
+    This is important for calculating group delay because accurate
+    calculation requires the phase of multiple frequencies and frequencies
+    within the frequency resolution are indistinguishable.
+
+    This function works by labeling the clusters of significant tests --
+    adjacent True values bordered by False values -- and determining their
+    size. If their size is greater than the frequency resolution, then
+    the group is left unchanged. If the size is less than the frequency
+    resolution, the group is changed to False values.
+
+    Parameters
+    ----------
+    is_significant : boolean Pandas series
+        A Pandas data series that is True for passing tests and False for
+        tests that failed to pass. Frequency must be a level of the index.
+    frequency_resolution : float
+
+    Returns
+    -------
+    is_significant_corrected : boolean Pandas series
+        A Pandas series the same size as `is_significant` with clusters of
+        significance that are smaller than the frequency resolution set to
+        False.
+
+    Examples
+    --------
+    z_coherence = fisher_z_transform(coherogram)
+    frequency_resolution = coherogram.frequency_resolution.unique()[0]
+    is_significant = (pd.Series(
+        adjust_for_multiple_comparisons(z_coherence.p_value),
+        index=z_coherence.index)
+        .groupby(level='time')
+        .transform(
+            get_significant_groups_greater_than_frequency_resolution,
+            frequency_resolution))
+    group_delay_over_time(coherogram.mask(~is_significant))
+
+    '''
+    frequencies = is_significant.index.get_level_values('frequency')
+    frequency_change = frequencies[1] - frequencies[0]
+    significant_groups, _ = measurements.label(is_significant)
+
+    def _less_than_frequency_resolution(significant_group):
+        if ((significant_group.count() - 1) * frequency_change <=
+                frequency_resolution):
+            return significant_group * 0
+        else:
+            return significant_group
+    return (is_significant
+            .groupby(significant_groups)
+            .transform(_less_than_frequency_resolution)
+            .astype(bool)
+            .sort_index())
