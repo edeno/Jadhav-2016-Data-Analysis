@@ -27,7 +27,6 @@ from scipy.fftpack import fft
 from scipy.stats import linregress, norm
 
 from nitime.algorithms.spectral import dpss_windows
-from src.data_processing import reshape_to_segments
 
 
 def convert_pandas(func):
@@ -749,41 +748,6 @@ def coherence_change(baseline_coherence, coherence_of_interest):
         ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers'],
         axis=1, errors='ignore')
     return coherence_of_interest_dropped - baseline_coherence_dropped
-
-
-def difference_from_baseline_coherence(lfps, times_of_interest,
-                                       baseline_window=(-0.250, 0),
-                                       window_of_interest=(-0.250, .250),
-                                       sampling_frequency=1000,
-                                       time_window_duration=0.020,
-                                       time_window_step=None,
-                                       desired_frequencies=None,
-                                       time_halfbandwidth_product=3,
-                                       n_tapers=None):
-    ''''''
-    baseline_time_halfbandwidth_product = _match_frequency_resolution(
-        time_halfbandwidth_product, time_window_duration, baseline_window)
-    baseline_lfp_segments = [reshape_to_segments(
-        lfp, times_of_interest, window_offset=baseline_window,
-        concat_axis=1, sampling_frequency=sampling_frequency)
-        for lfp in lfps]
-    time_of_interest_lfp_segments = [reshape_to_segments(
-        lfp, times_of_interest, window_offset=window_of_interest,
-        concat_axis=1, sampling_frequency=sampling_frequency)
-        for lfp in lfps]
-    coherence_baseline = multitaper_coherence(
-        baseline_lfp_segments,
-        sampling_frequency=sampling_frequency,
-        desired_frequencies=desired_frequencies,
-        time_halfbandwidth_product=baseline_time_halfbandwidth_product)
-    coherogram = multitaper_coherogram(
-        time_of_interest_lfp_segments,
-        sampling_frequency=sampling_frequency,
-        time_window_duration=time_window_duration,
-        time_window_step=time_window_step,
-        desired_frequencies=desired_frequencies,
-        time_halfbandwidth_product=time_halfbandwidth_product)
-    return power_and_coherence_change(coherence_baseline, coherogram)
 
 
 @convert_pandas
