@@ -185,8 +185,8 @@ def multitaper_spectrogram(data,
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, n_fft_samples, frequencies, freq_ind = \
-        _set_default_multitaper_parameters(
+    (tapers, n_fft_samples,
+     frequencies, freq_ind) = _set_default_multitaper_parameters(
             n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency,
             tapers=tapers,
@@ -641,26 +641,15 @@ def multitaper_coherogram(data,
             sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
-            desired_frequencies=desired_frequencies,
-            pad=pad)
+            desired_frequencies=desired_frequencies, pad=pad)
     return pd.concat(list(_make_sliding_window_dataframe(
-        multitaper_coherence,
-        data,
-        time_window_duration,
-        time_window_step,
-        time_step_length,
-        time_window_length,
-        time,
-        axis=0,
+        multitaper_coherence, data, time_window_duration, time_window_step,
+        time_step_length, time_window_length, time, axis=0,
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
-        n_tapers=n_tapers,
-        pad=pad,
-        tapers=tapers,
-        frequencies=frequencies,
-        freq_ind=freq_ind,
-        n_fft_samples=n_fft_samples,
+        n_tapers=n_tapers, pad=pad, tapers=tapers, frequencies=frequencies,
+        freq_ind=freq_ind, n_fft_samples=n_fft_samples,
     ))).sort_index()
 
 
