@@ -1,18 +1,17 @@
 '''Higher level functions for analyzing the data
 
 '''
-from logging import getLogger
-
 from copy import deepcopy
 from functools import wraps
 from glob import glob
 from itertools import combinations
+from logging import getLogger
 from os.path import abspath, join, pardir
 from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
-from dask import delayed, compute, async
+from dask import async, compute, delayed
 
 from src.data_processing import (get_area_pair_info,
                                  get_interpolated_position_dataframe,
@@ -941,11 +940,13 @@ def adjust_for_multiple_comparisons(p_values, alpha=0.05,
     is_significant : boolean nd-array
         A boolean array the same shape as `p_values` indicating whether the
         null hypothesis has been rejected (True) or failed to reject
-        (False).'''
+        (False).
+
+    '''
     methods = dict(
         Benjamini_Hochberg_procedure=Benjamini_Hochberg_procedure,
         Bonferroni_correction=Bonferroni_correction
-        )
+    )
 
     return methods[method](p_values, alpha=alpha)
 
