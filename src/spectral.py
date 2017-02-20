@@ -1005,6 +1005,8 @@ def filter_significant_groups_less_than_frequency_resolution(
     '''Finds clusters of statistical significance and ensures that they
     are greater than the frequency resolution.
 
+    Also makes sure significant frequency points are independent.
+
     This is important for calculating group delay because accurate
     calculation requires the phase of multiple frequencies and frequencies
     within the frequency resolution are indistinguishable.
@@ -1047,15 +1049,23 @@ def filter_significant_groups_less_than_frequency_resolution(
     frequencies = is_significant.index.get_level_values('frequency')
     frequency_change = frequencies[1] - frequencies[0]
     significant_groups, _ = measurements.label(is_significant)
+    independent_frequency_points = np.ceil(
+        frequency_resolution / frequency_change).astype(int)
 
     def _less_than_frequency_resolution(significant_group):
-        if ((significant_group.count() - 1) * frequency_change <=
-            return significant_group * 0
+        n_significant_points = significant_group.shape[0]
+        position_index = np.arange(0, n_significant_points)
+        if ((n_significant_points - 1) * frequency_change <=
                 2 * frequency_resolution):
+            significant_group.iloc[position_index] = False
         else:
-            return significant_group
+            good_index = np.arange(0, n_significant_points,
+                                   independent_frequency_points)
+            bad_ind = np.setdiff1d(position_index, good_index)
+            significant_group.iloc[bad_ind] = False
+        return significant_group
+
     return (is_significant
             .groupby(significant_groups)
             .transform(_less_than_frequency_resolution)
-            .astype(bool)
             .sort_index())
