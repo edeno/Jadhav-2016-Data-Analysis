@@ -77,7 +77,7 @@ def test_nextpower2(test_number, expected_number):
 
 
 @pytest.mark.parametrize('complex_spectrum, expected_shape', [
-    (np.random.normal(MEAN, STD_DEV, (23, 2, 1)), (23,)),
+    (np.random.normal(MEAN, STD_DEV, (23, 2, 1)), (23, 2, 1)),
 ])
 def test_cross_spectrum_shape(complex_spectrum, expected_shape):
     cross_spectrum = _cross_spectrum(
