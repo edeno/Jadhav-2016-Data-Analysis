@@ -1021,6 +1021,7 @@ def filter_significant_groups_less_than_frequency_resolution(
         A Pandas data series that is True for passing tests and False for
         tests that failed to pass. Frequency must be a level of the index.
     frequency_resolution : float
+        The half-bandwith frequency resolution
 
     Returns
     -------
@@ -1049,8 +1050,8 @@ def filter_significant_groups_less_than_frequency_resolution(
 
     def _less_than_frequency_resolution(significant_group):
         if ((significant_group.count() - 1) * frequency_change <=
-                frequency_resolution):
             return significant_group * 0
+                2 * frequency_resolution):
         else:
             return significant_group
     return (is_significant
