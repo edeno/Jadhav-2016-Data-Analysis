@@ -933,6 +933,7 @@ def adjust_for_multiple_comparisons(p_values, alpha=0.05,
         The expected proportion of false positive tests.
     method : string, optional
         Name of the method to use to correct for multiple comparisons.
+        Options are "Benjamini_Hochberg_procedure", "Bonferroni_correction"
 
     Returns
     -------
