@@ -695,7 +695,11 @@ def group_delay(coherence_dataframe):
     coherence_dataframe = coherence_dataframe.dropna()
     frequency = coherence_dataframe.index.get_level_values('frequency')
     coherence_phase = np.unwrap(coherence_dataframe.coherence_phase)
-    slope, _, correlation, _, _ = linregress(frequency, coherence_phase)
+    try:
+        slope, _, correlation, _, _ = linregress(frequency,
+                                                 coherence_phase)
+    except ValueError:
+        slope, correlation = np.nan, np.nan
     return pd.DataFrame({
         'correlation': correlation,
         'number_of_points': coherence_dataframe.shape[0],
