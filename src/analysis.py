@@ -951,11 +951,11 @@ def adjust_for_multiple_comparisons(p_values, alpha=0.05,
     return methods[method](p_values, alpha=alpha)
 
 
-def estimate_significant_group_delay(coherogram):
+def estimate_significant_group_delay(coherogram, alpha=0.01):
     z_coherence = fisher_z_transform(coherogram)
     frequency_resolution = coherogram.frequency_resolution.unique()[0]
     adjusted_p_values = adjust_for_multiple_comparisons(
-        z_coherence.p_value)
+        z_coherence.p_value, alpha=alpha)
     is_significant = (
         pd.Series(adjusted_p_values, index=z_coherence.index)
         .groupby(level='time')
