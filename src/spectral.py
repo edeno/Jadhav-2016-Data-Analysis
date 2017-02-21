@@ -1061,6 +1061,8 @@ def filter_significant_groups_less_than_frequency_resolution(
         else:
             good_index = np.arange(0, n_significant_points,
                                    independent_frequency_points)
+            if good_index.shape[0] < 2:
+                good_index = np.array([])
             bad_ind = np.setdiff1d(position_index, good_index)
             significant_group.iloc[bad_ind] = False
         return significant_group
