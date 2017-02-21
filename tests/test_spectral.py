@@ -5,7 +5,9 @@ import pytest
 from src.spectral import (_cross_spectrum, _get_frequencies, _get_tapers,
                           _get_window_lengths,
                           _make_sliding_window_dataframe,
-                          _multitaper_fft, _nextpower2)
+                          _multitaper_fft, _nextpower2,
+                          _get_multitaper_bias,
+                          filter_significant_groups_less_than_frequency_resolution)
 
 
 @pytest.mark.parametrize(
@@ -118,3 +120,42 @@ def test_make_sliding_window_dataframe(num_data, time_window_duration,
     assert np.all([df.test1.values == [1, 2] for df in dataframes])
     assert np.allclose(
         [df.index.values[0][1] for df in dataframes], expected_time_steps)
+
+
+def test__get_multitaper_bias():
+    n_trials, n_tapers = 10, 5
+    bias = _get_multitaper_bias(n_trials, n_tapers)
+    expected = 1 / 98
+    assert bias == expected
+
+
+def _convert_to_significant_series(x):
+    FREQUENCIES = pd.Index(np.arange(0, 20, 2), name='frequency')
+    return pd.Series(
+        x, index=FREQUENCIES, name='is_significant').astype(bool)
+
+
+@pytest.mark.parametrize(
+    'is_significant, frequency_resolution, expected', [
+        (_convert_to_significant_series(np.zeros((10,))), 2,
+         _convert_to_significant_series(np.zeros((10,)))),
+        (_convert_to_significant_series(np.ones((10,))), 20,
+         _convert_to_significant_series(np.zeros((10,)))),
+        (_convert_to_significant_series(np.ones((10,))), 1,
+         _convert_to_significant_series(np.ones((10,)))),
+        (_convert_to_significant_series(np.ones((10,))), 3,
+         _convert_to_significant_series([1, 0, 1, 0, 1, 0, 1, 0, 1, 0])),
+        (_convert_to_significant_series([0, 0, 0, 0, 0, 1, 1, 1, 0, 0]), 1,
+         _convert_to_significant_series([0, 0, 0, 0, 0, 1, 1, 1, 0, 0])),
+        (_convert_to_significant_series([0, 0, 0, 0, 0, 1, 1, 1, 0, 0]), 3,
+         _convert_to_significant_series([0, 0, 0, 0, 0, 1, 0, 1, 0, 0])),
+        (_convert_to_significant_series([0, 0, 0, 0, 0, 1, 0, 1, 0, 0]), 3,
+         _convert_to_significant_series(np.zeros((10,)))),
+        (_convert_to_significant_series([1, 1, 1, 0, 0, 1, 1, 1, 0, 0]), 3,
+         _convert_to_significant_series([1, 0, 1, 0, 0, 1, 0, 1, 0, 0])),
+    ])
+def test_filter_significant_groups_less_than_frequency_resolution(
+        is_significant, frequency_resolution, expected):
+    is_sig = filter_significant_groups_less_than_frequency_resolution(
+        is_significant, frequency_resolution)
+    assert all(is_sig == expected)
