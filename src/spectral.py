@@ -731,10 +731,12 @@ def power_change(baseline_power, power_of_interest):
 
 def coherence_change(baseline_coherence, coherence_of_interest):
     coherence_of_interest_dropped = coherence_of_interest.drop(
-        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers'],
+        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers',
+         'frequency_resolution'],
         axis=1, errors='ignore')
     baseline_coherence_dropped = baseline_coherence.drop(
-        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers'],
+        ['power_spectrum1', 'power_spectrum2', 'n_trials', 'n_tapers',
+         'frequency_resolution'],
         axis=1, errors='ignore')
     return coherence_of_interest_dropped - baseline_coherence_dropped
 
