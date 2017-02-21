@@ -153,8 +153,6 @@ def _convert_to_significant_series(x):
          _convert_to_significant_series(np.zeros((10,)))),
         (_convert_to_significant_series([1, 1, 1, 0, 0, 1, 1, 1, 0, 0]), 3,
          _convert_to_significant_series([1, 0, 1, 0, 0, 1, 0, 1, 0, 0])),
-        (_convert_to_significant_series([0, 0, 0, 0, 0, 1, 1, 1, 0, 0]), 5,
-         _convert_to_significant_series(np.zeros((10,)))),
     ])
 def test_filter_significant_groups_less_than_frequency_resolution(
         is_significant, frequency_resolution, expected):
