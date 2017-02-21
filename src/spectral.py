@@ -570,7 +570,7 @@ def _get_window_center(time_window_start, time_window_duration, time):
 
 def _get_number_of_trials(data):
     try:
-        return data[0].shape[1]
+        return data[0].shape[-1]
     except IndexError:
         return 1
 
