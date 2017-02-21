@@ -1056,7 +1056,7 @@ def filter_significant_groups_less_than_frequency_resolution(
         n_significant_points = significant_group.shape[0]
         position_index = np.arange(0, n_significant_points)
         if ((n_significant_points - 1) * frequency_change <=
-                2 * frequency_resolution):
+                frequency_resolution):
             significant_group.iloc[position_index] = False
         else:
             good_index = np.arange(0, n_significant_points,
