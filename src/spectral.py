@@ -853,8 +853,6 @@ def multitaper_canonical_coherogram(data,
         _set_default_multitaper_parameters(
             n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency,
-            time_window_duration=time_window_duration,
-            time_window_step=time_window_duration,
             tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
