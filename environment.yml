@@ -22,3 +22,5 @@ dependencies:
 - icu=56.1
 - pytest-cov
 - numba
+- snakeviz
+- openblas
