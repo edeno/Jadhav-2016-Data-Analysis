@@ -14,7 +14,7 @@ def main():
     makedirs(log_directory,  exist_ok=True)
 
     python_function = 'run_by_epoch.py'
-    directives = ('-l h_rt=10:00:00 '
+    directives = ('-l h_rt=6:00:00 '
                   '-pe omp 12 '
                   '-P braincom '
                   '-notify '
