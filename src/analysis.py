@@ -639,7 +639,7 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
                       'channel_4_max']
     hippocampal_tetrodes = tetrode_info.loc[
         tetrode_info.area.isin(['CA1', 'iCA1']) &
-        (tetrode_info.descrip != 'CA1Ref'), :]
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False), :]
     logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
     tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
