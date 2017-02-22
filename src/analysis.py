@@ -647,24 +647,23 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     position_info = (get_interpolated_position_dataframe(
         epoch_index, animals).loc[:, position_variables])
 
-    tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
-                      .loc[:, mark_variables])
-                     for tetrode_index in hippocampal_tetrodes.index]
-    tetrode_marks = [mark_tetrode_data
-                     for mark_tetrode_data in tetrode_marks
-                     if (mark_tetrode_data.loc[position_info.speed > 4, :]
-                         .dropna().shape[0]) != 0]
+    marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
+              .loc[:, mark_variables])
+             for tetrode_index in hippocampal_tetrodes.index]
+    marks = [tetrode_marks for tetrode_marks in marks
+             if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
+                 .shape[0]) != 0]
 
     train_position_info = position_info.query('speed > 4')
 
     place = _get_place(train_position_info)
-    place_at_spike = [_get_place_at_spike(mark_tetrode_data,
+    place_at_spike = [_get_place_at_spike(tetrode_marks,
                                           train_position_info)
-                      for mark_tetrode_data in tetrode_marks]
-    training_marks = [_get_training_marks(mark_tetrode_data,
+                      for tetrode_marks in marks]
+    training_marks = [_get_training_marks(tetrode_marks,
                                           train_position_info,
                                           mark_variables)
-                      for mark_tetrode_data in tetrode_marks]
+                      for tetrode_marks in marks]
 
     place_bin_edges = np.linspace(
         np.floor(position_info.linear_distance.min()),
@@ -701,7 +700,7 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
     )
 
     test_marks = _get_ripple_marks(
-        tetrode_marks, ripple_times, sampling_frequency)
+        marks, ripple_times, sampling_frequency)
 
     posterior_density = [
         delayed(predict_state, pure=True)(ripple_marks, **decoder_kwargs)
@@ -734,32 +733,32 @@ def _get_place(train_position_info, place_measure='linear_distance'):
 
 
 @_convert_to_states
-def _get_place_at_spike(mark_tetrode_data, train_position_info,
+def _get_place_at_spike(tetrode_marks, train_position_info,
                         place_measure='linear_distance'):
     return {trajectory_direction: (grouped.dropna()
                                    .loc[:, place_measure].values)
             for trajectory_direction, grouped
-            in (mark_tetrode_data
+            in (tetrode_marks
                 .join(train_position_info)
                 .groupby('trajectory_direction'))}
 
 
 @_convert_to_states
-def _get_training_marks(mark_tetrode_data, train_position_info,
+def _get_training_marks(tetrode_marks, train_position_info,
                         mark_variables):
     return {trajectory_direction: (grouped.dropna()
                                    .loc[:, mark_variables].values)
             for trajectory_direction, grouped
-            in (mark_tetrode_data
+            in (tetrode_marks
                 .join(train_position_info)
                 .groupby('trajectory_direction'))}
 
 
-def _get_ripple_marks(tetrode_marks, ripple_times, sampling_frequency):
+def _get_ripple_marks(marks, ripple_times, sampling_frequency):
     mark_ripples = [reshape_to_segments(
-        mark_tetrode_data, ripple_times,
+        tetrode_marks, ripple_times,
         concat_axis=0, sampling_frequency=sampling_frequency)
-        for mark_tetrode_data in tetrode_marks]
+        for tetrode_marks in marks]
 
     return [np.stack([df.loc[ripple_ind + 1, :].values
                       for df in mark_ripples], axis=1)
