@@ -6,8 +6,6 @@ from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from subprocess import PIPE, run
 from sys import exit, stdout
 
-from dask import multiprocessing
-
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
                           decode_ripple_clusterless, detect_epoch_ripples,
@@ -107,9 +105,7 @@ def estimate_ripple_coherence(epoch_index):
 
     # Compare different types of ripples
     ripple_info = decode_ripple_clusterless(
-        epoch_index, animals, ripple_times,
-        scheduler=multiprocessing.get,
-        scheduler_kwargs=dict(num_workers=4))[0]
+        epoch_index, animals, ripple_times)[0]
     save_ripple_info(epoch_index, ripple_info)
 
     for covariate in ripple_covariates:
