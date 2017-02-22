@@ -642,14 +642,18 @@ def decode_ripple_clusterless(epoch_index, animals, ripple_times,
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False), :]
     logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
-    tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
-                      .loc[:, mark_variables])
-                     for tetrode_index in hippocampal_tetrodes.index]
-
     position_variables = ['linear_distance', 'trajectory_direction',
                           'speed']
     position_info = (get_interpolated_position_dataframe(
         epoch_index, animals).loc[:, position_variables])
+
+    tetrode_marks = [(get_mark_indicator_dataframe(tetrode_index, animals)
+                      .loc[:, mark_variables])
+                     for tetrode_index in hippocampal_tetrodes.index]
+    tetrode_marks = [mark_tetrode_data
+                     for mark_tetrode_data in tetrode_marks
+                     if (mark_tetrode_data.loc[position_info.speed > 4, :]
+                         .dropna().shape[0]) != 0]
 
     train_position_info = position_info.query('speed > 4')
 
