@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 from collections import namedtuple
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
+from signal import signal, SIGUSR1, SIGUSR2
 from subprocess import PIPE, run
 from sys import exit, stdout
 
@@ -151,6 +152,14 @@ def main():
     args = get_command_line_arguments()
     logger = get_logger()
     logger.setLevel(args.log_level)
+
+    def _signal_handler(signal_code, frame):
+        logger.error('***Process killed with signal {signal}***'.format(
+            signal=signal_code))
+        exit()
+
+    for code in [SIGUSR1, SIGUSR2]:
+        signal(code, _signal_handler)
 
     epoch_index = (args.Animal, args.Day, args.Epoch)
     logger.info(

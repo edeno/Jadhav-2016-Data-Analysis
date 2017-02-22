@@ -17,6 +17,7 @@ def main():
     directives = ('-l h_rt=10:00:00 '
                   '-pe omp 12 '
                   '-P braincom '
+                  '-notify '
                   '-l mem_per_core=3G')
 
     Animal = namedtuple('Animal', {'directory', 'short_name'})
