@@ -65,8 +65,10 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
             num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        logger.info('Level: {level_name} ({num_ripples} ripples)'.format(
-            level_name=level_name, num_ripples=len(ripple_times_by_group)))
+        logger.info(
+            '...Level: {level_name} ({num_ripples} ripples)'.format(
+                level_name=level_name,
+                num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
             sampling_frequency=params['sampling_frequency'],
@@ -85,13 +87,13 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
             sorted(grouped.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
-        logger.info('Level Difference: {level2} - {level1}'.format(
+        logger.info('...Level Difference: {level2} - {level1}'.format(
             level1=level1, level2=level2))
         for tetrode1, tetrode2 in combinations(
                 sorted(reshaped_lfps), 2):
-            logger.debug('...Tetrode Pair: {tetrode1} - {tetrode2}'.format(
-                tetrode1=tetrode1, tetrode2=tetrode2
-            ))
+            logger.debug(
+                '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
+                    tetrode1=tetrode1, tetrode2=tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
                 tetrode1, tetrode2)
@@ -134,7 +136,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
 
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        logger.info('Level: {level_name} ({num_ripples} ripples)'.format(
+        logger.info('...Level: {level_name} ({num_ripples} ripples)'.format(
             level_name=level_name, num_ripples=len(ripple_times_by_group)))
         reshaped_lfps = {key: reshape_to_segments(
             lfps[key], ripple_times_by_group,
@@ -144,7 +146,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            logger.debug('...Area Pair: {area1} - {area2}'.format(
+            logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             area1_lfps = get_lfps_by_area(
                 area1, tetrode_info, reshaped_lfps)
@@ -163,12 +165,12 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         logger.info(
-            'Level Difference: {level2} - {level1}'.format(
+            '...Level Difference: {level2} - {level1}'.format(
                 level1=level1, level2=level2))
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
-            logger.debug('...Area Pair: {area1} - {area2}'.format(
+            logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
                 coherence_name, ripple_covariate, level1,
