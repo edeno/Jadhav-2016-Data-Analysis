@@ -824,8 +824,9 @@ def multitaper_canonical_coherence(data,
     complex_spectra2 = _get_complex_spectra(
         area2_lfps, tapers, n_fft_samples, sampling_frequency)
     canonical_coherency = np.asarray(
-        [_compute_canonical(complex_spectra1, complex_spectra2, freq)
-         for freq in freq_ind], dtype=np.complex128)
+        [_estimate_canonical_coherency(complex_spectra1[:, frequency, :],
+                                       complex_spectra2[:, frequency, :])
+         for frequency in freq_ind], dtype=np.complex128)
 
     return pd.DataFrame(
         {'frequency': frequencies,
@@ -901,13 +902,23 @@ def _get_complex_spectra(lfps, tapers, n_fft_samples,
         (complex_spectra.shape[0], complex_spectra.shape[1], -1))
 
 
-def _compute_canonical(complex_spectra1, complex_spectra2, freq_ind):
-    U1, _, V1 = np.linalg.svd(
-        complex_spectra1[:, freq_ind, :], full_matrices=False)
-    U2, _, V2 = np.linalg.svd(
-        complex_spectra2[:, freq_ind, :], full_matrices=False)
-    Q = np.dot(np.dot(U1, V1), np.dot(U2, V2).conj().transpose())
+def _estimate_canonical_coherency(complex_spectra1, complex_spectra2):
+    normalized_complex_spectra1 = _normalize_complex_spectra(
+        complex_spectra1)
+    normalized_complex_spectra2 = _normalize_complex_spectra(
+        complex_spectra2)
+    Q = _complex_dot_product(normalized_complex_spectra1,
+                             normalized_complex_spectra2)
     return np.linalg.svd(Q, full_matrices=False, compute_uv=False)[0]
+
+
+def _complex_dot_product(a, b):
+    return np.dot(a, b.conj().transpose())
+
+
+def _normalize_complex_spectra(complex_spectra):
+    U1, _, V1 = np.linalg.svd(complex_spectra, full_matrices=False)
+    return np.dot(U1, V1)
 
 
 def _match_frequency_resolution(time_halfbandwidth_product,
