@@ -1,6 +1,7 @@
 import numpy as np
 from pytest import mark
 from scipy.stats import multivariate_normal, norm
+from scipy.linalg import block_diag
 
 from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  _normalize_column_probability,
@@ -10,7 +11,9 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  estimate_ground_process_intensity,
                                  estimate_place_occupancy,
                                  poisson_mark_likelihood,
-                                 _normal_pdf)
+                                 _normal_pdf, _update_posterior,
+                                 _get_prior, _get_bin_centers,
+                                 poisson_likelihood)
 
 
 def test_evaluate_mark_space():
@@ -203,3 +206,75 @@ def test__normal_pdf(x, mean, std_deviation):
     assert np.allclose(
         _normal_pdf(x, mean=mean, std_deviation=std_deviation),
         expected)
+
+
+def test__update_posterior():
+    prior1 = 2 * np.ones((2,))
+    prior2 = np.ones((3,))
+    prior = np.hstack((prior1, prior2))
+
+    likelihood1 = 3 * np.ones((2,))
+    likelihood2 = 3 * np.ones((3,))
+    likelihood = np.hstack((likelihood1, likelihood2))
+
+    posterior = _update_posterior(prior, likelihood)
+    expected = np.ones((5,))
+    expected[:2] = 6 / 21
+    expected[2:] = 3 / 21
+
+    assert np.allclose(posterior, expected)
+
+
+def test__get_prior():
+    posterior1 = 2 * np.ones((2,))
+    posterior2 = np.ones((3,))
+    posterior = np.hstack((posterior1, posterior2))
+
+    state_transition1 = 3 * np.ones((2, 2))
+    state_transition2 = 4 * np.ones((3, 3))
+    state_transition = block_diag(
+        state_transition1, state_transition2)
+    prior = _get_prior(posterior, state_transition)
+    expected = 12 * np.ones((5,))
+
+    assert np.allclose(prior, expected)
+
+
+@mark.parametrize('bin_edges, expected', [
+    (np.arange(0, 5), np.arange(0, 4) + 0.5),
+    (np.arange(0, 12, 2), np.arange(1, 10, 2))
+]
+)
+def test__get_bin_centers(bin_edges, expected):
+    bin_centers = _get_bin_centers(bin_edges)
+    assert np.allclose(bin_centers, expected)
+
+
+@mark.parametrize('is_spike, expected_likelihood', [
+    (np.zeros(3,), np.array([[5, 2, 5, 4],
+                             [5, 2, 5, 4],
+                             [5, 2, 5, 4],
+                             ])),
+    (np.array([0, 1, 0]), np.array([[5, 2, 5, 4],
+                                    [5 * np.log(0.2), 2 * np.log(0.5),
+                                     5 * np.log(0.2), 4 * np.log(0.25)],
+                                    [5, 2, 5, 4],
+                                    ])),
+    (np.ones(3,), np.array([[5 * np.log(0.2), 2 * np.log(0.5),
+                             5 * np.log(0.2), 4 * np.log(0.25)],
+                            [5 * np.log(0.2), 2 * np.log(0.5),
+                             5 * np.log(0.2), 4 * np.log(0.25)],
+                            [5 * np.log(0.2), 2 * np.log(0.5),
+                             5 * np.log(0.2), 4 * np.log(0.25)],
+                            ])),
+])
+def test_poisson_likelihood_is_spike(is_spike, expected_likelihood):
+    conditional_intensity = np.array(
+        [[np.log(0.2), np.log(0.5), np.log(0.2), np.log(0.25)],
+         [np.log(0.2), np.log(0.5), np.log(0.2), np.log(0.25)],
+         [np.log(0.2), np.log(0.5), np.log(0.2), np.log(0.25)]
+         ])
+    likelihood = poisson_likelihood(
+        is_spike, conditional_intensity=conditional_intensity,
+        time_bin_size=1)
+    assert np.allclose(likelihood, expected_likelihood)
