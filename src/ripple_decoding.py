@@ -404,8 +404,7 @@ def combined_likelihood(data, likelihood_function=None,
         return likelihood_function(data, **likelihood_kwargs).squeeze()
 
 
-def empirical_movement_transition_matrix(place,
-                                         place_bin_edges,
+def empirical_movement_transition_matrix(place, place_bin_edges,
                                          sequence_compression_factor=16):
     '''Estimate the probablity of the next position based on the movement
      data, given the movment is sped up by the
@@ -431,8 +430,8 @@ def empirical_movement_transition_matrix(place,
                                            n_bin_edges-1)
 
     '''
-    movement_bins, _, _ = np.histogram2d(place[1:],
-                                         place[:-1],
+    place = np.array(place)
+    movement_bins, _, _ = np.histogram2d(place[1:], place[:-1],
                                          bins=(place_bin_edges,
                                                place_bin_edges),
                                          normed=False)
@@ -487,8 +486,7 @@ def set_initial_conditions(place_bin_edges,
     initial_conditions : array_like, shape=(n_parameters * n_states,)
         Initial conditions for each state are stacked row-wise.
     '''
-    place_bin_size = place_bin_edges[
-        1] - place_bin_edges[0]
+    place_bin_size = place_bin_edges[1] - place_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
         _normal_pdf(place_bin_centers, mean=0,
