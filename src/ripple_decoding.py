@@ -100,15 +100,17 @@ def poisson_likelihood(is_spike, conditional_intensity=None,
 
     Parameters
     ----------
-    is_spike : array_like with values of {0, 1}, shape=(n_signals,)
+    is_spike : array_like with values in {0, 1}, shape (n_signals,)
         Indicator of spike or no spike at current time.
-    conditional_intensity : array_like, shape=(n_time_points, n_signals)
+    conditional_intensity : array_like, shape (n_signals,
+                                               n_parameters * n_states)
         Instantaneous probability of observing a spike
     time_bin_size : float, optional
 
     Returns
     -------
-    poisson_likelihood : array_like, shape=(n_parameters,)
+    poisson_likelihood : array_like, shape (n_signals,
+                                            n_parameters * n_states)
 
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
@@ -520,7 +522,8 @@ def estimate_state_transition(train_position_info,
 
     Returns
     -------
-    state_transition_matrix : array_like
+    state_transition_matrix : array_like, shape (n_parameters * n_states,
+                                                 n_parameters * n_states)
 
     '''
     inbound_state_transitions = empirical_movement_transition_matrix(
