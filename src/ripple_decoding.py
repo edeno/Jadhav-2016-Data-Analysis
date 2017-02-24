@@ -524,21 +524,16 @@ def estimate_state_transition(train_position_info,
                                                  n_parameters * n_states)
 
     '''
-    inbound_state_transitions = empirical_movement_transition_matrix(
-        (train_position_info[
-            train_position_info.trajectory_direction == 'Inbound']
-            .linear_distance.values),
-        place_bin_edges)
-    outbound_state_transitions = empirical_movement_transition_matrix(
-        (train_position_info[
-            train_position_info.trajectory_direction == 'Outbound']
-            .linear_distance.values),
-        place_bin_edges)
+    state_transition = {
+        state_name: empirical_movement_transition_matrix(
+            position_info.linear_distance, place_bin_edges)
+        for state_name, position_info
+        in train_position_info.groupby('trajectory_direction')}
 
-    return block_diag(outbound_state_transitions,
-                      inbound_state_transitions,
-                      inbound_state_transitions,
-                      outbound_state_transitions)
+    return block_diag(state_transition['outbound'],
+                      state_transition['inbound'],
+                      state_transition['inbound'],
+                      state_transition['outbound'])
 
 
 def glm_fit(spikes, design_matrix, ind):
