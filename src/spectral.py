@@ -886,15 +886,15 @@ def _get_complex_spectra(lfps, tapers, n_fft_samples,
     (electrode x frequencies x (trials x tapers)) for input into the
     canonical coherence
     '''
-    centered_lfps = _center_data(lfps, axis=1)
+    n_signals = data.shape[0]
+    data = _subtract_mean(data, axis=1)
     complex_spectra = [_multitaper_fft(
-        tapers, centered_lfps[lfp_ind, ...].squeeze(),
+        tapers, data[signal_ind, ...].squeeze(),
         n_fft_samples, sampling_frequency)
-        for lfp_ind in np.arange(centered_lfps.shape[0])]
+        for signal_ind in range(n_signals)]
     complex_spectra = np.concatenate(
         [spectra[np.newaxis, ...] for spectra in complex_spectra])
-    return complex_spectra.reshape(
-        (complex_spectra.shape[0], complex_spectra.shape[1], -1))
+    return complex_spectra.reshape((n_signals, n_fft_samples, -1))
 
 
 def _estimate_canonical_coherency(complex_spectra1, complex_spectra2):
