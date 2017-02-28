@@ -124,17 +124,11 @@ def _make_sliding_window_dataframe(func, data, time_window_duration,
 
 
 @convert_pandas
-def multitaper_spectrogram(data,
-                           sampling_frequency=1000,
+def multitaper_spectrogram(data, sampling_frequency=1000,
                            time_halfbandwidth_product=3,
-                           time_window_duration=1,
-                           time_window_step=None,
-                           pad=0,
-                           n_tapers=None,
-                           desired_frequencies=None,
-                           tapers=None,
-                           time=None,
-                           n_fft_samples=None):
+                           time_window_duration=1, time_window_step=None,
+                           pad=0, n_tapers=None, desired_frequencies=None,
+                           tapers=None, time=None, n_fft_samples=None):
     '''Estimates the power spectral density of a time series using the
     multitaper method over time.
 
