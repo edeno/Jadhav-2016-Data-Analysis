@@ -68,7 +68,7 @@ low_frequency_highTimeRes = dict(
     time_halfbandwidth_product=1,
     window_of_interest=(-0.500, 0.400)
 )
-low_frequency_highFreqRes = dict(
+low_frequency_medFreqRes = dict(
     sampling_frequency=sampling_frequency,
     time_window_duration=0.250,
     time_window_step=0.250,
@@ -76,12 +76,21 @@ low_frequency_highFreqRes = dict(
     time_halfbandwidth_product=1,
     window_of_interest=(-0.750, 0.250)
 )
+low_frequency_highFreqRes = dict(
+    sampling_frequency=sampling_frequency,
+    time_window_duration=0.500,
+    time_window_step=0.500,
+    desired_frequencies=(0, 30),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-1.00, 0.500)
+)
 coherence_type = {
     'gamma_frequency_coherence_medFreqRes1': gamma_frequency_medFreqRes1,
     'gamma_frequency_coherence_medFreqRes2': gamma_frequency_medFreqRes2,
     'gamma_frequency_coherence_highTimeRes': gamma_frequency_highTimeRes,
     'gamma_frequency_coherence_highFreqRes': gamma_frequency_highFreqRes,
     'low_frequencies_coherence_highTimeRes': low_frequency_highTimeRes,
+    'low_frequencies_coherence_medFreqRes': low_frequency_medFreqRes,
     'low_frequencies_coherence_highFreqRes': low_frequency_highFreqRes,
     'ripple_frequencies_coherence': ripple_frequency
 }
