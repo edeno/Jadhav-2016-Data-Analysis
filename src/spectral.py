@@ -882,9 +882,22 @@ def multitaper_canonical_coherogram(data,
 
 def _get_complex_spectra(lfps, tapers, n_fft_samples,
                          sampling_frequency):
-    ''' Returns a numpy array of complex spectra
-    (electrode x frequencies x (trials x tapers)) for input into the
-    canonical coherence
+    '''Calculates the tapered Fourier coefficients for each signal.
+
+    Data is automatically centered by its mean over time.
+
+    Parameters
+    ----------
+    data : array_like, shape (n_signals, n_time_samples, n_trials)
+    tapers : array_like, shape (n_time_samples, n_tapers)
+    n_fft_samples : int
+    sampling_frequency : int
+
+    Returns
+    -------
+    complex_spectra : array_like, shape (n_signals, n_fft_samples,
+                                         n_trials * n_tapers)
+
     '''
     n_signals = data.shape[0]
     data = _subtract_mean(data, axis=1)
