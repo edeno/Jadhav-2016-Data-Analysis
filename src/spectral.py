@@ -132,7 +132,8 @@ def multitaper_spectrogram(data, sampling_frequency=1000,
     '''Estimates the power spectral density of a time series using the
     multitaper method over time.
 
-    Data is automatically centered.
+    The mean of each time series is automatically subtracted to center the
+    data.
 
     Parameters
     ----------
