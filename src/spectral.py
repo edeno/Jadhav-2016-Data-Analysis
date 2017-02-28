@@ -880,7 +880,7 @@ def multitaper_canonical_coherogram(data,
     ))).sort_index()
 
 
-def _get_complex_spectra(lfps, tapers, n_fft_samples,
+def _get_complex_spectra(data, tapers, n_fft_samples,
                          sampling_frequency):
     '''Calculates the tapered Fourier coefficients for each signal.
 
