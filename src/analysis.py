@@ -2,7 +2,7 @@
 
 '''
 from copy import deepcopy
-from functools import wraps
+from functools import wraps, partial
 from glob import glob
 from itertools import combinations
 from logging import getLogger
@@ -57,6 +57,10 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     grouped = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
+    reshape_to_trials = partial(
+        reshape_to_segments,
+        sampling_frequency=params['sampling_frequency'],
+        window_offset=window_of_interest, concat_axis=1)
 
     logger.info(
         'Computing {coherence_name} for each level of the covariate '
@@ -69,15 +73,15 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
             '...Level: {level_name} ({num_ripples} ripples)'.format(
                 level_name=level_name,
                 num_ripples=len(ripple_times_by_group)))
-        reshaped_lfps = {key: reshape_to_segments(
-            lfps[key], ripple_times_by_group,
-            sampling_frequency=params['sampling_frequency'],
-            window_offset=window_of_interest, concat_axis=1)
-            for key in lfps}
+        ripple_locked_lfps = {
+            lfp_name: _subtract_event_related_potential(
+                reshape_to_trials(lfps[lfp_name], ripple_times_by_group))
+            for lfp_name in lfps}
         for tetrode1, tetrode2 in combinations(
-                sorted(reshaped_lfps), 2):
+                sorted(ripple_locked_lfps), 2):
             coherence_df = multitaper_coherogram(
-                [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]],
+                [ripple_locked_lfps[tetrode1],
+                 ripple_locked_lfps[tetrode2]],
                 **params)
             save_tetrode_pair(coherence_name, ripple_covariate, level_name,
                               tetrode1, tetrode2, coherence_df)
@@ -90,7 +94,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
         logger.info('...Level Difference: {level2} - {level1}'.format(
             level1=level1, level2=level2))
         for tetrode1, tetrode2 in combinations(
-                sorted(reshaped_lfps), 2):
+                sorted(ripple_locked_lfps), 2):
             logger.debug(
                 '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
                     tetrode1=tetrode1, tetrode2=tetrode2))
@@ -129,6 +133,11 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
     grouped = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
+    reshape_to_trials = partial(
+        reshape_to_segments,
+        sampling_frequency=params['sampling_frequency'],
+        window_offset=window_of_interest, concat_axis=1)
+
     logger.info('Computing canonical {coherence_name} for each '
                 'level of the covariate "{covariate}":'.format(
                     coherence_name=coherence_name,
@@ -136,22 +145,24 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
 
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
-        logger.info('...Level: {level_name} ({num_ripples} ripples)'.format(
-            level_name=level_name, num_ripples=len(ripple_times_by_group)))
-        reshaped_lfps = {key: reshape_to_segments(
-            lfps[key], ripple_times_by_group,
-            sampling_frequency=params['sampling_frequency'],
-            window_offset=window_of_interest, concat_axis=1).dropna(axis=1)
-            for key in lfps}
+        logger.info(
+            '...Level: {level_name} ({num_ripples} ripples)'.format(
+                level_name=level_name,
+                num_ripples=len(ripple_times_by_group)))
+        ripple_locked_lfps = {
+            lfp_name: _subtract_event_related_potential(
+                reshape_to_trials(
+                    lfps[lfp_name], ripple_times_by_group).dropna(axis=1))
+            for lfp_name in lfps}
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
         for area1, area2 in area_pairs:
             logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             area1_lfps = get_lfps_by_area(
-                area1, tetrode_info, reshaped_lfps)
+                area1, tetrode_info, ripple_locked_lfps)
             area2_lfps = get_lfps_by_area(
-                area2, tetrode_info, reshaped_lfps)
+                area2, tetrode_info, ripple_locked_lfps)
             coherogram = multitaper_canonical_coherogram(
                 [area1_lfps, area2_lfps], **params)
             save_area_pair(
@@ -203,20 +214,22 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
+    reshape_to_trials = partial(
+        reshape_to_segments,
+        sampling_frequency=params['sampling_frequency'],
+        window_offset=window_of_interest, concat_axis=1)
 
     logger.info('Computing ripple-triggered {coherence_name} '
                 'for {num_pairs} pairs of electrodes'.format(
                     coherence_name=coherence_name,
                     num_pairs=num_pairs))
 
-    reshaped_lfps = {key: reshape_to_segments(
-        lfps[key], ripple_times,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest,
-        concat_axis=1)
-        for key in lfps}
+    ripple_locked_lfps = {
+        lfp_name: _subtract_event_related_potential(
+            reshape_to_trials(lfps[lfp_name], ripple_times))
+        for lfp_name in lfps}
     for tetrode1, tetrode2 in combinations(
-            sorted(reshaped_lfps), 2):
+            sorted(ripple_locked_lfps), 2):
         logger.debug('...Tetrode Pair: {tetrode1} - {tetrode2}'.format(
             tetrode1=tetrode1, tetrode2=tetrode2
         ))
@@ -249,13 +262,16 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
             for index in tetrode_info.index}
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
-
-    reshaped_lfps = {key: reshape_to_segments(
-        lfps[key], ripple_times,
+    reshape_to_trials = partial(
+        reshape_to_segments,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest,
-        concat_axis=1).dropna(axis=1)
-        for key in lfps}
+        concat_axis=1)
+
+    ripple_locked_lfps = {
+        lfp_name: _subtract_event_related_potential(
+            reshape_to_trials(lfps[lfp_name], ripple_times).dropna(axis=1))
+        for lfp_name in lfps}
 
     area_pairs = combinations(
         sorted(tetrode_info.area.unique()), 2)
@@ -266,9 +282,9 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         logger.debug('...Area Pair: {area1} - {area2}'.format(
             area1=area1, area2=area2))
         area1_lfps = get_lfps_by_area(
-            area1, tetrode_info, reshaped_lfps)
+            area1, tetrode_info, ripple_locked_lfps)
         area2_lfps = get_lfps_by_area(
-            area2, tetrode_info, reshaped_lfps)
+            area2, tetrode_info, ripple_locked_lfps)
         coherogram = multitaper_canonical_coherogram(
             [area1_lfps, area2_lfps], **params)
         coherence_baseline = coherogram.xs(
@@ -968,3 +984,7 @@ def estimate_significant_group_delay(coherogram, alpha=0.01):
             filter_significant_groups_less_than_frequency_resolution,
             frequency_resolution))
     return group_delay_over_time(coherogram.mask(~is_significant))
+
+
+def _subtract_event_related_potential(df):
+    return df.apply(lambda x: x - df.mean(axis=1), raw=True)
