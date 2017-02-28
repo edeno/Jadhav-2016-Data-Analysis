@@ -77,7 +77,7 @@ def tetrode_title(tetrode_index_tuple, cur_tetrode_info):
                     tetrode_index_tuple, 'area']))
 
 
-def _center_data(x, axis=0):
+def _subtract_mean(x, axis=0):
     '''Returns the mean-centered data array along the first axis'''
     with catch_warnings():
         simplefilter("ignore", category=RuntimeWarning)
@@ -455,7 +455,7 @@ def multitaper_power_spectral_density(
             desired_frequencies=desired_frequencies,
             pad=pad)
     complex_spectrum = _multitaper_fft(
-        tapers, _center_data(data), n_fft_samples,
+        tapers, _subtract_mean(data), n_fft_samples,
         sampling_frequency)
     average_cross_spectrum = _average_over_trials_and_tapers(
         _cross_spectrum(complex_spectrum[freq_ind, :, :],
@@ -534,7 +534,7 @@ def multitaper_coherence(data, sampling_frequency=1000,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies,
             pad=pad)
-    data = [_center_data(datum) for datum in data]
+    data = [_subtract_mean(datum) for datum in data]
     complex_spectra = [_multitaper_fft(
         tapers, datum, n_fft_samples, sampling_frequency)
         for datum in data]
