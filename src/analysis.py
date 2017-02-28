@@ -64,7 +64,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
 
     logger.info(
         'Computing {coherence_name} for each level of the covariate '
-        '"{covariate}"for {num_pairs} pairs of electrodes:'.format(
+        '"{covariate}" for {num_pairs} pairs of electrodes:'.format(
             coherence_name=coherence_name, covariate=ripple_covariate,
             num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
@@ -234,7 +234,8 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
             tetrode1=tetrode1, tetrode2=tetrode2
         ))
         coherogram = multitaper_coherogram(
-            [reshaped_lfps[tetrode1], reshaped_lfps[tetrode2]], **params)
+            [ripple_locked_lfps[tetrode1], ripple_locked_lfps[tetrode2]],
+            **params)
         coherence_baseline = coherogram.xs(
             coherogram.index.min()[1], level='time')
         coherence_change = power_and_coherence_change(
