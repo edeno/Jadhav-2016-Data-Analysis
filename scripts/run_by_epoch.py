@@ -3,15 +3,17 @@
 from argparse import ArgumentParser
 from collections import namedtuple
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
-from signal import signal, SIGUSR1, SIGUSR2
+from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
-                          decode_ripple_clusterless, detect_epoch_ripples,
+                          decode_ripple_clusterless,
+                          detect_epoch_ripples,
                           ripple_triggered_canonical_coherence,
-                          ripple_triggered_coherence, save_ripple_info)
+                          ripple_triggered_coherence)
+from src.data_processing import save_ripple_info
 
 sampling_frequency = 1500
 Animal = namedtuple('Animal', {'directory', 'short_name'})
