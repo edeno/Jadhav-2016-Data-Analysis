@@ -436,18 +436,14 @@ def multitaper_power_spectral_density(
         Allows the user to specify the number of fft samples.
 
     '''
-    tapers, n_fft_samples, frequencies, frequency_index = \
+    tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
             n_time_samples=time_series.shape[0],
-            sampling_frequency=sampling_frequency,
-            tapers=tapers,
-            frequencies=frequencies,
-            frequency_index=frequency_index,
-            n_fft_samples=n_fft_samples,
-            n_tapers=n_tapers,
+            sampling_frequency=sampling_frequency, tapers=tapers,
+            frequencies=frequencies, frequency_index=frequency_index,
+            n_fft_samples=n_fft_samples, n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
-            desired_frequencies=desired_frequencies,
-            pad=pad)
+            desired_frequencies=desired_frequencies, pad=pad))
     complex_spectrum = _multitaper_fft(
         tapers, _subtract_mean(time_series), n_fft_samples,
         sampling_frequency)
@@ -520,19 +516,17 @@ def multitaper_coherence(time_series, sampling_frequency=1000,
         Allows the user to specify the number of fft samples.
 
     '''
-    tapers, n_fft_samples, frequencies, frequency_index = \
+    tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
             n_time_samples=time_series[0].shape[0],
-            sampling_frequency=sampling_frequency,
-            tapers=tapers,
+            sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
-            desired_frequencies=desired_frequencies,
-            pad=pad)
-    time_series = [_subtract_mean(datum) for datum in time_series]
+            desired_frequencies=desired_frequencies, pad=pad))
+    time_series = [_subtract_mean(series) for series in time_series]
     complex_spectra = [_multitaper_fft(
-        tapers, datum, n_fft_samples, sampling_frequency)
-        for datum in time_series]
+        tapers, series, n_fft_samples, sampling_frequency)
+        for series in time_series]
     cross_spectrum = _average_over_trials_and_tapers(
         _cross_spectrum(complex_spectra[0][frequency_index, :, :],
                         complex_spectra[1][frequency_index, :, :]))
@@ -627,13 +621,13 @@ def multitaper_coherogram(
         time_window_duration,
         sampling_frequency,
         time_window_step)
-    tapers, n_fft_samples, frequencies, frequency_index = \
+    tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
             n_time_samples=time_window_length,
             sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
-            desired_frequencies=desired_frequencies, pad=pad)
+            desired_frequencies=desired_frequencies, pad=pad))
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_coherence, time_series, time_window_duration,
         time_window_step, time_step_length, time_window_length, time,
