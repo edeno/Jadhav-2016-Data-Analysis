@@ -530,10 +530,10 @@ def estimate_state_transition(train_position_info,
         for state_name, position_info
         in train_position_info.groupby('trajectory_direction')}
 
-    return block_diag(state_transition['outbound'],
-                      state_transition['inbound'],
-                      state_transition['inbound'],
-                      state_transition['outbound'])
+    return block_diag(state_transition['Outbound'],
+                      state_transition['Inbound'],
+                      state_transition['Inbound'],
+                      state_transition['Outbound'])
 
 
 def glm_fit(spikes, design_matrix, ind):
