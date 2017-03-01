@@ -268,15 +268,14 @@ def _get_window_lengths(time_window_duration, sampling_frequency,
     return time_step_length, time_window_length
 
 
-def _get_unique_time_freq(spectrogram_dataframe):
+def _get_unique_time_freq(dataframe):
     '''Returns the unique time and frequency given a spectrogram dataframe
     with non-unique time and frequency columns'''
-    time = np.unique(spectrogram_dataframe.index.get_level_values('time'))
+    time = dataframe.index.get_level_values('time').unique()
     half_time_diff = (time[1] - time[0]) / 2
     time = np.append(time - half_time_diff,
                      time[-1] + half_time_diff)
-    frequency = np.unique(
-        spectrogram_dataframe.index.get_level_values('frequency'))
+    frequency = dataframe.index.get_level_values('frequency').unique()
     half_frequency_diff = (frequency[1] - frequency[0]) / 2
     frequency = np.append(frequency - half_frequency_diff,
                           frequency[-1] + half_frequency_diff)
