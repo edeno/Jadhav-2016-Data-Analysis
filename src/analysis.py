@@ -277,7 +277,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
     area_pairs = combinations(
         sorted(tetrode_info.area.unique()), 2)
     logger.info('Computing ripple-triggered '
-                'canonical {coherence_name}:'.format(
+                'canonical {coherence_name}'.format(
                     coherence_name=coherence_name))
     for area1, area2 in area_pairs:
         logger.debug('...Area Pair: {area1} - {area2}'.format(
