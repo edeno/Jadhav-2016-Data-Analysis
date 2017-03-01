@@ -516,9 +516,10 @@ def multitaper_coherence(time_series, sampling_frequency=1000,
         Allows the user to specify the number of fft samples.
 
     '''
+    n_time_samples = time_series[0].shape[0]
     tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
-            n_time_samples=time_series[0].shape[0],
+            n_time_samples=n_time_samples,
             sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
@@ -549,7 +550,7 @@ def multitaper_coherence(time_series, sampling_frequency=1000,
                          'n_trials': _get_number_of_trials(time_series),
                          'n_tapers': tapers.shape[1],
                          'frequency_resolution': get_frequency_resolution(
-                             time_series[0].shape[0] / sampling_frequency,
+                             (n_time_samples - 1) / sampling_frequency,
                              time_halfbandwidth_product)
                          }).set_index('frequency')
 
@@ -816,7 +817,7 @@ def multitaper_canonical_coherence(
          'n_trials': _get_number_of_trials(time_series_groups),
          'n_tapers': tapers.shape[1],
          'frequency_resolution': get_frequency_resolution(
-              n_time_samples / sampling_frequency,
+              (n_time_samples - 1) / sampling_frequency,
               time_halfbandwidth_product)
          }).set_index('frequency')
 
