@@ -176,7 +176,7 @@ def main():
             *epoch_index))
     git_hash = run(['git', 'rev-parse', 'HEAD'],
                    stdout=PIPE, universal_newlines=True).stdout
-    logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash))
+    logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
     estimate_ripple_coherence(epoch_index)
 
