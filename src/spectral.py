@@ -294,8 +294,7 @@ def plot_spectrogram(spectrogram_dataframe, axis_handle=None,
     if vmax is None:
         vmax = spectrogram_dataframe[spectrum_name].quantile(q=0.95)
     time, freq = _get_unique_time_freq(spectrogram_dataframe)
-    data2D = spectrogram_dataframe.reset_index().pivot(
-        'frequency', 'time', spectrum_name)
+    data2D = spectrogram_dataframe[spectrum_name].unstack()
     if plot_type is None:
         mesh = axis_handle.pcolormesh(time, freq, data2D, cmap=cmap,
                                       vmin=vmin, vmax=vmax)
@@ -645,11 +644,8 @@ def plot_coherogram(coherogram_dataframe, axis_handle=None,
     if axis_handle is None:
         axis_handle = plt.gca()
     time, freq = _get_unique_time_freq(coherogram_dataframe)
-    data2D = coherogram_dataframe.reset_index().pivot(
-        'frequency', 'time', 'coherence_magnitude')
-    mesh = axis_handle.pcolormesh(time, freq, data2D,
-                                  cmap=cmap,
-                                  vmin=vmin,
+    data2D = coherogram_dataframe['coherence_magnitude'].unstack()
+    mesh = axis_handle.pcolormesh(time, freq, data2D, cmap=cmap, vmin=vmin,
                                   vmax=vmax)
     axis_handle.set_xlim([time.min(), time.max()])
     axis_handle.set_ylim([freq.min(), freq.max()])
