@@ -96,8 +96,8 @@ coherence_type = {
     'low_frequencies_coherence_highFreqRes': low_frequency_highFreqRes,
     'ripple_frequencies_coherence': ripple_frequency
 }
-ripple_covariates = ['is_spike', 'session_time',
-                     'ripple_trajectory', 'ripple_direction']
+ripple_covariates = ['session_time', 'ripple_trajectory',
+                     'ripple_direction']
 
 
 def estimate_ripple_coherence(epoch_index):
