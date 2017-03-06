@@ -362,7 +362,8 @@ def get_spikes_dataframe(neuron_index, animals):
         get_data_filename(animals[animal], day, 'spikes'))
     try:
         neuron_data = neuron_file['spikes'][0, -1][0, epoch - 1][
-            0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][:, 0]
+            0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][
+            :, 0]
         data_dict = {'time': neuron_data,
                      'is_spike': 1
                      }
