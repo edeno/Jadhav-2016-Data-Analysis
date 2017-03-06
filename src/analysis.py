@@ -39,7 +39,8 @@ logger = getLogger(__name__)
 
 
 def coherence_by_ripple_type(epoch_index, animals, ripple_info,
-                             ripple_covariate, coherence_name='coherence',
+                             ripple_covariate,
+                             multitaper_parameter_name='',
                              multitaper_params={}):
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
@@ -63,9 +64,11 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
         window_offset=window_of_interest, concat_axis=1)
 
     logger.info(
-        'Computing {coherence_name} for each level of the covariate '
-        '"{covariate}" for {num_pairs} pairs of electrodes:'.format(
-            coherence_name=coherence_name, covariate=ripple_covariate,
+        'Computing {multitaper_parameter_name} for each level of the '
+        'covariate "{covariate}" for {num_pairs} pairs of '
+        'electrodes:'.format(
+            multitaper_parameter_name=multitaper_parameter_name,
+            covariate=ripple_covariate,
             num_pairs=num_pairs))
     for level_name, ripples_df in grouped:
         ripple_times_by_group = _get_ripple_times(ripples_df)
@@ -99,25 +102,26 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
                     tetrode1=tetrode1, tetrode2=tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
-                coherence_name, ripple_covariate, level1,
+                multitaper_parameter_name, ripple_covariate, level1,
                 tetrode1, tetrode2)
             level2_coherence_df = get_tetrode_pair_from_hdf(
-                coherence_name, ripple_covariate, level2,
+                multitaper_parameter_name, ripple_covariate, level2,
                 tetrode1, tetrode2)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_tetrode_pair(
-                coherence_name, ripple_covariate, level_difference_name,
-                tetrode1, tetrode2, coherence_difference_df)
+                multitaper_parameter_name, ripple_covariate,
+                level_difference_name, tetrode1, tetrode2,
+                coherence_difference_df)
     logger.info('Saving Parameters')
     save_multitaper_parameters(
-        epoch_index, coherence_name, multitaper_params)
+        epoch_index, multitaper_parameter_name, multitaper_params)
     save_tetrode_pair_info(epoch_index, tetrode_info)
 
 
 def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
                                        ripple_covariate,
-                                       coherence_name='coherence',
+                                       multitaper_parameter_name='',
                                        multitaper_params={}):
     '''Computes the canonical coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
@@ -138,9 +142,9 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest, concat_axis=1)
 
-    logger.info('Computing canonical {coherence_name} for each '
+    logger.info('Computing canonical {multitaper_parameter_name} for each '
                 'level of the covariate "{covariate}":'.format(
-                    coherence_name=coherence_name,
+                    multitaper_parameter_name=multitaper_parameter_name,
                     covariate=ripple_covariate))
 
     for level_name, ripples_df in grouped:
@@ -166,7 +170,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
             coherogram = multitaper_canonical_coherogram(
                 [area1_lfps, area2_lfps], **params)
             save_area_pair(
-                coherence_name, ripple_covariate, level_name,
+                multitaper_parameter_name, ripple_covariate, level_name,
                 area1, area2, coherogram, epoch_index)
 
     logger.info(
@@ -184,24 +188,25 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
             logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
-                coherence_name, ripple_covariate, level1,
+                multitaper_parameter_name, ripple_covariate, level1,
                 area1, area2, epoch_index)
             level2_coherence_df = get_area_pair_from_hdf(
-                coherence_name, ripple_covariate, level2,
+                multitaper_parameter_name, ripple_covariate, level2,
                 area1, area2, epoch_index)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_area_pair(
-                coherence_name, ripple_covariate, level_difference_name,
-                area1, area2, coherence_difference_df, epoch_index)
+                multitaper_parameter_name, ripple_covariate,
+                level_difference_name, area1, area2,
+                coherence_difference_df, epoch_index)
     logger.info('Saving Parameters')
     save_multitaper_parameters(
-        epoch_index, coherence_name, multitaper_params)
+        epoch_index, multitaper_parameter_name, multitaper_params)
     save_area_pair_info(epoch_index, tetrode_info)
 
 
 def ripple_triggered_coherence(epoch_index, animals, ripple_times,
-                               coherence_name='coherence',
+                               multitaper_parameter_name='coherence',
                                multitaper_params={}):
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
@@ -219,9 +224,9 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
         sampling_frequency=params['sampling_frequency'],
         window_offset=window_of_interest, concat_axis=1)
 
-    logger.info('Computing ripple-triggered {coherence_name} '
+    logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
-                    coherence_name=coherence_name,
+                    multitaper_parameter_name=multitaper_parameter_name,
                     num_pairs=num_pairs))
 
     ripple_locked_lfps = {
@@ -240,11 +245,12 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
             coherogram.index.min()[1], level='time')
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
-        save_tetrode_pair(coherence_name, 'all_ripples', 'baseline',
-                          tetrode1, tetrode2, coherence_baseline)
-        save_tetrode_pair(coherence_name, 'all_ripples', 'ripple_locked',
-                          tetrode1, tetrode2, coherogram)
-        save_tetrode_pair(coherence_name, 'all_ripples',
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'baseline', tetrode1, tetrode2,
+                          coherence_baseline)
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'ripple_locked', tetrode1, tetrode2, coherogram)
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
                           'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
     save_tetrode_pair_info(epoch_index, tetrode_info)
@@ -252,7 +258,7 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
 
 def ripple_triggered_canonical_coherence(epoch_index, animals,
                                          ripple_times,
-                                         coherence_name='coherence',
+                                         multitaper_parameter_name='',
                                          multitaper_params={}):
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_index]
@@ -277,8 +283,8 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
     area_pairs = combinations(
         sorted(tetrode_info.area.unique()), 2)
     logger.info('Computing ripple-triggered '
-                'canonical {coherence_name}'.format(
-                    coherence_name=coherence_name))
+                'canonical {multitaper_parameter_name}'.format(
+                    multitaper_parameter_name=multitaper_parameter_name))
     for area1, area2 in area_pairs:
         logger.debug('...Area Pair: {area1} - {area2}'.format(
             area1=area1, area2=area2))
@@ -293,13 +299,13 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_area_pair(
-            coherence_name, 'all_ripples', 'baseline', area1, area2,
-            coherence_baseline, epoch_index)
+            multitaper_parameter_name, 'all_ripples', 'baseline', area1,
+            area2, coherence_baseline, epoch_index)
         save_area_pair(
-            coherence_name, 'all_ripples', 'ripple_locked', area1, area2,
-            coherogram, epoch_index)
+            multitaper_parameter_name, 'all_ripples', 'ripple_locked',
+            area1, area2, coherogram, epoch_index)
         save_area_pair(
-            coherence_name, 'all_ripples',
+            multitaper_parameter_name, 'all_ripples',
             'ripple_difference_from_baseline', area1, area2,
             coherence_change, epoch_index)
     save_area_pair_info(epoch_index, tetrode_info)
