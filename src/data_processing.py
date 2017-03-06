@@ -849,6 +849,59 @@ def get_all_tetrode_info(multitaper_parameter_name):
     return pd.concat(
         [pd.read_hdf(filename, key=hdf_path)
          for filename in hdf5_files]).sort_index()
+
+
+def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
+                                   difference_level, tetrode_pair_info):
+    brain_area_pairs = merge_symmetric_key_pairs(
+        tetrode_pair_info.groupby(['area_1', 'area_2']).groups)
+    return {brain_area_pair: get_tetrode_pair_group_from_hdf(
+        brain_area_pairs[brain_area_pair], multitaper_parameter_name,
+        covariate, difference_level).mean(axis=0)
+        for brain_area_pair in brain_area_pairs}
+
+
+def get_area_tetrode_index_from_tetrode_pairs(brain_area,
+                                              tetrode_pair_info):
+    tetrode1_keys = (tetrode_pair_info[
+                        tetrode_pair_info.area_1 == brain_area]
+                     .index
+                     .get_level_values('tetrode1')
+                     .unique()
+                     .tolist())
+    tetrode2_keys = (tetrode_pair_info[
+                        tetrode_pair_info.area_2 == brain_area]
+                     .index
+                     .get_level_values('tetrode2')
+                     .unique()
+                     .tolist())
+    return set(tetrode1_keys + tetrode2_keys)
+
+
+def get_power_spectra_for_area(brain_area, multitaper_parameter_name,
+                               covariate, level, tetrode_pair_info):
+    brain_area_tetrode_indices = get_area_tetrode_index_from_tetrode_pairs(
+        brain_area, tetrode_pair_info)
+    return pd.Panel(
+        {tetrode_index: find_power_spectrum_from_pair_index(
+            tetrode_index, multitaper_parameter_name, covariate, level,
+            tetrode_pair_info)
+         for tetrode_index in brain_area_tetrode_indices})
+
+
+def get_brain_area_power(multitaper_parameter_name, covariate, level,
+                         tetrode_pair_info):
+    '''Given a tetrode_pair_info data structure,
+    '''
+    brain_areas = set(tetrode_pair_info.area_1.tolist() +
+                      tetrode_pair_info.area_2.tolist())
+
+    return {brain_area: get_power_spectra_for_area(
+                brain_area, multitaper_parameter_name, covariate,
+                level, tetrode_pair_info).mean(axis=0)
+            for brain_area in brain_areas}
+
+
 def merge_symmetric_key_pairs(pair_dict):
     '''If a 2-element key is the same except for the order, merge the
     Pandas index corresponding to the key.
@@ -909,5 +962,14 @@ def find_power_spectrum_from_pair_index(target_tetrode,
     power_spectrum_name = 'power_spectrum{}'.format(
         (tetrode1, tetrode2).index(target_tetrode) + 1)
     return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
+
+
+def get_area_pair_group_from_hdf5(multitaper_parameter_name, covariate,
+                                  level, area1, area2, epoch_index):
+    return pd.Panel(
+        {epoch: get_area_pair_from_hdf(
+            multitaper_parameter_name, covariate, level, area1, area2,
+            epoch)
+         for epoch in epoch_index})
 
 
