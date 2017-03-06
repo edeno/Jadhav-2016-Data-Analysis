@@ -789,31 +789,21 @@ def save_ripple_info(epoch_index, ripple_info):
         store.put('/ripple_info', ripple_info)
 
 
-def save_tetrode_pair_info(epoch_index, multitaper_parameter_name,
-                           tetrode_info):
-    hdf_path = '/{multitaper_parameter_name}/tetrode_info'.format(
-        multitaper_parameter_name=multitaper_parameter_name)
-    hdf_pair_path = ('/{multitaper_parameter_name}/'
-                     'tetrode_pair_info').format(
-        multitaper_parameter_name=multitaper_parameter_name)
+def save_tetrode_pair_info(epoch_index, tetrode_info):
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
         with catch_warnings():
             simplefilter('ignore')
-            store.put(hdf_path, tetrode_info)
-            store.put(hdf_pair_path,
+            store.put('/tetrode_info', tetrode_info)
+            store.put('/tetrode_pair_info',
                       get_tetrode_pair_info(tetrode_info))
 
 
-def save_area_pair_info(epoch_index, multitaper_parameter_name,
-                        tetrode_info):
-    hdf_pair_path = '/{multitaper_parameter_name}/area_pair_info'.format(
-        multitaper_parameter_name=multitaper_parameter_name)
+def save_area_pair_info(epoch_index, tetrode_info):
     with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
         with catch_warnings():
             simplefilter('ignore')
-            store.put(
-                hdf_pair_path, get_area_pair_info(
-                    tetrode_info, epoch_index))
+            store.put('/area_pair_info', get_area_pair_info(
+                tetrode_info, epoch_index))
 
 
 def get_tetrode_pair_group_from_hdf(tetrode_pair_index,
@@ -826,29 +816,25 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_index,
         for tetrode1, tetrode2 in tetrode_pair_index})
 
 
-def get_all_tetrode_pair_info(multitaper_parameter_name):
+def get_all_tetrode_pair_info():
     '''Retrieves all the hdf5 files from the Processed Data directory and
     returns the tetrode pair info dataframe'''
     file_path = join(abspath(
         pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob(file_path)
-    hdf_path = '/{multitaper_parameter_name}/tetrode_pair_info'.format(
-        multitaper_parameter_name=multitaper_parameter_name)
     return pd.concat(
-        [pd.read_hdf(filename, key=hdf_path)
+        [pd.read_hdf(filename, key='/tetrode_pair_info')
          for filename in hdf5_files]).sort_index()
 
 
-def get_all_tetrode_info(multitaper_parameter_name):
+def get_all_tetrode_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
     file_path = join(abspath(
         pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob(file_path)
-    hdf_path = '/{multitaper_parameter_name}/tetrode_info'.format(
-        multitaper_parameter_name=multitaper_parameter_name)
     return pd.concat(
-        [pd.read_hdf(filename, key=hdf_path)
+        [pd.read_hdf(filename, key='/tetrode_info')
          for filename in hdf5_files]).sort_index()
 
 

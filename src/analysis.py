@@ -83,8 +83,8 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 [ripple_locked_lfps[tetrode1],
                  ripple_locked_lfps[tetrode2]],
                 **params)
-            save_tetrode_pair(coherence_name, ripple_covariate, level_name,
-                              tetrode1, tetrode2, coherence_df)
+            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
+                              level_name, tetrode1, tetrode2, coherence_df)
     logger.info(
         'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
@@ -112,7 +112,7 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
     logger.info('Saving Parameters')
     save_multitaper_parameters(
         epoch_index, coherence_name, multitaper_params)
-    save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
+    save_tetrode_pair_info(epoch_index, tetrode_info)
 
 
 def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
@@ -197,7 +197,7 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
     logger.info('Saving Parameters')
     save_multitaper_parameters(
         epoch_index, coherence_name, multitaper_params)
-    save_area_pair_info(epoch_index, coherence_name, tetrode_info)
+    save_area_pair_info(epoch_index, tetrode_info)
 
 
 def ripple_triggered_coherence(epoch_index, animals, ripple_times,
@@ -247,7 +247,7 @@ def ripple_triggered_coherence(epoch_index, animals, ripple_times,
         save_tetrode_pair(coherence_name, 'all_ripples',
                           'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
-    save_tetrode_pair_info(epoch_index, coherence_name, tetrode_info)
+    save_tetrode_pair_info(epoch_index, tetrode_info)
 
 
 def ripple_triggered_canonical_coherence(epoch_index, animals,
@@ -302,7 +302,7 @@ def ripple_triggered_canonical_coherence(epoch_index, animals,
             coherence_name, 'all_ripples',
             'ripple_difference_from_baseline', area1, area2,
             coherence_change, epoch_index)
-    save_area_pair_info(epoch_index, coherence_name, tetrode_info)
+    save_area_pair_info(epoch_index, tetrode_info)
 
 
 def _get_ripple_times(df):
