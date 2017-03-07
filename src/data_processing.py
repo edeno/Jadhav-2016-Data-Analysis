@@ -594,6 +594,7 @@ def get_mark_dataframe(tetrode_key, animals):
 
 
 def get_mark_filename(tetrode_key, animals):
+    '''Given a tetrode key (animal, day, epoch, tetrode_number) and the
     animals dictionary return a file name for the tetrode file marks
     '''
     data_dir = join(abspath(pardir), 'Raw-Data')
@@ -723,7 +724,7 @@ def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
     except KeyError:
         logger.warn(
             'Could not load tetrode pair:'
-            'animal={animal}, day={day}, epoch={epoch}'
+            'animal={animal}, day={day}, epoch={epoch}, '
             'tetrode {tetrode1} - tetrode {tetrode2}'.format(
                 animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
                 tetrode2=tetrode2
@@ -820,20 +821,17 @@ def get_all_tetrode_pair_info():
     file_path = join(abspath(
         pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob(file_path)
-    return pd.concat(
-        [pd.read_hdf(filename, key='/tetrode_pair_info')
-         for filename in hdf5_files]).sort_index()
+    return pd.concat([pd.read_hdf(filename, key='/tetrode_pair_info')
+                      for filename in hdf5_files]).sort_index()
 
 
 def get_all_tetrode_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(
-        pardir), 'Processed-Data', '*.h5')
+    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob(file_path)
-    return pd.concat(
-        [pd.read_hdf(filename, key='/tetrode_info')
-         for filename in hdf5_files]).sort_index()
+    return pd.concat([pd.read_hdf(filename, key='/tetrode_info')
+                      for filename in hdf5_files]).sort_index()
 
 
 def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
@@ -841,7 +839,8 @@ def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
     brain_area_pairs = merge_symmetric_key_pairs(
         tetrode_pair_info.groupby(['area_1', 'area_2']).groups)
     return {brain_area_pair: get_tetrode_pair_group_from_hdf(
-        brain_area_pairs[brain_area_pair], multitaper_parameter_name,
+        brain_area_pairs[brain_area_pair],
+        multitaper_parameter_name,
         covariate, difference_level).mean(axis=0)
         for brain_area_pair in brain_area_pairs}
 
@@ -849,17 +848,17 @@ def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
 def get_area_tetrode_key_from_tetrode_pairs(brain_area,
                                             tetrode_pair_info):
     tetrode1_keys = (tetrode_pair_info[
-                        tetrode_pair_info.area_1 == brain_area]
-                     .index
-                     .get_level_values('tetrode1')
-                     .unique()
-                     .tolist())
+        tetrode_pair_info.area_1 == brain_area]
+        .index
+        .get_level_values('tetrode1')
+        .unique()
+        .tolist())
     tetrode2_keys = (tetrode_pair_info[
-                        tetrode_pair_info.area_2 == brain_area]
-                     .index
-                     .get_level_values('tetrode2')
-                     .unique()
-                     .tolist())
+        tetrode_pair_info.area_2 == brain_area]
+        .index
+        .get_level_values('tetrode2')
+        .unique()
+        .tolist())
     return set(tetrode1_keys + tetrode2_keys)
 
 
@@ -882,9 +881,9 @@ def get_brain_area_power(multitaper_parameter_name, covariate, level,
                       tetrode_pair_info.area_2.tolist())
 
     return {brain_area: get_power_spectra_for_area(
-                brain_area, multitaper_parameter_name, covariate,
-                level, tetrode_pair_info).mean(axis=0)
-            for brain_area in brain_areas}
+        brain_area, multitaper_parameter_name, covariate,
+        level, tetrode_pair_info).mean(axis=0)
+        for brain_area in brain_areas}
 
 
 def merge_symmetric_key_pairs(pair_dict):
