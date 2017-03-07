@@ -834,6 +834,13 @@ def get_all_tetrode_info():
                       for filename in hdf5_files]).sort_index()
 
 
+def get_ripple_info(epoch_key):
+    '''Retrieves ripple info dataframe given an epoch'''
+    file_name = '{}_{:02d}_{:02d}.h5'.format(*epoch_key)
+    file_path = join(abspath(pardir), 'Processed-Data', file_name)
+    return pd.read_hdf(file_path, key='/ripple_info')
+
+
 def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
                                    difference_level, tetrode_pair_info):
     brain_area_pairs = merge_symmetric_key_pairs(
