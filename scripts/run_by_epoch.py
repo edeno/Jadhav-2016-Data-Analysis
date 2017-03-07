@@ -13,7 +13,9 @@ from src.analysis import (canonical_coherence_by_ripple_type,
                           detect_epoch_ripples,
                           ripple_triggered_canonical_coherence,
                           ripple_triggered_coherence)
-from src.data_processing import save_ripple_info
+from src.data_processing import (save_ripple_info, get_epoch_lfps,
+                                 save_multitaper_parameters,
+                                 save_tetrode_pair_info)
 
 sampling_frequency = 1500
 Animal = namedtuple('Animal', {'directory', 'short_name'})
@@ -86,15 +88,15 @@ low_frequency_highFreqRes = dict(
     time_halfbandwidth_product=1,
     window_of_interest=(-1.00, 0.500)
 )
-coherence_type = {
-    'gamma_frequency_coherence_medFreqRes1': gamma_frequency_medFreqRes1,
-    'gamma_frequency_coherence_medFreqRes2': gamma_frequency_medFreqRes2,
-    'gamma_frequency_coherence_highTimeRes': gamma_frequency_highTimeRes,
-    'gamma_frequency_coherence_highFreqRes': gamma_frequency_highFreqRes,
-    'low_frequencies_coherence_highTimeRes': low_frequency_highTimeRes,
-    'low_frequencies_coherence_medFreqRes': low_frequency_medFreqRes,
-    'low_frequencies_coherence_highFreqRes': low_frequency_highFreqRes,
-    'ripple_frequencies_coherence': ripple_frequency
+multitaper_parameters = {
+    'gamma_frequency_medFreqRes1': gamma_frequency_medFreqRes1,
+    'gamma_frequency_medFreqRes2': gamma_frequency_medFreqRes2,
+    'gamma_frequency_highTimeRes': gamma_frequency_highTimeRes,
+    'gamma_frequency_highFreqRes': gamma_frequency_highFreqRes,
+    'low_frequencies_highTimeRes': low_frequency_highTimeRes,
+    'low_frequencies_medFreqRes': low_frequency_medFreqRes,
+    'low_frequencies_highFreqRes': low_frequency_highFreqRes,
+    'ripple_frequencies': ripple_frequency
 }
 ripple_covariates = ['session_time', 'ripple_trajectory',
                      'ripple_direction']
@@ -103,17 +105,21 @@ ripple_covariates = ['session_time', 'ripple_trajectory',
 def estimate_ripple_coherence(epoch_index):
     ripple_times = detect_epoch_ripples(
         epoch_index, animals, sampling_frequency=sampling_frequency)
+    lfps, tetrode_info = get_epoch_lfps(epoch_index, animals)
+    save_tetrode_pair_info(epoch_index, tetrode_info)
 
     # Compare before ripple to after ripple
-    for coherence_name in coherence_type:
+    for parameters_name, parameters in multitaper_parameters.items():
         ripple_triggered_coherence(
-            epoch_index, animals, ripple_times,
-            coherence_name=coherence_name,
-            multitaper_params=coherence_type[coherence_name])
+            lfps, ripple_times,
+            multitaper_parameter_name=parameters_name,
+            multitaper_params=parameters)
         ripple_triggered_canonical_coherence(
-            epoch_index, animals, ripple_times,
-            coherence_name=coherence_name,
-            multitaper_params=coherence_type[coherence_name])
+            lfps, epoch_index, tetrode_info, ripple_times,
+            multitaper_parameter_name=parameters_name,
+            multitaper_params=parameters)
+        save_multitaper_parameters(
+            epoch_index, parameters_name, parameters)
 
     # Compare different types of ripples
     ripple_info = decode_ripple_clusterless(
@@ -121,15 +127,15 @@ def estimate_ripple_coherence(epoch_index):
     save_ripple_info(epoch_index, ripple_info)
 
     for covariate in ripple_covariates:
-        for coherence_name in coherence_type:
+        for parameters_name, parameters in multitaper_parameters.items():
             coherence_by_ripple_type(
-                epoch_index, animals, ripple_info, covariate,
-                coherence_name=coherence_name,
-                multitaper_params=coherence_type[coherence_name])
+                lfps, ripple_info, covariate,
+                multitaper_parameter_name=parameters_name,
+                multitaper_params=parameters)
             canonical_coherence_by_ripple_type(
-                epoch_index, animals, ripple_info, covariate,
-                coherence_name=coherence_name,
-                multitaper_params=coherence_type[coherence_name])
+                lfps, epoch_index, tetrode_info, ripple_info, covariate,
+                multitaper_parameter_name=parameters_name,
+                multitaper_params=parameters)
 
 
 def get_command_line_arguments():

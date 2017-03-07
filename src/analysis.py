@@ -18,8 +18,7 @@ from src.data_processing import (get_interpolated_position_dataframe,
                                  make_tetrode_dataframe,
                                  reshape_to_segments, save_tetrode_pair,
                                  get_tetrode_pair_from_hdf,
-                                 save_multitaper_parameters,
-                                 save_tetrode_pair_info, save_area_pair,
+                                 save_area_pair,
                                  get_area_pair_from_hdf,
                                  save_area_pair_info)
 from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
@@ -38,20 +37,13 @@ from src.spectral import (fisher_z_transform,
 logger = getLogger(__name__)
 
 
-def coherence_by_ripple_type(epoch_index, animals, ripple_info,
-                             ripple_covariate,
-                             multitaper_parameter_name='',
-                             multitaper_params={}):
+def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
+                             multitaper_params,
+                             multitaper_parameter_name=''):
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    tetrode_info = tetrode_info[
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: get_LFP_dataframe(index, animals)
-            for index in tetrode_info.index}
+
     num_lfps = len(lfps)
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
 
@@ -113,26 +105,15 @@ def coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 multitaper_parameter_name, ripple_covariate,
                 level_difference_name, tetrode1, tetrode2,
                 coherence_difference_df)
-    logger.info('Saving Parameters')
-    save_multitaper_parameters(
-        epoch_index, multitaper_parameter_name, multitaper_params)
-    save_tetrode_pair_info(epoch_index, tetrode_info)
 
 
-def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
-                                       ripple_covariate,
-                                       multitaper_parameter_name='',
-                                       multitaper_params={}):
+def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
+                                       ripple_info, ripple_covariate,
+                                       multitaper_params,
+                                       multitaper_parameter_name=''):
     '''Computes the canonical coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    tetrode_info = tetrode_info[
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: get_LFP_dataframe(index, animals)
-            for index in tetrode_info.index}
 
     grouped = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
@@ -200,21 +181,11 @@ def canonical_coherence_by_ripple_type(epoch_index, animals, ripple_info,
                 level_difference_name, area1, area2,
                 coherence_difference_df, epoch_index)
     logger.info('Saving Parameters')
-    save_multitaper_parameters(
-        epoch_index, multitaper_parameter_name, multitaper_params)
-    save_area_pair_info(epoch_index, tetrode_info)
+    save_area_pair_info(epoch_key, tetrode_info)
 
 
-def ripple_triggered_coherence(epoch_index, animals, ripple_times,
-                               multitaper_parameter_name='coherence',
-                               multitaper_params={}):
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_index]
-    tetrode_info = tetrode_info[
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    lfps = {index: get_LFP_dataframe(index, animals)
-            for index in tetrode_info.index}
+def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
+                               multitaper_parameter_name=''):
     num_lfps = len(lfps)
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
     params = deepcopy(multitaper_params)
