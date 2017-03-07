@@ -957,3 +957,10 @@ def get_area_pair_group_from_hdf5(multitaper_parameter_name, covariate,
          for epoch_key in epoch_keys})
 
 
+def get_epoch_lfps(epoch_key, animals):
+    tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
+    tetrode_info = tetrode_info[
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
+    return {tetrode_key: get_LFP_dataframe(tetrode_key, animals)
+            for tetrode_key in tetrode_info.index}, tetrode_info
