@@ -997,8 +997,7 @@ def fisher_z_transform_difference(coherence_df1, coherence_df2):
          })
 
 
-def filter_significant_groups_less_than_frequency_resolution(
-        is_significant, frequency_resolution):
+def filter_significant_groups(is_significant, frequency_resolution):
     '''Finds clusters of statistical significance and ensures that they
     are greater than the frequency resolution.
 

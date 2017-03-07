@@ -28,7 +28,7 @@ from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  set_initial_conditions)
 from src.ripple_detection import Kay_method
 from src.spectral import (fisher_z_transform,
-                          filter_significant_groups_less_than_frequency_resolution,
+                          filter_significant_groups,
                           group_delay_over_time,
                           multitaper_canonical_coherogram,
                           multitaper_coherogram,
@@ -790,9 +790,7 @@ def estimate_significant_group_delay(coherogram, alpha=0.01):
     is_significant = (
         pd.Series(adjusted_p_values, index=z_coherence.index)
         .groupby(level='time')
-        .transform(
-            filter_significant_groups_less_than_frequency_resolution,
-            frequency_resolution))
+        .transform(filter_significant_groups, frequency_resolution))
     return group_delay_over_time(coherogram.mask(~is_significant))
 
 
