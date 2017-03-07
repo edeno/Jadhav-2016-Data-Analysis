@@ -28,12 +28,12 @@ def main():
                'HPc': Animal(directory='HPc_direct', short_name='HPc')
                }
     epoch_info = make_epochs_dataframe(animals, days)
-    epoch_index = epoch_info[(epoch_info.type == 'run') & (
+    epoch_keys = epoch_info[(epoch_info.type == 'run') & (
         epoch_info.environment != 'lin')].index
 
-    for epoch in epoch_index:
-        print(epoch)
-        animal, day, epoch_ind = epoch
+    for epoch_key in epoch_keys:
+        print(epoch_key)
+        animal, day, epoch_ind = epoch_key
         log_file = '{animal}_{day:02d}_{epoch:02d}.log'.format(
             animal=animal, day=day, epoch=epoch_ind)
         function_name = '{function_name}_{animal}_{day:02d}_{epoch:02d}'.format(

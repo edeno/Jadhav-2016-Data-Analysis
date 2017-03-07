@@ -102,11 +102,11 @@ ripple_covariates = ['session_time', 'ripple_trajectory',
                      'ripple_direction']
 
 
-def estimate_ripple_coherence(epoch_index):
+def estimate_ripple_coherence(epoch_key):
     ripple_times = detect_epoch_ripples(
-        epoch_index, animals, sampling_frequency=sampling_frequency)
-    lfps, tetrode_info = get_epoch_lfps(epoch_index, animals)
-    save_tetrode_pair_info(epoch_index, tetrode_info)
+        epoch_key, animals, sampling_frequency=sampling_frequency)
+    lfps, tetrode_info = get_epoch_lfps(epoch_key, animals)
+    save_tetrode_pair_info(epoch_key, tetrode_info)
 
     # Compare before ripple to after ripple
     for parameters_name, parameters in multitaper_parameters.items():
@@ -115,16 +115,16 @@ def estimate_ripple_coherence(epoch_index):
             multitaper_parameter_name=parameters_name,
             multitaper_params=parameters)
         ripple_triggered_canonical_coherence(
-            lfps, epoch_index, tetrode_info, ripple_times,
+            lfps, epoch_key, tetrode_info, ripple_times,
             multitaper_parameter_name=parameters_name,
             multitaper_params=parameters)
         save_multitaper_parameters(
-            epoch_index, parameters_name, parameters)
+            epoch_key, parameters_name, parameters)
 
     # Compare different types of ripples
     ripple_info = decode_ripple_clusterless(
-        epoch_index, animals, ripple_times)[0]
-    save_ripple_info(epoch_index, ripple_info)
+        epoch_key, animals, ripple_times)[0]
+    save_ripple_info(epoch_key, ripple_info)
 
     for covariate in ripple_covariates:
         for parameters_name, parameters in multitaper_parameters.items():
@@ -133,7 +133,7 @@ def estimate_ripple_coherence(epoch_index):
                 multitaper_parameter_name=parameters_name,
                 multitaper_params=parameters)
             canonical_coherence_by_ripple_type(
-                lfps, epoch_index, tetrode_info, ripple_info, covariate,
+                lfps, epoch_key, tetrode_info, ripple_info, covariate,
                 multitaper_parameter_name=parameters_name,
                 multitaper_params=parameters)
 
@@ -178,15 +178,15 @@ def main():
     for code in [SIGUSR1, SIGUSR2]:
         signal(code, _signal_handler)
 
-    epoch_index = (args.Animal, args.Day, args.Epoch)
+    epoch_key = (args.Animal, args.Day, args.Epoch)
     logger.info(
         'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
-            *epoch_index))
+            *epoch_key))
     git_hash = run(['git', 'rev-parse', 'HEAD'],
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_coherence(epoch_index)
+    estimate_ripple_coherence(epoch_key)
 
     logger.info('Finished Processing')
 

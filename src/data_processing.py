@@ -33,7 +33,7 @@ def get_data_filename(animal, day, file_type):
 
 def get_epochs(animal, day):
     '''For a given recording day and animal, get the three-element epoch
-    index that uniquely identifys the recording epochs in that day.
+    key that uniquely identifys the recording epochs in that day.
 
     Parameters
     ----------
@@ -46,7 +46,7 @@ def get_epochs(animal, day):
     Returns
     -------
     epochs : list of tuples
-         A list of three-element tuples (animal, day, epoch index) that
+         A list of three-element tuples (animal, day, epoch key) that
          uniquely identifys the recording epochs in that day.
 
     Examples
@@ -98,12 +98,12 @@ def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
     ]
 
 
-def get_position_dataframe(epoch_index, animals):
+def get_position_dataframe(epoch_key, animals):
     '''Returns a list of position dataframes with a length corresponding
-     to the number of epochs in the epoch index -- either a tuple or a
+     to the number of epochs in the epoch key -- either a tuple or a
     list of tuples with the format (animal, day, epoch_number)
     '''
-    animal, day, epoch = epoch_index
+    animal, day, epoch = epoch_key
     epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
         epoch - 1]['data'][0, 0]
     return _convert_position_array_to_dataframe(epoch_data)
@@ -211,11 +211,11 @@ def _convert_to_dict(struct_array):
         return {}
 
 
-def get_LFP_dataframe(tetrode_index, animals):
-    ''' Given a tetrode index tuple and the animals dictionary,
+def get_LFP_dataframe(tetrode_key, animals):
+    ''' Given a tetrode key tuple and the animals dictionary,
     return the LFP data and start time
     '''
-    lfp_file = loadmat(get_LFP_filename(tetrode_index, animals))
+    lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
     lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
     lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0][0],
                              lfp_data['data'][0, 0].size,
@@ -356,8 +356,8 @@ def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
             if is_in_list]
 
 
-def get_spikes_dataframe(neuron_index, animals):
-    animal, day, epoch, tetrode_number, neuron_number = neuron_index
+def get_spikes_dataframe(neuron_key, animals):
+    animal, day, epoch, tetrode_number, neuron_number = neuron_key
     neuron_file = loadmat(
         get_data_filename(animals[animal], day, 'spikes'))
     try:
@@ -387,11 +387,11 @@ def make_neuron_dataframe(animals):
             }
 
 
-def get_interpolated_position_dataframe(epoch_index, animals):
-    time = get_trial_time(epoch_index, animals)
+def get_interpolated_position_dataframe(epoch_key, animals):
+    time = get_trial_time(epoch_key, animals)
     position = (pd.concat(
-        [get_linear_position_structure(epoch_index, animals),
-         get_position_dataframe(epoch_index, animals)], axis=1)
+        [get_linear_position_structure(epoch_key, animals),
+         get_position_dataframe(epoch_key, animals)], axis=1)
         .assign(trajectory_direction=_trajectory_direction)
         .assign(trajectory_turn=_trajectory_turn)
         .assign(trial_number=_trial_number)
@@ -463,25 +463,25 @@ def get_linear_position_structure(epoch_key, animals,
     )
 
 
-def get_spike_indicator_dataframe(neuron_index, animals):
+def get_spike_indicator_dataframe(neuron_key, animals):
     ''' Returns a dataframe with a spike time indicator column
     where 1 indicates a spike at that time and 0 indicates no
     spike at that time. The number of datapoints corresponds
     is the same as the LFP.
     '''
-    time = get_trial_time(neuron_index, animals)
-    spikes_df = get_spikes_dataframe(neuron_index, animals)
+    time = get_trial_time(neuron_key, animals)
+    spikes_df = get_spikes_dataframe(neuron_key, animals)
     spikes_df.index = time[find_closest_ind(time, spikes_df.index.values)]
     return spikes_df.reindex(index=time, fill_value=0)
 
 
-def get_trial_time(index, animals):
+def get_trial_time(key, animals):
     try:
-        animal, day, epoch, tetrode_number = index[:4]
+        animal, day, epoch, tetrode_number = key[:4]
     except ValueError:
         # no tetrode number provided
         tetrode_info = make_tetrode_dataframe(animals)
-        animal, day, epoch, tetrode_number = tetrode_info[index].index[0]
+        animal, day, epoch, tetrode_number = tetrode_info[key].index[0]
     lfp_df = get_LFP_dataframe(
         (animal, day, epoch, tetrode_number), animals)
     return lfp_df.index
@@ -531,45 +531,45 @@ def reshape_to_segments(dataframe, segments, window_offset=None,
 
 
 def get_tetrode_pair_info(tetrode_info):
-    pair_index = pd.MultiIndex.from_tuples(
+    pair_keys = pd.MultiIndex.from_tuples(
         list(combinations(tetrode_info.index, 2)),
         names=['tetrode1', 'tetrode2'])
     no_rename = {'animal_1': 'animal',
                  'day_1': 'day',
                  'epoch_ind_1': 'epoch_ind'}
     tetrode1 = (tetrode_info
-                .loc[pair_index.get_level_values('tetrode1')]
+                .loc[pair_keys.get_level_values('tetrode1')]
                 .reset_index(drop=True)
                 .add_suffix('_1')
                 .rename(columns=no_rename)
                 )
     tetrode2 = (tetrode_info
-                .loc[pair_index.get_level_values('tetrode2')]
+                .loc[pair_keys.get_level_values('tetrode2')]
                 .reset_index(drop=True)
                 .drop(['animal', 'day', 'epoch_ind'], axis=1)
                 .add_suffix('_2')
                 )
     return (pd.concat([tetrode1, tetrode2], axis=1)
-            .set_index(pair_index))
+            .set_index(pair_keys))
 
 
-def get_area_pair_info(tetrode_info, epoch_index):
+def get_area_pair_info(tetrode_info, epoch_key):
     area_pairs = area_pairs = list(combinations(
         sorted(tetrode_info.area.unique()), 2))
     return (pd.DataFrame(area_pairs, columns=['area1', 'area2'])
-            .assign(animal=epoch_index[0],
-                    day=epoch_index[1],
-                    epoch=epoch_index[2])
+            .assign(animal=epoch_key[0],
+                    day=epoch_key[1],
+                    epoch=epoch_key[2])
             .set_index(
                 ['animal', 'day', 'epoch', 'area1', 'area2'], drop=False))
 
 
-def get_mark_dataframe(tetrode_index, animals):
-    '''Retrieve the marks for each tetrode given a tetrode index
+def get_mark_dataframe(tetrode_key, animals):
+    '''Retrieve the marks for each tetrode given a tetrode key
 
     Parameters
     ----------
-    tetrode_index : tuple
+    tetrode_key : tuple
         Elements are (animal_short_name, day, epoch, tetrode_number)
     animals : dict of named-tuples
         Dictionary containing information about the directory for each
@@ -583,7 +583,7 @@ def get_mark_dataframe(tetrode_index, animals):
         marks.
     '''
     TIME_CONSTANT = 1E4
-    mark_file = loadmat(get_mark_filename(tetrode_index, animals))
+    mark_file = loadmat(get_mark_filename(tetrode_key, animals))
     mark_names = [name[0][0].lower().replace(' ', '_')
                   for name in mark_file['filedata'][0, 0]['paramnames']]
     mark_data = mark_file['filedata'][0, 0]['params']
@@ -593,12 +593,11 @@ def get_mark_dataframe(tetrode_index, animals):
     return pd.DataFrame(mark_data, columns=mark_names).set_index('time')
 
 
-def get_mark_filename(tetrode_index, animals):
-    '''Given an index tuple (animal, day, epoch, tetrode_number) and the
+def get_mark_filename(tetrode_key, animals):
     animals dictionary return a file name for the tetrode file marks
     '''
     data_dir = join(abspath(pardir), 'Raw-Data')
-    animal, day, _, tetrode_number = tetrode_index
+    animal, day, _, tetrode_number = tetrode_key
     filename = ('{animal.short_name}marks{day:02d}-'
                 '{tetrode_number:02d}.mat').format(
         data_dir=data_dir,
@@ -610,9 +609,9 @@ def get_mark_filename(tetrode_index, animals):
         data_dir, animals[animal].directory, 'EEG', filename)
 
 
-def get_mark_indicator_dataframe(tetrode_index, animals):
-    time = get_trial_time(tetrode_index, animals)
-    mark_dataframe = (get_mark_dataframe(tetrode_index, animals)
+def get_mark_indicator_dataframe(tetrode_key, animals):
+    time = get_trial_time(tetrode_key, animals)
+    mark_dataframe = (get_mark_dataframe(tetrode_key, animals)
                       .loc[time.min():time.max()])
     mark_dataframe.index = time[
         find_closest_ind(time, mark_dataframe.index.values)]
@@ -661,27 +660,26 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
     return ripple_dataframe
 
 
-def get_computed_ripples_dataframe(tetrode_index, animals):
-    '''Given a tetrode index (animal, day, epoch, tetrode #), returns a
+def get_computed_ripples_dataframe(tetrode_key, animals):
+    '''Given a tetrode key (animal, day, epoch, tetrode #), returns a
     pandas dataframe with the pre-computed ripples from the Frank lab
      labeled according to the ripple number. Non-ripple times are marked as
      NaN.
     '''
-    ripple_times = _get_computed_ripple_times(tetrode_index, animals)
+    ripple_times = _get_computed_ripple_times(tetrode_key, animals)
     [(ripple_ind + 1, start_time, end_time)
      for ripple_ind, (start_time, end_time) in enumerate(ripple_times)]
-    lfp_dataframe = get_LFP_dataframe(
-        tetrode_index, animals)
+    lfp_dataframe = get_LFP_dataframe(tetrode_key, animals)
     return (_convert_ripple_times_to_dataframe(ripple_times, lfp_dataframe)
             .assign(
                 ripple_indicator=lambda x: x.ripple_number.fillna(0) > 0))
 
 
-def get_computed_consensus_ripple_times(epoch_index, animals):
+def get_computed_consensus_ripple_times(epoch_key, animals):
     '''Returns a list of tuples for a given epoch in the format
     (start_time, end_time).
     '''
-    animal, day, epoch_ind = epoch_index
+    animal, day, epoch_ind = epoch_key
     ripples_data = get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
     return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
@@ -689,9 +687,9 @@ def get_computed_consensus_ripple_times(epoch_index, animals):
 
 def get_lfps_by_area(area, tetrode_info, lfps):
     '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
-    return pd.Panel(
-        {index: lfps[index]
-         for index in tetrode_info[tetrode_info.area == area].index})
+    return pd.Panel({tetrode_key: lfps[tetrode_key]
+                     for tetrode_key
+                     in tetrode_info[tetrode_info.area == area].index})
 
 
 def save_tetrode_pair(multitaper_parameter_name, covariate, level,
@@ -705,8 +703,8 @@ def save_tetrode_pair(multitaper_parameter_name, covariate, level,
 
 
 def save_area_pair(multitaper_parameter_name, covariate, level, area1,
-                   area2, save_df, epoch_index):
-    animal, day, epoch = epoch_index
+                   area2, save_df, epoch_key):
+    animal, day, epoch = epoch_key
     hdf_path = area_pair_hdf_path(
         multitaper_parameter_name, covariate, level, area1, area2)
     with pd.HDFStore(analysis_file_path(animal, day, epoch)) as store:
@@ -733,8 +731,8 @@ def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
 
 
 def get_area_pair_from_hdf(multitaper_parameter_name, covariate, level,
-                           area1, area2, epoch_index):
-    animal, day, epoch = epoch_index
+                           area1, area2, epoch_key):
+    animal, day, epoch = epoch_key
     hdf_path = area_pair_hdf_path(
         multitaper_parameter_name, covariate, level, area1, area2)
     try:
@@ -775,22 +773,22 @@ def analysis_file_path(animal, day, epoch):
         abspath(pardir), 'Processed-Data', filename)
 
 
-def save_multitaper_parameters(epoch_index, multitaper_parameter_name,
+def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
                                multitaper_parameters):
     coherence_node = '/{multitaper_parameter_name}'.format(
         multitaper_parameter_name=multitaper_parameter_name)
-    with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
+    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
         (store.get_node(coherence_node)
          ._v_attrs.multitaper_parameters) = multitaper_parameters
 
 
-def save_ripple_info(epoch_index, ripple_info):
-    with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
+def save_ripple_info(epoch_key, ripple_info):
+    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
         store.put('/ripple_info', ripple_info)
 
 
-def save_tetrode_pair_info(epoch_index, tetrode_info):
-    with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
+def save_tetrode_pair_info(epoch_key, tetrode_info):
+    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
             store.put('/tetrode_info', tetrode_info)
@@ -798,22 +796,22 @@ def save_tetrode_pair_info(epoch_index, tetrode_info):
                       get_tetrode_pair_info(tetrode_info))
 
 
-def save_area_pair_info(epoch_index, tetrode_info):
-    with pd.HDFStore(analysis_file_path(*epoch_index)) as store:
+def save_area_pair_info(epoch_key, tetrode_info):
+    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
             store.put('/area_pair_info', get_area_pair_info(
-                tetrode_info, epoch_index))
+                tetrode_info, epoch_key))
 
 
-def get_tetrode_pair_group_from_hdf(tetrode_pair_index,
+def get_tetrode_pair_group_from_hdf(tetrode_pair_key,
                                     multitaper_parameter_name, covariate,
                                     level):
     '''Given a list of tetrode indices and specifiers for the path,
     returns a panel object of the corresponding coherence dataframes'''
     return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
         multitaper_parameter_name, covariate, level, tetrode1, tetrode2)
-        for tetrode1, tetrode2 in tetrode_pair_index})
+        for tetrode1, tetrode2 in tetrode_pair_key})
 
 
 def get_all_tetrode_pair_info():
@@ -848,8 +846,8 @@ def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
         for brain_area_pair in brain_area_pairs}
 
 
-def get_area_tetrode_index_from_tetrode_pairs(brain_area,
-                                              tetrode_pair_info):
+def get_area_tetrode_key_from_tetrode_pairs(brain_area,
+                                            tetrode_pair_info):
     tetrode1_keys = (tetrode_pair_info[
                         tetrode_pair_info.area_1 == brain_area]
                      .index
@@ -867,13 +865,13 @@ def get_area_tetrode_index_from_tetrode_pairs(brain_area,
 
 def get_power_spectra_for_area(brain_area, multitaper_parameter_name,
                                covariate, level, tetrode_pair_info):
-    brain_area_tetrode_indices = get_area_tetrode_index_from_tetrode_pairs(
+    brain_area_tetrode_keys = get_area_tetrode_key_from_tetrode_pairs(
         brain_area, tetrode_pair_info)
     return pd.Panel(
-        {tetrode_index: find_power_spectrum_from_pair_index(
-            tetrode_index, multitaper_parameter_name, covariate, level,
+        {tetrode_key: find_power_spectrum_from_pair_key(
+            tetrode_key, multitaper_parameter_name, covariate, level,
             tetrode_pair_info)
-         for tetrode_index in brain_area_tetrode_indices})
+         for tetrode_key in brain_area_tetrode_keys})
 
 
 def get_brain_area_power(multitaper_parameter_name, covariate, level,
@@ -936,10 +934,10 @@ def merge_symmetric_key_pairs(pair_dict):
     return merged_dict
 
 
-def find_power_spectrum_from_pair_index(target_tetrode,
-                                        multitaper_parameter_name,
-                                        covariate, level,
-                                        tetrode_pair_info):
+def find_power_spectrum_from_pair_key(target_tetrode,
+                                      multitaper_parameter_name,
+                                      covariate, level,
+                                      tetrode_pair_info):
     tetrode1, tetrode2 = next(
         (tetrode1, tetrode2) for tetrode1, tetrode2
         in tetrode_pair_info.index
@@ -952,11 +950,11 @@ def find_power_spectrum_from_pair_index(target_tetrode,
 
 
 def get_area_pair_group_from_hdf5(multitaper_parameter_name, covariate,
-                                  level, area1, area2, epoch_index):
+                                  level, area1, area2, epoch_keys):
     return pd.Panel(
-        {epoch: get_area_pair_from_hdf(
+        {epoch_key: get_area_pair_from_hdf(
             multitaper_parameter_name, covariate, level, area1, area2,
-            epoch)
-         for epoch in epoch_index})
+            epoch_key)
+         for epoch_key in epoch_keys})
 
 
