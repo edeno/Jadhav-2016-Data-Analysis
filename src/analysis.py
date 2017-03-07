@@ -80,6 +80,14 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 **params)
             save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
                               level_name, tetrode1, tetrode2, coherence_df)
+            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
+                              level_name, tetrode1, tetrode1,
+                              _get_power_spectrum(
+                                coherence_df, 'power_spectrum1'))
+            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
+                              level_name, tetrode2, tetrode2,
+                              _get_power_spectrum(
+                                coherence_df, 'power_spectrum2'))
     logger.info(
         'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
@@ -105,6 +113,16 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 multitaper_parameter_name, ripple_covariate,
                 level_difference_name, tetrode1, tetrode2,
                 coherence_difference_df)
+            save_tetrode_pair(
+                multitaper_parameter_name, ripple_covariate,
+                level_difference_name, tetrode1, tetrode1,
+                _get_power_spectrum(
+                    coherence_difference_df, 'power_spectrum1'))
+            save_tetrode_pair(
+                multitaper_parameter_name, ripple_covariate,
+                level_difference_name, tetrode2, tetrode2,
+                _get_power_spectrum(
+                    coherence_difference_df, 'power_spectrum2'))
 
 
 def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
@@ -216,6 +234,8 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
             coherogram.index.min()[1], level='time')
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
+
+        # Save coherence
         save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
                           'baseline', tetrode1, tetrode2,
                           coherence_baseline)
@@ -224,6 +244,39 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
         save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
                           'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
+        # Save power for tetrode1
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'baseline', tetrode1, tetrode1,
+                          _get_power_spectrum(
+                            coherence_baseline, 'power_spectrum1'))
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'ripple_locked', tetrode1, tetrode1,
+                          _get_power_spectrum(
+                            coherogram, 'power_spectrum1'))
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'ripple_difference_from_baseline',
+                          tetrode1, tetrode1, _get_power_spectrum(
+                            coherence_change, 'power_spectrum1'))
+        # Save power for tetrode2
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'baseline', tetrode2, tetrode2,
+                          _get_power_spectrum(
+                            coherence_baseline, 'power_spectrum2'))
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'ripple_locked', tetrode2, tetrode2,
+                          _get_power_spectrum(
+                            coherogram, 'power_spectrum2'))
+        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
+                          'ripple_difference_from_baseline',
+                          tetrode2, tetrode2, _get_power_spectrum(
+                            coherence_change, 'power_spectrum2'))
+
+
+def _get_power_spectrum(df, spectrum_name):
+    power_spectrum_columns = [spectrum_name, 'n_trials',
+                              'frequency_resolution', 'n_tapers']
+    return (df.loc[:, power_spectrum_columns]
+            .rename(index=str, columns={spectrum_name: 'power_spectrum'}))
 
 
 def ripple_triggered_canonical_coherence(lfps, epoch_key, tetrode_info,
