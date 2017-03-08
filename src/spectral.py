@@ -559,7 +559,9 @@ def _get_window_center(time_window_start, time_window_duration, time):
 
 def _get_number_of_trials(time_series):
     if len(time_series[0].shape) > 1:
-        return time_series[0].shape[-1]
+        return np.min(
+            (np.sum(~np.isnan(time_series[0]), axis=-1).min(),
+             np.sum(~np.isnan(time_series[1]), axis=-1).min()))
     else:
         return 1
 
