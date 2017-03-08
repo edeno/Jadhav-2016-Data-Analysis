@@ -20,7 +20,8 @@ from src.data_processing import (get_interpolated_position_dataframe,
                                  get_tetrode_pair_from_hdf,
                                  save_area_pair,
                                  get_area_pair_from_hdf,
-                                 save_area_pair_info)
+                                 save_area_pair_info,
+                                 get_analysis_file_path)
 from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  estimate_marked_encoding_model,
                                  estimate_sorted_spike_encoding_model,
@@ -273,6 +274,45 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode2, tetrode2, _get_power_spectrum(
                             coherence_change, 'power_spectrum2'))
+
+
+def ripple_triggered_group_delay(epoch_key, multitaper_parameter_name,
+                                 frequency_extent, alpha=0.01):
+    '''Depends on the coherence already being computed.
+    '''
+    tetrode_pair_info = pd.read_hdf(get_analysis_file_path(*epoch_key),
+                                    key='/tetrode_pair_info')
+    tetrode_pair_keys = tetrode_pair_info.index.tolist()
+
+    for tetrode1, tetrode2 in tetrode_pair_keys:
+        estimate_group_delay_by_tetrode(
+            tetrode1, tetrode2, 'all_ripples', 'ripple_locked',
+            multitaper_parameter_name, frequency_extent, alpha)
+
+
+def group_delay_by_ripple_type(epoch_key, ripple_info, ripple_covariate,
+                               multitaper_parameter_name, frequency_extent,
+                               alpha=0.01):
+    tetrode_pair_info = pd.read_hdf(get_analysis_file_path(*epoch_key),
+                                    key='/tetrode_pair_info')
+    tetrode_pair_keys = tetrode_pair_info.index.tolist()
+    for level_name, _ in ripple_info.groupby(ripple_covariate):
+        for tetrode1, tetrode2 in tetrode_pair_keys:
+            estimate_group_delay_by_tetrode(
+                tetrode1, tetrode2, ripple_covariate, level_name,
+                multitaper_parameter_name, frequency_extent, alpha)
+
+
+def estimate_group_delay_by_tetrode(tetrode1, tetrode2, covariate,
+                                    level, multitaper_parameter_name,
+                                    frequency_extent, alpha=0.01):
+    coherogram = get_tetrode_pair_from_hdf(
+        multitaper_parameter_name + '/coherence', covariate, level,
+        tetrode1, tetrode2)
+    group_delay = estimate_significant_group_delay(
+        coherogram.loc(axis=0)[slice(*frequency_extent), :], alpha=alpha)
+    save_tetrode_pair(multitaper_parameter_name + '/group_delay',
+                      covariate, level, tetrode1, tetrode2, group_delay)
 
 
 def _get_power_spectrum(df, spectrum_name):
