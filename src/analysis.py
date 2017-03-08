@@ -78,15 +78,16 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 [ripple_locked_lfps[tetrode1],
                  ripple_locked_lfps[tetrode2]],
                 **params)
-            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
-                              level_name, tetrode1, tetrode2, coherence_df)
-            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
-                              level_name, tetrode1, tetrode1,
-                              _get_power_spectrum(
+            save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                              ripple_covariate, level_name, tetrode1,
+                              tetrode2, coherence_df)
+            save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                              ripple_covariate, level_name, tetrode1,
+                              tetrode1, _get_power_spectrum(
                                 coherence_df, 'power_spectrum1'))
-            save_tetrode_pair(multitaper_parameter_name, ripple_covariate,
-                              level_name, tetrode2, tetrode2,
-                              _get_power_spectrum(
+            save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                              ripple_covariate, level_name, tetrode2,
+                              tetrode2, _get_power_spectrum(
                                 coherence_df, 'power_spectrum2'))
     logger.info(
         'Computing the difference in coherence between all levels:')
@@ -102,19 +103,19 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
                     tetrode1=tetrode1, tetrode2=tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
-                multitaper_parameter_name, ripple_covariate, level1,
-                tetrode1, tetrode2)
+                multitaper_parameter_name + '/coherence', ripple_covariate,
+                level1, tetrode1, tetrode2)
             level2_coherence_df = get_tetrode_pair_from_hdf(
-                multitaper_parameter_name, ripple_covariate, level2,
-                tetrode1, tetrode2)
+                multitaper_parameter_name + '/coherence', ripple_covariate,
+                level2, tetrode1, tetrode2)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_tetrode_pair(
-                multitaper_parameter_name, ripple_covariate,
+                multitaper_parameter_name + '/coherence', ripple_covariate,
                 level_difference_name, tetrode1, tetrode2,
                 coherence_difference_df)
             save_tetrode_pair(
-                multitaper_parameter_name, ripple_covariate,
+                multitaper_parameter_name + '/coherence', ripple_covariate,
                 level_difference_name, tetrode1, tetrode1,
                 _get_power_spectrum(
                     coherence_difference_df, 'power_spectrum1'))
@@ -169,7 +170,8 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
             coherogram = multitaper_canonical_coherogram(
                 [area1_lfps, area2_lfps], **params)
             save_area_pair(
-                multitaper_parameter_name, ripple_covariate, level_name,
+                multitaper_parameter_name + '/canonical_coherence',
+                ripple_covariate, level_name,
                 area1, area2, coherogram, epoch_key)
 
     logger.info(
@@ -187,16 +189,16 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
             logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name, ripple_covariate, level1,
-                area1, area2, epoch_key)
+                multitaper_parameter_name + '/canonical_coherence',
+                ripple_covariate, level1, area1, area2, epoch_key)
             level2_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name, ripple_covariate, level2,
-                area1, area2, epoch_key)
+                multitaper_parameter_name + '/canonical_coherence',
+                ripple_covariate, level2, area1, area2, epoch_key)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_area_pair(
-                multitaper_parameter_name, ripple_covariate,
-                level_difference_name, area1, area2,
+                multitaper_parameter_name + '/canonical_coherence',
+                ripple_covariate, level_difference_name, area1, area2,
                 coherence_difference_df, epoch_key)
     logger.info('Saving Parameters')
     save_area_pair_info(epoch_key, tetrode_info)
@@ -236,38 +238,39 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
             coherence_baseline, coherogram)
 
         # Save coherence
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'baseline', tetrode1, tetrode2,
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'baseline', tetrode1, tetrode2,
                           coherence_baseline)
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_locked', tetrode1, tetrode2, coherogram)
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_difference_from_baseline',
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_locked', tetrode1,
+                          tetrode2, coherogram)
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
         # Save power for tetrode1
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'baseline', tetrode1, tetrode1,
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'baseline', tetrode1, tetrode1,
                           _get_power_spectrum(
                             coherence_baseline, 'power_spectrum1'))
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_locked', tetrode1, tetrode1,
-                          _get_power_spectrum(
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_locked', tetrode1,
+                          tetrode1, _get_power_spectrum(
                             coherogram, 'power_spectrum1'))
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_difference_from_baseline',
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_difference_from_baseline',
                           tetrode1, tetrode1, _get_power_spectrum(
                             coherence_change, 'power_spectrum1'))
         # Save power for tetrode2
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'baseline', tetrode2, tetrode2,
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'baseline', tetrode2, tetrode2,
                           _get_power_spectrum(
                             coherence_baseline, 'power_spectrum2'))
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_locked', tetrode2, tetrode2,
-                          _get_power_spectrum(
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_locked', tetrode2,
+                          tetrode2, _get_power_spectrum(
                             coherogram, 'power_spectrum2'))
-        save_tetrode_pair(multitaper_parameter_name, 'all_ripples',
-                          'ripple_difference_from_baseline',
+        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+                          'all_ripples', 'ripple_difference_from_baseline',
                           tetrode2, tetrode2, _get_power_spectrum(
                             coherence_change, 'power_spectrum2'))
 
@@ -314,14 +317,16 @@ def ripple_triggered_canonical_coherence(lfps, epoch_key, tetrode_info,
         coherence_change = power_and_coherence_change(
             coherence_baseline, coherogram)
         save_area_pair(
-            multitaper_parameter_name, 'all_ripples', 'baseline', area1,
-            area2, coherence_baseline, epoch_key)
+            multitaper_parameter_name + '/canonical_coherence',
+            'all_ripples', 'baseline', area1, area2, coherence_baseline,
+            epoch_key)
         save_area_pair(
-            multitaper_parameter_name, 'all_ripples', 'ripple_locked',
-            area1, area2, coherogram, epoch_key)
+            multitaper_parameter_name + '/canonical_coherence',
+            'all_ripples', 'ripple_locked', area1, area2, coherogram,
+            epoch_key)
         save_area_pair(
-            multitaper_parameter_name, 'all_ripples',
-            'ripple_difference_from_baseline', area1, area2,
+            multitaper_parameter_name + '/canonical_coherence',
+            'all_ripples', 'ripple_difference_from_baseline', area1, area2,
             coherence_change, epoch_key)
     save_area_pair_info(epoch_key, tetrode_info)
 
