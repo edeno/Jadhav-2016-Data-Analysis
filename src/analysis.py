@@ -276,12 +276,11 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
                             coherence_change, 'power_spectrum2'))
 
 
-def ripple_triggered_group_delay(epoch_key, multitaper_parameter_name,
                                  frequency_extent, alpha=0.01):
+def ripple_triggered_group_delay(tetrode_pair_info,
+                                 multitaper_parameter_name,
     '''Depends on the coherence already being computed.
     '''
-    tetrode_pair_info = pd.read_hdf(get_analysis_file_path(*epoch_key),
-                                    key='/tetrode_pair_info')
     tetrode_pair_keys = tetrode_pair_info.index.tolist()
 
     for tetrode1, tetrode2 in tetrode_pair_keys:
@@ -290,11 +289,9 @@ def ripple_triggered_group_delay(epoch_key, multitaper_parameter_name,
             multitaper_parameter_name, frequency_extent, alpha)
 
 
-def group_delay_by_ripple_type(epoch_key, ripple_info, ripple_covariate,
                                multitaper_parameter_name, frequency_extent,
                                alpha=0.01):
-    tetrode_pair_info = pd.read_hdf(get_analysis_file_path(*epoch_key),
-                                    key='/tetrode_pair_info')
+def group_delay_by_ripple_type(tetrode_pair_info, ripple_info,
     tetrode_pair_keys = tetrode_pair_info.index.tolist()
     for level_name, _ in ripple_info.groupby(ripple_covariate):
         for tetrode1, tetrode2 in tetrode_pair_keys:
