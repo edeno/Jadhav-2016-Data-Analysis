@@ -530,7 +530,7 @@ def reshape_to_segments(dataframe, segments, window_offset=None,
         axis=concat_axis).sort_index())
 
 
-def get_tetrode_pair_info(tetrode_info):
+def make_tetrode_pair_info(tetrode_info):
     pair_keys = pd.MultiIndex.from_tuples(
         list(combinations(tetrode_info.index, 2)),
         names=['tetrode1', 'tetrode2'])
@@ -794,7 +794,7 @@ def save_tetrode_pair_info(epoch_key, tetrode_info):
             simplefilter('ignore')
             store.put('/tetrode_info', tetrode_info)
             store.put('/tetrode_pair_info',
-                      get_tetrode_pair_info(tetrode_info))
+                      make_tetrode_pair_info(tetrode_info))
 
 
 def save_area_pair_info(epoch_key, tetrode_info):
