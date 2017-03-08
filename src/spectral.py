@@ -916,12 +916,15 @@ def _match_frequency_resolution(time_halfbandwidth_product,
         return baseline_time_halfbandwidth_product
 
 
-def power_and_coherence_change(dataframe1, dataframe2):
-    return (pd.concat([coherence_change(dataframe1, dataframe2),
-                       power_change(dataframe1, dataframe2)], axis=1)
+def power_and_coherence_change(baseline_dataframe1, dataframe2):
+    dataframe1_n_trials = baseline_dataframe1.n_trials.reindex(
+        index=dataframe2.index, level='frequency')
+    return (pd.concat([coherence_change(baseline_dataframe1, dataframe2),
+                       power_change(baseline_dataframe1, dataframe2)],
+                      axis=1)
             .sort_index()
-            .assign(n_trials_1=dataframe1.n_trials)
-            .assign(n_trials_2=dataframe2.n_trials))
+            .assign(n_trials1=dataframe1_n_trials)
+            .assign(n_trials2=dataframe2.n_trials))
 
 
 def get_frequency_resolution(time_window_duration,
