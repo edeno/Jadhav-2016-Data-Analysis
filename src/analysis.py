@@ -277,7 +277,8 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
 
 def ripple_triggered_group_delay(tetrode_pair_info,
                                  multitaper_parameter_name,
-                                 frequency_band, alpha=0.01):
+                                 frequency_band, frequency_band_name,
+                                 alpha=0.01):
     '''Depends on the coherence already being computed.
     '''
     tetrode_pair_keys = tetrode_pair_info.index.tolist()
@@ -285,30 +286,35 @@ def ripple_triggered_group_delay(tetrode_pair_info,
     for tetrode1, tetrode2 in tetrode_pair_keys:
         estimate_group_delay_by_tetrode(
             tetrode1, tetrode2, 'all_ripples', 'ripple_locked',
-            multitaper_parameter_name, frequency_band, alpha)
+            multitaper_parameter_name, frequency_band, frequency_band_name,
+            alpha)
 
 
 def group_delay_by_ripple_type(tetrode_pair_info, ripple_info,
                                ripple_covariate, multitaper_parameter_name,
-                               frequency_band, alpha=0.01):
+                               frequency_band, frequency_band_name,
+                               alpha=0.01):
     tetrode_pair_keys = tetrode_pair_info.index.tolist()
     for level_name, _ in ripple_info.groupby(ripple_covariate):
         for tetrode1, tetrode2 in tetrode_pair_keys:
             estimate_group_delay_by_tetrode(
                 tetrode1, tetrode2, ripple_covariate, level_name,
-                multitaper_parameter_name, frequency_band, alpha)
+                multitaper_parameter_name, frequency_band,
+                frequency_band_name, alpha)
 
 
 def estimate_group_delay_by_tetrode(tetrode1, tetrode2, covariate,
                                     level, multitaper_parameter_name,
-                                    frequency_band, alpha=0.01):
+                                    frequency_band, frequency_band_name,
+                                    alpha=0.01):
     coherogram = get_tetrode_pair_from_hdf(
         multitaper_parameter_name + '/coherence', covariate, level,
         tetrode1, tetrode2)
     group_delay = estimate_significant_group_delay(
         coherogram.loc(axis=0)[slice(*frequency_band), :], alpha=alpha)
-    save_tetrode_pair(multitaper_parameter_name + '/group_delay',
-                      covariate, level, tetrode1, tetrode2, group_delay)
+    save_tetrode_pair(multitaper_parameter_name + '/group_delay/' +
+                      frequency_band_name, covariate, level, tetrode1,
+                      tetrode2, group_delay)
 
 
 def _get_power_spectrum(df, spectrum_name):
