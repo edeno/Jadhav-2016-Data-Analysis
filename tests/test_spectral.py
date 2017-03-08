@@ -7,7 +7,7 @@ from src.spectral import (_cross_spectrum, _get_frequencies, _get_tapers,
                           _make_sliding_window_dataframe,
                           _multitaper_fft, _nextpower2,
                           _get_multitaper_bias,
-                          filter_significant_groups_less_than_frequency_resolution)
+                          filter_significant_groups)
 
 
 @pytest.mark.parametrize(
@@ -154,8 +154,8 @@ def _convert_to_significant_series(x):
         (_convert_to_significant_series([1, 1, 1, 0, 0, 1, 1, 1, 0, 0]), 3,
          _convert_to_significant_series([1, 0, 1, 0, 0, 1, 0, 1, 0, 0])),
     ])
-def test_filter_significant_groups_less_than_frequency_resolution(
+def test_filter_significant_groups(
         is_significant, frequency_resolution, expected):
-    is_sig = filter_significant_groups_less_than_frequency_resolution(
+    is_sig = filter_significant_groups(
         is_significant, frequency_resolution)
     assert all(is_sig == expected)
