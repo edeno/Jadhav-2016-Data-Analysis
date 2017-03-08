@@ -699,7 +699,7 @@ def save_tetrode_pair(multitaper_parameter_name, covariate, level,
     hdf_path = tetrode_pair_hdf_path(
         multitaper_parameter_name, covariate, level, tetrode1[-1],
         tetrode2[-1])
-    with pd.HDFStore(analysis_file_path(animal, day, epoch)) as store:
+    with pd.HDFStore(get_analysis_file_path(animal, day, epoch)) as store:
         store.put(hdf_path, save_df)
 
 
@@ -708,7 +708,7 @@ def save_area_pair(multitaper_parameter_name, covariate, level, area1,
     animal, day, epoch = epoch_key
     hdf_path = area_pair_hdf_path(
         multitaper_parameter_name, covariate, level, area1, area2)
-    with pd.HDFStore(analysis_file_path(animal, day, epoch)) as store:
+    with pd.HDFStore(get_analysis_file_path(animal, day, epoch)) as store:
         store.put(hdf_path, save_df)
 
 
@@ -720,7 +720,7 @@ def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
         tetrode2[-1])
     try:
         return pd.read_hdf(
-            analysis_file_path(animal, day, epoch), key=hdf_path)
+            get_analysis_file_path(animal, day, epoch), key=hdf_path)
     except KeyError:
         logger.warn(
             'Could not load tetrode pair:'
@@ -738,7 +738,7 @@ def get_area_pair_from_hdf(multitaper_parameter_name, covariate, level,
         multitaper_parameter_name, covariate, level, area1, area2)
     try:
         return pd.read_hdf(
-            analysis_file_path(animal, day, epoch), key=hdf_path)
+            get_analysis_file_path(animal, day, epoch), key=hdf_path)
     except KeyError:
         logger.warn(
             'Could not load brain area pair:'
@@ -767,7 +767,7 @@ def area_pair_hdf_path(multitaper_parameter_name, covariate, level, area1,
         covariate=covariate, level=level, area1=area1, area2=area2)
 
 
-def analysis_file_path(animal, day, epoch):
+def get_analysis_file_path(animal, day, epoch):
     filename = '{animal}_{day:02d}_{epoch:02d}.h5'.format(
         animal=animal, day=day, epoch=epoch)
     return join(
@@ -778,18 +778,18 @@ def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
                                multitaper_parameters):
     coherence_node = '/{multitaper_parameter_name}'.format(
         multitaper_parameter_name=multitaper_parameter_name)
-    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
+    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         (store.get_node(coherence_node)
          ._v_attrs.multitaper_parameters) = multitaper_parameters
 
 
 def save_ripple_info(epoch_key, ripple_info):
-    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
+    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         store.put('/ripple_info', ripple_info)
 
 
 def save_tetrode_pair_info(epoch_key, tetrode_info):
-    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
+    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
             store.put('/tetrode_info', tetrode_info)
@@ -798,7 +798,7 @@ def save_tetrode_pair_info(epoch_key, tetrode_info):
 
 
 def save_area_pair_info(epoch_key, tetrode_info):
-    with pd.HDFStore(analysis_file_path(*epoch_key)) as store:
+    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
             store.put('/area_pair_info', get_area_pair_info(
