@@ -20,8 +20,7 @@ from src.data_processing import (get_interpolated_position_dataframe,
                                  get_tetrode_pair_from_hdf,
                                  save_area_pair,
                                  get_area_pair_from_hdf,
-                                 save_area_pair_info,
-                                 get_analysis_file_path)
+                                 save_area_pair_info)
 from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
                                  estimate_marked_encoding_model,
                                  estimate_sorted_spike_encoding_model,
@@ -48,7 +47,7 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
     num_lfps = len(lfps)
     num_pairs = int(num_lfps * (num_lfps - 1) / 2)
 
-    grouped = ripple_info.groupby(ripple_covariate)
+    ripples_by_covariate = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
     reshape_to_trials = partial(
@@ -63,15 +62,15 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
             multitaper_parameter_name=multitaper_parameter_name,
             covariate=ripple_covariate,
             num_pairs=num_pairs))
-    for level_name, ripples_df in grouped:
-        ripple_times_by_group = _get_ripple_times(ripples_df)
+    for level_name, ripples_df in ripples_by_covariate:
+        ripple_times = _get_ripple_times(ripples_df)
         logger.info(
             '...Level: {level_name} ({num_ripples} ripples)'.format(
                 level_name=level_name,
-                num_ripples=len(ripple_times_by_group)))
+                num_ripples=len(ripple_times)))
         ripple_locked_lfps = {
             lfp_name: _subtract_event_related_potential(
-                reshape_to_trials(lfps[lfp_name], ripple_times_by_group))
+                reshape_to_trials(lfps[lfp_name], ripple_times))
             for lfp_name in lfps}
         for tetrode1, tetrode2 in combinations(
                 sorted(ripple_locked_lfps), 2):
@@ -93,7 +92,7 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
     logger.info(
         'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
-            sorted(grouped.groups.keys()), 2):
+            sorted(ripples_by_covariate.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         logger.info('...Level Difference: {level2} - {level1}'.format(
@@ -135,7 +134,7 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
     from the ripple info dataframe and the differences between those
     levels'''
 
-    grouped = ripple_info.groupby(ripple_covariate)
+    ripples_by_covariate = ripple_info.groupby(ripple_covariate)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
     reshape_to_trials = partial(
@@ -148,16 +147,16 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
                     multitaper_parameter_name=multitaper_parameter_name,
                     covariate=ripple_covariate))
 
-    for level_name, ripples_df in grouped:
-        ripple_times_by_group = _get_ripple_times(ripples_df)
+    for level_name, ripples_df in ripples_by_covariate:
+        ripple_times = _get_ripple_times(ripples_df)
         logger.info(
             '...Level: {level_name} ({num_ripples} ripples)'.format(
                 level_name=level_name,
-                num_ripples=len(ripple_times_by_group)))
+                num_ripples=len(ripple_times)))
         ripple_locked_lfps = {
             lfp_name: _subtract_event_related_potential(
                 reshape_to_trials(
-                    lfps[lfp_name], ripple_times_by_group).dropna(axis=1))
+                    lfps[lfp_name], ripple_times).dropna(axis=1))
             for lfp_name in lfps}
         area_pairs = combinations(
             sorted(tetrode_info.area.unique()), 2)
@@ -178,7 +177,7 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
     logger.info(
         'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
-            sorted(grouped.groups.keys()), 2):
+            sorted(ripples_by_covariate.groups.keys()), 2):
         level_difference_name = '{level2}_{level1}'.format(
             level1=level1, level2=level2)
         logger.info(
