@@ -368,8 +368,8 @@ def ripple_triggered_canonical_coherence(lfps, epoch_key, tetrode_info,
 
 def _get_ripple_times(df):
     '''Retrieves the ripple times from the ripple_info dataframe'''
-    return df.loc[
-        :, ('ripple_start_time', 'ripple_end_time')].values.tolist()
+    return (df.loc[:, ('ripple_start_time', 'ripple_end_time')]
+            .values.tolist())
 
 
 def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
