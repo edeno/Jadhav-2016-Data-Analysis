@@ -1048,7 +1048,10 @@ def filter_significant_groups(is_significant, frequency_resolution):
 
     '''
     frequencies = is_significant.index.get_level_values('frequency')
-    frequency_change = frequencies[1] - frequencies[0]
+    try:
+        frequency_change = frequencies[1] - frequencies[0]
+    except IndexError:
+        frequency_change = np.nan
     significant_groups, _ = measurements.label(is_significant)
     independent_frequency_points = np.ceil(
         frequency_resolution / frequency_change).astype(int)
