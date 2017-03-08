@@ -824,7 +824,10 @@ def adjust_for_multiple_comparisons(p_values, alpha=0.05,
 
 def estimate_significant_group_delay(coherogram, alpha=0.01):
     z_coherence = fisher_z_transform(coherogram)
-    frequency_resolution = coherogram.frequency_resolution.unique()[0]
+    try:
+        frequency_resolution = coherogram.frequency_resolution.unique()[0]
+    except IndexError:
+        frequency_resolution = np.nan
     adjusted_p_values = adjust_for_multiple_comparisons(
         z_coherence.p_value, alpha=alpha)
     is_significant = (
