@@ -770,8 +770,7 @@ def area_pair_hdf_path(multitaper_parameter_name, covariate, level, area1,
 def get_analysis_file_path(animal, day, epoch):
     filename = '{animal}_{day:02d}_{epoch:02d}.h5'.format(
         animal=animal, day=day, epoch=epoch)
-    return join(
-        abspath(pardir), 'Processed-Data', filename)
+    return join(abspath(pardir), 'Processed-Data', filename)
 
 
 def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
@@ -818,8 +817,7 @@ def get_tetrode_pair_group_from_hdf(tetrode_pair_key,
 def get_all_tetrode_pair_info():
     '''Retrieves all the hdf5 files from the Processed Data directory and
     returns the tetrode pair info dataframe'''
-    file_path = join(abspath(
-        pardir), 'Processed-Data', '*.h5')
+    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/tetrode_pair_info')
                       for filename in hdf5_files]).sort_index()
