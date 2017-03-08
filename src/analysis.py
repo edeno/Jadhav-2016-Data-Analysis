@@ -298,12 +298,11 @@ def ripple_triggered_canonical_coherence(lfps, epoch_key, tetrode_info,
             reshape_to_trials(lfps[lfp_name], ripple_times).dropna(axis=1))
         for lfp_name in lfps}
 
-    area_pairs = combinations(
-        sorted(tetrode_info.area.unique()), 2)
     logger.info('Computing ripple-triggered '
                 'canonical {multitaper_parameter_name}'.format(
                     multitaper_parameter_name=multitaper_parameter_name))
-    for area1, area2 in area_pairs:
+    for area1, area2 in combinations(
+            sorted(tetrode_info.area.unique()), 2):
         logger.debug('...Area Pair: {area1} - {area2}'.format(
             area1=area1, area2=area2))
         area1_lfps = get_lfps_by_area(
