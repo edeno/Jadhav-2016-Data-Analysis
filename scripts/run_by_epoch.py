@@ -13,9 +13,13 @@ from src.analysis import (canonical_coherence_by_ripple_type,
                           detect_epoch_ripples,
                           ripple_triggered_canonical_coherence,
                           ripple_triggered_coherence)
-from src.data_processing import (save_ripple_info, get_epoch_lfps,
+from src.data_processing import (save_ripple_info,
                                  save_multitaper_parameters,
-                                 save_tetrode_pair_info)
+                                 save_tetrode_pair_info,
+                                 make_tetrode_dataframe,
+                                 get_LFP_dataframe,
+                                 make_tetrode_pair_info,
+                                 save_tetrode_info)
 
 sampling_frequency = 1500
 Animal = namedtuple('Animal', {'directory', 'short_name'})
@@ -105,8 +109,17 @@ ripple_covariates = ['session_time', 'ripple_trajectory',
 def estimate_ripple_coherence(epoch_key):
     ripple_times = detect_epoch_ripples(
         epoch_key, animals, sampling_frequency=sampling_frequency)
-    lfps, tetrode_info = get_epoch_lfps(epoch_key, animals)
-    save_tetrode_pair_info(epoch_key, tetrode_info)
+
+    tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
+    tetrode_info = tetrode_info[
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+    save_tetrode_info(epoch_key, tetrode_info)
+
+    tetrode_pair_info = make_tetrode_pair_info(tetrode_info)
+    save_tetrode_pair_info(epoch_key, tetrode_pair_info)
+
+    lfps = {tetrode_key: get_LFP_dataframe(tetrode_key, animals)
+            for tetrode_key in tetrode_info.index}
 
     # Compare before ripple to after ripple
     for parameters_name, parameters in multitaper_parameters.items():

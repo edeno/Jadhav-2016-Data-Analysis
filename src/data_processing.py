@@ -787,13 +787,18 @@ def save_ripple_info(epoch_key, ripple_info):
         store.put('/ripple_info', ripple_info)
 
 
-def save_tetrode_pair_info(epoch_key, tetrode_info):
+def save_tetrode_pair_info(epoch_key, tetrode_pair_info):
+    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
+        with catch_warnings():
+            simplefilter('ignore')
+            store.put('/tetrode_pair_info', tetrode_pair_info)
+
+
+def save_tetrode_info(epoch_key, tetrode_info):
     with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
             store.put('/tetrode_info', tetrode_info)
-            store.put('/tetrode_pair_info',
-                      make_tetrode_pair_info(tetrode_info))
 
 
 def save_area_pair_info(epoch_key, tetrode_info):
@@ -960,12 +965,3 @@ def get_area_pair_group_from_hdf5(multitaper_parameter_name, covariate,
             multitaper_parameter_name, covariate, level, area1, area2,
             epoch_key)
          for epoch_key in epoch_keys})
-
-
-def get_epoch_lfps(epoch_key, animals):
-    tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
-    tetrode_info = tetrode_info[
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
-    logger.debug(tetrode_info.loc[:, ['area', 'depth', 'descrip']])
-    return {tetrode_key: get_LFP_dataframe(tetrode_key, animals)
-            for tetrode_key in tetrode_info.index}, tetrode_info
