@@ -977,10 +977,20 @@ def find_power_spectrum_from_pair_key(target_tetrode,
     return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
 
 
-def get_area_pair_group_from_hdf5(multitaper_parameter_name, covariate,
-                                  level, area1, area2, epoch_keys):
+def get_area_pair_group_from_hdf(multitaper_parameter_name, covariate,
+                                 level, area_pair_keys):
     return pd.Panel(
-        {epoch_key: get_area_pair_from_hdf(
+        {(animal, day, epoch): get_area_pair_from_hdf(
             multitaper_parameter_name, covariate, level, area1, area2,
-            epoch_key)
-         for epoch_key in epoch_keys})
+            (animal, day, epoch))
+         for animal, day, epoch, area1, area2 in area_pair_keys})
+
+
+def get_brain_area_pairs_canonical_coherence(multitaper_parameter_name,
+                                             covariate, level,
+                                             area_pair_info):
+    return {(area1, area2): get_area_pair_group_from_hdf(
+                multitaper_parameter_name, covariate,
+                level, info.index).mean(axis=0)
+            for (area1, area2), info in area_pair_info.groupby(
+                ['area_1', 'area_2']).groups}
