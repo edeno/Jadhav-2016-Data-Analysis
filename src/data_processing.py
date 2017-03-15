@@ -151,11 +151,11 @@ def get_LFP_filename(tetrode_tuple, animals):
     animals dictionary return a file name for the tetrode file LFP
     '''
     data_dir = join(abspath(pardir), 'Raw-Data')
-    animal, day, epoch_ind, tetrode_number = tetrode_tuple
+    animal, day, epoch, tetrode_number = tetrode_tuple
     filename = ('{animal.short_name}eeg{day:02d}-{epoch}-'
                 '{tetrode_number:02d}.mat').format(
                     data_dir=data_dir, animal=animals[animal],
-                    day=day, epoch=epoch_ind, tetrode_number=tetrode_number
+                    day=day, epoch=epoch, tetrode_number=tetrode_number
     )
     return join(
         data_dir, animals[animal].directory, 'EEG', filename)
@@ -164,12 +164,12 @@ def get_LFP_filename(tetrode_tuple, animals):
 def _get_tetrode_id(dataframe):
     return dataframe.animal + \
         dataframe.day.astype(str) + \
-        dataframe.epoch_ind.astype(str) + \
+        dataframe.epoch.astype(str) + \
         dataframe.tetrode_number.astype(str)
 
 
 def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal,
-                                       day, epoch_ind):
+                                       day, epoch):
     '''
     Given an epoch data structure, return a cleaned up DataFrame
     '''
@@ -184,11 +184,11 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal,
               .assign(area=lambda x: x['area'])
               .assign(animal=lambda x: animal)
               .assign(day=lambda x: day)
-              .assign(epoch_ind=lambda x: epoch_ind)
+              .assign(epoch=lambda x: epoch)
               .assign(tetrode_number=lambda x: x.index + 1)
               .assign(tetrode_id=_get_tetrode_id)
             # set index to identify rows
-              .set_index(['animal', 'day', 'epoch_ind', 'tetrode_number'],
+              .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
                          drop=False)
               .sort_index()
             )
@@ -247,13 +247,13 @@ def get_neuron_info(animal):
 def _get_neuron_id(dataframe):
     return dataframe.animal + \
         dataframe.day.astype(str) + \
-        dataframe.epoch_ind.astype(str) + \
+        dataframe.epoch.astype(str) + \
         dataframe.tetrode_number.astype(str) + \
         dataframe.neuron_number.astype(str)
 
 
 def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day,
-                                      epoch_ind):
+                                      epoch):
     '''
     Given an neuron data structure, return a cleaned up DataFrame
     '''
@@ -267,7 +267,7 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day,
                     'tag', 'typetag', 'runripmodtype2',
                     'tag2', 'ripmodtype2', 'descrip']
 
-    NEURON_INDEX = ['animal', 'day', 'epoch_ind',
+    NEURON_INDEX = ['animal', 'day', 'epoch',
                     'tetrode_number', 'neuron_number']
 
     neuron_dict_list = [_add_to_dict(
@@ -281,7 +281,7 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day,
               .drop(DROP_COLUMNS, axis=1, errors='ignore')
               .assign(animal=animal)
               .assign(day=day)
-              .assign(epoch_ind=epoch_ind)
+              .assign(epoch=epoch)
               .assign(neuron_id=_get_neuron_id)
             # set index to identify rows
               .set_index(NEURON_INDEX, drop=False)
@@ -313,7 +313,7 @@ def make_epochs_dataframe(animals, days):
 
     index_labels = pd.DataFrame([{'animal': animal,
                                   'day': day,
-                                  'epoch_ind': epoch_ind + 1}
+                                  'epoch': epoch_ind + 1}
                                  for day_structure, animal, day in tasks
                                  for epoch_ind, _ in enumerate(
         day_structure)])
@@ -321,7 +321,7 @@ def make_epochs_dataframe(animals, days):
     return (pd.concat(
         [index_labels, task_dataframe],
         axis=1, join_axes=[task_dataframe.index])
-        .set_index(['animal', 'day', 'epoch_ind'], drop=False)
+        .set_index(['animal', 'day', 'epoch'], drop=False)
         .sort_index()
         .assign(environment=lambda x: pd.Categorical(x['environment']))
         .assign(type=lambda x: pd.Categorical(x['type'])))
@@ -333,7 +333,7 @@ def make_tetrode_dataframe(animals):
     tetrode_data = [(loadmat(file_name[0]), file_name[1])
                     for file_name in tetrode_file_names]
 
-    # Make a dictionary with (animal, day, epoch_ind) as the keys
+    # Make a dictionary with (animal, day, epoch) as the keys
     return {(animal, day_ind + 1, epoch_ind + 1):
             convert_tetrode_epoch_to_dataframe(
                 epoch, animal, day_ind + 1, epoch_ind + 1)
@@ -536,7 +536,7 @@ def make_tetrode_pair_info(tetrode_info):
         names=['tetrode1', 'tetrode2'])
     no_rename = {'animal_1': 'animal',
                  'day_1': 'day',
-                 'epoch_ind_1': 'epoch_ind'}
+                 'epoch_1': 'epoch'}
     tetrode1 = (tetrode_info
                 .loc[pair_keys.get_level_values('tetrode1')]
                 .reset_index(drop=True)
@@ -546,7 +546,7 @@ def make_tetrode_pair_info(tetrode_info):
     tetrode2 = (tetrode_info
                 .loc[pair_keys.get_level_values('tetrode2')]
                 .reset_index(drop=True)
-                .drop(['animal', 'day', 'epoch_ind'], axis=1)
+                .drop(['animal', 'day', 'epoch'], axis=1)
                 .add_suffix('_2')
                 )
     return (pd.concat([tetrode1, tetrode2], axis=1)
@@ -625,7 +625,7 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     to the trial time for that session. Data is extracted from the ripples
     data structure and calculated according to the Frank Lab criterion.
     '''
-    animal, day, epoch_ind, tetrode_number = tetrode_tuple
+    animal, day, epoch, tetrode_number = tetrode_tuple
     ripples_data = get_data_structure(
         animals[animal], day, 'ripples', 'ripples')
     return zip(
@@ -680,10 +680,10 @@ def get_computed_consensus_ripple_times(epoch_key, animals):
     '''Returns a list of tuples for a given epoch in the format
     (start_time, end_time).
     '''
-    animal, day, epoch_ind = epoch_key
+    animal, day, epoch = epoch_key
     ripples_data = get_data_structure(
         animals[animal], day, 'candripples', 'candripples')
-    return list(map(tuple, ripples_data[epoch_ind - 1]['riptimes'][0][0]))
+    return list(map(tuple, ripples_data[epoch - 1]['riptimes'][0][0]))
 
 
 def get_lfps_by_area(area, tetrode_info, lfps):
