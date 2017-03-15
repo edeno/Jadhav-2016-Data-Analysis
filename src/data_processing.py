@@ -905,10 +905,27 @@ def get_brain_area_power(multitaper_parameter_name, covariate, level,
     '''
 
     return {brain_area: get_power_spectra_for_area(
-def merge_symmetric_key_pairs(pair_dict):
         '{}/power'.format(multitaper_parameter_name), covariate, level,
         area_tetrodes).mean(axis=0)
         for brain_area, area_tetrodes in tetrode_info.groupby('area')}
+
+
+def get_brain_area_pairs_group_delay(multitaper_parameter_name, covariate,
+                                     level, frequency_band,
+                                     tetrode_pair_info):
+    group_delay = {brain_area_pair: get_tetrode_pair_group_from_hdf(
+        brain_areas_pair_info.index, '{}/group_delay/{}'.format(
+            multitaper_parameter_name, frequency_band),
+        covariate, level)
+        for brain_area_pair, brain_areas_pair_info
+        in tetrode_pair_info.groupby(['area_1', 'area_2'])}
+    group_delay = merge_symmetric_key_pairs(
+        group_delay, _merge_group_delay_pairs)
+    return {brain_area_pair: data.dropna().mean(axis=0)
+            for brain_area_pair, data in group_delay.items()}
+
+
+def merge_symmetric_key_pairs(pair_dict, merge_function):
     '''If a 2-element key is the same except for the order, merge the
     values.
 
@@ -954,6 +971,17 @@ def merge_symmetric_key_pairs(pair_dict):
             merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
 
     return merged_dict
+
+
+def _merge_group_delay_pairs(pair_group1, pair_group2):
+    pair_group2 = pd.Panel({
+        tetrode_pair: pair_group2[tetrode_pair].apply(_flip_sign, axis=0)
+        for tetrode_pair in pair_group2})
+    return pd.concat((pair_group1, pair_group2))
+
+
+def _flip_sign(x):
+    return -x if x.name in ['delay', 'slope'] else x
 
 
 def find_power_spectrum_from_pair_key(target_tetrode,
