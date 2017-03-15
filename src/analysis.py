@@ -282,7 +282,11 @@ def ripple_triggered_group_delay(tetrode_pair_info,
     '''Depends on the coherence already being computed.
     '''
     tetrode_pair_keys = tetrode_pair_info.index.tolist()
-
+    logger.info('Computing ripple-triggered group delay for '
+                '{multitaper_parameter_name} in the '
+                '{frequency_band_name} band'.format(
+                    multitaper_parameter_name=multitaper_parameter_name,
+                    frequency_band_name=frequency_band_name))
     for tetrode1, tetrode2 in tetrode_pair_keys:
         estimate_group_delay_by_tetrode(
             tetrode1, tetrode2, 'all_ripples', 'ripple_locked',
