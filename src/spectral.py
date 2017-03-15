@@ -675,7 +675,7 @@ def group_delay(coherence_dataframe):
         slope, correlation = np.nan, np.nan
     return pd.DataFrame({
         'correlation': correlation,
-        'number_of_points': coherence_dataframe.shape[0],
+        'n_points': coherence_dataframe.shape[0],
         'slope': slope,
         'delay': slope / (2 * np.pi)
         }, index=[0])
