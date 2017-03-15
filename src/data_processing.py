@@ -553,7 +553,7 @@ def make_tetrode_pair_info(tetrode_info):
             .set_index(pair_keys))
 
 
-def get_area_pair_info(tetrode_info, epoch_key):
+def make_area_pair_info(tetrode_info, epoch_key):
     area_pairs = area_pairs = list(combinations(
         sorted(tetrode_info.area.unique()), 2))
     return (pd.DataFrame(area_pairs, columns=['area1', 'area2'])
@@ -805,7 +805,7 @@ def save_area_pair_info(epoch_key, tetrode_info):
     with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
             simplefilter('ignore')
-            store.put('/area_pair_info', get_area_pair_info(
+            store.put('/area_pair_info', make_area_pair_info(
                 tetrode_info, epoch_key))
 
 
