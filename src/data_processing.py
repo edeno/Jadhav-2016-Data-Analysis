@@ -315,7 +315,7 @@ def make_epochs_dataframe(animals, days):
                                   'day': day,
                                   'epoch_ind': epoch_ind + 1}
                                  for day_structure, animal, day in tasks
-                                 for epoch_ind, epoch in enumerate(
+                                 for epoch_ind, _ in enumerate(
         day_structure)])
 
     return (pd.concat(
