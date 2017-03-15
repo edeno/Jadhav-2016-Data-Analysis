@@ -692,13 +692,15 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     decision_state_probability = [
         _compute_decision_state_probability(density, n_states)
         for density in posterior_density]
-
+    index = pd.MultiIndex.from_tuples(
+        [(*epoch_key, ripple+1) for ripple in range(n_ripples)],
+        names=['animal', 'day', 'epoch', 'ripple_number'])
     ripple_info = pd.DataFrame(
         [_compute_max_state(probability, state_names)
          for probability in decision_state_probability],
         columns=['ripple_trajectory', 'ripple_direction',
                  'ripple_state_probability'],
-        index=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
+        index=index)
     ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
     ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
     ripple_info['number_of_unique_neurons_spiking'] = [
