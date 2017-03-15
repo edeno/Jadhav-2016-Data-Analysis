@@ -2,7 +2,7 @@
 
 '''
 from copy import deepcopy
-from functools import wraps, partial
+from functools import partial, wraps
 from itertools import combinations
 from logging import getLogger
 
@@ -259,7 +259,7 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
         save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode1, tetrode1, _get_power_spectrum(
-                            coherence_change, 'power_spectrum1'))
+            coherence_change, 'power_spectrum1'))
         # Save power for tetrode2
         save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'baseline', tetrode2, tetrode2,
@@ -272,7 +272,7 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
         save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode2, tetrode2, _get_power_spectrum(
-                            coherence_change, 'power_spectrum2'))
+            coherence_change, 'power_spectrum2'))
 
 
 def ripple_triggered_group_delay(tetrode_pair_info,
