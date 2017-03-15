@@ -519,10 +519,10 @@ def multitaper_coherence(time_series, sampling_frequency=1000,
         _cross_spectrum(complex_spectra[0][frequency_index, :, :],
                         complex_spectra[1][frequency_index, :, :]))
     spectrum = [_average_over_trials_and_tapers(
-                    _cross_spectrum(
-                        complex_spectrum[frequency_index, :, :],
-                        complex_spectrum[frequency_index, :, :]))
-                for complex_spectrum in complex_spectra]
+        _cross_spectrum(
+            complex_spectrum[frequency_index, :, :],
+            complex_spectrum[frequency_index, :, :]))
+        for complex_spectrum in complex_spectra]
 
     coherency = cross_spectrum / np.sqrt(spectrum[0] * spectrum[1])
     coherence_magnitude = np.abs(coherency)
@@ -678,7 +678,7 @@ def group_delay(coherence_dataframe):
         'n_points': coherence_dataframe.shape[0],
         'slope': slope,
         'delay': slope / (2 * np.pi)
-        }, index=[0])
+    }, index=[0])
 
 
 def group_delay_over_time(coherogram_dataframe):
@@ -933,7 +933,7 @@ def get_frequency_resolution(time_window_duration,
 
 
 def _get_normal_distribution_p_values(data, mean=0, std_deviation=1):
-        return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
+    return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
 
 
 def _get_multitaper_bias(n_trials, n_tapers):
