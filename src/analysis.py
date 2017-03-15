@@ -75,17 +75,20 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 [ripple_locked_lfps[tetrode1],
                  ripple_locked_lfps[tetrode2]],
                 **params)
-            save_tetrode_pair(multitaper_parameter_name + '/coherence',
-                              ripple_covariate, level_name, tetrode1,
-                              tetrode2, coherence_df)
-            save_tetrode_pair(multitaper_parameter_name + '/coherence',
-                              ripple_covariate, level_name, tetrode1,
-                              tetrode1, _get_power_spectrum(
-                                coherence_df, 'power_spectrum1'))
-            save_tetrode_pair(multitaper_parameter_name + '/coherence',
-                              ripple_covariate, level_name, tetrode2,
-                              tetrode2, _get_power_spectrum(
-                                coherence_df, 'power_spectrum2'))
+            save_tetrode_pair(
+                '{}/coherence'.format(multitaper_parameter_name),
+                ripple_covariate, level_name, tetrode1,
+                tetrode2, coherence_df)
+            save_tetrode_pair(
+                '{}/power'.format(multitaper_parameter_name),
+                ripple_covariate, level_name, tetrode1,
+                tetrode1, _get_power_spectrum(
+                    coherence_df, 'power_spectrum1'))
+            save_tetrode_pair(
+                '{}/power'.format(multitaper_parameter_name),
+                ripple_covariate, level_name, tetrode2,
+                tetrode2, _get_power_spectrum(
+                    coherence_df, 'power_spectrum2'))
     logger.info(
         'Computing the difference in coherence between all levels:')
     for level1, level2 in combinations(
@@ -100,26 +103,26 @@ def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
                 '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
                     tetrode1=tetrode1, tetrode2=tetrode2))
             level1_coherence_df = get_tetrode_pair_from_hdf(
-                multitaper_parameter_name + '/coherence', ripple_covariate,
-                level1, tetrode1, tetrode2)
+                '{}/coherence'.format(multitaper_parameter_name),
+                ripple_covariate, level1, tetrode1, tetrode2)
             level2_coherence_df = get_tetrode_pair_from_hdf(
-                multitaper_parameter_name + '/coherence', ripple_covariate,
-                level2, tetrode1, tetrode2)
+                '{}/coherence'.format(multitaper_parameter_name),
+                ripple_covariate, level2, tetrode1, tetrode2)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_tetrode_pair(
-                multitaper_parameter_name + '/coherence', ripple_covariate,
-                level_difference_name, tetrode1, tetrode2,
-                coherence_difference_df)
+                '{}/coherence'.format(multitaper_parameter_name),
+                ripple_covariate, level_difference_name, tetrode1,
+                tetrode2, coherence_difference_df)
             save_tetrode_pair(
-                multitaper_parameter_name + '/coherence', ripple_covariate,
-                level_difference_name, tetrode1, tetrode1,
-                _get_power_spectrum(
+                '{}/power'.format(multitaper_parameter_name),
+                ripple_covariate, level_difference_name, tetrode1,
+                tetrode1, _get_power_spectrum(
                     coherence_difference_df, 'power_spectrum1'))
             save_tetrode_pair(
-                multitaper_parameter_name, ripple_covariate,
-                level_difference_name, tetrode2, tetrode2,
-                _get_power_spectrum(
+                '{}/power'.format(multitaper_parameter_name),
+                ripple_covariate, level_difference_name, tetrode2,
+                tetrode2, _get_power_spectrum(
                     coherence_difference_df, 'power_spectrum2'))
 
 
@@ -235,38 +238,38 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
             coherence_baseline, coherogram)
 
         # Save coherence
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
                           'all_ripples', 'baseline', tetrode1, tetrode2,
                           coherence_baseline)
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_locked', tetrode1,
                           tetrode2, coherogram)
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode1, tetrode2, coherence_change)
         # Save power for tetrode1
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'baseline', tetrode1, tetrode1,
                           _get_power_spectrum(
-                            coherence_baseline, 'power_spectrum1'))
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+            coherence_baseline, 'power_spectrum1'))
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_locked', tetrode1,
                           tetrode1, _get_power_spectrum(
-                            coherogram, 'power_spectrum1'))
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+            coherogram, 'power_spectrum1'))
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode1, tetrode1, _get_power_spectrum(
                             coherence_change, 'power_spectrum1'))
         # Save power for tetrode2
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'baseline', tetrode2, tetrode2,
                           _get_power_spectrum(
-                            coherence_baseline, 'power_spectrum2'))
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+            coherence_baseline, 'power_spectrum2'))
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_locked', tetrode2,
                           tetrode2, _get_power_spectrum(
-                            coherogram, 'power_spectrum2'))
-        save_tetrode_pair(multitaper_parameter_name + '/coherence',
+            coherogram, 'power_spectrum2'))
+        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
                           'all_ripples', 'ripple_difference_from_baseline',
                           tetrode2, tetrode2, _get_power_spectrum(
                             coherence_change, 'power_spectrum2'))
@@ -305,13 +308,14 @@ def estimate_group_delay_by_tetrode(tetrode1, tetrode2, covariate,
                                     frequency_band, frequency_band_name,
                                     alpha=0.01):
     coherogram = get_tetrode_pair_from_hdf(
-        multitaper_parameter_name + '/coherence', covariate, level,
+        '{}/coherence'.format(multitaper_parameter_name), covariate, level,
         tetrode1, tetrode2)
     group_delay = estimate_significant_group_delay(
         coherogram.loc(axis=0)[slice(*frequency_band), :], alpha=alpha)
-    save_tetrode_pair(multitaper_parameter_name + '/group_delay/' +
-                      frequency_band_name, covariate, level, tetrode1,
-                      tetrode2, group_delay)
+    if not group_delay.empty:
+        save_tetrode_pair('{}/group_delay/{}'.format(
+            multitaper_parameter_name, frequency_band_name), covariate,
+            level, tetrode1, tetrode2, group_delay)
 
 
 def _get_power_spectrum(df, spectrum_name):
