@@ -837,6 +837,24 @@ def get_all_tetrode_info():
                       for filename in hdf5_files]).sort_index()
 
 
+def get_all_area_pair_info():
+    '''Retrieves all the hdf5 files from the Processed Data directory
+    and returns the tetrode pair info dataframe'''
+    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob(file_path)
+    return pd.concat([pd.read_hdf(filename, key='/area_pair_info')
+                      for filename in hdf5_files]).sort_index()
+
+
+def get_all_ripple_info():
+    '''Retrieves all the hdf5 files from the Processed Data directory
+    and returns the tetrode pair info dataframe'''
+    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
+    hdf5_files = glob(file_path)
+    return pd.concat([pd.read_hdf(filename, key='/ripple_info')
+                      for filename in hdf5_files]).sort_index()
+
+
 def get_ripple_info(epoch_key):
     '''Retrieves ripple info dataframe given an epoch'''
     file_name = '{}_{:02d}_{:02d}.h5'.format(*epoch_key)
