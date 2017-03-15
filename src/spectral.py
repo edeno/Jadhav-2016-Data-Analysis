@@ -96,18 +96,18 @@ def _get_window_array(data, time_window_start_ind, time_window_end_ind,
 
 
 def _make_sliding_window_dataframe(func, data, time_window_duration,
-                                   time_window_step, time_step_length,
-                                   time_window_length, time, axis,
-                                   **kwargs):
+                                   time_window_step,
+                                   n_samples_per_time_step, n_time_samples,
+                                   time, axis=0, **kwargs):
     ''' Generator function that returns a transformed dataframe (via func)
     for each sliding time window.
     '''
     time_window_start_ind = 0
     while (time_window_start_ind +
-           time_window_length) <= data[0].shape[axis]:
+           n_time_samples) <= data[0].shape[axis]:
         try:
             time_window_end_ind = (time_window_start_ind +
-                                   time_window_length)
+                                   n_time_samples)
             windowed_arrays = _get_window_array(
                 data, time_window_start_ind, time_window_end_ind,
                 axis=axis)
@@ -117,7 +117,7 @@ def _make_sliding_window_dataframe(func, data, time_window_duration,
                 time=_get_window_center(
                     time_window_start_ind, time_window_duration, time))
                    .set_index('time', append=True))
-            time_window_start_ind += time_step_length
+            time_window_start_ind += n_samples_per_time_step
         except ValueError:
             # Not enough data points
             raise StopIteration
@@ -176,38 +176,26 @@ def multitaper_spectrogram(time_series, sampling_frequency=1000,
         Allows the user to specify the number of fft samples.
 
     '''
-    time_step_length, time_window_length = _get_window_lengths(
-        time_window_duration,
-        sampling_frequency,
-        time_window_step)
+    n_samples_per_time_step, n_time_samples = _get_window_lengths(
+        time_window_duration, sampling_frequency, time_window_step)
     (tapers, n_fft_samples,
      frequencies, frequency_index) = _set_default_multitaper_parameters(
-            n_time_samples=time_window_length,
-            sampling_frequency=sampling_frequency,
-            tapers=tapers,
-            n_tapers=n_tapers,
-            time_halfbandwidth_product=time_halfbandwidth_product,
-            desired_frequencies=desired_frequencies,
-            pad=pad)
-    return pd.concat(list(_make_sliding_window_dataframe(
-        multitaper_power_spectral_density,
-        [time_series],
-        time_window_duration,
-        time_window_step,
-        time_step_length,
-        time_window_length,
-        time,
-        axis=0,
+        n_time_samples=n_time_samples,
+        sampling_frequency=sampling_frequency,
+        tapers=tapers, n_tapers=n_tapers,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        desired_frequencies=desired_frequencies, pad=pad)
+    psd_kwargs = dict(
         sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
-        n_tapers=n_tapers,
-        pad=pad,
-        tapers=tapers,
-        frequencies=frequencies,
-        frequency_index=frequency_index,
-        n_fft_samples=n_fft_samples))
-    ).sort_index()
+        n_tapers=n_tapers, pad=pad, tapers=tapers, frequencies=frequencies,
+        frequency_index=frequency_index, n_fft_samples=n_fft_samples
+    )
+    return pd.concat(list(_make_sliding_window_dataframe(
+        multitaper_power_spectral_density, [time_series],
+        time_window_duration, time_window_step, n_samples_per_time_step,
+        n_time_samples, time, axis=0, **psd_kwargs))).sort_index()
 
 
 def _set_default_multitaper_parameters(
@@ -260,12 +248,13 @@ def _set_default_multitaper_parameters(
 def _get_window_lengths(time_window_duration, sampling_frequency,
                         time_window_step):
     '''Figures out the number of points per time window and step'''
-    time_window_length = int(
+    n_time_samples = int(
         np.fix(time_window_duration * sampling_frequency))
     if time_window_step is None:
         time_window_step = time_window_duration
-    time_step_length = int(np.fix(time_window_step * sampling_frequency))
-    return time_step_length, time_window_length
+    n_samples_per_time_step = int(
+        np.fix(time_window_step * sampling_frequency))
+    return n_samples_per_time_step, n_time_samples
 
 
 def _get_unique_time_freq(dataframe):
@@ -618,20 +607,20 @@ def multitaper_coherogram(
         The labels for the time axis.
 
     '''
-    time_step_length, time_window_length = _get_window_lengths(
+    n_samples_per_time_step, n_time_samples = _get_window_lengths(
         time_window_duration,
         sampling_frequency,
         time_window_step)
     tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
-            n_time_samples=time_window_length,
+            n_time_samples=n_time_samples,
             sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies, pad=pad))
     return pd.concat(list(_make_sliding_window_dataframe(
         multitaper_coherence, time_series, time_window_duration,
-        time_window_step, time_step_length, time_window_length, time,
+        time_window_step, n_samples_per_time_step, n_time_samples, time,
         axis=0, sampling_frequency=sampling_frequency,
         desired_frequencies=desired_frequencies,
         time_halfbandwidth_product=time_halfbandwidth_product,
@@ -814,8 +803,8 @@ def multitaper_canonical_coherence(
          'n_trials': _get_number_of_trials(time_series_groups),
          'n_tapers': tapers.shape[1],
          'frequency_resolution': get_frequency_resolution(
-              (n_time_samples - 1) / sampling_frequency,
-              time_halfbandwidth_product)
+             (n_time_samples - 1) / sampling_frequency,
+             time_halfbandwidth_product)
          }).set_index('frequency')
 
 
@@ -830,13 +819,13 @@ def multitaper_canonical_coherogram(time_series_groups,
                                     pad=0,
                                     tapers=None,
                                     time=None):
-    time_step_length, time_window_length = _get_window_lengths(
+    n_samples_per_time_step, n_time_samples = _get_window_lengths(
         time_window_duration,
         sampling_frequency,
         time_window_step)
     tapers, n_fft_samples, frequencies, frequency_index = (
         _set_default_multitaper_parameters(
-            n_time_samples=time_window_length,
+            n_time_samples=n_time_samples,
             sampling_frequency=sampling_frequency, tapers=tapers,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
@@ -844,14 +833,14 @@ def multitaper_canonical_coherogram(time_series_groups,
     return pd.concat(list(
         _make_sliding_window_dataframe(
             multitaper_canonical_coherence, time_series_groups,
-            time_window_duration, time_window_step, time_step_length,
-            time_window_length, time, axis=1,
             sampling_frequency=sampling_frequency,
             desired_frequencies=desired_frequencies,
             time_halfbandwidth_product=time_halfbandwidth_product,
             n_tapers=n_tapers, pad=pad, tapers=tapers,
             frequencies=frequencies, frequency_index=frequency_index,
             n_fft_samples=n_fft_samples
+            time_window_duration, time_window_step,
+            n_samples_per_time_step, n_time_samples, time, axis=1,
         ))).sort_index()
 
 
