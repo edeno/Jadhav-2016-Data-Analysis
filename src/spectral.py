@@ -830,17 +830,20 @@ def multitaper_canonical_coherogram(time_series_groups,
             n_tapers=n_tapers,
             time_halfbandwidth_product=time_halfbandwidth_product,
             desired_frequencies=desired_frequencies, pad=pad))
+    canoncial_coherence_kwargs = dict(
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies,
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        n_tapers=n_tapers, pad=pad, tapers=tapers,
+        frequencies=frequencies, frequency_index=frequency_index,
+        n_fft_samples=n_fft_samples
+    )
     return pd.concat(list(
         _make_sliding_window_dataframe(
             multitaper_canonical_coherence, time_series_groups,
-            sampling_frequency=sampling_frequency,
-            desired_frequencies=desired_frequencies,
-            time_halfbandwidth_product=time_halfbandwidth_product,
-            n_tapers=n_tapers, pad=pad, tapers=tapers,
-            frequencies=frequencies, frequency_index=frequency_index,
-            n_fft_samples=n_fft_samples
             time_window_duration, time_window_step,
             n_samples_per_time_step, n_time_samples, time, axis=1,
+            **canoncial_coherence_kwargs
         ))).sort_index()
 
 
