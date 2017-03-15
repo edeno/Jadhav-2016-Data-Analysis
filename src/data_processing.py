@@ -629,10 +629,10 @@ def _get_computed_ripple_times(tetrode_tuple, animals):
     ripples_data = get_data_structure(
         animals[animal], day, 'ripples', 'ripples')
     return zip(
-        ripples_data[epoch_ind - 1][0][tetrode_number -
-                                       1]['starttime'][0, 0].flatten(),
-        ripples_data[epoch_ind - 1][0][tetrode_number
-                                       - 1]['endtime'][0, 0].flatten())
+        ripples_data[epoch - 1][0][tetrode_number - 1]['starttime'][
+            0, 0].flatten(),
+        ripples_data[epoch - 1][0][tetrode_number - 1]['endtime'][
+            0, 0].flatten())
 
 
 def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
@@ -869,7 +869,7 @@ def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
         pd.Index.union)
     return {brain_area_pair: get_tetrode_pair_group_from_hdf(
         brain_area_pairs[brain_area_pair],
-        multitaper_parameter_name,
+        '{}/coherence'.format(multitaper_parameter_name),
         covariate, difference_level).mean(axis=0)
         for brain_area_pair in brain_area_pairs}
 
