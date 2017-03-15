@@ -10,29 +10,26 @@ import numpy as np
 import pandas as pd
 from dask import async, compute, delayed
 
-from src.data_processing import (get_interpolated_position_dataframe,
-                                 get_LFP_dataframe, get_lfps_by_area,
-                                 get_mark_indicator_dataframe,
-                                 get_spike_indicator_dataframe,
-                                 make_neuron_dataframe,
-                                 make_tetrode_dataframe,
-                                 reshape_to_segments, save_tetrode_pair,
-                                 get_tetrode_pair_from_hdf,
-                                 save_area_pair,
-                                 get_area_pair_from_hdf,
-                                 save_area_pair_info)
-from src.ripple_decoding import (_get_bin_centers, combined_likelihood,
-                                 estimate_marked_encoding_model,
-                                 estimate_sorted_spike_encoding_model,
-                                 estimate_state_transition, predict_state,
-                                 set_initial_conditions)
-from src.ripple_detection import Kay_method
-from src.spectral import (fisher_z_transform,
-                          filter_significant_groups,
-                          group_delay_over_time,
-                          multitaper_canonical_coherogram,
-                          multitaper_coherogram,
-                          power_and_coherence_change)
+from .data_processing import (get_area_pair_from_hdf,
+                              get_interpolated_position_dataframe,
+                              get_LFP_dataframe, get_lfps_by_area,
+                              get_mark_indicator_dataframe,
+                              get_spike_indicator_dataframe,
+                              get_tetrode_pair_from_hdf,
+                              make_neuron_dataframe,
+                              make_tetrode_dataframe, reshape_to_segments,
+                              save_area_pair, save_area_pair_info,
+                              save_tetrode_pair)
+from .ripple_decoding import (combined_likelihood,
+                              estimate_marked_encoding_model,
+                              estimate_sorted_spike_encoding_model,
+                              estimate_state_transition, get_bin_centers,
+                              predict_state, set_initial_conditions)
+from .ripple_detection import Kay_method
+from .spectral import (filter_significant_groups, fisher_z_transform,
+                       group_delay_over_time,
+                       multitaper_canonical_coherogram,
+                       multitaper_coherogram, power_and_coherence_change)
 
 logger = getLogger(__name__)
 
