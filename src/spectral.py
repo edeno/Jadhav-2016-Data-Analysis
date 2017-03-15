@@ -26,7 +26,9 @@ from matplotlib.colors import LogNorm
 from scipy.fftpack import fft
 from scipy.ndimage import measurements
 from scipy.stats import linregress, norm
+from scipy.linalg import det
 
+from nitime.algorithms import MAR_est_LWR, granger_causality_xy
 from nitime.algorithms.spectral import dpss_windows
 
 
@@ -1065,3 +1067,122 @@ def filter_significant_groups(is_significant, frequency_resolution):
             .groupby(significant_groups)
             .transform(_less_than_frequency_resolution)
             .sort_index())
+
+
+@convert_pandas
+def spectral_granger(time_series, n_fft_samples=None, model_order=3,
+                     sampling_frequency=1000, frequencies=None, pad=0,
+                     desired_frequencies=None, frequency_index=None):
+    '''Parametric granger causality
+
+    Parameters
+    ----------
+    time_series : 2-element list of arrays, shape (n_time_samples,
+                                                   n_trials)
+    n_fft_samples : int, optional
+        Number of frequency samples.
+    model_order : int or 2-element list or tuple, optional
+        Order of the autoregressive model. If a 2-element list or tuple is
+        given, the order with the smallest AIC will be chosen.
+    sampling_frequency : int, optional
+        Number of samples per time
+    frequencies : array_like, optional
+    pad : int, optional
+    desired_frequencies : 2-element array_like, optional
+
+    Returns
+    -------
+    spectral_granger_causality : pandas DataFrame
+
+    '''
+    time_series = np.stack([_subtract_mean(series)
+                            for series in time_series])
+    n_signals, n_time_samples, n_trials = time_series.shape
+    if pad is None:
+        pad = -1
+    if n_fft_samples is None:
+        next_exponent = _nextpower2(n_time_samples)
+        n_fft_samples = max(2 ** (next_exponent + pad), n_time_samples)
+    if frequencies is None:
+        frequencies, frequency_index = _get_frequencies(
+            sampling_frequency, n_fft_samples,
+            desired_frequencies=desired_frequencies)
+    try:
+        AIC_by_order = [estimate_AIC(time_series, order, n_signals,
+                                     n_time_samples, n_trials)
+                        for order in range(*model_order)]
+        best_AIC_index = AIC_by_order.index(
+            min(AIC_by_order, key=lambda x: x[0]))
+        _, AR_coefficients, noise_covariance = AIC_by_order[best_AIC_index]
+    except TypeError:
+        AR_coefficients, noise_covariance = estimate_AR_fit(
+            time_series, model_order, n_trials)
+    normalized_freq, granger_12, granger_21, _, _ = granger_causality_xy(
+        AR_coefficients, noise_covariance,
+        n_freqs=n_fft_samples)
+    frequency = pd.Index(
+        (normalized_freq * sampling_frequency) / (2 * np.pi),
+        name='frequency')
+
+    return pd.DataFrame(
+        dict(granger_causality_12=granger_12[frequency_index],
+             granger_causality_21=granger_21[frequency_index]),
+        index=frequency[frequency_index])
+
+
+def estimate_AR_fit(time_series, model_order, n_trials):
+    AR_fit = [MAR_est_LWR(time_series[:, :, trial],
+                          order=model_order)
+              for trial in range(n_trials)]
+    trial_averaged_AR_coefficients = np.mean(
+        [trial_fit[0] for trial_fit in AR_fit], axis=0)
+    trial_averaged_noise_covariance = np.mean(
+        [trial_fit[1] for trial_fit in AR_fit], axis=0)
+    return trial_averaged_AR_coefficients, trial_averaged_noise_covariance
+
+
+def estimate_AIC(time_series, model_order, n_signals, n_time_samples,
+                 n_trials):
+    AR_coefficients, noise_covariance = estimate_AR_fit(
+        time_series, model_order, n_trials)
+    print(AR_coefficients.shape)
+    AIC = spectral_granger_AIC(
+        noise_covariance, model_order, n_signals, n_time_samples, n_trials)
+    return AIC, AR_coefficients, noise_covariance
+
+
+@convert_pandas
+def spectral_grangerogram(time_series, model_order=3,
+                          sampling_frequency=1000, time_window_duration=1,
+                          time_window_step=None, desired_frequencies=None,
+                          pad=0, time=None):
+    n_samples_per_time_step, n_time_samples = _get_window_lengths(
+        time_window_duration,
+        sampling_frequency,
+        time_window_step)
+    if pad is None:
+        pad = -1
+    next_exponent = _nextpower2(n_time_samples)
+    n_fft_samples = max(2 ** (next_exponent + pad), n_time_samples)
+    frequencies, frequency_index = _get_frequencies(
+        sampling_frequency, n_fft_samples,
+        desired_frequencies=desired_frequencies)
+    granger_kwargs = dict(
+        sampling_frequency=sampling_frequency,
+        desired_frequencies=desired_frequencies, pad=pad,
+        frequencies=frequencies, frequency_index=frequency_index,
+        n_fft_samples=n_fft_samples, model_order=model_order
+    )
+    return pd.concat(list(
+        _make_sliding_window_dataframe(
+            spectral_granger, time_series,
+            time_window_duration, time_window_step,
+            n_samples_per_time_step, n_time_samples, time, axis=0,
+            **granger_kwargs
+        ))).sort_index()
+
+
+def spectral_granger_AIC(noise_covariance, model_order, n_signals,
+                         n_time_samples, n_trials):
+    return 2 * np.log(det(noise_covariance)) + (
+        2 * model_order * n_signals ** 2) / (n_time_samples * n_trials)
