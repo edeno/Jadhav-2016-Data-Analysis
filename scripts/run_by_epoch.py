@@ -9,14 +9,11 @@ from sys import exit, stdout
 from src.analysis import (canonical_coherence_by_ripple_type,
                           coherence_by_ripple_type,
                           decode_ripple_clusterless,
-                          detect_epoch_ripples,
+                          detect_epoch_ripples, group_delay_by_ripple_type,
                           ripple_triggered_canonical_coherence,
-                          ripple_triggered_coherence)
-from src.data_processing import (save_ripple_info,
-                                 save_multitaper_parameters,
-                                 save_tetrode_pair_info,
-                                 make_tetrode_dataframe,
-                                 get_LFP_dataframe,
+                          ripple_triggered_coherence,
+                          ripple_triggered_group_delay)
+from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
                                  make_tetrode_pair_info,
                                  save_multitaper_parameters,
                                  save_ripple_info,
@@ -51,6 +48,10 @@ def estimate_ripple_coherence(epoch_key):
             lfps, epoch_key, tetrode_info, ripple_times,
             multitaper_parameter_name=parameters_name,
             multitaper_params=parameters)
+        for frequency_band_name, frequency_band in FREQUENCY_BANDS.items():
+            ripple_triggered_group_delay(
+                tetrode_pair_info, parameters_name, frequency_band,
+                frequency_band_name, alpha=ALPHA)
         save_multitaper_parameters(
             epoch_key, parameters_name, parameters)
 
@@ -69,6 +70,11 @@ def estimate_ripple_coherence(epoch_key):
                 lfps, epoch_key, tetrode_info, ripple_info, covariate,
                 multitaper_parameter_name=parameters_name,
                 multitaper_params=parameters)
+            for frequency_band_name, frequency_band in FREQUENCY_BANDS.items():
+                group_delay_by_ripple_type(
+                    tetrode_pair_info, ripple_info, covariate,
+                    parameters_name, frequency_band, frequency_band_name,
+                    alpha=ALPHA)
 
 
 def get_command_line_arguments():
