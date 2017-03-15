@@ -498,7 +498,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
                          for ripple_spikes in test_spikes]
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index)
+        state_names, position_info.index, epoch_key)
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -668,7 +668,7 @@ def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, session_time):
+                    state_names, session_time, epoch_key):
     '''Summary statistics for ripple categories
 
     Parameters
