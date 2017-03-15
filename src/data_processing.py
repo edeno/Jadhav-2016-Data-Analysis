@@ -556,12 +556,12 @@ def make_tetrode_pair_info(tetrode_info):
 def make_area_pair_info(tetrode_info, epoch_key):
     area_pairs = area_pairs = list(combinations(
         sorted(tetrode_info.area.unique()), 2))
-    return (pd.DataFrame(area_pairs, columns=['area1', 'area2'])
+    return (pd.DataFrame(area_pairs, columns=['area_1', 'area_2'])
             .assign(animal=epoch_key[0],
                     day=epoch_key[1],
                     epoch=epoch_key[2])
-            .set_index(
-                ['animal', 'day', 'epoch', 'area1', 'area2'], drop=False))
+            .set_index(['animal', 'day', 'epoch', 'area_1', 'area_2'],
+                       drop=False))
 
 
 def get_mark_dataframe(tetrode_key, animals):
