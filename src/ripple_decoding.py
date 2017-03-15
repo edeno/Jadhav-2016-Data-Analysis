@@ -661,3 +661,24 @@ def _normal_pdf(x, mean=0, std_deviation=1):
     '''
     u = (x - mean) / std_deviation
     return np.exp(-0.5 * u ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
+
+
+def _gaussian_kernel(data, means, std_deviation=1):
+    n_means, n_data = means.shape[0], data.shape[0]
+    means = np.tile(means, (n_data, 1))
+    data = np.tile(data, (n_means, 1)).T
+    return _normal_pdf(data, mean=means, std_deviation=std_deviation)
+
+
+def estimate_marginalized_joint_mark_intensity(
+    mark_bin_edges, place_bin_edges, marks, position_at_spike,
+        all_positions, mark_std_deviation, place_std_deviation):
+
+    mark_at_spike = _gaussian_kernel(mark_bin_edges, marks,
+                                     mark_std_deviation)
+    place_at_spike = _gaussian_kernel(place_bin_edges, position_at_spike,
+                                      place_std_deviation)
+    place_occupancy = _gaussian_kernel(place_bin_edges, all_positions,
+                                       place_std_deviation).sum(axis=1)
+    return (np.dot(place_at_spike, mark_at_spike.T) /
+            place_occupancy[:, np.newaxis])
