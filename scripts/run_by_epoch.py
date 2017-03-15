@@ -1,7 +1,6 @@
 '''Exectue set of functions for each epoch
 '''
 from argparse import ArgumentParser
-from collections import namedtuple
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
@@ -19,98 +18,19 @@ from src.data_processing import (save_ripple_info,
                                  make_tetrode_dataframe,
                                  get_LFP_dataframe,
                                  make_tetrode_pair_info,
-                                 save_tetrode_info)
-
-sampling_frequency = 1500
-Animal = namedtuple('Animal', {'directory', 'short_name'})
-animals = {
-    'HPa': Animal(directory='HPa_direct', short_name='HPa'),
-    'HPb': Animal(directory='HPb_direct', short_name='HPb'),
-    'HPc': Animal(directory='HPc_direct', short_name='HPc')
-}
-ripple_frequency = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.020,
-    time_window_step=0.020,
-    desired_frequencies=(100, 300),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.420, 0.400)
-)
-gamma_frequency_highTimeRes = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.050,
-    time_window_step=0.050,
-    desired_frequencies=(12, 125),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.450, 0.400)
-)
-gamma_frequency_medFreqRes1 = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.100,
-    time_window_step=0.100,
-    desired_frequencies=(12, 125),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.500, 0.400)
-)
-gamma_frequency_medFreqRes2 = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.200,
-    time_window_step=0.200,
-    desired_frequencies=(12, 125),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.600, 0.400)
-)
-gamma_frequency_highFreqRes = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.400,
-    time_window_step=0.400,
-    desired_frequencies=(12, 125),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.800, 0.400)
-)
-low_frequency_highTimeRes = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.100,
-    time_window_step=0.100,
-    desired_frequencies=(0, 30),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.500, 0.400)
-)
-low_frequency_medFreqRes = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.250,
-    time_window_step=0.250,
-    desired_frequencies=(0, 30),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-0.750, 0.250)
-)
-low_frequency_highFreqRes = dict(
-    sampling_frequency=sampling_frequency,
-    time_window_duration=0.500,
-    time_window_step=0.500,
-    desired_frequencies=(0, 30),
-    time_halfbandwidth_product=1,
-    window_of_interest=(-1.00, 0.500)
-)
-multitaper_parameters = {
-    'gamma_frequency_medFreqRes1': gamma_frequency_medFreqRes1,
-    'gamma_frequency_medFreqRes2': gamma_frequency_medFreqRes2,
-    'gamma_frequency_highTimeRes': gamma_frequency_highTimeRes,
-    'gamma_frequency_highFreqRes': gamma_frequency_highFreqRes,
-    'low_frequencies_highTimeRes': low_frequency_highTimeRes,
-    'low_frequencies_medFreqRes': low_frequency_medFreqRes,
-    'low_frequencies_highFreqRes': low_frequency_highFreqRes,
-    'ripple_frequencies': ripple_frequency
-}
-ripple_covariates = ['session_time', 'ripple_trajectory',
-                     'ripple_direction']
+                                 save_multitaper_parameters,
+                                 save_ripple_info,
+                                 save_tetrode_info, save_tetrode_pair_info)
+from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
+                            MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
+                            RIPPLE_COVARIATES, ALPHA)
 
 
 def estimate_ripple_coherence(epoch_key):
     ripple_times = detect_epoch_ripples(
-        epoch_key, animals, sampling_frequency=sampling_frequency)
+        epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
-    tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
+    tetrode_info = make_tetrode_dataframe(ANIMALS)[epoch_key]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
     save_tetrode_info(epoch_key, tetrode_info)
@@ -118,11 +38,11 @@ def estimate_ripple_coherence(epoch_key):
     tetrode_pair_info = make_tetrode_pair_info(tetrode_info)
     save_tetrode_pair_info(epoch_key, tetrode_pair_info)
 
-    lfps = {tetrode_key: get_LFP_dataframe(tetrode_key, animals)
+    lfps = {tetrode_key: get_LFP_dataframe(tetrode_key, ANIMALS)
             for tetrode_key in tetrode_info.index}
 
     # Compare before ripple to after ripple
-    for parameters_name, parameters in multitaper_parameters.items():
+    for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
         ripple_triggered_coherence(
             lfps, ripple_times,
             multitaper_parameter_name=parameters_name,
@@ -136,11 +56,11 @@ def estimate_ripple_coherence(epoch_key):
 
     # Compare different types of ripples
     ripple_info = decode_ripple_clusterless(
-        epoch_key, animals, ripple_times)[0]
+        epoch_key, ANIMALS, ripple_times)[0]
     save_ripple_info(epoch_key, ripple_info)
 
-    for covariate in ripple_covariates:
-        for parameters_name, parameters in multitaper_parameters.items():
+    for covariate in RIPPLE_COVARIATES:
+        for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             coherence_by_ripple_type(
                 lfps, ripple_info, covariate,
                 multitaper_parameter_name=parameters_name,

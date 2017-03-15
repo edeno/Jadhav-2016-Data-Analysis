@@ -1,12 +1,12 @@
 '''Script for executing run_by_epoch on the cluster
 '''
-from collections import namedtuple
 from os import getcwd, makedirs
 from os.path import join
 from subprocess import run
 from sys import exit
 
 from src.data_processing import make_epochs_dataframe
+from src.parameters import ANIMALS, N_DAYS
 
 
 def main():
@@ -20,14 +20,7 @@ def main():
                   '-notify '
                   '-l mem_per_core=3G')
 
-    Animal = namedtuple('Animal', {'directory', 'short_name'})
-    num_days = 8
-    days = range(1, num_days + 1)
-    animals = {'HPa': Animal(directory='HPa_direct', short_name='HPa'),
-               'HPb': Animal(directory='HPb_direct', short_name='HPb'),
-               'HPc': Animal(directory='HPc_direct', short_name='HPc')
-               }
-    epoch_info = make_epochs_dataframe(animals, days)
+    epoch_info = make_epochs_dataframe(ANIMALS, range(1, N_DAYS + 1))
     epoch_keys = epoch_info[(epoch_info.type == 'run') & (
         epoch_info.environment != 'lin')].index
 
