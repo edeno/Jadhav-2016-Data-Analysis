@@ -439,7 +439,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     tetrode_info = make_tetrode_dataframe(animals)[
         epoch_key]
     neuron_info = pd.merge(tetrode_info, neuron_info,
-                           on=['animal', 'day', 'epoch_ind',
+                           on=['animal', 'day', 'epoch',
                                'tetrode_number', 'area'],
                            how='right', right_index=True).set_index(
         neuron_info.index)
