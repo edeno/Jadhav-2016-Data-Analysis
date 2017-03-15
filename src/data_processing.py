@@ -898,7 +898,7 @@ def get_brain_area_power(multitaper_parameter_name, covariate, level,
 
 def merge_symmetric_key_pairs(pair_dict):
     '''If a 2-element key is the same except for the order, merge the
-    Pandas index corresponding to the key.
+    values.
 
     For example, a dictionary with keys ('a', 'b') and ('b', 'a') will be
     combined into a key ('a', 'b')
@@ -906,8 +906,9 @@ def merge_symmetric_key_pairs(pair_dict):
     Parameters
     ----------
     pair_dict : dict
-        A dictionary with keys that are 2-element tuples and values that
-        are a Pandas index.
+        A dictionary with keys that are 2-element tuples
+    merge_function : func
+        If 2-elements are symmetrically similar, merge them
 
     Returns
     -------
@@ -920,7 +921,7 @@ def merge_symmetric_key_pairs(pair_dict):
                      ('a', 'b'): pd.Index([4, 5, 6]),
                      ('b', 'a'): pd.Index([7, 8, 9]),
                      ('b', 'c'): pd.Index([10, 11, 12])}
-    >>> merge_symmetric_key_pairs(test_dict)
+    >>> merge_symmetric_key_pairs(test_dict, pd.Index.union)
     {('a', 'a'): Int64Index([1, 2, 3], dtype='int64'),
      ('a', 'b'): Int64Index([4, 5, 6, 7, 8, 9], dtype='int64'),
      ('b', 'c'): Int64Index([10, 11, 12], dtype='int64')}
@@ -935,8 +936,8 @@ def merge_symmetric_key_pairs(pair_dict):
         elif ((area2, area1) in pair_dict and
               (area1, area2) not in skip_list):
             skip_list.append((area2, area1))
-            merged_dict[(area1, area2)] = pair_dict[
-                (area1, area2)].union(pair_dict[(area2, area1)])
+            merged_dict[(area1, area2)] = merge_function(
+                pair_dict[(area1, area2)], pair_dict[(area2, area1)])
         elif (area1, area2) not in skip_list:
             merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
 

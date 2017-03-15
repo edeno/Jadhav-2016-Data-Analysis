@@ -68,7 +68,7 @@ def test_merge_symmetric_key_pairs():
                  ('a', 'b'): pd.Index([4, 5, 6]),
                  ('b', 'a'): pd.Index([7, 8, 9]),
                  ('b', 'c'): pd.Index([10, 11, 12])}
-    merged_dict = merge_symmetric_key_pairs(test_dict)
+    merged_dict = merge_symmetric_key_pairs(test_dict, pd.Index.union)
     expected_dict = {('a', 'a'): pd.Index([1, 2, 3]),
                      ('a', 'b'): pd.Index([4, 5, 6, 7, 8, 9]),
                      ('b', 'c'): pd.Index([10, 11, 12])}
