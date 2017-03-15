@@ -467,7 +467,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
         np.floor(position_info.linear_distance.min()),
         np.ceil(position_info.linear_distance.max()),
         n_place_bins + 1)
-    place_bin_centers = _get_bin_centers(
+    place_bin_centers = get_bin_centers(
         place_bin_edges)
 
     logger.info('...Fitting encoding model')
