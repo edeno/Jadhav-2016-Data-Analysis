@@ -459,7 +459,7 @@ def _fix_zero_bins(movement_bins):
     return movement_bins
 
 
-def _get_bin_centers(bin_edges):
+def get_bin_centers(bin_edges):
     '''Given the outer-points of bins, find their center
     '''
     return bin_edges[:-1] + np.diff(bin_edges) / 2

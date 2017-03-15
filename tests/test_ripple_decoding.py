@@ -12,7 +12,7 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  estimate_place_occupancy,
                                  poisson_mark_likelihood,
                                  _normal_pdf, _update_posterior,
-                                 _get_prior, _get_bin_centers,
+                                 _get_prior, get_bin_centers,
                                  poisson_likelihood)
 
 
@@ -245,8 +245,8 @@ def test__get_prior():
     (np.arange(0, 12, 2), np.arange(1, 10, 2))
 ]
 )
-def test__get_bin_centers(bin_edges, expected):
-    bin_centers = _get_bin_centers(bin_edges)
+def test_get_bin_centers(bin_edges, expected):
+    bin_centers = get_bin_centers(bin_edges)
     assert np.allclose(bin_centers, expected)
 
 
