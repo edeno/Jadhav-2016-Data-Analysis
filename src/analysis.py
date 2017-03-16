@@ -591,7 +591,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index)
+        state_names, position_info.index, epoch_key)
 
 
 def _convert_to_states(function):
