@@ -54,7 +54,7 @@ def main():
 
 def save(analysis_function, path, args=None):
     with pd.HDFStore(RESULTS_FILE) as store:
-        store.put(path, analysis_function(*args))
+        store.put(path, pd.Panel(analysis_function(*args)))
 
 
 def save_mean(label, multitaper_parameter_name, covariate, level,
