@@ -70,7 +70,8 @@ def estimate_ripple_coherence(epoch_key):
                 lfps, epoch_key, tetrode_info, ripple_info, covariate,
                 multitaper_parameter_name=parameters_name,
                 multitaper_params=parameters)
-            for frequency_band_name, frequency_band in FREQUENCY_BANDS.items():
+            for (frequency_band_name,
+                 frequency_band) in FREQUENCY_BANDS.items():
                 group_delay_by_ripple_type(
                     tetrode_pair_info, ripple_info, covariate,
                     parameters_name, frequency_band, frequency_band_name,
