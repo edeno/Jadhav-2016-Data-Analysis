@@ -725,9 +725,11 @@ def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
         logger.warn(
             'Could not load tetrode pair: '
             'animal={animal}, day={day}, epoch={epoch}, '
-            'tetrode {tetrode1} - tetrode {tetrode2}'.format(
+            'tetrode {tetrode1} - tetrode {tetrode2} '
+            'for {multitaper_parameter_name}, {covariate}, {level}'.format(
                 animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
-                tetrode2=tetrode2
+                tetrode2=tetrode2, covariate=covariate, level=level,
+                multitaper_parameter_name=multitaper_parameter_name
             ))
 
 
