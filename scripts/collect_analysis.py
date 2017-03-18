@@ -43,7 +43,7 @@ def main():
          epoch_area_pair_info) in epoch_groups:
         save_analysis(epoch_tetrode_info[1], epoch_tetrode_pair_info[1],
                       epoch_area_pair_info[1], ripple_info,
-                      label=epoch_tetrode_info[0])
+                      label=str(epoch_tetrode_info[0]))
 
     with pd.HDFStore(RESULTS_FILE) as store:
         store.put('/ripple_info', ripple_info)
