@@ -23,6 +23,7 @@ lib64
 # Byte-compiled / optimized / DLL files
 /__pycache__
 *.py[cod]
+*.h5
 
 # Unit test / coverage reports
 .cache
