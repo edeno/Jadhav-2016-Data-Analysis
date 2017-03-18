@@ -723,7 +723,7 @@ def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
             get_analysis_file_path(animal, day, epoch), key=hdf_path)
     except KeyError:
         logger.warn(
-            'Could not load tetrode pair:'
+            'Could not load tetrode pair: '
             'animal={animal}, day={day}, epoch={epoch}, '
             'tetrode {tetrode1} - tetrode {tetrode2}'.format(
                 animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
@@ -742,7 +742,7 @@ def get_area_pair_from_hdf(multitaper_parameter_name, covariate, level,
     except KeyError:
         logger.warn(
             'Could not load brain area pair:'
-            'animal={animal}, day={day}, epoch={epoch}'
+            'animal={animal}, day={day}, epoch={epoch}, '
             'area {area1} - area {area2}'.format(
                 animal=animal, day=day, epoch=epoch, area1=area1,
                 area2=area2
