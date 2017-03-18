@@ -189,15 +189,15 @@ def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
             logger.debug('......Area Pair: {area1} - {area2}'.format(
                 area1=area1, area2=area2))
             level1_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name + '/canonical_coherence',
+                '{}/canonical_coherence'.format(multitaper_parameter_name),
                 ripple_covariate, level1, area1, area2, epoch_key)
             level2_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name + '/canonical_coherence',
+                '{}/canonical_coherence'.format(multitaper_parameter_name),
                 ripple_covariate, level2, area1, area2, epoch_key)
             coherence_difference_df = power_and_coherence_change(
                 level1_coherence_df, level2_coherence_df)
             save_area_pair(
-                multitaper_parameter_name + '/canonical_coherence',
+                '{}/canonical_coherence'.format(multitaper_parameter_name),
                 ripple_covariate, level_difference_name, area1, area2,
                 coherence_difference_df, epoch_key)
     logger.info('Saving Parameters')
