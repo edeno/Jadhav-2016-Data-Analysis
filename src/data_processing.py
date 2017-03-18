@@ -1016,4 +1016,4 @@ def get_brain_area_pairs_canonical_coherence(multitaper_parameter_name,
                 multitaper_parameter_name, covariate,
                 level, info.index).mean(axis=0)
             for (area1, area2), info in area_pair_info.groupby(
-                ['area_1', 'area_2']).groups}
+                ['area_1', 'area_2'])}
