@@ -52,27 +52,39 @@ def main():
         store.put('/area_pair_info', area_pair_info)
 
 
-def save(analysis_function, args=None):
-    path = '/'.join(args[:-1])
+def save(analysis_function, path, args=None):
     with pd.HDFStore(RESULTS_FILE) as store:
         store.put(path, analysis_function(*args))
 
 
 def save_mean(label, multitaper_parameter_name, covariate, level,
               tetrode_info, tetrode_pair_info, area_pair_info):
-    save(get_brain_area_power, args=(
-        label, multitaper_parameter_name, covariate, level,
+    path = '/'.join([label, multitaper_parameter_name, 'power', covariate,
+                     level])
+    save(get_brain_area_power, path, args=(
+        multitaper_parameter_name, covariate, level,
         tetrode_info))
-    save(get_brain_area_pairs_coherence, args=(
-        label, multitaper_parameter_name, covariate, level,
+
+    path = '/'.join([label, multitaper_parameter_name, 'coherence',
+                     covariate, level])
+    save(get_brain_area_pairs_coherence, path, args=(
+        multitaper_parameter_name, covariate, level,
         tetrode_pair_info))
-    save(get_brain_area_pairs_canonical_coherence, args=(
-        label, multitaper_parameter_name, covariate, level,
+
+    path = '/'.join([label, multitaper_parameter_name,
+                     'canonical_coherence', covariate, level])
+    save(get_brain_area_pairs_canonical_coherence, path, args=(
+        multitaper_parameter_name, covariate, level,
         area_pair_info))
+
     for frequency_band in FREQUENCY_BANDS:
-        save(get_brain_area_pairs_group_delay, args=(
-            label, multitaper_parameter_name, covariate, level,
-            frequency_band, tetrode_pair_info))
+        if level not in ['baseline', 'ripple_difference_from_baseline']:
+            path = '/'.join([label, multitaper_parameter_name,
+                             'group_delay', covariate, level,
+                             frequency_band])
+            save(get_brain_area_pairs_group_delay, path, args=(
+                multitaper_parameter_name, covariate, level,
+                frequency_band, tetrode_pair_info))
 
 
 def save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
