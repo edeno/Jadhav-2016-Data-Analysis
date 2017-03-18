@@ -763,8 +763,8 @@ def tetrode_pair_hdf_path(multitaper_parameter_name, covariate, level,
 
 def area_pair_hdf_path(multitaper_parameter_name, covariate, level, area1,
                        area2):
-    return ('/{multitaper_parameter_name}/{area1}_{area2}/'
-            '{covariate}/{level}').format(
+    return ('/{multitaper_parameter_name}/canonical_coherence/'
+            '{area1}_{area2}/{covariate}/{level}').format(
         multitaper_parameter_name=multitaper_parameter_name,
         covariate=covariate, level=level, area1=area1, area2=area2)
 
