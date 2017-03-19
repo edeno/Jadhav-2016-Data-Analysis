@@ -11,13 +11,14 @@ from src.parameters import ANIMALS, N_DAYS
 
 def queue_job(python_cmd, directives=None, log_file='log.log',
               job_name='job'):
-    'echo python {python_cmd}'.format(python_cmd=python_cmd)
     queue_cmd = (
         'qsub {directives} -j y -o {log_file} -N {job_name}').format(
             directives=directives,
             log_file=log_file,
             job_name=job_name)
-    cmd_line_script = ' | '.join([python_cmd, queue_cmd])
+    cmd_line_script = ' | '.join([
+        'echo python {python_cmd}'.format(python_cmd=python_cmd),
+        queue_cmd])
     run(cmd_line_script, shell=True)
 
 
