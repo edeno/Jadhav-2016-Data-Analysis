@@ -53,8 +53,8 @@ def main():
 
     # Collect analysis after all epoch jobs have run
     analysis_directives = ' '.join(
-        ['-pe omp 4', '-l h_rt=2:00:00', '-P braincom',
-         '-l mem_per_core=2G',
+        ['-pe omp 4', '-l h_rt=4:00:00', '-P braincom',
+         '-l mem_per_core=1G',
          '-hold_jid "{epoch_function}*"'.format(
              epoch_function=python_function.replace('.py', ''))
          ])
