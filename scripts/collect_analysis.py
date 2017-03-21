@@ -27,7 +27,7 @@ def main():
               area_pair_info)
 
     save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
-                  ripple_info)
+                  ripple_info, label='all_animals')
 
     animal_groups = zip(tetrode_info.groupby('animal'),
                         tetrode_pair_info.groupby('animal'),
