@@ -93,7 +93,7 @@ def save_mean(label, multitaper_parameter_name, covariate, level,
                              frequency_band_name])
             save(get_brain_area_pairs_group_delay, path, args=(
                 multitaper_parameter_name, covariate, level,
-                frequency_band, tetrode_pair_info))
+                frequency_band_name, tetrode_pair_info))
 
 
 def save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
