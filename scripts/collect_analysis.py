@@ -23,28 +23,35 @@ def main():
     tetrode_pair_info = get_all_tetrode_pair_info()
     area_pair_info = get_all_area_pair_info()
     ripple_info = get_all_ripple_info()
+
+    print('Saving info....')
     save_info(ripple_info, tetrode_info, tetrode_pair_info,
               area_pair_info)
 
+    print('Saving all animals...')
     save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
                   ripple_info, label='all_animals')
 
+    print('Saving each animal...')
     animal_groups = zip(tetrode_info.groupby('animal'),
                         tetrode_pair_info.groupby('animal'),
                         area_pair_info.groupby('animal'))
 
     for (animal_tetrode_info, animal_tetrode_pair_info,
          animal_area_pair_info) in animal_groups:
+        print('...Animal {}'.format(animal_tetrode_info[0]))
         save_analysis(animal_tetrode_info[1], animal_tetrode_pair_info[1],
                       animal_area_pair_info[1], ripple_info,
                       label=animal_tetrode_info[0])
 
+    print('Saving each day...')
     day_groups = zip(tetrode_info.groupby('day'),
                      tetrode_pair_info.groupby('day'),
                      area_pair_info.groupby('day'))
 
     for (day_tetrode_info, day_tetrode_pair_info,
          day_area_pair_info) in day_groups:
+        print('...Day {}'.format(day_tetrode_info[0]))
         save_analysis(day_tetrode_info[1], day_tetrode_pair_info[1],
                       day_area_pair_info[1], ripple_info,
                       label='day_{}'.format(day_tetrode_info[0]))
