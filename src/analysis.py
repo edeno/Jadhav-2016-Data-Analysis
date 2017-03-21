@@ -855,4 +855,4 @@ def _subtract_event_related_potential(df):
 
 
 def is_overlap(band1, band2):
-    return (band1[0] <= band2[1]) & (band2[0] <= band1[1])
+    return (band1[0] < band2[1]) & (band2[0] < band1[1])
