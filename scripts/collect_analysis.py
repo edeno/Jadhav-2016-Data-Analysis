@@ -23,6 +23,9 @@ def main():
     tetrode_pair_info = get_all_tetrode_pair_info()
     area_pair_info = get_all_area_pair_info()
     ripple_info = get_all_ripple_info()
+    save_info(ripple_info, tetrode_info, tetrode_pair_info,
+              area_pair_info)
+
     save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
                   ripple_info)
 
@@ -113,6 +116,15 @@ def save_analysis(tetrode_info, tetrode_pair_info, area_pair_info,
                 save_mean(label, multitaper_parameter_name, covariate,
                           level, tetrode_info, tetrode_pair_info,
                           area_pair_info)
+
+
+def save_info(ripple_info, tetrode_info, tetrode_pair_info,
+              area_pair_info):
+    with pd.HDFStore(RESULTS_FILE) as store:
+        store.put('/ripple_info', ripple_info)
+        store.put('/tetrode_info', tetrode_info)
+        store.put('/tetrode_pair_info', tetrode_pair_info)
+        store.put('/area_pair_info', area_pair_info)
 
 if __name__ == '__main__':
     exit(main())
