@@ -77,11 +77,15 @@ def save_mean(label, multitaper_parameter_name, covariate, level,
         multitaper_parameter_name, covariate, level,
         area_pair_info))
 
-    for frequency_band in FREQUENCY_BANDS:
-        if level not in ['baseline', 'ripple_difference_from_baseline']:
+    multitaper_frequency_band = MULTITAPER_PARAMETERS[
+        multitaper_parameter_name]['desired_frequencies']
+
+    for frequency_band_name, frequency_band in FREQUENCY_BANDS.items():
+        if (level not in ['baseline', 'ripple_difference_from_baseline']
+                and is_overlap(frequency_band, multitaper_frequency_band)):
             path = '/'.join([label, multitaper_parameter_name,
                              'group_delay', covariate, level,
-                             frequency_band])
+                             frequency_band_name])
             save(get_brain_area_pairs_group_delay, path, args=(
                 multitaper_parameter_name, covariate, level,
                 frequency_band, tetrode_pair_info))

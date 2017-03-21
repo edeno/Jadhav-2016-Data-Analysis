@@ -852,3 +852,7 @@ def estimate_significant_group_delay(coherogram, alpha=0.01):
 
 def _subtract_event_related_potential(df):
     return df.apply(lambda x: x - df.mean(axis=1), raw=True)
+
+
+def is_overlap(band1, band2):
+    return (band1[0] <= band2[1]) & (band2[0] <= band1[1])
