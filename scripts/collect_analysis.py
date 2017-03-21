@@ -13,6 +13,7 @@ from src.data_processing import (get_all_area_pair_info,
                                  get_brain_area_power)
 from src.parameters import (FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
                             RIPPLE_COVARIATES)
+from src.analysis import is_overlap
 
 RESULTS_FILE = 'results.h5'
 
