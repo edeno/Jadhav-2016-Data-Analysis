@@ -39,21 +39,15 @@ def main():
                       animal_area_pair_info[1], ripple_info,
                       label=animal_tetrode_info[0])
 
-    epoch_groups = zip(tetrode_info.groupby('epoch'),
-                       tetrode_pair_info.groupby('epoch'),
-                       area_pair_info.groupby('epoch'))
+    day_groups = zip(tetrode_info.groupby('day'),
+                     tetrode_pair_info.groupby('day'),
+                     area_pair_info.groupby('day'))
 
-    for (epoch_tetrode_info, epoch_tetrode_pair_info,
-         epoch_area_pair_info) in epoch_groups:
-        save_analysis(epoch_tetrode_info[1], epoch_tetrode_pair_info[1],
-                      epoch_area_pair_info[1], ripple_info,
-                      label=str(epoch_tetrode_info[0]))
-
-    with pd.HDFStore(RESULTS_FILE) as store:
-        store.put('/ripple_info', ripple_info)
-        store.put('/tetrode_info', tetrode_info)
-        store.put('/tetrode_pair_info', tetrode_pair_info)
-        store.put('/area_pair_info', area_pair_info)
+    for (day_tetrode_info, day_tetrode_pair_info,
+         day_area_pair_info) in day_groups:
+        save_analysis(day_tetrode_info[1], day_tetrode_pair_info[1],
+                      day_area_pair_info[1], ripple_info,
+                      label='day_{}'.format(day_tetrode_info[0]))
 
 
 def save(analysis_function, path, args=None):
