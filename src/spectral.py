@@ -262,11 +262,12 @@ def _get_window_lengths(time_window_duration, sampling_frequency,
 def _get_unique_time_freq(dataframe):
     '''Returns the unique time and frequency given a spectrogram dataframe
     with non-unique time and frequency columns'''
-    time = dataframe.index.get_level_values('time').unique()
+    time = dataframe.index.get_level_values('time').unique().astype(float)
     half_time_diff = (time[1] - time[0]) / 2
     time = np.append(time - half_time_diff,
                      time[-1] + half_time_diff)
-    frequency = dataframe.index.get_level_values('frequency').unique()
+    frequency = (dataframe.index.get_level_values('frequency').unique()
+                 .astype(float))
     half_frequency_diff = (frequency[1] - frequency[0]) / 2
     frequency = np.append(frequency - half_frequency_diff,
                           frequency[-1] + half_frequency_diff)
