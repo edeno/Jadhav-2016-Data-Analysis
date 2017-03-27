@@ -869,10 +869,13 @@ def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
     brain_area_pairs = merge_symmetric_key_pairs(
         tetrode_pair_info.groupby(['area_1', 'area_2']).groups,
         pd.MultiIndex.union)
-    return {brain_area_pair: get_tetrode_pair_group_from_hdf(
-        brain_area_pairs[brain_area_pair],
-        '{}/coherence'.format(multitaper_parameter_name),
-        covariate, level).mean(axis=0)
+    return {
+        brain_area_pair: (get_tetrode_pair_group_from_hdf(
+            brain_area_pairs[brain_area_pair],
+            '{}/coherence'.format(multitaper_parameter_name),
+            covariate, level)
+                .drop(['power_spectrum1', 'power_spectrum2'], axis=2)
+                .mean(axis=0))
         for brain_area_pair in brain_area_pairs}
 
 
