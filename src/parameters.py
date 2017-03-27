@@ -14,7 +14,7 @@ ANIMALS = {
 
 # Ripple Frequencies
 # Frequency Resolution: 50 Hz
-ripple_frequency = dict(
+ripple_frequency_highTimeRes = dict(
     sampling_frequency=SAMPLING_FREQUENCY,
     time_window_duration=0.020,
     time_window_step=0.020,
@@ -22,7 +22,15 @@ ripple_frequency = dict(
     time_halfbandwidth_product=1,
     window_of_interest=(-0.420, 0.400)
 )
-
+# Frequency Resolution: 20 Hz
+ripple_frequency_highFreqRes = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.050,
+    time_window_step=0.050,
+    desired_frequencies=(30, 125),
+    time_halfbandwidth_product=1,
+    window_of_interest=(-0.450, 0.500)
+)
 # Gamma Frequencies
 # Frequency Resolution: 20 Hz
 gamma_frequency_highTimeRes = dict(
@@ -82,7 +90,8 @@ low_frequency_highFreqRes = dict(
 )
 
 MULTITAPER_PARAMETERS = {
-    'ripple_frequencies_50Hz_Res': ripple_frequency,
+    'ripple_frequencies_50Hz_Res': ripple_frequency_highTimeRes,
+    'ripple_frequencies_20Hz_Res': ripple_frequency_highFreqRes,
     'gamma_frequencies_20Hz_Res': gamma_frequency_highTimeRes,
     'gamma_frequencies_10Hz_Res': gamma_frequency_medFreqRes,
     'gamma_frequencies_5Hz_Res': gamma_frequency_highFreqRes,
