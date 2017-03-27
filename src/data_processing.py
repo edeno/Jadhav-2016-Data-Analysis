@@ -1002,7 +1002,7 @@ def find_power_spectrum_from_pair_key(target_tetrode,
         multitaper_parameter_name, covariate, level, tetrode1, tetrode2)
     power_spectrum_name = 'power_spectrum{}'.format(
         (tetrode1, tetrode2).index(target_tetrode) + 1)
-    return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
+    return pd.DataFrame(
         coherence_df[power_spectrum_name].rename('power'))
 
 
