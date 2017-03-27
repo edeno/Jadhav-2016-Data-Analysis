@@ -1003,6 +1003,7 @@ def find_power_spectrum_from_pair_key(target_tetrode,
     power_spectrum_name = 'power_spectrum{}'.format(
         (tetrode1, tetrode2).index(target_tetrode) + 1)
     return pd.DataFrame(coherence_df[power_spectrum_name].rename('power'))
+        coherence_df[power_spectrum_name].rename('power'))
 
 
 def get_area_pair_group_from_hdf(multitaper_parameter_name, covariate,
