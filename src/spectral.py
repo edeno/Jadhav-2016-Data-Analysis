@@ -866,7 +866,7 @@ def _get_complex_spectra(time_series, tapers, n_fft_samples,
 
     Returns
     -------
-    complex_spectra : array_like, shape (n_signals, n_fft_samples,
+    fourier_coefficients : array_like, shape (n_signals, n_fft_samples,
                                          n_trials * n_tapers)
 
     '''
