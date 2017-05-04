@@ -231,7 +231,8 @@ def _set_default_multitaper_parameters(
     '''
     if tapers is None:
         if n_tapers is None:
-            n_tapers = int(np.floor(2 * time_halfbandwidth_product - 1))
+            n_tapers = np.floor(
+                2 * time_halfbandwidth_product - 1).astype(int)
 
         tapers = _get_tapers(n_time_samples, sampling_frequency,
                              time_halfbandwidth_product, n_tapers)
@@ -250,12 +251,12 @@ def _set_default_multitaper_parameters(
 def _get_window_lengths(time_window_duration, sampling_frequency,
                         time_window_step):
     '''Figures out the number of points per time window and step'''
-    n_time_samples = int(
-        np.fix(time_window_duration * sampling_frequency))
+    n_time_samples = np.fix(
+        time_window_duration * sampling_frequency).astype(int)
     if time_window_step is None:
         time_window_step = time_window_duration
-    n_samples_per_time_step = int(
-        np.fix(time_window_step * sampling_frequency))
+    n_samples_per_time_step = np.fix(
+        time_window_step * sampling_frequency).astype(int)
     return n_samples_per_time_step, n_time_samples
 
 
@@ -367,7 +368,7 @@ def _nextpower2(n):
     '''Return the next integer exponent of two greater than the given number.
     This is useful for ensuring fast FFT sizes.
     '''
-    return int(np.ceil(np.log2(n)))
+    return np.ceil(np.log2(n)).astype(int)
 
 
 def _cross_spectrum(complex_spectrum1, complex_spectrum2):
