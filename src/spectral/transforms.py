@@ -413,7 +413,7 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
     eigenvalues = get_taper_eigenvalues(tapers, half_bandwidth, time_index)
 
     return (get_low_bias_tapers(tapers, eigenvalues)
-            if is_low_bias else tapers, eigenvalues)
+            if is_low_bias else (tapers, eigenvalues))
 
 
 def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
