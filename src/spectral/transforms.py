@@ -6,6 +6,27 @@ from scipy.signal import detrend
 
 
 class Multitaper(object):
+    '''Transform time-domain signal(s) to the frequency domain by using
+    multiple tapering windows.
+
+    Attributes
+    ----------
+    time_series : array, shape (n_time_samples, n_trials, n_signals) or
+                  shape (n_time_samples, n_signals)
+    sampling_frequency : float, optional
+        Number of samples per time unit the signal(s) are recorded at.
+    time_halfbandwidth_product : float, optional
+    pad : int, optional
+    detrend_type : string, optional
+    start_time : float, optional
+    time_window_duration : float, optional
+    time_window_step : float, optional
+    tapers : array, optional
+    n_tapers : int, optional
+    n_time_samples : int, optional
+    n_samples_per_time_step : int, optional
+
+    '''
 
     def __init__(self, time_series, sampling_frequency=1000,
                  time_halfbandwidth_product=3, pad=0,
