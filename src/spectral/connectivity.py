@@ -340,10 +340,10 @@ def _estimate_canonical_coherency(normalized_fourier_coefficients1,
                          full_matrices=False, compute_uv=False)[..., 0]
 
 
-def _bandpass(coherency, frequencies, frequencies_of_interest):
+def _bandpass(data, frequencies, frequencies_of_interest, axis=-3):
     frequency_index = ((frequencies_of_interest[0] < frequencies) &
                        (frequencies < frequencies_of_interest[1]))
-    return (coherency[..., frequency_index, :, :],
+    return (np.take(data, frequency_index, axis=axis),
             frequencies[frequency_index])
 
 
