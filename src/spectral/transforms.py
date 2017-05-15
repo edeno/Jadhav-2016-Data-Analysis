@@ -506,6 +506,7 @@ def fix_taper_sign(tapers, n_time_samples):
     for i, p in enumerate(pk):
         if np.sum(tapers[2 * i + 1, :p]) < 0:
             tapers[2 * i + 1] *= -1
+    return tapers
 
 
 def auto_correlation(tapers, n_time_samples):
