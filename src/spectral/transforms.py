@@ -334,7 +334,7 @@ def tridi_inverse_iteration(d, e, w, x0=None, rtol=1e-8):
 
 
 def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
-                 low_bias=True, interp_from=None, interp_kind='linear'):
+                 is_low_bias=True, interp_from=None, interp_kind='linear'):
     '''Compute Discrete Prolate Spheroidal Sequences.
 
     Will give of orders [0, n_tapers-1] for a given frequency-spacing
@@ -351,7 +351,7 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
         = BW * `n_time_samples` / dt but with dt taken as 1
     n_tapers : int
         Number of DPSS windows to return
-    low_bias : Bool
+    is_low_bias : Bool
         Keep only tapers with eigenvalues > 0.9
     interp_from : int (optional)
         The tapers can be calculated using interpolation from a set of
