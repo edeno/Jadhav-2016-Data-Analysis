@@ -242,8 +242,17 @@ class Connectivity(object):
 
     def phase_slope_index(self, frequencies_of_interest=None,
                           frequencies=None, frequency_resolution=None):
-        bandpassed_coherency, frequencies = _bandpass(
+        bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
+
+        frequency_difference = frequencies[1] - frequencies[0]
+        independent_frequency_step = _get_independent_frequency_step(
+            frequency_difference, frequency_resolution)
+        frequency_index = np.arange(0, bandpassed_frequencies.shape[0],
+                                    independent_frequency_step)
+        bandpassed_coherency = bandpassed_coherency[
+            ..., frequency_index, :, :]
+
         return np.imag(_inner_combination(bandpassed_coherency, axis=-1))
 
 
