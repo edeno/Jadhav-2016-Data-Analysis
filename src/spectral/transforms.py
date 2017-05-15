@@ -354,9 +354,9 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
     low_bias : Bool
         Keep only tapers with eigenvalues > 0.9
     interp_from : int (optional)
-        The dpss can be calculated using interpolation from a set of dpss
-        with the same NW and n_tapers, but shorter n_time_samples.
-        This is the length of the shorter set of dpss windows.
+        The tapers can be calculated using interpolation from a set of
+        tapers with the same NW and n_tapers, but shorter n_time_samples.
+        This is the length of the shorter set of tapers.
     interp_kind : str (optional)
         This input variable is passed to scipy.interpolate.interp1d and
         specifies the kind of interpolation as a string ('linear',
@@ -365,9 +365,8 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
 
     Returns
     -------
-    tapers, eigenvalues : tuple,
-        v is an array of DPSS windows shaped (n_tapers, n_time_samples)
-        e are the eigenvalues
+    tapers, eigenvalues : tuple
+        tapers is an array, shape (n_tapers, n_time_samples)
 
     Notes
     -----
@@ -378,115 +377,141 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
 
     '''
     n_tapers = int(n_tapers)
-    W = float(time_halfbandwidth_product) / n_time_samples
-    nidx = np.arange(n_time_samples, dtype='d')
+    half_bandwidth = float(time_halfbandwidth_product) / n_time_samples
+    time_index = np.arange(n_time_samples, dtype='d')
 
-    # In this case, we create the dpss windows of the smaller size
-    # (interp_from) and then interpolate to the larger size
-    # (n_time_samples)
     if interp_from is not None:
-        if interp_from > n_time_samples:
-            e_s = 'In dpss_windows, interp_from is: %s ' % interp_from
-            e_s += 'and n_time_samples is: %s. ' % n_time_samples
-            e_s += 'Please enter interp_from smaller than n_time_samples.'
-            raise ValueError(e_s)
-        dpss = []
-        d, e = dpss_windows(interp_from, time_halfbandwidth_product,
-                            n_tapers, low_bias=False)
-        for this_d in d:
-            x = np.arange(this_d.shape[-1])
-            I = interpolate.interp1d(x, this_d, kind=interp_kind)
-            d_temp = I(np.linspace(
-                0, this_d.shape[-1] - 1, n_time_samples, endpoint=False))
-
-            # Rescale:
-            d_temp = d_temp / np.sqrt(sum_squared(d_temp))
-
-            dpss.append(d_temp)
-
-        dpss = np.array(dpss)
-
+        tapers = find_tapers_from_interpolation(
+            interp_from, time_halfbandwidth_product, n_tapers,
+            n_time_samples, interp_kind)
     else:
-        '''here we want to set up an optimization problem to find a sequence
-        whose energy is maximally concentrated within band [-W,W]. Thus,
-        the measure lambda(T,W) is the ratio between the energy within
-        that band, and the total energy. This leads to the eigen-system
-        (A - (l1)I)v = 0, where the eigenvector corresponding to the
-        largest eigenvalue is the sequence with maximally concentrated
-        energy. The collection of eigenvectors of this system are called
-        Slepian sequences, or discrete prolate spheroidal sequences (DPSS).
-        Only the first K, K = 2NW/dt orders of DPSS will exhibit good
-        spectral concentration
-        [see http://en.wikipedia.org/wiki/Spectral_concentration_problem]
+        tapers = find_tapers_from_optimization(
+            n_time_samples, time_index, half_bandwidth, n_tapers)
 
-        Here I set up an alternative symmetric tri-diagonal eigenvalue
-        problem such that
-        (B - (l2)I)v = 0, and v are our DPSS (but eigenvalues l2 != l1)
-        the main diagonal = ([n_time_samples-1-2*t]/2)**2 cos(2PIW),
-        t=[0,1,2,...,n_time_samples-1] and the first off-diagonal =
-        t(n_time_samples-t)/2, t=[1,2,...,n_time_samples-1]
-        [see Percival and Walden, 1993]'''
-        diagonal = ((n_time_samples - 1 - 2 * nidx) / 2.) ** 2 * np.cos(
-            2 * np.pi * W)
-        off_diag = np.zeros_like(nidx)
-        off_diag[:-1] = nidx[1:] * (n_time_samples - nidx[1:]) / 2.
-        # put the diagonals in LAPACK 'packed' storage
-        ab = np.zeros((2, n_time_samples), 'd')
-        ab[1] = diagonal
-        ab[0, 1:] = off_diag[:-1]
-        # only calculate the highest n_tapers eigenvalues
-        w = eigvals_banded(
-            ab, select='i', select_range=(n_time_samples - n_tapers,
-                                          n_time_samples - 1))
-        w = w[::-1]
+    tapers = fix_taper_sign(tapers, n_time_samples)
+    eigenvalues = get_taper_eigenvalues(tapers, half_bandwidth, time_index)
 
-        # find the corresponding eigenvectors via inverse iteration
-        t = np.linspace(0, np.pi, n_time_samples)
-        dpss = np.zeros((n_tapers, n_time_samples), 'd')
-        for k in range(n_tapers):
-            dpss[k] = tridi_inverse_iteration(diagonal, off_diag, w[k],
-                                              x0=np.sin((k + 1) * t))
+    return (get_low_bias_tapers(tapers, eigenvalues)
+            if is_low_bias else tapers, eigenvalues)
 
+
+def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
+                                   n_tapers, n_time_samples, interp_kind):
+    '''Create the tapers of the smaller size
+    `interp_from` and then interpolate to the larger size
+    `n_time_samples`'''
+    if interp_from > n_time_samples:
+        e_s = ('In dpss_windows, `interp_from` is: {} '
+               'and `n_time_samples` is: {}. '
+               'Please enter `interp_from` smaller '
+               'than `n_time_samples`.').format(
+                interp_from, n_time_samples)
+        raise ValueError(e_s)
+    tapers = []
+    d, e = dpss_windows(interp_from, time_halfbandwidth_product,
+                        n_tapers, is_low_bias=False)
+    for this_d in d:
+        x = np.arange(this_d.shape[-1])
+        I = interpolate.interp1d(x, this_d, kind=interp_kind)
+        d_temp = I(
+            np.linspace(0, this_d.shape[-1] - 1, n_time_samples,
+                        endpoint=False))
+
+        # Rescale:
+        d_temp = d_temp / np.sqrt(sum_squared(d_temp))
+
+        tapers.append(d_temp)
+
+    return np.array(tapers)
+
+
+def find_tapers_from_optimization(n_time_samples, time_index,
+                                  half_bandwidth, n_tapers):
+    '''here we want to set up an optimization problem to find a sequence
+    whose energy is maximally concentrated within band
+    [-half_bandwidth, half_bandwidth]. Thus,
+    the measure lambda(T, half_bandwidth) is the ratio between the
+    energy within that band, and the total energy. This leads to the
+    eigen-system (A - (l1)I)v = 0, where the eigenvector corresponding
+    to the largest eigenvalue is the sequence with maximally
+    concentrated energy. The collection of eigenvectors of this system
+    are called Slepian sequences, or discrete prolate spheroidal
+    sequences (DPSS). Only the first K, K = 2NW/dt orders of DPSS will
+    exhibit good spectral concentration
+    [see http://en.wikipedia.org/wiki/Spectral_concentration_problem]
+
+    Here I set up an alternative symmetric tri-diagonal eigenvalue
+    problem such that
+    (B - (l2)I)v = 0, and v are our DPSS (but eigenvalues l2 != l1)
+    the main diagonal = ([n_time_samples-1-2*t]/2)**2 cos(2PIW),
+    t=[0,1,2,...,n_time_samples-1] and the first off-diagonal =
+    t(n_time_samples-t)/2, t=[1,2,...,n_time_samples-1]
+    [see Percival and Walden, 1993]'''
+    diagonal = ((n_time_samples - 1 - 2 * time_index) / 2.) ** 2 * np.cos(
+        2 * np.pi * half_bandwidth)
+    off_diag = np.zeros_like(time_index)
+    off_diag[:-1] = time_index[1:] * (n_time_samples - time_index[1:]) / 2.
+    # put the diagonals in LAPACK 'packed' storage
+    ab = np.zeros((2, n_time_samples), dtype='d')
+    ab[1] = diagonal
+    ab[0, 1:] = off_diag[:-1]
+    # only calculate the highest n_tapers eigenvalues
+    w = eigvals_banded(
+        ab, select='i',
+        select_range=(n_time_samples - n_tapers, n_time_samples - 1))
+    w = w[::-1]
+
+    # find the corresponding eigenvectors via inverse iteration
+    t = np.linspace(0, np.pi, n_time_samples)
+    tapers = np.zeros((n_tapers, n_time_samples), dtype='d')
+    for taper_ind in range(n_tapers):
+        tapers[taper_ind] = tridi_inverse_iteration(
+            diagonal, off_diag, w[taper_ind],
+            x0=np.sin((taper_ind + 1) * t))
+    return tapers
+
+
+def fix_taper_sign(tapers, n_time_samples):
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
     # * antisymmetric tapers should begin with a positive lobe
-    fix_symmetric = (dpss[0::2].sum(axis=1) < 0)
+    fix_symmetric = (tapers[0::2].sum(axis=1) < 0)
     for i, f in enumerate(fix_symmetric):
         if f:
-            dpss[2 * i] *= -1
+            tapers[2 * i] *= -1
     # rather than test the sign of one point, test the sign of the
     # linear slope up to the first (largest) peak
-    pk = np.argmax(np.abs(dpss[1::2, :n_time_samples // 2]), axis=1)
+    pk = np.argmax(np.abs(tapers[1::2, :n_time_samples // 2]), axis=1)
     for i, p in enumerate(pk):
-        if np.sum(dpss[2 * i + 1, :p]) < 0:
-            dpss[2 * i + 1] *= -1
+        if np.sum(tapers[2 * i + 1, :p]) < 0:
+            tapers[2 * i + 1] *= -1
 
-    '''Now find the eigenvalues of the original spectral concentration
-    problem Use the autocorr sequence technique from Percival and Walden,
+
+def auto_correlation(tapers, n_time_samples):
+    n_fft_samples = 2 ** _nextpower2(2 * n_time_samples - 1)
+    dpss_fft = fft(tapers, n_fft_samples)
+    dpss_rxx = np.real(ifft(dpss_fft * dpss_fft.conj()))
+    return dpss_rxx[:, :n_time_samples]
+
+
+def get_low_bias_tapers(tapers, eigenvalues):
+    idx = (eigenvalues > 0.9)
+    if not idx.any():
+        print('Could not properly use low_bias,'
+              'keeping lowest-bias taper')
+        idx = [np.argmax(eigenvalues)]
+    return tapers[idx], eigenvalues[idx]
+
+
+def get_taper_eigenvalues(tapers, half_bandwidth,
+                          time_index):
+    '''Finds the eigenvalues of the original spectral concentration
+    problem using the autocorr sequence technique from Percival and Walden,
     1993 pg 390'''
 
-    # compute autocorr using FFT (same as nitime.utils.autocorr(dpss) *
-    # n_time_samples)
-    rxx_size = 2 * n_time_samples - 1
-    n_fft = 2 ** int(np.ceil(np.log2(rxx_size)))
-    dpss_fft = fft(dpss, n_fft)
-    dpss_rxx = np.real(ifft(dpss_fft * dpss_fft.conj()))
-    dpss_rxx = dpss_rxx[:, :n_time_samples]
-
-    r = 4 * W * np.sinc(2 * W * nidx)
-    r[0] = 2 * W
-    eigvals = np.dot(dpss_rxx, r)
-
-    if low_bias:
-        idx = (eigvals > 0.9)
-        if not idx.any():
-            print('Could not properly use low_bias,'
-                  'keeping lowest-bias taper')
-            idx = [np.argmax(eigvals)]
-        dpss, eigvals = dpss[idx], eigvals[idx]
-    assert len(dpss) > 0  # should never happen
-    assert dpss.shape[1] == n_time_samples  # old nitime bug
-    return dpss, eigvals
+    r = 4 * half_bandwidth * np.sinc(2 * half_bandwidth * time_index)
+    r[0] = 2 * half_bandwidth
+    return np.dot(auto_correlation(tapers, len(time_index)), r)
 
 
 def sum_squared(X):
