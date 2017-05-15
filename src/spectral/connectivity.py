@@ -39,7 +39,23 @@ class Connectivity(object):
 
     @lazyproperty
     def cross_spectral_matrix(self):
-        return compute_cross_spectral_matrix(self.fourier_coefficients)
+        '''
+
+        Parameters
+        ----------
+        fourier_coefficients : array, shape (n_time_samples, n_trials,
+                                             n_signals, n_fft_samples,
+                                             n_tapers)
+
+        Returns
+        -------
+        cross_spectral_matrix : array, shape (..., n_signals, n_signals)
+
+        '''
+        fourier_coefficients = (self.fourier_coefficients()
+                                .swapaxes(2, -1)[..., np.newaxis])
+        return _complex_inner_product(fourier_coefficients,
+                                      fourier_coefficients)
 
     @lazyproperty
     def power(self):
@@ -388,24 +404,6 @@ def find_largest_significant_group(coherency, bias, frequency_step=1,
     return np.apply_along_axis(_find_largest_independent_group, -3,
                                is_significant, frequency_step,
                                smallest_group_size)
-
-
-def compute_cross_spectral_matrix(fourier_coefficients):
-    '''
-    Parameters
-    ----------
-    fourier_coefficients : array-like, shape (n_time_samples, n_trials,
-                                              n_signals, n_fft_samples,
-                                              n_tapers)
-
-    Returns
-    -------
-    cross_spectral_matrix : array-like, shape (..., n_signals, n_signals)
-    '''
-    fourier_coefficients = fourier_coefficients.swapaxes(2, -1)[
-        ..., np.newaxis]
-    return _complex_inner_product(fourier_coefficients,
-                                  fourier_coefficients)
 
 
 def _conjugate_transpose(x):
