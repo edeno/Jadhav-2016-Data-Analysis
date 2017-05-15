@@ -422,12 +422,12 @@ def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
     `interp_from` and then interpolate to the larger size
     `n_time_samples`'''
     if interp_from > n_time_samples:
-        e_s = ('In dpss_windows, `interp_from` is: {} '
-               'and `n_time_samples` is: {}. '
-               'Please enter `interp_from` smaller '
-               'than `n_time_samples`.').format(
-                interp_from, n_time_samples)
-        raise ValueError(e_s)
+        raise ValueError(
+            'In dpss_windows, `interp_from` is: {} '
+            'and `n_time_samples` is: {}. '
+            'Please enter `interp_from` smaller '
+            'than `n_time_samples`.'.format(
+                interp_from, n_time_samples))
     tapers = []
     d, e = dpss_windows(interp_from, time_halfbandwidth_product,
                         n_tapers, is_low_bias=False)
