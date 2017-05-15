@@ -91,8 +91,8 @@ class Connectivity(object):
             return self.cross_spectral_matrix.shape[axes]
         else:
             return np.prod(
-                [self.cross_spectral_matrix.shape[axis] for axis
-                 in axes])
+                [self.cross_spectral_matrix.shape[axis]
+                 for axis in axes])
 
     @property
     def bias(self):
