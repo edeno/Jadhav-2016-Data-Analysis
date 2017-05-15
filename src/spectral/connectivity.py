@@ -244,14 +244,16 @@ class Connectivity(object):
                           frequencies=None, frequency_resolution=None):
         bandpassed_coherency, frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
-        n_frequencies = bandpassed_coherency.shape[-3]
-        psi = (bandpassed_coherency[..., :, np.newaxis, :, :].conj() *
-               bandpassed_coherency[..., np.newaxis, :, :, :])
-        lower_triangular_ind = np.tril_indices(n_frequencies)
-        psi[
-            ..., lower_triangular_ind[0], lower_triangular_ind[1],
-            :, :] = 0
-        return np.imag(psi.sum(axis=(-3, -4)))
+        return np.imag(_inner_combination(bandpassed_coherency, axis=-1))
+
+
+def _inner_combination(data, axis=-1):
+    '''Takes the inner product of all possible pairs of a
+    dimension without regard to order (combinations)'''
+    combination_index = np.array(
+        list(combinations(range(data.shape[axis]), 2)))
+    return (np.take(data, combination_index[:, 0], axis).conjugate() *
+            np.take(data, combination_index[:, 1], axis)).sum(axis=axis)
 
 
 def _estimate_noise_covariance(minimum_phase):
