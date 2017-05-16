@@ -1,5 +1,6 @@
-from functools import combinations, partial
+from functools import partial
 from inspect import signature
+from itertools import combinations
 
 import numpy as np
 from scipy.ndimage import label
