@@ -369,12 +369,6 @@ def _get_independent_frequency_step(frequency_difference,
     return np.ceil(frequency_resolution / frequency_difference).astype(int)
 
 
-def fisher_z_transform(coherency, bias):
-    return (np.arctanh(np.abs(coherency)) - bias) / np.sqrt(bias)
-
-
-def _get_normal_distribution_p_values(data, mean=0, std_deviation=1):
-    return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
 
 
 def _find_largest_group(is_significant):
