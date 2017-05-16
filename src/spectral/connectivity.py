@@ -226,7 +226,7 @@ class Connectivity(object):
             frequency_difference, frequency_resolution)
         bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
-        is_significant = find_largest_significant_group(
+        is_significant = _find_significant_frequencies(
             bandpassed_coherency, self.bias, independent_frequency_step)
         coherence_phase = np.ma.masked_array(
             np.unwrap(np.angle(bandpassed_coherency), axis=-3),
@@ -332,6 +332,7 @@ def _reshape(fourier_coefficients):
 
 
 def _normalize_fourier_coefficients(fourier_coefficients):
+    '''Normalizes a group of fourier coefficients by power'''
     U, _, V = np.linalg.svd(
         _reshape(fourier_coefficients), full_matrices=False)
     return np.matmul(U, V)
@@ -355,7 +356,7 @@ def _bandpass(data, frequencies, frequencies_of_interest, axis=-3):
 def _get_independent_frequency_step(frequency_difference,
                                     frequency_resolution):
     '''Find the number of points of a frequency axis such that they
-    are statistically independent.
+    are statistically independent given a frequency resolution.
 
 
     Parameters
@@ -376,7 +377,7 @@ def _get_independent_frequency_step(frequency_difference,
 
 
 
-def _find_largest_group(is_significant):
+def _find_largest_significant_group(is_significant):
     labeled, _ = label(is_significant)
     label_groups, label_counts = np.unique(labeled, return_counts=True)
 
@@ -388,7 +389,9 @@ def _find_largest_group(is_significant):
         return np.zeros(is_significant.shape, dtype=bool)
 
 
-def _filter_by_frequency_resolution(is_significant, frequency_step):
+def _get_independent_frequencies(is_significant, frequency_step):
+    '''
+    '''
     index = is_significant.nonzero()[0]
     independent_index = index[slice(0, len(index), frequency_step)]
     return np.in1d(np.arange(0, len(is_significant)), independent_index)
@@ -396,7 +399,22 @@ def _filter_by_frequency_resolution(is_significant, frequency_step):
 
 def _find_largest_independent_group(is_significant, frequency_step,
                                     min_group_size=3):
+    '''Finds the largest signficant cluster of frequency points and
+    returns the indpendent frequency points of that cluster
 
+    Parameters
+    ----------
+    is_significant : boolean array
+    frequency_step : int
+        The number of points between each independent frequency step
+    min_group_size : int
+        The minimum number of points for a group to be considered
+
+    Returns
+    -------
+    is_significant : boolean array
+
+    '''
     is_significant = _find_largest_significant_group(is_significant)
     is_significant = _get_independent_frequencies(
         is_significant, frequency_step)
@@ -404,8 +422,43 @@ def _find_largest_independent_group(is_significant, frequency_step,
         is_significant[:] = False
     return is_significant
 
-def find_largest_significant_group(coherency, bias, frequency_step=1,
-                                   significance_threshold=0.05,
+
+def _find_significant_frequencies(
+    coherency, bias, frequency_step=1, significance_threshold=0.05,
+    min_group_size=3,
+        multiple_comparisons_method='Benjamini_Hochberg_procedure'):
+    '''Determines the largest significant cluster along the frequency axis.
+
+    This function uses the fisher z-transform to determine the p-values and
+    adjusts for multiple comparisons using the
+    `multiple_comparisons_method`. Only independent frequencies are
+    returned and there must be at least `min_group_size` frequency
+    points for the cluster to be returned. If there are several significant
+    groups, then only the largest group is returned.
+
+    Parameters
+    ----------
+    coherency : array, shape (..., n_frequencies, n_signals, n_signals)
+        The complex coherency between signals.
+    bias : float
+        Bias from the number of indpendent estimates of the frequency
+        transform.
+    frequency_step : int
+        The number of points between each independent frequency step
+    significance_threshold : float
+        The threshold for a p-value to be considered signficant.
+    min_group_size : int
+        The minimum number of independent frequency points for
+    multiple_comparisons_method : 'Benjamini_Hochberg_procedure' |
+                                  'Bonferroni_correction'
+        Procedure used to correct for multiple comparisons.
+
+    Returns
+    -------
+    is_significant : bool array, shape (..., n_frequencies, n_signals,
+                                        n_signals)
+
+    '''
     z_coherence = fisher_z_transform(coherency, bias)
     p_values = get_normal_distribution_p_values(z_coherence)
     is_significant = adjust_for_multiple_comparisons(
