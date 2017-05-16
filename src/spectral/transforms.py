@@ -372,7 +372,7 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
         = BW * `n_time_samples` / dt but with dt taken as 1
     n_tapers : int
         Number of DPSS windows to return
-    is_low_bias : Bool
+    is_low_bias : bool
         Keep only tapers with eigenvalues > 0.9
     interp_from : int (optional)
         The tapers can be calculated using interpolation from a set of
@@ -429,7 +429,7 @@ def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
             'than `n_time_samples`.'.format(
                 interp_from, n_time_samples))
     tapers = []
-    d, e = dpss_windows(interp_from, time_halfbandwidth_product,
+    d, _ = dpss_windows(interp_from, time_halfbandwidth_product,
                         n_tapers, is_low_bias=False)
     for this_d in d:
         x = np.arange(this_d.shape[-1])
