@@ -82,9 +82,8 @@ class Multitaper(object):
                 self._time_window_duration is None):
             self._n_time_samples = self.time_series.shape[0]
         elif self._time_window_duration is not None:
-            self._n_time_samples = np.fix(
-                self.time_window_duration * self.sampling_frequency
-            ).astype(int)
+            self._n_time_samples = int(np.round(
+                self.time_window_duration * self.sampling_frequency))
         return self._n_time_samples
 
     @property
