@@ -395,7 +395,7 @@ def _filter_by_frequency_resolution(is_significant, frequency_step):
 
 
 def _find_largest_independent_group(is_significant, frequency_step,
-                                    smallest_group_size=3):
+                                    min_group_size=3):
 
     is_significant = _find_largest_significant_group(is_significant)
     is_significant = _get_independent_frequencies(
@@ -406,14 +406,13 @@ def _find_largest_independent_group(is_significant, frequency_step,
 
 def find_largest_significant_group(coherency, bias, frequency_step=1,
                                    significance_threshold=0.05,
-                                   smallest_group_size=3):
     z_coherence = fisher_z_transform(coherency, bias)
     p_values = get_normal_distribution_p_values(z_coherence)
     is_significant = adjust_for_multiple_comparisons(
         p_values, alpha=significance_threshold)
     return np.apply_along_axis(_find_largest_independent_group, -3,
                                is_significant, frequency_step,
-                               smallest_group_size)
+                               min_group_size)
 
 
 def _conjugate_transpose(x):
