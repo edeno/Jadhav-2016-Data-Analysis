@@ -120,10 +120,12 @@ class Multitaper(object):
 
     @property
     def time(self):
-        time_ind = np.arange(
-            0, self.time_series.shape[0] - 1,
-            step=self.n_samples_per_time_step)
-        return self.start_time + (time_ind / self.sampling_frequency)
+        original_time = (np.arange(0, self.time_series.shape[0]) /
+                         self.sampling_frequency)
+        window_start_time = _sliding_window(
+            original_time, self.n_time_samples,
+            self.n_samples_per_time_step)[:, 0]
+        return self.start_time + window_start_time
 
     @property
     def n_signals(self):
