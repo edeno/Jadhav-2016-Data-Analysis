@@ -113,9 +113,8 @@ class Multitaper(object):
                 self._time_window_step is None):
             self._n_samples_per_time_step = self.n_time_samples
         elif self._time_window_step is not None:
-            self._n_samples_per_time_step = np.fix(
-                self.time_window_step * self.sampling_frequency
-            ).astype(int)
+            self._n_samples_per_time_step = int(
+                self.time_window_step * self.sampling_frequency)
         return self._n_samples_per_time_step
 
     @property
