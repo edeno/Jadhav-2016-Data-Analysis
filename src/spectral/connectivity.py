@@ -126,12 +126,14 @@ class Connectivity(object):
                 self.fourier_coefficients[
                     :, :, np.in1d(group_labels, label), ...])
             for label in labels]
-        return np.stack([
+        coherence = np.stack([
             _estimate_canonical_coherency(
                 fourier_coefficients1, fourier_coefficients2)
             for fourier_coefficients1, fourier_coefficients2
             in combinations(normalized_fourier_coefficients, 2)
-        ], axis=-1), list(combinations(labels, 2))
+        ], axis=-1)
+        pair_labels = list(combinations(labels, 2))
+        return coherence, pair_labels
 
     def phase_locking_value(self):
         return self.expectation(
