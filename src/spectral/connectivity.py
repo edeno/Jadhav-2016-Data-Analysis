@@ -7,6 +7,9 @@ from scipy.ndimage import label
 from scipy.stats.mstats import linregress
 
 from .minimum_phase_decomposition import minimum_phase_decomposition
+from .statistics import (adjust_for_multiple_comparisons,
+                         fisher_z_transform,
+                         get_normal_distribution_p_values)
 
 EXPECTATION = {
     'trials': partial(np.mean, axis=1),
