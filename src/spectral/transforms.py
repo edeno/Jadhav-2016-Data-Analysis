@@ -73,8 +73,8 @@ class Multitaper(object):
 
     @property
     def n_tapers(self):
-        return np.floor(
-            2 * self.time_halfbandwidth_product - 1).astype(int)
+        return int(np.floor(
+            2 * self.time_halfbandwidth_product - 1))
 
     @property
     def n_time_samples(self):
