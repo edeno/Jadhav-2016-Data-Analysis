@@ -30,7 +30,7 @@ class Multitaper(object):
 
     def __init__(self, time_series, sampling_frequency=1000,
                  time_halfbandwidth_product=3, pad=0,
-                 detrend_type='linear', time_window_duration=None,
+                 detrend_type='constant', time_window_duration=None,
                  time_window_step=None, n_tapers=None,  tapers=None,
                  start_time=0, n_fft_samples=None, n_time_samples=None,
                  n_samples_per_time_step=None):
