@@ -3,7 +3,6 @@ from inspect import signature
 
 import numpy as np
 from scipy.ndimage import label
-from scipy.stats import norm
 from scipy.stats.mstats import linregress
 
 from .minimum_phase_decomposition import minimum_phase_decomposition
