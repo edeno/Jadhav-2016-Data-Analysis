@@ -372,9 +372,7 @@ def _get_independent_frequency_step(frequency_difference,
         The number of points required so that two
         frequency points are statistically independent.
     '''
-    return np.ceil(frequency_resolution / frequency_difference).astype(int)
-
-
+    return int(np.ceil(frequency_resolution / frequency_difference))
 
 
 def _find_largest_significant_group(is_significant):
