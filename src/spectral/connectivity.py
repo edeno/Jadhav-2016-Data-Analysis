@@ -259,13 +259,15 @@ class Connectivity(object):
         return np.imag(_inner_combination(bandpassed_coherency, axis=-1))
 
 
-def _inner_combination(data, axis=-1):
+def _inner_combination(data, axis=-3):
     '''Takes the inner product of all possible pairs of a
     dimension without regard to order (combinations)'''
     combination_index = np.array(
         list(combinations(range(data.shape[axis]), 2)))
-    return (np.take(data, combination_index[:, 0], axis).conjugate() *
-            np.take(data, combination_index[:, 1], axis)).sum(axis=axis)
+    combination_slice1 = np.take(data, combination_index[:, 0], axis)
+    combination_slice2 = np.take(data, combination_index[:, 1], axis)
+    return (combination_slice1.conjugate() * combination_slice2).sum(
+        axis=axis)
 
 
 def _estimate_noise_covariance(minimum_phase):
