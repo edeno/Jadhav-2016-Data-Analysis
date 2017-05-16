@@ -256,7 +256,7 @@ class Connectivity(object):
         bandpassed_coherency = bandpassed_coherency[
             ..., frequency_index, :, :]
 
-        return np.imag(_inner_combination(bandpassed_coherency, axis=-1))
+        return _inner_combination(bandpassed_coherency).imag
 
 
 def _inner_combination(data, axis=-3):
