@@ -396,14 +396,13 @@ def _filter_by_frequency_resolution(is_significant, frequency_step):
 
 def _find_largest_independent_group(is_significant, frequency_step,
                                     smallest_group_size=3):
-    is_significant = _filter_by_frequency_resolution(
-        _find_largest_group(is_significant),
-        frequency_step)
-    if sum(is_significant) >= smallest_group_size:
-        return is_significant
-    else:
-        return np.zeros(is_significant.shape, dtype=bool)
 
+    is_significant = _find_largest_significant_group(is_significant)
+    is_significant = _get_independent_frequencies(
+        is_significant, frequency_step)
+    if sum(is_significant) < min_group_size:
+        is_significant[:] = False
+    return is_significant
 
 def find_largest_significant_group(coherency, bias, frequency_step=1,
                                    significance_threshold=0.05,
