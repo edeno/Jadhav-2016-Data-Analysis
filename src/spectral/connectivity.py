@@ -113,12 +113,6 @@ class Connectivity(object):
     def coherence_magnitude(self):
         return np.abs(self.coherency)
 
-    def coherence_z(self):
-        return fisher_z_transform(self.coherency(), self.bias)
-
-    def coherence_p_values(self):
-        return _get_normal_distribution_p_values(self.coherence_z())
-
     def imaginary_coherence(self):
         return np.abs(
             self.expectation(self.cross_spectral_matrix).imag /
