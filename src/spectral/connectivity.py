@@ -52,7 +52,7 @@ class Connectivity(object):
         cross_spectral_matrix : array, shape (..., n_signals, n_signals)
 
         '''
-        fourier_coefficients = (self.fourier_coefficients()
+        fourier_coefficients = (self.fourier_coefficients
                                 .swapaxes(2, -1)[..., np.newaxis])
         return _complex_inner_product(fourier_coefficients,
                                       fourier_coefficients)
