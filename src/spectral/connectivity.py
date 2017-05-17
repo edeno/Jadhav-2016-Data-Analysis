@@ -373,6 +373,15 @@ class Connectivity(object):
         return ppc.real
 
     def spectral_granger_prediction(self):
+        '''
+
+        References
+        ----------
+        .. [1] Geweke, J. (1982). Measurement of Linear Dependence and
+               Feedback Between Multiple Time Series. Journal of the
+               American Statistical Association 77, 304.
+
+        '''
         partial_covariance = _remove_instantaneous_causality(
             self.noise_covariance)
         intrinsic_power = (self.power[..., np.newaxis] -
@@ -382,6 +391,19 @@ class Connectivity(object):
             self.power[..., np.newaxis] / intrinsic_power))
 
     def directed_transfer_function(self, is_directed_coherence=False):
+        '''
+
+        References
+        ----------
+        .. [1] Kaminski, M., and Blinowska, K.J. (1991). A new method of
+               the description of the information flow in the brain
+               structures. Biological Cybernetics 65, 203-210.
+        .. [2] Baccala, L., Sameshima, K., Ballester, G., Do Valle, A., and
+               Timo-Iaria, C. (1998). Studying the interaction between
+               brain structures via directed coherence and Granger
+               causality. Applied Signal Processing 5, 40.
+
+        '''
         if is_directed_coherence:
             noise_variance = np.diagonal(
                 self.noise_covariance, axis1=-1, axis2=-2)[
@@ -394,6 +416,19 @@ class Connectivity(object):
                 _total_inflow(transfer_magnitude, noise_variance))
 
     def partial_directed_coherence(self, is_generalized=False):
+        '''
+
+        References
+        ----------
+        .. [1] Baccala, L.A., and Sameshima, K. (2001). Partial directed
+               coherence: a new concept in neural structure determination.
+               Biological Cybernetics 84, 463-474.
+        .. [2] Baccala, L.A., Sameshima, K., and Takahashi, D.Y. (2007).
+               Generalized partial directed coherence. In Digital Signal
+               Processing, 2007 15th International Conference on, (IEEE),
+               pp. 163-166.
+
+        '''
         if is_generalized:
             noise_variance = np.diagonal(
                 self.noise_covariance, axis1=-1, axis2=-2)[
@@ -406,6 +441,17 @@ class Connectivity(object):
                     self.MVAR_Fourier_coefficients, noise_variance))
 
     def direct_directed_transfer_function(self):
+        '''
+
+        References
+        ----------
+        .. [1] Korzeniewska, A., Manczak, M., Kaminski,
+               M., Blinowska, K.J., and Kasicki, S. (2003). Determination
+               of information flow direction among brain structures by a
+               modified directed transfer function (dDTF) method.
+               Journal of Neuroscience Methods 125, 195-207.
+
+        '''
         transfer_magnitude = _magnitude(self.transfer_function)
         full_frequency_DTF = transfer_magnitude / np.sum(
             _total_inflow(transfer_magnitude, 1.0), axis=-3, keepdims=True)
@@ -413,6 +459,17 @@ class Connectivity(object):
 
     def group_delay(self, frequencies_of_interest=None,
                     frequencies=None, frequency_resolution=None):
+        '''The average time-delay of a broadband signal.
+
+
+        References
+        ----------
+        .. [1] Gotman, J. (1983). Measurement of small time differences
+               between EEG channels: method and application to epileptic
+               seizure propagation. Electroencephalography and Clinical
+               Neurophysiology 56, 501-514.
+
+        '''
         frequency_difference = frequencies[1] - frequencies[0]
         independent_frequency_step = _get_independent_frequency_step(
             frequency_difference, frequency_resolution)
@@ -437,6 +494,16 @@ class Connectivity(object):
 
     def phase_slope_index(self, frequencies_of_interest=None,
                           frequencies=None, frequency_resolution=None):
+        '''
+
+        References
+        ----------
+        .. [1] Nolte, G., Ziehe, A., Nikulin, V.V., Schlogl, A., Kramer,
+               N., Brismar, T., and Muller, K.-R. (2008). Robustly
+               Estimating the Flow Direction of Information in Complex
+               Physical Systems. Physical Review Letters 100.
+
+        '''
         bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
 
