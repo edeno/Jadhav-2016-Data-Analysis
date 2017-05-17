@@ -33,6 +33,14 @@ class lazyproperty:
 
 
 class Connectivity(object):
+    '''
+
+    Attributes
+    ----------
+    fourier_coefficients : array
+    expectation_type : str
+    frequencies_of_interest : array
+    '''
 
     def __init__(self, fourier_coefficients, frequencies_of_interest=None,
                  expectation_type='trials_tapers'):
@@ -103,23 +111,99 @@ class Connectivity(object):
         return 1 / (degrees_of_freedom - 2)
 
     def coherency(self):
+        '''The complex-valued linear association between time series in the
+         frequency domain
+
+         Returns
+         -------
+         complex_coherency : array, shape (..., n_fft_samples, n_signals,
+                                           n_signals)
+
+         '''
         return self.expectation(self.cross_spectral_matrix) / np.sqrt(
             self.power[..., :, np.newaxis] *
             self.power[..., np.newaxis, :])
 
     def coherence_phase(self):
+        '''The phase angle of the complex coherency
+
+        Returns
+        -------
+        phase : array, shape (..., n_fft_samples, n_signals, n_signals)
+
+        '''
         return np.angle(self.coherency())
 
     def coherence_magnitude(self):
+        '''The magnitude of the complex coherency.
+
+        Note that this is not the magnitude squared coherence.
+
+        Returns
+        -------
+        magnitude : array, shape (..., n_fft_samples, n_signals, n_signals)
+
+        '''
         return np.abs(self.coherency)
 
     def imaginary_coherence(self):
+        '''The normalized imaginary component of the cross-spectrum.
+
+        Projects the cross-spectrum onto the imaginary axis to mitigate the
+        effect of volume-conducted dependencies. Assumes volume-conducted
+        sources arrive at sensors at the same time, resulting in
+        a cross-spectrum with phase angle of 0 (perfectly in-phase) or \pi
+        (anti-phase) if the sensors are on opposite sides of a dipole
+        source. With the imaginary coherence, in-phase and anti-phase
+        associations are set to zero.
+
+        Returns
+        -------
+        imaginary_coherence_magnitude : array, shape (..., n_fft_samples,
+                                                      n_signals, n_signals)
+
+        References
+        ----------
+        .. [1] Nolte, G., Bai, O., Wheaton, L., Mari, Z., Vorbach, S., and
+               Hallett, M. (2004). Identifying true brain interaction from
+               EEG data using the imaginary part of coherency. Clinical
+               Neurophysiology 115, 2292-2307.
+
+        '''
         return np.abs(
             self.expectation(self.cross_spectral_matrix).imag /
             np.sqrt(self.power[..., :, np.newaxis] *
                     self.power[..., np.newaxis, :]))
 
     def canonical_coherence(self, group_labels):
+        '''Finds the maximal coherence between all combinations of groups.
+
+        The canonical coherence finds two sets of weights such that the
+        coherence between the linear combination of group1 and the linear
+        combination of group2 is maximized.
+
+        Parameters
+        ----------
+        group_labels : array-like, shape (n_signals,)
+            Links each signal to a group.
+
+        Returns
+        -------
+        canonical_coherence : array, shape (..., n_fft_samples,
+                                            n_group_pairs)
+            The maximimal coherence for each group pair where
+            n_group_pairs = (n_groups) * (n_groups - 1) / 2
+        pair_labels : list of tuples, shape (n_group_pairs, 2)
+            The label for the group pair for which the coherence was
+            maximized.
+
+        References
+        ----------
+        .. [1] Stephen, E.P. (2015). Characterizing dynamically evolving
+               functional networks in humans with application to speech.
+               Boston University.
+
+        '''
         labels = np.unique(group_labels)
         normalized_fourier_coefficients = [
             _normalize_fourier_coefficients(
@@ -136,15 +220,75 @@ class Connectivity(object):
         return coherence, pair_labels
 
     def phase_locking_value(self):
+        '''The cross-spectrum with the power for each signal scaled to
+        a magnitude of 1.
+
+        The phase locking value attempts to mitigate power differences
+        between realizations (tapers or trials) by treating all values of
+        the cross-spectrum as the same power. This has the effect of
+        downweighting high power realizations and upweighting low power
+        realizations.
+
+        Returns
+        -------
+        phase_locking_value : array, shape (..., n_fft_samples, n_signals,
+                                            n_signals)
+
+        References
+        ----------
+        .. [1] Lachaux, J.-P., Rodriguez, E., Martinerie, J., Varela, F.J.,
+               and others (1999). Measuring phase synchrony in brain
+               signals. Human Brain Mapping 8, 194-208.
+
+        '''
         return self.expectation(
             self.cross_spectral_matrix /
             np.abs(self.cross_spectral_matrix))
 
     def phase_lag_index(self):
+        '''A non-parametric synchrony measure designed to mitigate power
+        differences between realizations (tapers, trials) and
+        volume-conduction.
+
+        The phase lag index is the average sign of the imaginary
+        component of the cross-spectrum. The imaginary component sets
+        in-phase or anti-phase signals to zero and the sign scales it to
+        have the same magnitude regardless of phase.
+
+        Returns
+        -------
+        phase_lag_index : array, shape (..., n_fft_samples, n_signals,
+                                        n_signals)
+
+        References
+        ----------
+        .. [1] Stam, C.J., Nolte, G., and Daffertshofer, A. (2007). Phase
+               lag index: Assessment of functional connectivity from multi
+               channel EEG and MEG with diminished bias from common
+               sources. Human Brain Mapping 28, 1178-1193.
+
+        '''
         return self.expectation(
             np.sign(self.cross_spectral_matrix.imag))
 
     def weighted_phase_lag_index(self):
+        '''Weighted average of the phase lag index using the imaginary
+        coherency magnitudes as weights.
+
+        Returns
+        -------
+        weighted_phase_lag_index : array, shape (..., n_fft_samples,
+                                                 n_signals, n_signals)
+
+        References
+        ----------
+        .. [1] Vinck, M., Oostenveld, R., van Wingerden, M., Battaglia, F.,
+               and Pennartz, C.M.A. (2011). An improved index of
+               phase-synchronization for electrophysiological data in the
+               presence of volume-conduction, noise and sample-size bias.
+               NeuroImage 55, 1548-1565.
+
+        '''
         pli = self.phase_lag_index()
         weights = self.expectation(
             np.abs(self.cross_spectral_matrix.imag))
@@ -152,11 +296,46 @@ class Connectivity(object):
             return pli / weights
 
     def debiased_squared_phase_lag_index(self):
+        '''The square of the phase lag index corrected for the positive
+        bias induced by using the magnitude of the complex cross-spectrum.
+
+        Returns
+        -------
+        phase_lag_index : array, shape (..., n_fft_samples, n_signals,
+                                        n_signals)
+
+        References
+        ----------
+        .. [1] Vinck, M., Oostenveld, R., van Wingerden, M., Battaglia, F.,
+               and Pennartz, C.M.A. (2011). An improved index of
+               phase-synchronization for electrophysiological data in the
+               presence of volume-conduction, noise and sample-size bias.
+               NeuroImage 55, 1548-1565.
+
+        '''
         n_observations = self.n_observations
         return ((n_observations * self.phase_lag_index() ** 2 - 1.0) /
                 (n_observations - 1.0))
 
     def debiased_squared_weighted_phase_lag_index(self):
+        '''The square of the weighted phase lag index corrected for the
+        positive bias induced by using the magnitude of the complex
+        cross-spectrum.
+
+        Returns
+        -------
+        weighted_phase_lag_index : array, shape (..., n_fft_samples,
+                                                 n_signals, n_signals)
+
+        References
+        ----------
+        .. [1] Vinck, M., Oostenveld, R., van Wingerden, M., Battaglia, F.,
+               and Pennartz, C.M.A. (2011). An improved index of
+               phase-synchronization for electrophysiological data in the
+               presence of volume-conduction, noise and sample-size bias.
+               NeuroImage 55, 1548-1565.
+
+        '''
         n_observations = self.n_observations
         imaginary_cross_spectral_matrix_sum = self.expectation(
             self.cross_spectral_matrix.imag) * n_observations
@@ -170,6 +349,23 @@ class Connectivity(object):
                 squared_imaginary_cross_spectral_matrix_sum) / weights
 
     def pairwise_phase_consistency(self):
+        '''The square of the phase locking value corrected for the
+        positive bias induced by using the magnitude of the complex
+        cross-spectrum.
+
+        Returns
+        -------
+        phase_locking_value : array, shape (..., n_fft_samples, n_signals,
+                                            n_signals)
+
+        References
+        ----------
+        .. [1] Vinck, M., van Wingerden, M., Womelsdorf, T., Fries, P., and
+               Pennartz, C.M.A. (2010). The pairwise phase consistency: A
+               bias-free measure of rhythmic neuronal synchronization.
+               NeuroImage 51, 112-122.
+
+        '''
         n_observations = self.n_observations
         plv_sum = self.phase_locking_value() * n_observations
         ppc = ((plv_sum * plv_sum.conjugate() - n_observations) /
