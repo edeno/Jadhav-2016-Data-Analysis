@@ -563,7 +563,23 @@ class Connectivity(object):
 
     def phase_slope_index(self, frequencies_of_interest=None,
                           frequencies=None, frequency_resolution=None):
-        '''
+        '''The weighted average of slopes of a broadband signal projected
+        onto the imaginary axis.
+
+        The phase slope index finds the complex weighted average of the
+        coherency between frequencies where the weights correspond to the
+        magnitude of the coherency at that frequency. This is projected
+        on to the imaginary axis to avoid volume conduction effects.
+
+        Parameters
+        ----------
+        frequencies_of_interest : array-like, shape (2,)
+        frequencies : array-like, shape (n_fft_samples,)
+        frequency_resolution : float
+
+        Returns
+        -------
+        phase_slope_index : array, shape (..., n_signals, n_signals)
 
         References
         ----------
