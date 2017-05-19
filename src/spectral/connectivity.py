@@ -390,58 +390,117 @@ class Connectivity(object):
                            _squared_magnitude(self.transfer_function))
         return np.log(self.power[..., np.newaxis] / intrinsic_power)
 
-    def directed_transfer_function(self, is_directed_coherence=False):
-        '''
+    def directed_transfer_function(self):
+        '''The transfer function coupling strength normalized by the total
+        influence of other signals on that signal (inflow).
+
+        Characterizes the direct and indirect coupling to a node.
+
+        Returns
+        -------
+        directed_transfer_function : array, shape (..., n_fft_samples,
+                                                   n_signals, n_signals)
 
         References
         ----------
         .. [1] Kaminski, M., and Blinowska, K.J. (1991). A new method of
                the description of the information flow in the brain
                structures. Biological Cybernetics 65, 203-210.
-        .. [2] Baccala, L., Sameshima, K., Ballester, G., Do Valle, A., and
+
+        '''
+
+        return self.transfer_function / _total_inflow(
+            self.transfer_function)
+
+    def directed_coherence(self):
+        '''The transfer function coupling strength normalized by the total
+        influence of other signals on that signal (inflow).
+
+        This measure is the same as the directed transfer function but the
+        signal inflow is scaled by the noise variance.
+
+        Returns
+        -------
+        directed_coherence : array, shape (..., n_fft_samples,
+                                           n_signals, n_signals)
+
+        References
+        ----------
+        .. [1] Baccala, L., Sameshima, K., Ballester, G., Do Valle, A., and
                Timo-Iaria, C. (1998). Studying the interaction between
                brain structures via directed coherence and Granger
                causality. Applied Signal Processing 5, 40.
 
         '''
-        if is_directed_coherence:
-            noise_variance = np.diagonal(
-                self.noise_covariance, axis1=-1, axis2=-2)[
-                ..., np.newaxis, :, np.newaxis]
-        else:
-            noise_variance = 1.0
+        noise_variance = _get_noise_variance(self.noise_covariance)
+        return (np.sqrt(noise_variance) * self.transfer_function /
+                _total_inflow(self.transfer_function, noise_variance))
 
-        transfer_magnitude = _magnitude(self.transfer_function)
-        return (np.sqrt(noise_variance) * transfer_magnitude /
-                _total_inflow(transfer_magnitude, noise_variance))
+    def partial_directed_coherence(self):
+        '''The transfer function coupling strength normalized by its
+        strength of coupling to other signals (outflow).
 
-    def partial_directed_coherence(self, is_generalized=False):
-        '''
+        The partial directed coherence tries to regress out the influence
+        of other observed signals, leaving only the direct coupling between
+        two signals.
+
+        Returns
+        -------
+        partial_directed_coherence : array, shape (..., n_fft_samples,
+                                                   n_signals, n_signals)
 
         References
         ----------
         .. [1] Baccala, L.A., and Sameshima, K. (2001). Partial directed
                coherence: a new concept in neural structure determination.
                Biological Cybernetics 84, 463-474.
-        .. [2] Baccala, L.A., Sameshima, K., and Takahashi, D.Y. (2007).
+
+        '''
+        return (self.MVAR_Fourier_coefficients /
+                _total_outflow(self.MVAR_Fourier_coefficients, 1.0))
+
+    def generalized_partial_directed_coherence(self):
+        '''The transfer function coupling strength normalized by its
+        strength of coupling to other signals (outflow).
+
+        The partial directed coherence tries to regress out the influence
+        of other observed signals, leaving only the direct coupling between
+        two signals.
+
+        The generalized partial directed coherence scales the relative
+        strength of coupling by the noise variance.
+
+        Returns
+        -------
+        generalized_partial_directed_coherence : array,
+                                                 shape (..., n_fft_samples,
+                                                        n_signals,
+                                                        n_signals)
+
+        References
+        ----------
+        .. [1] Baccala, L.A., Sameshima, K., and Takahashi, D.Y. (2007).
                Generalized partial directed coherence. In Digital Signal
                Processing, 2007 15th International Conference on, (IEEE),
                pp. 163-166.
 
         '''
-        if is_generalized:
-            noise_variance = np.diagonal(
-                self.noise_covariance, axis1=-1, axis2=-2)[
-                ..., np.newaxis, :, np.newaxis]
-        else:
-            noise_variance = 1.0
+        noise_variance = _get_noise_variance(self.noise_covariance)
         return (self.MVAR_Fourier_coefficients *
                 (1.0 / np.sqrt(noise_variance)) /
                 _total_outflow(
                     self.MVAR_Fourier_coefficients, noise_variance))
 
     def direct_directed_transfer_function(self):
-        '''
+        '''A combination of the directed transfer function estimate of
+        directional influence between signals and the partial coherence's
+        accounting for the influence of other signals.
+
+        Returns
+        -------
+        direct_directed_transfer_function : array, shape
+                                            (..., n_fft_samples,
+                                             n_signals, n_signals)
 
         References
         ----------
@@ -452,9 +511,8 @@ class Connectivity(object):
                Journal of Neuroscience Methods 125, 195-207.
 
         '''
-        transfer_magnitude = _magnitude(self.transfer_function)
-        full_frequency_DTF = transfer_magnitude / np.sum(
-            _total_inflow(transfer_magnitude, 1.0), axis=-3, keepdims=True)
+        full_frequency_DTF = self.transfer_function / np.sum(
+            _total_inflow(self.transfer_function), axis=-3, keepdims=True)
         return full_frequency_DTF * self.partial_directed_coherence()
 
     def group_delay(self, frequencies_of_interest=None,
