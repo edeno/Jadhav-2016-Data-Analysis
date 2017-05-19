@@ -519,6 +519,17 @@ class Connectivity(object):
                     frequencies=None, frequency_resolution=None):
         '''The average time-delay of a broadband signal.
 
+        Parameters
+        ----------
+        frequencies_of_interest : array-like, shape (2,)
+        frequencies : array-like, shape (n_fft_samples,)
+        frequency_resolution : float
+
+        Returns
+        -------
+        delay : array, shape (..., n_signals, n_signals)
+        slope : array, shape (..., n_signals, n_signals)
+        r_value : array, shape (..., n_signals, n_signals)
 
         References
         ----------
