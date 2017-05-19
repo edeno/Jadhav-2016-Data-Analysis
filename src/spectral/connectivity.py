@@ -387,9 +387,8 @@ class Connectivity(object):
             self.noise_covariance)
         intrinsic_power = (self.power[..., np.newaxis] -
                            partial_covariance *
-                           _magnitude(self.transfer_function))
-        return _set_diagonal_to_zero(np.log(
-            self.power[..., np.newaxis] / intrinsic_power))
+                           _squared_magnitude(self.transfer_function))
+        return np.log(self.power[..., np.newaxis] / intrinsic_power)
 
     def directed_transfer_function(self, is_directed_coherence=False):
         '''
