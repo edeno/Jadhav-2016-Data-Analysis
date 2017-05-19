@@ -624,7 +624,7 @@ def _estimate_transfer_function(minimum_phase):
                      np.linalg.inv(minimum_phase[..., 0:1, :, :]))
 
 
-def _magnitude(x):
+def _squared_magnitude(x):
     return np.abs(x) ** 2
 
 
@@ -648,9 +648,10 @@ def _set_diagonal_to_zero(x):
     return x
 
 
-def _total_inflow(transfer_magnitude, noise_variance):
-    return np.sum(noise_variance * transfer_magnitude,
-                  keepdims=True, axis=-1)
+def _total_inflow(transfer_function, noise_variance=1.0):
+    return np.sqrt(np.sum(
+        noise_variance * _squared_magnitude(transfer_function),
+        keepdims=True, axis=-1))
 
 
 def _get_noise_variance(noise_covariance):
@@ -662,9 +663,10 @@ def _get_noise_variance(noise_covariance):
 
 
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
-    return np.sum(
-        (1.0 / noise_variance) * _magnitude(MVAR_Fourier_coefficients),
-        keepdims=True, axis=-2)
+    return np.sqrt(np.sum(
+        (1.0 / noise_variance) *
+        _squared_magnitude(MVAR_Fourier_coefficients),
+        keepdims=True, axis=-2))
 
 
 def _reshape(fourier_coefficients):
