@@ -719,6 +719,24 @@ def _get_independent_frequency_step(frequency_difference,
 
 
 def _find_largest_significant_group(is_significant):
+    '''Finds the largest cluster of significant values over frequencies.
+
+    If frequency value is signficant and its neighbor in the next frequency
+    is also a signficant value, then they are part of the same cluster.
+
+    If there are two clusters of the same size, the first one encountered
+    is the signficant cluster. All other signficant values are set to
+    false.
+
+    Parameters
+    ----------
+    is_significant : bool array
+
+    Returns
+    -------
+    is_significant_largest : bool array
+
+    '''
     labeled, _ = label(is_significant)
     label_groups, label_counts = np.unique(labeled, return_counts=True)
 
@@ -731,7 +749,17 @@ def _find_largest_significant_group(is_significant):
 
 
 def _get_independent_frequencies(is_significant, frequency_step):
-    '''
+    '''Given a `frequency_step` that determines the distance to the next
+    signficant point, sets non-distinguishable points to false.
+
+    Parameters
+    ----------
+    is_significant : bool array
+
+    Returns
+    -------
+    is_significant_independent : bool array
+
     '''
     index = is_significant.nonzero()[0]
     independent_index = index[slice(0, len(index), frequency_step)]
@@ -745,7 +773,7 @@ def _find_largest_independent_group(is_significant, frequency_step,
 
     Parameters
     ----------
-    is_significant : boolean array
+    is_significant : bool array
     frequency_step : int
         The number of points between each independent frequency step
     min_group_size : int
@@ -753,7 +781,7 @@ def _find_largest_independent_group(is_significant, frequency_step,
 
     Returns
     -------
-    is_significant : boolean array
+    is_significant : bool array
 
     '''
     is_significant = _find_largest_significant_group(is_significant)
