@@ -74,7 +74,7 @@ class Connectivity(object):
     def power(self):
         fourier_coefficients = self.fourier_coefficients.swapaxes(2, -1)
         return self.expectation(fourier_coefficients *
-                                fourier_coefficients.conjugate())
+                                fourier_coefficients.conjugate()).real
 
     @lazyproperty
     def minimum_phase_factor(self):
