@@ -655,11 +655,8 @@ def _total_inflow(transfer_function, noise_variance=1.0):
 
 
 def _get_noise_variance(noise_covariance):
-    if noise_covariance is None:
-        return 1.0
-    else:
-        return np.diagonal(noise_covariance, axis1=-1, axis2=-2)[
-            ..., np.newaxis]
+    return np.diagonal(noise_covariance, axis1=-1, axis2=-2)[
+        ..., np.newaxis, :, np.newaxis]
 
 
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
