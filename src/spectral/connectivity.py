@@ -146,7 +146,7 @@ class Connectivity(object):
         magnitude : array, shape (..., n_fft_samples, n_signals, n_signals)
 
         '''
-        return np.abs(self.coherency)
+        return _squared_magnitude(self.coherency())
 
     def imaginary_coherence(self):
         '''The normalized imaginary component of the cross-spectrum.
@@ -212,7 +212,7 @@ class Connectivity(object):
                 self.fourier_coefficients[
                     :, :, np.in1d(group_labels, label), ...])
             for label in labels]
-        coherence = np.stack([
+        coherence = _squared_magnitude(np.stack([
             _estimate_canonical_coherency(
                 fourier_coefficients1, fourier_coefficients2)
             for fourier_coefficients1, fourier_coefficients2
@@ -411,8 +411,8 @@ class Connectivity(object):
 
         '''
 
-        return self.transfer_function / _total_inflow(
-            self.transfer_function)
+        return (_squared_magnitude(self.transfer_function) /
+                _total_inflow(self.transfer_function))
 
     def directed_coherence(self):
         '''The transfer function coupling strength normalized by the total
@@ -435,7 +435,8 @@ class Connectivity(object):
 
         '''
         noise_variance = _get_noise_variance(self.noise_covariance)
-        return (np.sqrt(noise_variance) * self.transfer_function /
+        return (np.sqrt(noise_variance) *
+                _squared_magnitude(self.transfer_function) /
                 _total_inflow(self.transfer_function, noise_variance))
 
     def partial_directed_coherence(self):
@@ -458,7 +459,7 @@ class Connectivity(object):
                Biological Cybernetics 84, 463-474.
 
         '''
-        return (self.MVAR_Fourier_coefficients /
+        return (_squared_magnitude(self.MVAR_Fourier_coefficients) /
                 _total_outflow(self.MVAR_Fourier_coefficients, 1.0))
 
     def generalized_partial_directed_coherence(self):
@@ -488,9 +489,8 @@ class Connectivity(object):
 
         '''
         noise_variance = _get_noise_variance(self.noise_covariance)
-        return (self.MVAR_Fourier_coefficients *
-                (1.0 / np.sqrt(noise_variance)) /
-                _total_outflow(
+        return (_squared_magnitude(self.MVAR_Fourier_coefficients) /
+                np.sqrt(noise_variance) / _total_outflow(
                     self.MVAR_Fourier_coefficients, noise_variance))
 
     def direct_directed_transfer_function(self):
@@ -513,8 +513,9 @@ class Connectivity(object):
                Journal of Neuroscience Methods 125, 195-207.
 
         '''
-        full_frequency_DTF = self.transfer_function / np.sum(
-            _total_inflow(self.transfer_function), axis=-3, keepdims=True)
+        full_frequency_DTF = (_squared_magnitude(self.transfer_function) /
+                              np.sum(_total_inflow(self.transfer_function),
+                              axis=-3, keepdims=True))
         return full_frequency_DTF * self.partial_directed_coherence()
 
     def group_delay(self, frequencies_of_interest=None,
