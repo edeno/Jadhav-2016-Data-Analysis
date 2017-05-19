@@ -38,7 +38,9 @@ class Connectivity(object):
     Attributes
     ----------
     fourier_coefficients : array
-    expectation_type : str
+        The compex-valued coefficients from a fourier transform.
+    expectation_type : ('trials_tapers' | 'trials' | 'tapers')
+        How to average the cross spectral matrix.
     frequencies_of_interest : array
     '''
 
