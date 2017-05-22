@@ -262,7 +262,7 @@ class Connectivity(object):
                 fourier_coefficients1, fourier_coefficients2)
             for fourier_coefficients1, fourier_coefficients2
             in combinations(normalized_fourier_coefficients, 2)
-        ], axis=-1)
+        ], axis=-1))
         pair_labels = list(combinations(labels, 2))
         return coherence, pair_labels
 
