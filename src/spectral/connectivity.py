@@ -19,7 +19,13 @@ EXPECTATION = {
 
 
 class lazyproperty:
+    '''Computes property if it hasn't been computed, otherwise stores the
+    answer and returns the answer.
 
+    Useful if property computation is expensive. To use, simply use as a
+    decorator as one would use `property`.
+
+    '''
     def __init__(self, func):
         self.func = func
 
@@ -33,15 +39,52 @@ class lazyproperty:
 
 
 class Connectivity(object):
-    '''
+    '''Computes brain connectivity measures based on the cross spectral
+    matrix.
+
+    Spectral granger methods that require estimation of transfer function
+    and noise covariance use minimum phase decomposition [1] to decompose
+    the cross spectral matrix into square roots, which then can be used to
+    non-parametrically estimate the transfer function and noise covariance.
 
     Attributes
     ----------
     fourier_coefficients : array
         The compex-valued coefficients from a fourier transform.
     expectation_type : ('trials_tapers' | 'trials' | 'tapers')
-        How to average the cross spectral matrix.
-    frequencies_of_interest : array
+        How to average the cross spectral matrix. 'trials_tapers' averages
+        over the trials and tapers dimensions. 'trials' only averages over
+        the trials dimensions (leaving tapers) and 'tapers' only averages
+        over tapers (leaving trials).
+
+    Methods
+    -------
+    coherency
+    coherence_magnitude
+    coherence_phase
+    canonical_coherence
+    imaginary_coherence
+    phase_locking_value
+    phase_lag_index
+    weighted_phase_lag_index
+    debiased_squared_phase_lag_index
+    debiased_squared_weighted_phase_lag_index
+    pairwise_phase_consistency
+    directed_transfer_function
+    directed_coherence
+    partial_directed_coherence
+    generalized_partial_directed_coherence
+    direct_directed_transfer_function
+    group_delay
+    phase_lag_index
+    pairwise_spectral_granger_prediction
+
+    References
+    ----------
+    .. [1] Dhamala, M., Rangarajan, G., and Ding, M. (2008). Analyzing
+           information flow in brain networks with nonparametric Granger
+           causality. NeuroImage 41, 354-362.
+
     '''
 
     def __init__(self, fourier_coefficients, frequencies_of_interest=None,
@@ -52,7 +95,8 @@ class Connectivity(object):
 
     @lazyproperty
     def cross_spectral_matrix(self):
-        '''
+        '''The complex-valued linear association between fourier
+        coefficients at each frequency.
 
         Parameters
         ----------
