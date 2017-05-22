@@ -776,10 +776,10 @@ def _reshape(fourier_coefficients):
 
 
 def _normalize_fourier_coefficients(fourier_coefficients):
-    U, _, V = np.linalg.svd(
     '''Normalizes a group of fourier coefficients by power within group'''
+    U, _, V_transpose = np.linalg.svd(
         _reshape(fourier_coefficients), full_matrices=False)
-    return np.matmul(U, V)
+    return np.matmul(U, V_transpose)
 
 
 def _estimate_canonical_coherency(normalized_fourier_coefficients1,
