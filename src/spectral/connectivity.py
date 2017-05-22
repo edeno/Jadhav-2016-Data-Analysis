@@ -663,6 +663,28 @@ def _inner_combination(data, axis=-3):
 
 
 def _estimate_noise_covariance(minimum_phase):
+    '''Given a matrix square root of the cross spectral matrix (
+    minimum phase factor), non-parametrically estimate the noise covariance
+    of a multivariate autoregressive model (MVAR).
+
+    Parameters
+    ----------
+    minimum_phase : array, shape (n_time_samples, n_fft_samples,
+                                  n_signals, n_signals)
+        The matrix square root of a cross spectral matrix.
+
+    Returns
+    -------
+    noise_covariance : array, shape (n_time_samples, n_signals, n_signals)
+        The noise covariance of a MVAR model.
+
+    References
+    ----------
+    .. [1] Dhamala, M., Rangarajan, G., and Ding, M. (2008). Analyzing
+           information flow in brain networks with nonparametric Granger
+           causality. NeuroImage 41, 354-362.
+
+    '''
     A_0 = minimum_phase[..., 0, :, :]
     return np.matmul(A_0, A_0.swapaxes(-1, -2)).real
 
@@ -670,6 +692,31 @@ def _estimate_noise_covariance(minimum_phase):
 def _estimate_transfer_function(minimum_phase):
     return np.matmul(minimum_phase,
                      np.linalg.inv(minimum_phase[..., 0:1, :, :]))
+    '''Given a matrix square root of the cross spectral matrix (
+    minimum phase factor), non-parametrically estimate the transfer
+    function of a multivariate autoregressive model (MVAR).
+
+    Parameters
+    ----------
+    minimum_phase : array, shape (n_time_samples, n_fft_samples,
+                                  n_signals, n_signals)
+        The matrix square root of a cross spectral matrix.
+
+    Returns
+    -------
+    transfer_function : array, shape (n_time_samples, n_fft_samples,
+                                      n_signals, n_signals)
+        The transfer function of a MVAR model.
+
+    References
+    ----------
+    .. [1] Dhamala, M., Rangarajan, G., and Ding, M. (2008). Analyzing
+           information flow in brain networks with nonparametric Granger
+           causality. NeuroImage 41, 354-362.
+
+    '''
+    return np.matmul(
+        minimum_phase, np.linalg.inv(minimum_phase[..., 0:1, :, :]))
 
 
 def _squared_magnitude(x):
@@ -677,6 +724,8 @@ def _squared_magnitude(x):
 
 
 def _complex_inner_product(a, b):
+    '''Measures the orthogonality (similarity) of complex arrays in
+    the last two dimensions.'''
     return np.matmul(a, _conjugate_transpose(b))
 
 
