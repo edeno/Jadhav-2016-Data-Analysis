@@ -89,10 +89,9 @@ class Connectivity(object):
 
     '''
 
-    def __init__(self, fourier_coefficients, frequencies_of_interest=None,
+    def __init__(self, fourier_coefficients,
                  expectation_type='trials_tapers'):
         self.fourier_coefficients = fourier_coefficients
-        self.frequencies_of_interest = frequencies_of_interest
         self.expectation_type = expectation_type
 
     @lazyproperty
