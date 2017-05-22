@@ -739,8 +739,7 @@ def _remove_instantaneous_causality(noise_covariance):
 
 
 def _set_diagonal_to_zero(x):
-    '''Sets the diaginal of the last two dimensions to zero.
-    '''
+    '''Sets the diaginal of the last two dimensions to zero.'''
     n_signals = x.shape[-1]
     diagonal_index = np.diag_indices(n_signals)
     x[..., diagonal_index[0], diagonal_index[1]] = 0
@@ -748,8 +747,7 @@ def _set_diagonal_to_zero(x):
 
 
 def _total_inflow(transfer_function, noise_variance=1.0):
-    '''Measures the effect of incoming signals onto a node.
-    '''
+    '''Measures the effect of incoming signals onto a node.'''
     return np.sqrt(np.sum(
         noise_variance * _squared_magnitude(transfer_function),
         keepdims=True, axis=-1))
@@ -762,8 +760,7 @@ def _get_noise_variance(noise_covariance):
 
 
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
-    '''Measures the effect of outgoing signals on the node.
-    '''
+    '''Measures the effect of outgoing signals on the node.'''
     return np.sqrt(np.sum(
         (1.0 / noise_variance) *
         _squared_magnitude(MVAR_Fourier_coefficients),
@@ -779,8 +776,8 @@ def _reshape(fourier_coefficients):
 
 
 def _normalize_fourier_coefficients(fourier_coefficients):
-    '''Normalizes a group of fourier coefficients by power'''
     U, _, V = np.linalg.svd(
+    '''Normalizes a group of fourier coefficients by power within group'''
         _reshape(fourier_coefficients), full_matrices=False)
     return np.matmul(U, V)
 
@@ -834,6 +831,7 @@ def _get_independent_frequency_step(frequency_difference,
     frequency_step : int
         The number of points required so that two
         frequency points are statistically independent.
+
     '''
     return int(np.ceil(frequency_resolution / frequency_difference))
 
