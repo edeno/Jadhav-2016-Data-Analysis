@@ -690,8 +690,6 @@ def _estimate_noise_covariance(minimum_phase):
 
 
 def _estimate_transfer_function(minimum_phase):
-    return np.matmul(minimum_phase,
-                     np.linalg.inv(minimum_phase[..., 0:1, :, :]))
     '''Given a matrix square root of the cross spectral matrix (
     minimum phase factor), non-parametrically estimate the transfer
     function of a multivariate autoregressive model (MVAR).
