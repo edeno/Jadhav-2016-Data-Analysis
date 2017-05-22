@@ -681,6 +681,8 @@ def _complex_inner_product(a, b):
 
 
 def _remove_instantaneous_causality(noise_covariance):
+    '''Rotates the noise covariance so that the effect of instantaneous
+    signals (like those caused by volume conduction) are removed.'''
     noise_covariance = noise_covariance[..., np.newaxis, :, :]
     variance = np.diagonal(noise_covariance, axis1=-1,
                            axis2=-2)[..., np.newaxis]
@@ -690,6 +692,8 @@ def _remove_instantaneous_causality(noise_covariance):
 
 
 def _set_diagonal_to_zero(x):
+    '''Sets the diaginal of the last two dimensions to zero.
+    '''
     n_signals = x.shape[-1]
     diagonal_index = np.diag_indices(n_signals)
     x[..., diagonal_index[0], diagonal_index[1]] = 0
@@ -697,17 +701,22 @@ def _set_diagonal_to_zero(x):
 
 
 def _total_inflow(transfer_function, noise_variance=1.0):
+    '''Measures the effect of incoming signals onto a node.
+    '''
     return np.sqrt(np.sum(
         noise_variance * _squared_magnitude(transfer_function),
         keepdims=True, axis=-1))
 
 
 def _get_noise_variance(noise_covariance):
+    '''Extracts the noise variance from the noise covariance matrix.'''
     return np.diagonal(noise_covariance, axis1=-1, axis2=-2)[
         ..., np.newaxis, :, np.newaxis]
 
 
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
+    '''Measures the effect of outgoing signals on the node.
+    '''
     return np.sqrt(np.sum(
         (1.0 / noise_variance) *
         _squared_magnitude(MVAR_Fourier_coefficients),
@@ -731,6 +740,7 @@ def _normalize_fourier_coefficients(fourier_coefficients):
 
 def _estimate_canonical_coherency(normalized_fourier_coefficients1,
                                   normalized_fourier_coefficients2):
+    '''Finds the maximum complex correlation between groups of signals.'''
     group_cross_spectrum = _complex_inner_product(
         normalized_fourier_coefficients1, normalized_fourier_coefficients2)
     return np.linalg.svd(group_cross_spectrum,
@@ -738,6 +748,21 @@ def _estimate_canonical_coherency(normalized_fourier_coefficients1,
 
 
 def _bandpass(data, frequencies, frequencies_of_interest, axis=-3):
+    '''Filters the data matrix along an axis given a maximum and minimum
+    frequency of interest.
+
+    Parameters
+    ----------
+    data : array, shape (..., n_fft_samples, ...)
+    frequencies : array, shape (n_fft_samples,)
+    frequencies_of_interest : array-like, shape (2,)
+
+    Returns
+    -------
+    filtered_data : array
+    filtered_frequencies : array
+
+    '''
     frequency_index = ((frequencies_of_interest[0] < frequencies) &
                        (frequencies < frequencies_of_interest[1]))
     return (np.take(data, frequency_index.nonzero()[0], axis=axis),
