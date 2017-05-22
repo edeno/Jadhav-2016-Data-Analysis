@@ -419,7 +419,7 @@ class Connectivity(object):
                (n_observations * (n_observations - 1.0)))
         return ppc.real
 
-    def spectral_granger_prediction(self):
+    def pairwise_spectral_granger_prediction(self):
         '''The amount of power at a node in a frequency explained by (is
         predictive of) the power at other nodes.
 
