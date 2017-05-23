@@ -110,4 +110,4 @@ def test_bias(expectation_type, expected_bias):
         fourier_coefficients=fourier_coefficients,
         expectation_type=expectation_type,
     )
-    assert this_Conn.bias == expected_bias
+    assert np.allclose(this_Conn.bias, expected_bias)
