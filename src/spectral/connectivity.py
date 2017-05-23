@@ -155,7 +155,7 @@ class Connectivity(object):
     @property
     def bias(self):
         degrees_of_freedom = 2 * self.n_observations
-        return 1 / (degrees_of_freedom - 2)
+        return 1.0 / (degrees_of_freedom - 2)
 
     def coherency(self):
         '''The complex-valued linear association between time series in the
