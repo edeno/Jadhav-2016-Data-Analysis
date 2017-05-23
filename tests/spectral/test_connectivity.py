@@ -153,3 +153,25 @@ def test_imaginary_coherence():
     assert np.allclose(
         this_Conn.imaginary_coherence().squeeze(),
         expected_imaginary_coherence)
+
+
+def test_phase_locking_value():
+    '''Make sure phase locking value ignores magnitudes.'''
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = (
+        np.random.uniform(0, 2, (n_time_samples, n_trials, n_tapers,
+                                 n_fft_samples, n_signals)) *
+        np.exp(1j * np.pi / 2))
+    expected_phase_locking_value_magnitude = np.ones(
+        fourier_coefficients.shape)
+    expected_phase_locking_value_angle = np.zeros(
+        fourier_coefficients.shape)
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+
+    assert np.allclose(
+        np.abs(this_Conn.phase_locking_value()),
+        expected_phase_locking_value_magnitude)
+    assert np.allclose(
+        np.angle(this_Conn.phase_locking_value()),
+        expected_phase_locking_value_angle)
