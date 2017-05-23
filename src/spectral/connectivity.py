@@ -341,11 +341,11 @@ class Connectivity(object):
                NeuroImage 55, 1548-1565.
 
         '''
-        pli = self.phase_lag_index()
         weights = self.expectation(
             np.abs(self.cross_spectral_matrix.imag))
-        with np.errstate(divide='ignore', invalid='ignore'):
-            return pli / weights
+        weights[weights < np.finfo(float).eps] = 1
+
+        return self.expectation(self.cross_spectral_matrix.imag) / weights
 
     def debiased_squared_phase_lag_index(self):
         '''The square of the phase lag index corrected for the positive
