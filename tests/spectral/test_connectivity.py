@@ -249,3 +249,52 @@ def test_weighted_phase_lag_index_is_same_as_phase_lag_index():
     assert np.allclose(
         this_Conn.phase_lag_index(),
         this_Conn.weighted_phase_lag_index())
+
+
+def test_debiased_squared_phase_lag_index():
+    '''Test that incoherent signals are set to zero or below.'''
+    np.random.seed(0)
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 200, 5, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    angles1 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+    angles2 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+
+    fourier_coefficients[..., 0] = np.exp(1j * angles1)
+    fourier_coefficients[..., 1] = np.exp(1j * angles2)
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+
+    assert np.all(
+        this_Conn.debiased_squared_phase_lag_index() < np.finfo(float).eps)
+
+
+def test_debiased_squared_weighted_phase_lag_index():
+    '''Test that incoherent signals are set to zero or below.'''
+    np.random.seed(0)
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 200, 5, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    angles1 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+    angles2 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+
+    fourier_coefficients[..., 0] = np.exp(1j * angles1)
+    fourier_coefficients[..., 1] = np.exp(1j * angles2)
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+
+    # set NaN to 0 so less than will work
+    debiased_wPLI = this_Conn.debiased_squared_weighted_phase_lag_index()
+    debiased_wPLI[np.isnan(debiased_wPLI)] = 0
+
+    assert np.all(debiased_wPLI < np.finfo(float).eps)
