@@ -111,3 +111,27 @@ def test_bias(expectation_type, expected_bias):
         expectation_type=expectation_type,
     )
     assert np.allclose(this_Conn.bias, expected_bias)
+
+
+def test_coherency():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [2 * np.exp(1j * np.pi / 2),
+                                    3 * np.exp(1j * -np.pi / 2)]
+    this_Conn = Connectivity(
+        fourier_coefficients=fourier_coefficients)
+    expected_coherence_magnitude = [[4, 1], [1, 9]]
+    expected_phase = np.zeros((2, 2))
+    expected_phase[0, 1] = np.pi
+    expected_phase[1, 0] = -np.pi
+
+    assert np.allclose(
+        np.abs(this_Conn.coherency().squeeze()),
+        expected_coherence_magnitude)
+    assert np.allclose(
+        np.angle(this_Conn.coherency().squeeze()),
+        expected_phase)
