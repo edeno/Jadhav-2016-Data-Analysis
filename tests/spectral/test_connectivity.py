@@ -73,3 +73,22 @@ def test_expectation(expectation_type, expected_shape):
     expectation_function = this_Conn.expectation
     assert np.allclose(
         expected_shape, expectation_function(fourier_coefficients).shape)
+
+
+@mark.parametrize(
+    'expectation_type, expected_n_observations',
+    [('trials_tapers', 6),
+     ('trials', 2),
+     ('tapers', 3)])
+def test_n_observations(expectation_type, expected_n_observations):
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 2, 3, 4, 5)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    this_Conn = Connectivity(
+        fourier_coefficients=fourier_coefficients,
+        expectation_type=expectation_type,
+    )
+    assert this_Conn.n_observations == expected_n_observations
