@@ -146,10 +146,10 @@ class Connectivity(object):
     def n_observations(self):
         axes = signature(self.expectation).parameters['axis'].default
         if isinstance(axes, int):
-            return self.cross_spectral_matrix.shape[axes]
+            return self.fourier_coefficients.shape[axes]
         else:
             return np.prod(
-                [self.cross_spectral_matrix.shape[axis]
+                [self.fourier_coefficients.shape[axis]
                  for axis in axes])
 
     @property
