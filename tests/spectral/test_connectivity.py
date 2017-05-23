@@ -175,3 +175,44 @@ def test_phase_locking_value():
     assert np.allclose(
         np.angle(this_Conn.phase_locking_value()),
         expected_phase_locking_value_angle)
+
+
+def test_phase_lag_index_sets_zero_phase_signals_to_zero():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [2 * np.exp(1j * 0),
+                                    3 * np.exp(1j * 0)]
+    expected_phase_lag_index = np.zeros((2, 2))
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        this_Conn.phase_lag_index().squeeze(),
+        expected_phase_lag_index)
+
+
+def test_phase_lag_index_sets_angles_up_to_pi_to_same_value():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+    fourier_coefficients[..., 0] = (np.random.uniform(
+        0.1, 2, (n_time_samples, n_trials, n_tapers, n_fft_samples)) *
+        np.exp(1j * np.pi / 2))
+    fourier_coefficients[..., 1] = (np.random.uniform(
+        0.1, 2, (n_time_samples, n_trials, n_tapers, n_fft_samples)) *
+        np.exp(1j * np.pi / 4))
+
+    expected_phase_lag_index = np.zeros((2, 2))
+    expected_phase_lag_index[0, 1] = 1
+    expected_phase_lag_index[1, 0] = -1
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+
+    assert np.allclose(
+        this_Conn.phase_lag_index().squeeze(),
+        expected_phase_lag_index)
