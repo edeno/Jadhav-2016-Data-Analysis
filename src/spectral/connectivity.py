@@ -790,7 +790,21 @@ def _reshape(fourier_coefficients):
 
 
 def _normalize_fourier_coefficients(fourier_coefficients):
-    '''Normalizes a group of fourier coefficients by power within group'''
+    '''Normalizes a group of fourier coefficients by power within group
+
+    Parameters
+    ----------
+    fourier_coefficients : array, shape (n_time_samples, n_trials,
+                                         n_tapers, n_fft_samples,
+                                         n_signals)
+
+    Returns
+    -------
+    normalized_fourier_coefficients : array, shape (n_time_samples,
+                                                    n_fft_samples,
+                                                    n_signals,
+                                                    n_trials * n_tapers)
+    '''
     U, _, V_transpose = np.linalg.svd(
         _reshape(fourier_coefficients), full_matrices=False)
     return np.matmul(U, V_transpose)
@@ -798,7 +812,25 @@ def _normalize_fourier_coefficients(fourier_coefficients):
 
 def _estimate_canonical_coherence(normalized_fourier_coefficients1,
                                   normalized_fourier_coefficients2):
-    '''Finds the maximum complex correlation between groups of signals.'''
+    '''Finds the maximum complex correlation between groups of signals
+    at each time and frequency.
+
+    Parameters
+    ----------
+    normalized_fourier_coefficients1 : array, shape (n_time_samples,
+                                                     n_fft_samples,
+                                                     n_signals,
+                                                     n_trials * n_tapers)
+    normalized_fourier_coefficients2 : array, shape (n_time_samples,
+                                                     n_fft_samples,
+                                                     n_signals,
+                                                     n_trials * n_tapers)
+
+    Returns
+    -------
+    canonical_coherence : array, shape (n_time_samples, n_fft_samples)
+
+    '''
     group_cross_spectrum = _complex_inner_product(
         normalized_fourier_coefficients1, normalized_fourier_coefficients2)
     return np.linalg.svd(group_cross_spectrum,
