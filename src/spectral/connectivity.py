@@ -167,17 +167,17 @@ class Connectivity(object):
                                            n_signals)
 
          '''
-        coherencey = (
+        complex_coherencey = (
             self.expectation(self.cross_spectral_matrix) / np.sqrt(
                 self.power[..., :, np.newaxis] *
                 self.power[..., np.newaxis, :]))
         n_signals = self.fourier_coefficients.shape[-1]
         diagonal_ind = np.arange(0, n_signals)
-        coherencey[..., diagonal_ind, diagonal_ind] = self.power
-        return coherencey
+        complex_coherencey[..., diagonal_ind, diagonal_ind] = self.power
+        return complex_coherencey
 
     def coherence_phase(self):
-        '''The phase angle of the complex coherency
+        '''The phase angle of the complex coherency.
 
         Returns
         -------
