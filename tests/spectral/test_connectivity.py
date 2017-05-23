@@ -298,3 +298,35 @@ def test_debiased_squared_weighted_phase_lag_index():
     debiased_wPLI[np.isnan(debiased_wPLI)] = 0
 
     assert np.all(debiased_wPLI < np.finfo(float).eps)
+
+
+def test_pairwise_phase_consistency():
+    '''Test that incoherent signals are set to zero or below
+    and that differences in power are ignored.'''
+    np.random.seed(0)
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 200, 5, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    magnitude1 = np.random.uniform(
+        0.5, 3, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+    angles1 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+    magnitude2 = np.random.uniform(
+        0.5, 3, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+    angles2 = np.random.uniform(
+        0, 2 * np.pi, (n_time_samples, n_trials, n_tapers, n_fft_samples))
+
+    fourier_coefficients[..., 0] = magnitude1 * np.exp(1j * angles1)
+    fourier_coefficients[..., 1] = magnitude2 * np.exp(1j * angles2)
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    ppc = this_Conn.pairwise_phase_consistency()
+
+    # set diagonal to zero because its always 1
+    diagonal_ind = np.arange(0, n_signals)
+    ppc[..., diagonal_ind, diagonal_ind] = 0
+
+    assert np.all(ppc < np.finfo(float).eps)
