@@ -50,8 +50,8 @@ class Connectivity(object):
     Attributes
     ----------
     fourier_coefficients : array, shape (n_time_samples, n_trials,
-                                         n_signals, n_fft_samples,
-                                         n_tapers)
+                                         n_tapers, n_fft_samples,
+                                         n_signals)
         The compex-valued coefficients from a fourier transform.
     expectation_type : ('trials_tapers' | 'trials' | 'tapers')
         How to average the cross spectral matrix. 'trials_tapers' averages
