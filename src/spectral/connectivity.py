@@ -102,24 +102,24 @@ class Connectivity(object):
         Parameters
         ----------
         fourier_coefficients : array, shape (n_time_samples, n_trials,
-                                             n_signals, n_fft_samples,
-                                             n_tapers)
+                                             n_tapers, n_fft_samples,
+                                             n_signals)
 
         Returns
         -------
-        cross_spectral_matrix : array, shape (..., n_signals, n_signals)
+        cross_spectral_matrix : array, shape (n_time_samples, n_trials,
+                                              n_tapers, n_fft_samples,
+                                              n_signals, n_signals)
 
         '''
-        fourier_coefficients = (self.fourier_coefficients
-                                .swapaxes(2, -1)[..., np.newaxis])
+        fourier_coefficients = (self.fourier_coefficients[..., np.newaxis])
         return _complex_inner_product(fourier_coefficients,
                                       fourier_coefficients)
 
     @lazyproperty
     def power(self):
-        fourier_coefficients = self.fourier_coefficients.swapaxes(2, -1)
-        return self.expectation(fourier_coefficients *
-                                fourier_coefficients.conjugate()).real
+        return self.expectation(self.fourier_coefficients *
+                                self.fourier_coefficients.conjugate()).real
 
     @lazyproperty
     def minimum_phase_factor(self):
@@ -768,11 +768,25 @@ def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
 
 
 def _reshape(fourier_coefficients):
-    '''Combine trials and tapers dimensions'''
-    (n_time_samples, _, n_signals,
-     n_fft_samples, _) = fourier_coefficients.shape
-    return fourier_coefficients.swapaxes(1, 3).reshape(
-        (n_time_samples, n_fft_samples, n_signals, -1))
+    '''Combine trials and tapers dimensions and move the combined dimension
+    to the last axis position.
+
+    Parameters
+    ----------
+    fourier_coefficients : array, shape (n_time_samples, n_trials,
+                                         n_tapers, n_fft_samples,
+                                         n_signals)
+
+    Returns
+    -------
+    fourier_coefficients : array, shape (n_time_samples, n_fft_samples,
+                                         n_signals, n_trials * n_tapers)
+
+    '''
+    (n_time_samples, _, _, n_fft_samples,
+     n_signals) = fourier_coefficients.shape
+    new_shape = (n_time_samples, -1, n_fft_samples, n_signals)
+    return np.moveaxis(fourier_coefficients.reshape(new_shape), 1, -1)
 
 
 def _normalize_fourier_coefficients(fourier_coefficients):
