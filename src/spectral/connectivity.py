@@ -112,7 +112,7 @@ class Connectivity(object):
                                               n_signals, n_signals)
 
         '''
-        fourier_coefficients = (self.fourier_coefficients[..., np.newaxis])
+        fourier_coefficients = self.fourier_coefficients[..., np.newaxis]
         return _complex_inner_product(fourier_coefficients,
                                       fourier_coefficients)
 
