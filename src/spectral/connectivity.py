@@ -258,7 +258,7 @@ class Connectivity(object):
                     :, :, np.in1d(group_labels, label), ...])
             for label in labels]
         coherence = _squared_magnitude(np.stack([
-            _estimate_canonical_coherency(
+            _estimate_canonical_coherence(
                 fourier_coefficients1, fourier_coefficients2)
             for fourier_coefficients1, fourier_coefficients2
             in combinations(normalized_fourier_coefficients, 2)
@@ -796,7 +796,7 @@ def _normalize_fourier_coefficients(fourier_coefficients):
     return np.matmul(U, V_transpose)
 
 
-def _estimate_canonical_coherency(normalized_fourier_coefficients1,
+def _estimate_canonical_coherence(normalized_fourier_coefficients1,
                                   normalized_fourier_coefficients2):
     '''Finds the maximum complex correlation between groups of signals.'''
     group_cross_spectrum = _complex_inner_product(
