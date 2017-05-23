@@ -122,8 +122,7 @@ def test_coherency():
 
     fourier_coefficients[..., :] = [2 * np.exp(1j * np.pi / 2),
                                     3 * np.exp(1j * -np.pi / 2)]
-    this_Conn = Connectivity(
-        fourier_coefficients=fourier_coefficients)
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
     expected_coherence_magnitude = [[4, 1], [1, 9]]
     expected_phase = np.zeros((2, 2))
     expected_phase[0, 1] = np.pi
