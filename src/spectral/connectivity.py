@@ -159,7 +159,7 @@ class Connectivity(object):
 
     def coherency(self):
         '''The complex-valued linear association between time series in the
-         frequency domain
+         frequency domain.
 
          Returns
          -------
@@ -167,9 +167,14 @@ class Connectivity(object):
                                            n_signals)
 
          '''
-        return self.expectation(self.cross_spectral_matrix) / np.sqrt(
-            self.power[..., :, np.newaxis] *
-            self.power[..., np.newaxis, :])
+        coherencey = (
+            self.expectation(self.cross_spectral_matrix) / np.sqrt(
+                self.power[..., :, np.newaxis] *
+                self.power[..., np.newaxis, :]))
+        n_signals = self.fourier_coefficients.shape[-1]
+        diagonal_ind = np.arange(0, n_signals)
+        coherencey[..., diagonal_ind, diagonal_ind] = self.power
+        return coherencey
 
     def coherence_phase(self):
         '''The phase angle of the complex coherency
