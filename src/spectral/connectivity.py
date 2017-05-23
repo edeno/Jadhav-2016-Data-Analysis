@@ -418,7 +418,7 @@ class Connectivity(object):
         n_observations = self.n_observations
         plv_sum = self.phase_locking_value() * n_observations
         ppc = ((plv_sum * plv_sum.conjugate() - n_observations) /
-               (n_observations * (n_observations - 1.0)))
+               (n_observations ** 2 - n_observations))
         return ppc.real
 
     def pairwise_spectral_granger_prediction(self):
