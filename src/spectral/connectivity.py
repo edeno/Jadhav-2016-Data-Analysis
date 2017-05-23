@@ -320,8 +320,7 @@ class Connectivity(object):
                sources. Human Brain Mapping 28, 1178-1193.
 
         '''
-        return self.expectation(
-            np.sign(self.cross_spectral_matrix.imag))
+        return self.expectation(np.sign(self.cross_spectral_matrix.imag))
 
     def weighted_phase_lag_index(self):
         '''Weighted average of the phase lag index using the imaginary
@@ -341,10 +340,8 @@ class Connectivity(object):
                NeuroImage 55, 1548-1565.
 
         '''
-        weights = self.expectation(
-            np.abs(self.cross_spectral_matrix.imag))
+        weights = self.expectation(np.abs(self.cross_spectral_matrix.imag))
         weights[weights < np.finfo(float).eps] = 1
-
         return self.expectation(self.cross_spectral_matrix.imag) / weights
 
     def debiased_squared_phase_lag_index(self):
