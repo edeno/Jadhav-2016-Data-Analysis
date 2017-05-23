@@ -135,3 +135,22 @@ def test_coherency():
     assert np.allclose(
         np.angle(this_Conn.coherency().squeeze()),
         expected_phase)
+
+
+def test_imaginary_coherence():
+    '''Test that imaginary coherence sets signals with the same phase
+    to zero.'''
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [2 * np.exp(1j * 0),
+                                    3 * np.exp(1j * np.pi)]
+    expected_imaginary_coherence = np.zeros((2, 2))
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        this_Conn.imaginary_coherence().squeeze(),
+        expected_imaginary_coherence)
