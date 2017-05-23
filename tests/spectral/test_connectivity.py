@@ -92,3 +92,22 @@ def test_n_observations(expectation_type, expected_n_observations):
         expectation_type=expectation_type,
     )
     assert this_Conn.n_observations == expected_n_observations
+
+
+@mark.parametrize(
+    'expectation_type, expected_bias',
+    [('trials_tapers', 0.10),
+     ('trials', 0.50),
+     ('tapers', 0.25)])
+def test_bias(expectation_type, expected_bias):
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 2, 3, 4, 5)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    this_Conn = Connectivity(
+        fourier_coefficients=fourier_coefficients,
+        expectation_type=expectation_type,
+    )
+    assert this_Conn.bias == expected_bias
