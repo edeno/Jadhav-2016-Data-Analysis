@@ -34,3 +34,22 @@ def test_cross_spectrum(axis):
     cross_spectral_matrix = this_Conn.cross_spectral_matrix
     assert np.allclose(
         expected_cross_spectral_matrix, cross_spectral_matrix)
+
+
+def test_power():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 1, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [2 * np.exp(1j * np.pi / 2),
+                                    3 * np.exp(1j * -np.pi / 2)]
+
+    expected_power = np.zeros((n_time_samples, n_fft_samples, n_signals))
+
+    expected_power[..., :] = [4, 9]
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        expected_power, this_Conn.power)
