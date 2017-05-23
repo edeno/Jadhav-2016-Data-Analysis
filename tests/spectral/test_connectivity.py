@@ -31,9 +31,8 @@ def test_cross_spectrum(axis):
     expected_cross_spectral_matrix[expected_ind] = expected_slice
 
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
-    cross_spectral_matrix = this_Conn.cross_spectral_matrix
     assert np.allclose(
-        expected_cross_spectral_matrix, cross_spectral_matrix)
+        expected_cross_spectral_matrix, this_Conn.cross_spectral_matrix)
 
 
 def test_power():
