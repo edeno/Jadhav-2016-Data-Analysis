@@ -216,3 +216,36 @@ def test_phase_lag_index_sets_angles_up_to_pi_to_same_value():
     assert np.allclose(
         this_Conn.phase_lag_index().squeeze(),
         expected_phase_lag_index)
+
+
+def test_weighted_phase_lag_index_sets_zero_phase_signals_to_zero():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [2 * np.exp(1j * 0),
+                                    3 * np.exp(1j * 0)]
+    expected_phase_lag_index = np.zeros((2, 2))
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        this_Conn.weighted_phase_lag_index().squeeze(),
+        expected_phase_lag_index)
+
+
+def test_weighted_phase_lag_index_is_same_as_phase_lag_index():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        1, 30, 1, 1, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+
+    fourier_coefficients[..., :] = [1 * np.exp(1j * 3 * np.pi / 4),
+                                    1 * np.exp(1j * 5 * np.pi / 4)]
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        this_Conn.phase_lag_index(),
+        this_Conn.weighted_phase_lag_index())
