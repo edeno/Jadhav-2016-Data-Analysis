@@ -146,7 +146,7 @@ def test_imaginary_coherence():
         dtype=np.complex)
 
     fourier_coefficients[..., :] = [2 * np.exp(1j * 0),
-                                    3 * np.exp(1j * np.pi)]
+                                    3 * np.exp(1j * 0)]
     expected_imaginary_coherence = np.zeros((2, 2))
 
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
