@@ -1,5 +1,5 @@
 import numpy as np
-from src.spectral.connectivity import Connectivity
+from src.spectral.connectivity import Connectivity, _reshape
 from pytest import mark
 
 
@@ -330,3 +330,14 @@ def test_pairwise_phase_consistency():
     ppc[..., diagonal_ind, diagonal_ind] = 0
 
     assert np.all(ppc < np.finfo(float).eps)
+
+
+def test__reshape():
+    n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
+        20, 100, 3, 10, 2)
+    fourier_coefficients = np.zeros(
+        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
+        dtype=np.complex)
+    expected_shape = (n_time_samples, n_fft_samples, n_signals,
+                      n_trials * n_tapers)
+    np.allclose(_reshape(fourier_coefficients).shape, expected_shape)
