@@ -760,7 +760,8 @@ def _set_diagonal_to_zero(x):
 
 
 def _total_inflow(transfer_function, noise_variance=1.0):
-    '''Measures the effect of incoming signals onto a node.'''
+    '''Measures the effect of incoming signals onto a node via sum of
+    squares.'''
     return np.sqrt(np.sum(
         noise_variance * _squared_magnitude(transfer_function),
         keepdims=True, axis=-1))
@@ -773,7 +774,8 @@ def _get_noise_variance(noise_covariance):
 
 
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance=1.0):
-    '''Measures the effect of outgoing signals on the node.'''
+    '''Measures the effect of outgoing signals on the node via
+    sum of squares.'''
     return np.sqrt(np.sum(
         _squared_magnitude(MVAR_Fourier_coefficients) / noise_variance,
         keepdims=True, axis=-2))
