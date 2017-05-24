@@ -1,7 +1,8 @@
 import numpy as np
 from src.spectral.connectivity import (
     Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
-    _conjugate_transpose, _set_diagonal_to_zero, _bandpass)
+    _conjugate_transpose, _set_diagonal_to_zero, _bandpass,
+    _get_independent_frequency_step)
 from pytest import mark
 
 
@@ -408,3 +409,15 @@ def test__bandpass():
 
     assert (np.allclose(expected_data, filtered_data) &
             np.allclose(expected_labels, filtered_labels))
+
+
+@mark.parametrize(
+    'frequency_difference, frequency_resolution, expected_step',
+    [(2.0, 5.0, 3),
+     (5.0, 2.0, 1),
+     (2.0, 2.0, 1)])
+def test__get_independent_frequency_step(
+        frequency_difference, frequency_resolution, expected_step):
+    step = _get_independent_frequency_step(
+        frequency_difference, frequency_resolution)
+    assert step == expected_step
