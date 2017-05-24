@@ -4,7 +4,7 @@ from src.spectral.connectivity import (
     _conjugate_transpose, _set_diagonal_to_zero, _bandpass,
     _get_independent_frequency_step,
     _find_largest_significant_group, _get_independent_frequencies,
-    _find_largest_independent_group)
+    _find_largest_independent_group, _total_inflow, _total_outflow)
 from pytest import mark
 
 
@@ -479,3 +479,24 @@ def test__find_largest_independent_group(
         _find_largest_independent_group(is_significant, frequency_step,
                                         min_group_size=min_group_size),
         expected_is_significant)
+
+
+def test__total_inflow():
+    transfer_function = np.ones((2, 3, 3))
+    noise_variance = [4, 2, 3]
+    expected_total_inflow = 3 * np.ones((2, 3, 1))
+
+    assert np.allclose(
+        _total_inflow(transfer_function, noise_variance),
+        expected_total_inflow)
+
+
+def test__total_outflow():
+    MVAR_Fourier_coefficients = np.ones((2, 3, 3))
+    noise_variance = np.array([0.25, 0.5, 1/3])
+    expected_total_outflow = (np.ones((2, 1, 3)) *
+                              np.sqrt(1.0 / noise_variance * 3))
+
+    assert np.allclose(
+        _total_outflow(MVAR_Fourier_coefficients, noise_variance),
+        expected_total_outflow)
