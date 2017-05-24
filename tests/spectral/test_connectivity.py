@@ -436,3 +436,12 @@ def test__find_largest_significant_group():
     assert np.allclose(
         _find_largest_significant_group(is_significant),
         expected_is_significant)
+
+
+def test__find_largest_significant_group_with_no_significant():
+    is_significant = np.zeros((10,), dtype=bool)
+    expected_is_significant = np.zeros((10,), dtype=bool)
+
+    assert np.allclose(
+        _find_largest_significant_group(is_significant),
+        expected_is_significant)
