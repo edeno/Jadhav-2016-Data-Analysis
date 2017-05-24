@@ -2,7 +2,7 @@ import numpy as np
 from pytest import mark
 
 from src.spectral.transforms import (_add_trial_axis, _sliding_window,
-                                     _nextpower2)
+                                     _nextpower2, Multitaper)
 
 
 def test__add_trial_axis():
@@ -46,3 +46,16 @@ def test__sliding_window(
             test_array, window_size=window_size, step_size=step_size,
             axis=axis),
         expected_array)
+
+
+@mark.parametrize(
+    'time_halfbandwidth_product, expected_n_tapers',
+    [(3, 5), (1, 1), (1.75, 2)])
+def test_n_tapers(time_halfbandwidth_product, expected_n_tapers):
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros(
+        (n_time_samples, n_trials, n_signals), dtype=np.complex)
+    m = Multitaper(
+        time_series=time_series,
+        time_halfbandwidth_product=time_halfbandwidth_product)
+    assert m.n_tapers == expected_n_tapers
