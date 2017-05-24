@@ -1,5 +1,6 @@
 import numpy as np
-from src.spectral.connectivity import Connectivity, _reshape
+from src.spectral.connectivity import (
+    Connectivity, _reshape, _squared_magnitude)
 from pytest import mark
 
 
@@ -340,4 +341,11 @@ def test__reshape():
         dtype=np.complex)
     expected_shape = (n_time_samples, n_fft_samples, n_signals,
                       n_trials * n_tapers)
-    np.allclose(_reshape(fourier_coefficients).shape, expected_shape)
+    assert np.allclose(
+        _reshape(fourier_coefficients).shape, expected_shape)
+
+
+def test__squared_magnitude():
+    test_array = np.array([[1, 2], [3, 4]])
+    expected_array = np.array([[1, 4], [9, 16]])
+    assert np.allclose(_squared_magnitude(test_array), expected_array)
