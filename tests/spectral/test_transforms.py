@@ -24,5 +24,5 @@ def test__add_trial_axis():
     (3, 2),
     (17, 5),
     (1, 0)])
-def test_nextpower2(test_number, expected_number):
+def test__nextpower2(test_number, expected_number):
     assert _nextpower2(test_number) == expected_number
