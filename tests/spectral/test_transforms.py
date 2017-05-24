@@ -26,3 +26,23 @@ def test__add_trial_axis():
     (1, 0)])
 def test__nextpower2(test_number, expected_number):
     assert _nextpower2(test_number) == expected_number
+
+
+@mark.parametrize(
+    'test_array, window_size, step_size, axis, expected_array',
+    [(np.arange(1, 6), 3, 1, -1, np.array([[1, 2, 3],
+                                           [2, 3, 4],
+                                           [3, 4, 5]])),
+     (np.arange(1, 6), 3, 2, -1, np.array([[1, 2, 3],
+                                           [3, 4, 5]])),
+     (np.arange(0, 6).reshape((2, 3)), 2, 1, 0, np.array([[[0, 3],
+                                                           [1, 4],
+                                                           [2, 5]]]))
+     ])
+def test__sliding_window(
+        test_array, window_size, step_size, axis, expected_array):
+    assert np.allclose(
+        _sliding_window(
+            test_array, window_size=window_size, step_size=step_size,
+            axis=axis),
+        expected_array)
