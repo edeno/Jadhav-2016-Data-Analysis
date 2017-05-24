@@ -1,6 +1,7 @@
 import numpy as np
 from src.spectral.connectivity import (
-    Connectivity, _reshape, _squared_magnitude)
+    Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
+    _conjugate_transpose)
 from pytest import mark
 
 
@@ -349,3 +350,36 @@ def test__squared_magnitude():
     test_array = np.array([[1, 2], [3, 4]])
     expected_array = np.array([[1, 4], [9, 16]])
     assert np.allclose(_squared_magnitude(test_array), expected_array)
+
+
+def test__conjugate_transpose():
+    test_array = np.zeros((2, 2, 4), dtype=np.complex)
+    test_array[1, ...] = [[1+2j, 3+4j, 5+6j, 7+8j],
+                          [1-2j, 3-4j, 5-6j, 7-8j]]
+    expected_array = np.zeros((2, 4, 2), dtype=np.complex)
+    expected_array[1, ...] = test_array[1, ...].conj().transpose()
+    assert np.allclose(_conjugate_transpose(test_array), expected_array)
+
+
+def test__complex_inner_product():
+    '''Test that the complex inner product is taken over the last two
+    dimensions.'''
+    test_array1 = np.zeros((3, 2, 4), dtype=np.complex)
+    test_array2 = np.zeros((3, 2, 4), dtype=np.complex)
+
+    x1 = np.ones((2, 4)) * np.exp(1j * np.pi / 2)
+    x2 = np.ones((2, 4)) * np.exp(1j * 0)
+
+    test_array1[1, :, :] = x1
+    test_array2[1, :, :] = x2
+
+    test_array1[2, :, :] = x1
+    test_array2[2, :, :] = x1
+
+    expected_inner_product = np.zeros((3, 2, 2), dtype=np.complex)
+    expected_inner_product[1, ...] = x1.dot(x2.T.conj())
+    expected_inner_product[2, ...] = x1.dot(x1.T.conj())
+
+    assert np.allclose(
+        _complex_inner_product(test_array1, test_array2),
+        expected_inner_product)
