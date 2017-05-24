@@ -2,7 +2,8 @@ import numpy as np
 from pytest import mark
 from src.spectral.statistics import (get_normal_distribution_p_values,
                                      fisher_z_transform,
-                                     Benjamini_Hochberg_procedure)
+                                     Benjamini_Hochberg_procedure,
+                                     Bonferroni_correction)
 
 
 def test_get_normal_distribution_p_values():
@@ -33,4 +34,19 @@ def test_Benjamini_Hochberg_procedure(p_values, expected_is_significant):
     alpha = 0.05
     assert np.allclose(
         Benjamini_Hochberg_procedure(p_values, alpha),
+        expected_is_significant)
+
+
+@mark.parametrize(
+    'p_values, expected_is_significant',
+    [(np.ones((10, 2)), np.zeros((10, 2), dtype=bool)),
+     (np.zeros((10, 2)), np.ones((10, 2), dtype=bool)),
+     (np.array([0.03, 0.01, 0.04, 0.06]),
+      np.array([False, True, False, False])),
+     (np.array([0.03, 0.01, 0.04, 0.05]),
+      np.array([False, True, False, False]))])
+def test_Bonferroni_correction(p_values, expected_is_significant):
+    alpha = 0.05
+    assert np.allclose(
+        Bonferroni_correction(p_values, alpha),
         expected_is_significant)
