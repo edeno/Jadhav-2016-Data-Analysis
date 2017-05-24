@@ -504,16 +504,17 @@ def _fix_taper_sign(tapers, n_time_samples):
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
     # * antisymmetric tapers should begin with a positive lobe
-    fix_symmetric = (tapers[0::2].sum(axis=1) < 0)
-    for i, f in enumerate(fix_symmetric):
-        if f:
-            tapers[2 * i] *= -1
+    is_not_symmetric = tapers[0::2].sum(axis=1) < 0
+    for taper_ind, not_symmetric in enumerate(is_not_symmetric):
+        if not_symmetric:
+            tapers[2 * taper_ind] *= -1
     # rather than test the sign of one point, test the sign of the
     # linear slope up to the first (largest) peak
-    pk = np.argmax(np.abs(tapers[1::2, :n_time_samples // 2]), axis=1)
-    for i, p in enumerate(pk):
-        if np.sum(tapers[2 * i + 1, :p]) < 0:
-            tapers[2 * i + 1] *= -1
+    largest_peak_ind = np.argmax(
+        np.abs(tapers[1::2, :n_time_samples // 2]), axis=1)
+    for taper_ind, peak_ind in enumerate(largest_peak_ind):
+        if np.sum(tapers[2 * taper_ind + 1, :peak_ind]) < 0:
+            tapers[2 * taper_ind + 1] *= -1
     return tapers
 
 
@@ -524,13 +525,13 @@ def _auto_correlation(tapers, n_time_samples):
     return dpss_rxx[:, :n_time_samples]
 
 
-    idx = (eigenvalues > 0.9)
-    if not idx.any():
-        print('Could not properly use low_bias,'
 def _get_low_bias_tapers(tapers, eigenvalues):
+    is_low_bias = eigenvalues > 0.9
+    if not np.any(is_low_bias):
+        print('Could not properly use low_bias, '
               'keeping lowest-bias taper')
-        idx = [np.argmax(eigenvalues)]
-    return tapers[idx], eigenvalues[idx]
+        is_low_bias = [np.argmax(eigenvalues)]
+    return tapers[is_low_bias], eigenvalues[is_low_bias]
 
 
 def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
@@ -538,24 +539,7 @@ def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
     problem using the autocorr sequence technique from Percival and Walden,
     1993 pg 390'''
 
-    r = 4 * half_bandwidth * np.sinc(2 * half_bandwidth * time_index)
-    r[0] = 2 * half_bandwidth
-    return np.dot(auto_correlation(tapers, len(time_index)), r)
-
-
-def sum_squared(X):
-    '''Compute norm of an array.
-
-    Parameters
-    ----------
-    X : array
-        Data whose norm must be found
-
-    Returns
-    -------
-    value : float
-        Sum of squares of the input array X
-    '''
-    X_flat = X.ravel(order='F' if np.isfortran(X) else 'C')
-    return np.dot(X_flat, X_flat)
+    ideal_filter = 4 * half_bandwidth * np.sinc(
+        2 * half_bandwidth * time_index)
+    ideal_filter[0] = 2 * half_bandwidth
     return np.dot(_auto_correlation(tapers, len(time_index)), ideal_filter)
