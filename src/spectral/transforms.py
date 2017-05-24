@@ -409,21 +409,21 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
     time_index = np.arange(n_time_samples, dtype='d')
 
     if interp_from is not None:
-        tapers = find_tapers_from_interpolation(
+        tapers = _find_tapers_from_interpolation(
             interp_from, time_halfbandwidth_product, n_tapers,
             n_time_samples, interp_kind)
     else:
-        tapers = find_tapers_from_optimization(
+        tapers = _find_tapers_from_optimization(
             n_time_samples, time_index, half_bandwidth, n_tapers)
 
-    tapers = fix_taper_sign(tapers, n_time_samples)
-    eigenvalues = get_taper_eigenvalues(tapers, half_bandwidth, time_index)
+    tapers = _fix_taper_sign(tapers, n_time_samples)
+    eigenvalues = _get_taper_eigenvalues(
+        tapers, half_bandwidth, time_index)
 
-    return (get_low_bias_tapers(tapers, eigenvalues)
+    return (_get_low_bias_tapers(tapers, eigenvalues)
             if is_low_bias else (tapers, eigenvalues))
 
 
-def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
                                    n_tapers, n_time_samples, interp_kind):
     '''Create the tapers of the smaller size
     `interp_from` and then interpolate to the larger size
@@ -455,6 +455,7 @@ def find_tapers_from_interpolation(interp_from, time_halfbandwidth_product,
 
 def find_tapers_from_optimization(n_time_samples, time_index,
                                   half_bandwidth, n_tapers):
+def _find_tapers_from_interpolation(
     '''here we want to set up an optimization problem to find a sequence
     whose energy is maximally concentrated within band
     [-half_bandwidth, half_bandwidth]. Thus,
@@ -499,7 +500,7 @@ def find_tapers_from_optimization(n_time_samples, time_index,
     return tapers
 
 
-def fix_taper_sign(tapers, n_time_samples):
+def _fix_taper_sign(tapers, n_time_samples):
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
     # * antisymmetric tapers should begin with a positive lobe
@@ -516,24 +517,23 @@ def fix_taper_sign(tapers, n_time_samples):
     return tapers
 
 
-def auto_correlation(tapers, n_time_samples):
+def _auto_correlation(tapers, n_time_samples):
     n_fft_samples = 2 ** _nextpower2(2 * n_time_samples - 1)
     dpss_fft = fft(tapers, n_fft_samples)
     dpss_rxx = np.real(ifft(dpss_fft * dpss_fft.conj()))
     return dpss_rxx[:, :n_time_samples]
 
 
-def get_low_bias_tapers(tapers, eigenvalues):
     idx = (eigenvalues > 0.9)
     if not idx.any():
         print('Could not properly use low_bias,'
+def _get_low_bias_tapers(tapers, eigenvalues):
               'keeping lowest-bias taper')
         idx = [np.argmax(eigenvalues)]
     return tapers[idx], eigenvalues[idx]
 
 
-def get_taper_eigenvalues(tapers, half_bandwidth,
-                          time_index):
+def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
     '''Finds the eigenvalues of the original spectral concentration
     problem using the autocorr sequence technique from Percival and Walden,
     1993 pg 390'''
@@ -558,3 +558,4 @@ def sum_squared(X):
     '''
     X_flat = X.ravel(order='F' if np.isfortran(X) else 'C')
     return np.dot(X_flat, X_flat)
+    return np.dot(_auto_correlation(tapers, len(time_index)), ideal_filter)
