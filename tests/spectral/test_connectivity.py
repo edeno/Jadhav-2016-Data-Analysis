@@ -1,12 +1,18 @@
 import numpy as np
-from src.spectral.connectivity import (
-    Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
-    _conjugate_transpose, _set_diagonal_to_zero, _bandpass,
-    _get_independent_frequency_step,
-    _find_largest_significant_group, _get_independent_frequencies,
-    _find_largest_independent_group, _total_inflow, _total_outflow,
-    _remove_instantaneous_causality, _inner_combination)
 from pytest import mark
+
+from src.spectral.connectivity import (Connectivity, _bandpass,
+                                       _complex_inner_product,
+                                       _conjugate_transpose,
+                                       _find_largest_independent_group,
+                                       _find_largest_significant_group,
+                                       _get_independent_frequencies,
+                                       _get_independent_frequency_step,
+                                       _inner_combination,
+                                       _remove_instantaneous_causality,
+                                       _reshape, _set_diagonal_to_zero,
+                                       _squared_magnitude, _total_inflow,
+                                       _total_outflow)
 
 
 @mark.parametrize('axis', [(0), (1), (2), (3)])
@@ -358,8 +364,8 @@ def test__squared_magnitude():
 
 def test__conjugate_transpose():
     test_array = np.zeros((2, 2, 4), dtype=np.complex)
-    test_array[1, ...] = [[1+2j, 3+4j, 5+6j, 7+8j],
-                          [1-2j, 3-4j, 5-6j, 7-8j]]
+    test_array[1, ...] = [[1 + 2j, 3 + 4j, 5 + 6j, 7 + 8j],
+                          [1 - 2j, 3 - 4j, 5 - 6j, 7 - 8j]]
     expected_array = np.zeros((2, 4, 2), dtype=np.complex)
     expected_array[1, ...] = test_array[1, ...].conj().transpose()
     assert np.allclose(_conjugate_transpose(test_array), expected_array)
@@ -494,7 +500,7 @@ def test__total_inflow():
 
 def test__total_outflow():
     MVAR_Fourier_coefficients = np.ones((2, 3, 3))
-    noise_variance = np.array([0.25, 0.5, 1/3])
+    noise_variance = np.array([0.25, 0.5, 1 / 3])
     expected_total_outflow = (np.ones((2, 1, 3)) *
                               np.sqrt(1.0 / noise_variance * 3))
 
