@@ -1,9 +1,10 @@
 import numpy as np
 from pytest import mark
-from src.spectral.statistics import (get_normal_distribution_p_values,
+
+from src.spectral.statistics import (Benjamini_Hochberg_procedure,
+                                     Bonferroni_correction,
                                      fisher_z_transform,
-                                     Benjamini_Hochberg_procedure,
-                                     Bonferroni_correction)
+                                     get_normal_distribution_p_values)
 
 
 def test_get_normal_distribution_p_values():
