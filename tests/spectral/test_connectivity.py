@@ -2,7 +2,8 @@ import numpy as np
 from src.spectral.connectivity import (
     Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
     _conjugate_transpose, _set_diagonal_to_zero, _bandpass,
-    _get_independent_frequency_step)
+    _get_independent_frequency_step,
+    _find_largest_significant_group)
 from pytest import mark
 
 
@@ -421,3 +422,17 @@ def test__get_independent_frequency_step(
     step = _get_independent_frequency_step(
         frequency_difference, frequency_resolution)
     assert step == expected_step
+
+
+def test__find_largest_significant_group():
+    is_significant = np.zeros((10,), dtype=bool)
+    is_significant[1:3] = True
+    is_significant[4:7] = True
+    is_significant[8] = True
+
+    expected_is_significant = np.zeros((10,), dtype=bool)
+    expected_is_significant[4:7] = True
+
+    assert np.allclose(
+        _find_largest_significant_group(is_significant),
+        expected_is_significant)
