@@ -19,8 +19,8 @@ def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
         (False).
     '''
     p_values = np.asarray(p_values)
-    threshold_line = (alpha * np.arange(1, p_values.size + 1) /
-                      p_values.size)
+    threshold_line = np.linspace(0, alpha, num=p_values.size + 1,
+                                 endpoint=True)[1:]
     sorted_p_values = np.sort(p_values.flatten())
     try:
         threshold_ind = np.max(
