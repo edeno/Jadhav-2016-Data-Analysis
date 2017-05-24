@@ -102,3 +102,11 @@ def get_normal_distribution_p_values(data, mean=0, std_deviation=1):
     a normal distribution with `mean` and `std_deviation`
     '''
     return 1 - norm.cdf(data, loc=mean, scale=std_deviation)
+
+
+def coherence_bias(n_observations):
+    ''' Enochson and Goodman (1965)
+        Bokil et al. (2007)
+    '''
+    degrees_of_freedom = 2 * n_observations
+    return 1.0 / (degrees_of_freedom - 2)

@@ -9,7 +9,7 @@ from scipy.stats.mstats import linregress
 from .minimum_phase_decomposition import minimum_phase_decomposition
 from .statistics import (adjust_for_multiple_comparisons,
                          fisher_z_transform,
-                         get_normal_distribution_p_values)
+                         get_normal_distribution_p_values, coherence_bias)
 
 EXPECTATION = {
     'trials': partial(np.mean, axis=1),
@@ -151,11 +151,6 @@ class Connectivity(object):
             return np.prod(
                 [self.fourier_coefficients.shape[axis]
                  for axis in axes])
-
-    @property
-    def bias(self):
-        degrees_of_freedom = 2 * self.n_observations
-        return 1.0 / (degrees_of_freedom - 2)
 
     def coherency(self):
         '''The complex-valued linear association between time series in the
@@ -594,8 +589,9 @@ class Connectivity(object):
             frequency_difference, frequency_resolution)
         bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
+        bias = coherence_bias(self.n_observations)
         is_significant = _find_significant_frequencies(
-            bandpassed_coherency, self.bias, independent_frequency_step)
+            bandpassed_coherency, bias, independent_frequency_step)
         coherence_phase = np.ma.masked_array(
             np.unwrap(np.angle(bandpassed_coherency), axis=-3),
             mask=~is_significant)

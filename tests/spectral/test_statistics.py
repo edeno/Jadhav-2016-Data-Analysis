@@ -4,7 +4,8 @@ from pytest import mark
 from src.spectral.statistics import (Benjamini_Hochberg_procedure,
                                      Bonferroni_correction,
                                      fisher_z_transform,
-                                     get_normal_distribution_p_values)
+                                     get_normal_distribution_p_values,
+                                     coherence_bias)
 
 
 def test_get_normal_distribution_p_values():
@@ -51,3 +52,9 @@ def test_Bonferroni_correction(p_values, expected_is_significant):
     assert np.allclose(
         Bonferroni_correction(p_values, alpha),
         expected_is_significant)
+
+
+def test_coherence_bias():
+    n_observations = 10
+    expected_bias = 1.0 / 18
+    assert coherence_bias(n_observations) == expected_bias
