@@ -330,19 +330,19 @@ def tridi_inverse_iteration(d, e, w, x0=None, rtol=1e-8):
     ..note:: Copied from NiTime.
     Parameters
     ----------
-    d : ndarray
+    d : array
       main diagonal of the tridiagonal system
-    e : ndarray
+    e : array
       offdiagonal stored in e[:-1]
     w : float
       eigenvalue of the eigenvector
-    x0 : ndarray
+    x0 : array
       initial point to start the iteration
     rtol : float
       tolerance for the norm of the difference of iterates
     Returns
     -------
-    e: ndarray
+    e: array
       The converged eigenvector
     '''
     eig_diag = d - w
