@@ -1,7 +1,7 @@
 import numpy as np
 from src.spectral.connectivity import (
     Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
-    _conjugate_transpose, _set_diagonal_to_zero)
+    _conjugate_transpose, _set_diagonal_to_zero, _bandpass)
 from pytest import mark
 
 
@@ -393,3 +393,18 @@ def test__set_diagonal_to_zero():
     expected_array[1, 0, 0] = 0
     expected_array[1, 1, 1] = 0
     assert np.allclose(_set_diagonal_to_zero(test_array), expected_array)
+
+
+def test__bandpass():
+    test_data = np.arange(0, 10).reshape((2, 5))
+    labels = np.arange(0, 5) * 2
+    labels_of_interest = [1, 5]
+
+    expected_labels = np.array([2, 4])
+    expected_data = np.array([[1, 2], [6, 7]])
+
+    filtered_data, filtered_labels = _bandpass(
+        test_data, labels, labels_of_interest, axis=-1)
+
+    assert (np.allclose(expected_data, filtered_data) &
+            np.allclose(expected_labels, filtered_labels))
