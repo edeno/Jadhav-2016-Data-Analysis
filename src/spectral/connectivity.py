@@ -928,7 +928,7 @@ def _get_independent_frequencies(is_significant, frequency_step):
 
     '''
     index = is_significant.nonzero()[0]
-    independent_index = index[slice(0, len(index), frequency_step)]
+    independent_index = index[0:len(index):frequency_step]
     return np.in1d(np.arange(0, len(is_significant)), independent_index)
 
 
