@@ -424,38 +424,30 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
             if is_low_bias else (tapers, eigenvalues))
 
 
-                                   n_tapers, n_time_samples, interp_kind):
-    '''Create the tapers of the smaller size
-    `interp_from` and then interpolate to the larger size
-    `n_time_samples`'''
-    if interp_from > n_time_samples:
-        raise ValueError(
-            'In dpss_windows, `interp_from` is: {} '
-            'and `n_time_samples` is: {}. '
-            'Please enter `interp_from` smaller '
-            'than `n_time_samples`.'.format(
-                interp_from, n_time_samples))
-    tapers = []
-    d, _ = dpss_windows(interp_from, time_halfbandwidth_product,
-                        n_tapers, is_low_bias=False)
-    for this_d in d:
-        x = np.arange(this_d.shape[-1])
-        I = interpolate.interp1d(x, this_d, kind=interp_kind)
-        d_temp = I(
-            np.linspace(0, this_d.shape[-1] - 1, n_time_samples,
-                        endpoint=False))
-
-        # Rescale:
-        d_temp = d_temp / np.sqrt(sum_squared(d_temp))
-
-        tapers.append(d_temp)
-
-    return np.array(tapers)
-
-
-def find_tapers_from_optimization(n_time_samples, time_index,
-                                  half_bandwidth, n_tapers):
 def _find_tapers_from_interpolation(
+    interp_from, time_halfbandwidth_product, n_tapers, n_time_samples,
+        interp_kind):
+    '''Create the tapers of the smaller size `interp_from` and then
+    interpolate to the larger size `n_time_samples`.'''
+    smaller_tapers, _ = dpss_windows(
+        interp_from, time_halfbandwidth_product, n_tapers,
+        is_low_bias=False)
+
+    return [_interpolate_taper(taper, interp_kind, n_time_samples)
+            for taper in smaller_tapers]
+
+
+def _interpolate_taper(taper, interp_kind, n_time_samples):
+    interpolation_function = interpolate.interp1d(
+        np.arange(taper.shape[-1]), taper, kind=interp_kind)
+    interpolated_taper = interpolation_function(
+        np.linspace(0, taper.shape[-1] - 1, n_time_samples,
+                    endpoint=False))
+    return interpolated_taper / np.sqrt(np.sum(interpolated_taper ** 2))
+
+
+def _find_tapers_from_optimization(n_time_samples, time_index,
+                                   half_bandwidth, n_tapers):
     '''here we want to set up an optimization problem to find a sequence
     whose energy is maximally concentrated within band
     [-half_bandwidth, half_bandwidth]. Thus,
@@ -521,8 +513,7 @@ def _fix_taper_sign(tapers, n_time_samples):
 def _auto_correlation(tapers, n_time_samples):
     n_fft_samples = 2 ** _nextpower2(2 * n_time_samples - 1)
     dpss_fft = fft(tapers, n_fft_samples)
-    dpss_rxx = np.real(ifft(dpss_fft * dpss_fft.conj()))
-    return dpss_rxx[:, :n_time_samples]
+    return np.real(ifft(dpss_fft * dpss_fft.conj()))[:, :n_time_samples]
 
 
 def _get_low_bias_tapers(tapers, eigenvalues):
