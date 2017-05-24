@@ -1,7 +1,7 @@
 import numpy as np
 from src.spectral.connectivity import (
     Connectivity, _reshape, _squared_magnitude, _complex_inner_product,
-    _conjugate_transpose)
+    _conjugate_transpose, _set_diagonal_to_zero)
 from pytest import mark
 
 
@@ -383,3 +383,13 @@ def test__complex_inner_product():
     assert np.allclose(
         _complex_inner_product(test_array1, test_array2),
         expected_inner_product)
+
+
+def test__set_diagonal_to_zero():
+    test_array = np.ones((2, 2, 2))
+    expected_array = np.ones((2, 2, 2))
+    expected_array[0, 0, 0] = 0
+    expected_array[0, 1, 1] = 0
+    expected_array[1, 0, 0] = 0
+    expected_array[1, 1, 1] = 0
+    assert np.allclose(_set_diagonal_to_zero(test_array), expected_array)
