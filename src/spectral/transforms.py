@@ -198,11 +198,11 @@ def _sliding_window(data, window_size, step_size=1,
     Examples
     --------
     >>> a = numpy.array([1, 2, 3, 4, 5])
-    >>> _sliding_window(a, size=3)
+    >>> _sliding_window(a, window_size=3)
     array([[1, 2, 3],
            [2, 3, 4],
            [3, 4, 5]])
-    >>> _sliding_window(a, size=3, stepsize=2)
+    >>> _sliding_window(a, window_size=3, step_size=2)
     array([[1, 2, 3],
            [3, 4, 5]])
 
