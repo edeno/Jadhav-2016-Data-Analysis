@@ -507,7 +507,7 @@ class Connectivity(object):
 
         '''
         return (_squared_magnitude(self.MVAR_Fourier_coefficients) /
-                _total_outflow(self.MVAR_Fourier_coefficients, 1.0))
+                _total_outflow(self.MVAR_Fourier_coefficients))
 
     def generalized_partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
@@ -761,7 +761,7 @@ def _get_noise_variance(noise_covariance):
         ..., np.newaxis, :, np.newaxis]
 
 
-def _total_outflow(MVAR_Fourier_coefficients, noise_variance):
+def _total_outflow(MVAR_Fourier_coefficients, noise_variance=1.0):
     '''Measures the effect of outgoing signals on the node.'''
     return np.sqrt(np.sum(
         (1.0 / noise_variance) *
