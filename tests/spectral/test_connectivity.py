@@ -530,4 +530,12 @@ def test__remove_instantaneous_causality():
 
 
 def test__inner_combination():
-    pass
+    n_time_samples, n_fft_samples, n_signals = (2, 3, 2)
+    test_data = np.arange(
+        0, n_time_samples * n_fft_samples * n_signals).reshape(
+        (n_time_samples, n_fft_samples, n_signals))
+
+    expected_combination = np.array([[8, 23], [188, 239]])
+
+    assert np.allclose(
+        _inner_combination(test_data, axis=-2), expected_combination)
