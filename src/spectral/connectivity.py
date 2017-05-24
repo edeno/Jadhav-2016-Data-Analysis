@@ -432,10 +432,10 @@ class Connectivity(object):
                American Statistical Association 77, 304.
 
         '''
-        partial_covariance = _remove_instantaneous_causality(
+        rotated_covariance = _remove_instantaneous_causality(
             self.noise_covariance)
         intrinsic_power = (self.power[..., np.newaxis] -
-                           partial_covariance *
+                           rotated_covariance *
                            _squared_magnitude(self.transfer_function))
         return np.log(self.power[..., np.newaxis] / intrinsic_power)
 
