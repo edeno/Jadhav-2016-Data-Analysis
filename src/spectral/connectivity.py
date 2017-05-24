@@ -764,8 +764,7 @@ def _get_noise_variance(noise_covariance):
 def _total_outflow(MVAR_Fourier_coefficients, noise_variance=1.0):
     '''Measures the effect of outgoing signals on the node.'''
     return np.sqrt(np.sum(
-        (1.0 / noise_variance) *
-        _squared_magnitude(MVAR_Fourier_coefficients),
+        _squared_magnitude(MVAR_Fourier_coefficients) / noise_variance,
         keepdims=True, axis=-2))
 
 
