@@ -260,7 +260,7 @@ class Connectivity(object):
         normalized_fourier_coefficients = [
             _normalize_fourier_coefficients(
                 self.fourier_coefficients[
-                    :, :, np.in1d(group_labels, label), ...])
+                    ..., np.in1d(group_labels, label)])
             for label in labels]
         coherence = _squared_magnitude(np.stack([
             _estimate_canonical_coherence(
