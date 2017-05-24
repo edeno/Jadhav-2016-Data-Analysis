@@ -4,7 +4,8 @@ from src.spectral.connectivity import (
     _conjugate_transpose, _set_diagonal_to_zero, _bandpass,
     _get_independent_frequency_step,
     _find_largest_significant_group, _get_independent_frequencies,
-    _find_largest_independent_group, _total_inflow, _total_outflow)
+    _find_largest_independent_group, _total_inflow, _total_outflow,
+    _remove_instantaneous_causality, _inner_combination)
 from pytest import mark
 
 
@@ -500,3 +501,33 @@ def test__total_outflow():
     assert np.allclose(
         _total_outflow(MVAR_Fourier_coefficients, noise_variance),
         expected_total_outflow)
+
+
+def test__remove_instantaneous_causality():
+    noise_covariance = np.zeros((2, 2, 2))
+    x1 = np.array([[1, 2], [2, 4]], dtype=float)
+    x2 = np.array([[8, 4], [4, 16]], dtype=float)
+    noise_covariance[0, ...] = x1
+    noise_covariance[1, ...] = x2
+
+    # x -> y: var(x) - (cov(x,y) ** 2 / var(y))
+    # y -> x: var(y) - (cov(x,y) ** 2 / var(x))
+    expected_rotated_noise_covariance = np.zeros((2, 2, 2))
+
+    expected_rotated_noise_covariance[0, 0, 1] = (
+        x1[0, 0] - (x1[0, 1] ** 2 / x1[1, 1]))
+    expected_rotated_noise_covariance[0, 1, 0] = (
+        x1[1, 1] - (x1[0, 1] ** 2 / x1[0, 0]))
+
+    expected_rotated_noise_covariance[1, 0, 1] = (
+        x2[0, 0] - (x2[0, 1] ** 2 / x2[1, 1]))
+    expected_rotated_noise_covariance[1, 1, 0] = (
+        x2[1, 1] - (x2[0, 1] ** 2 / x2[0, 0]))
+
+    assert np.allclose(
+        _remove_instantaneous_causality(noise_covariance),
+        expected_rotated_noise_covariance)
+
+
+def test__inner_combination():
+    pass

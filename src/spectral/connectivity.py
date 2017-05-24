@@ -435,7 +435,7 @@ class Connectivity(object):
         rotated_covariance = _remove_instantaneous_causality(
             self.noise_covariance)
         intrinsic_power = (self.power[..., np.newaxis] -
-                           rotated_covariance *
+                           rotated_covariance[..., np.newaxis, :, :] *
                            _squared_magnitude(self.transfer_function))
         return np.log(self.power[..., np.newaxis] / intrinsic_power)
 
@@ -731,13 +731,24 @@ def _complex_inner_product(a, b):
 
 def _remove_instantaneous_causality(noise_covariance):
     '''Rotates the noise covariance so that the effect of instantaneous
-    signals (like those caused by volume conduction) are removed.'''
-    noise_covariance = noise_covariance[..., np.newaxis, :, :]
+    signals (like those caused by volume conduction) are removed.
+
+    x -> y: var(x) - (cov(x,y) ** 2 / var(y))
+    y -> x: var(y) - (cov(x,y) ** 2 / var(x))
+
+    Parameters
+    ----------
+    noise_covariance : array, shape (..., n_signals, n_signals)
+
+    Returns
+    -------
+    rotated_noise_covariance : array, shape (..., n_signals, n_signals)
+        The noise covariance without the instantaneous causality effects.
+
+    '''
     variance = np.diagonal(noise_covariance, axis1=-1,
                            axis2=-2)[..., np.newaxis]
-    return (_conjugate_transpose(variance) -
-            noise_covariance * _conjugate_transpose(noise_covariance) /
-            variance)
+    return (variance - noise_covariance ** 2 / variance.swapaxes(-1, -2))
 
 
 def _set_diagonal_to_zero(x):
