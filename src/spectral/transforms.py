@@ -166,7 +166,7 @@ def _add_trial_axis(time_series):
 
 
 def _sliding_window(data, window_size, step_size=1,
-                    padded=False, axis=-1, is_copy=True):
+                    axis=-1, is_copy=True):
     '''
     Calculate a sliding window over a signal
 
