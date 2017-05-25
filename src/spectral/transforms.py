@@ -133,7 +133,8 @@ class Multitaper(object):
                 self.time_window_duration)
 
     def fft(self):
-        '''
+        '''Compute the fast Fourier transform using the multitaper method.
+
         Returns
         -------
         fourier_coefficients : array, shape (n_time_samples, n_trials,
