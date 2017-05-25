@@ -93,10 +93,7 @@ class Multitaper(object):
 
     @property
     def frequencies(self):
-        positive_frequencies = np.linspace(
-            0, self.sampling_frequency, num=self.n_fft_samples // 2 + 1)
-        return np.concatenate((positive_frequencies,
-                               -1 * positive_frequencies[-2:0:-1]))
+        return fftfreq(self.n_fft_samples, 1.0 / self.sampling_frequency)
 
     @property
     def n_samples_per_time_step(self):
