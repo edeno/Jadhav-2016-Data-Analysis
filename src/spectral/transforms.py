@@ -37,7 +37,6 @@ class Multitaper(object):
         self.time_series = time_series
         self.sampling_frequency = sampling_frequency
         self.time_halfbandwidth_product = time_halfbandwidth_product
-        self.pad = pad
         self.detrend_type = detrend_type
         self._time_window_duration = time_window_duration
         self._time_window_step = time_window_step
