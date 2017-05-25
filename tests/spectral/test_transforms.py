@@ -3,7 +3,9 @@ from pytest import mark
 
 from src.spectral.transforms import (_add_trial_axis, _sliding_window,
                                      Multitaper, _get_low_bias_tapers,
-                                     _fix_taper_sign)
+                                     _get_taper_eigenvalues,
+                                     _fix_taper_sign, dpss_windows)
+from nitime.algorithms.spectral import dpss_windows as nitime_dpss_windows
 
 
 def test__add_trial_axis():
@@ -231,3 +233,19 @@ def test__fix_taper_sign():
     assert np.all(fixed_tapers[2, :] == 2)
     assert np.all(fixed_tapers[1, :].sum() >= 0)
     assert ~np.all(fixed_tapers[3, :].sum() >= 0)
+
+
+@mark.parametrize(
+    'n_time_samples, time_halfbandwidth_product, n_tapers',
+    [(1000, 3, 5), (31, 6, 4), (31, 7, 4)])
+def test_dpss_windows(
+        n_time_samples, time_halfbandwidth_product, n_tapers):
+    tapers, eigenvalues = dpss_windows(
+        n_time_samples, time_halfbandwidth_product, n_tapers,
+        is_low_bias=False)
+    nitime_tapers, nitime_eigenvalues = nitime_dpss_windows(
+        n_time_samples, time_halfbandwidth_product, n_tapers)
+    assert np.allclose(np.sum(tapers ** 2, axis=1), 1.0)
+    assert np.allclose(tapers, nitime_tapers)
+    assert np.allclose(eigenvalues, nitime_eigenvalues)
+    assert np.allclose(dpss_windows(31, 6, 4)[1], 1.0)
