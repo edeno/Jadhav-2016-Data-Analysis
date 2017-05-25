@@ -2,7 +2,8 @@ import numpy as np
 from pytest import mark
 
 from src.spectral.transforms import (_add_trial_axis, _sliding_window,
-                                     Multitaper, _get_low_bias_tapers)
+                                     Multitaper, _get_low_bias_tapers,
+                                     _fix_taper_sign)
 
 
 def test__add_trial_axis():
@@ -217,3 +218,16 @@ def test__get_low_bias_tapers(eigenvalues, expected_n_tapers):
         tapers, eigenvalues)
     assert (filtered_tapers.shape[0] == filtered_eigenvalues.shape[0] ==
             expected_n_tapers)
+
+
+def test__fix_taper_sign():
+    n_time_samples, n_tapers = 100, 4
+    tapers = -3 * np.ones((n_tapers, n_time_samples))
+    tapers[1, :3] = -1 * np.arange(0, 3)  # Begin with negative lobe
+    tapers[2, :] = 2
+    tapers[3, :3] = np.arange(0, 3)  # Begin with positive lobe
+    fixed_tapers = _fix_taper_sign(tapers, n_time_samples)
+    assert np.all(fixed_tapers[::2, :].sum(axis=1) >= 0)
+    assert np.all(fixed_tapers[2, :] == 2)
+    assert np.all(fixed_tapers[1, :].sum() >= 0)
+    assert ~np.all(fixed_tapers[3, :].sum() >= 0)
