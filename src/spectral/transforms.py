@@ -511,11 +511,12 @@ def _fix_taper_sign(tapers, n_time_samples):
     return tapers
 
 
-def _auto_correlation(tapers, n_time_samples):
-    n_fft_samples = next_fast_len(n_time_samples)
-    dpss_fft = fft(tapers, n_fft_samples)
+def _auto_correlation(data, axis=-1):
+    n_time_samples = data.shape[axis]
+    n_fft_samples = next_fast_len(2 * n_time_samples - 1)
+    dpss_fft = fft(data, n_fft_samples, axis=axis)
     power = dpss_fft * dpss_fft.conj()
-    return np.real(ifft(power))[:, :n_time_samples]
+    return np.real(ifft(power, axis=axis))
 
 
 def _get_low_bias_tapers(tapers, eigenvalues):
@@ -548,4 +549,5 @@ def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
         2 * half_bandwidth * time_index)
     ideal_filter[0] = 2 * half_bandwidth
     n_time_samples = len(time_index)
-    return np.dot(_auto_correlation(tapers, n_time_samples), ideal_filter)
+    return np.dot(
+        _auto_correlation(tapers)[:, :n_time_samples], ideal_filter)
