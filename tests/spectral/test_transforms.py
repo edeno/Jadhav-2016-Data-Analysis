@@ -77,7 +77,7 @@ def test_time_window_step(
         time_series=time_series,
         sampling_frequency=sampling_frequency,
         time_window_step=time_window_step)
-    assert m.time_window_duration == expected_step
+    assert m.time_window_step == expected_step
 
 
 @mark.parametrize(
