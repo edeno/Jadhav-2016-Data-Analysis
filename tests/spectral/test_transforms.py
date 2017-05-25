@@ -2,7 +2,7 @@ import numpy as np
 from pytest import mark
 
 from src.spectral.transforms import (_add_trial_axis, _sliding_window,
-                                     Multitaper)
+                                     Multitaper, _get_low_bias_tapers)
 
 
 def test__add_trial_axis():
@@ -204,3 +204,16 @@ def test_tapers():
 
     m = Multitaper(time_series, tapers=np.zeros((10, 3)))
     assert np.allclose(m.tapers.shape, (10, 3))
+
+
+@mark.parametrize(
+    'eigenvalues, expected_n_tapers',
+    [(np.array([0.95, 0.95, 0.95]), 3),
+     (np.array([0.95, 0.8, 0.95]), 2),
+     (np.array([0.8, 0.8, 0.8]), 1)])
+def test__get_low_bias_tapers(eigenvalues, expected_n_tapers):
+    tapers = np.zeros((3, 100))
+    filtered_tapers, filtered_eigenvalues = _get_low_bias_tapers(
+        tapers, eigenvalues)
+    assert (filtered_tapers.shape[0] == filtered_eigenvalues.shape[0] ==
+            expected_n_tapers)
