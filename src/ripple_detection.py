@@ -11,7 +11,8 @@ from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import filtfilt, hilbert
 from scipy.stats import zscore
 
-from .spectral import multitaper_spectrogram
+from .spectral.transforms import Multitaper
+from .spectral.connectivity import Connectivity
 
 
 def _get_series_start_end_times(series):

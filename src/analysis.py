@@ -26,10 +26,6 @@ from .ripple_decoding import (combined_likelihood,
                               estimate_state_transition, get_bin_centers,
                               predict_state, set_initial_conditions)
 from .ripple_detection import Kay_method
-from .spectral import (filter_significant_groups, fisher_z_transform,
-                       group_delay_over_time,
-                       multitaper_canonical_coherogram,
-                       multitaper_coherogram, power_and_coherence_change)
 
 logger = getLogger(__name__)
 
