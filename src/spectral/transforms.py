@@ -32,7 +32,7 @@ class Multitaper(object):
                  detrend_type='constant', time_window_duration=None,
                  time_window_step=None, n_tapers=None,  tapers=None,
                  start_time=0, n_fft_samples=None, n_time_samples=None,
-                 n_samples_per_time_step=None):
+                 n_samples_per_time_step=None, is_low_bias=True):
 
         self.time_series = time_series
         self.sampling_frequency = sampling_frequency
@@ -40,6 +40,7 @@ class Multitaper(object):
         self.detrend_type = detrend_type
         self._time_window_duration = time_window_duration
         self._time_window_step = time_window_step
+        self.is_low_bias = is_low_bias
         self.start_time = start_time
         self._n_fft_samples = n_fft_samples
         self._tapers = tapers
@@ -52,7 +53,8 @@ class Multitaper(object):
         if self._tapers is None:
             self._tapers = _make_tapers(
                 self.n_time_samples, self.sampling_frequency,
-                self.time_halfbandwidth_product, self.n_tapers)
+                self.time_halfbandwidth_product, self.n_tapers,
+                is_low_bias=self.is_low_bias)
         return self._tapers
 
     @property
@@ -248,7 +250,7 @@ def _multitaper_fft(tapers, time_series, n_fft_samples,
 
 
 def _make_tapers(n_time_samples, sampling_frequency,
-                 time_halfbandwidth_product, n_tapers):
+                 time_halfbandwidth_product, n_tapers, is_low_bias=True):
     '''Returns the Discrete prolate spheroidal sequences (tapers) for
     multi-taper spectral analysis.
 
@@ -258,6 +260,8 @@ def _make_tapers(n_time_samples, sampling_frequency,
     sampling_frequency : int
     time_halfbandwidth_product : float
     n_tapers : int
+    is_low_bias : bool
+        Keep only tapers with eigenvalues > 0.9
 
     Returns
     -------
@@ -265,7 +269,8 @@ def _make_tapers(n_time_samples, sampling_frequency,
 
     '''
     tapers, _ = dpss_windows(
-        n_time_samples, time_halfbandwidth_product, n_tapers)
+        n_time_samples, time_halfbandwidth_product, n_tapers,
+        is_low_bias=is_low_bias)
     return tapers.T * np.sqrt(sampling_frequency)
 
 
@@ -509,7 +514,7 @@ def _get_low_bias_tapers(tapers, eigenvalues):
         print('Could not properly use low_bias, '
               'keeping lowest-bias taper')
         is_low_bias = [np.argmax(eigenvalues)]
-    return tapers[is_low_bias], eigenvalues[is_low_bias]
+    return tapers[is_low_bias, :], eigenvalues[is_low_bias]
 
 
 def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
