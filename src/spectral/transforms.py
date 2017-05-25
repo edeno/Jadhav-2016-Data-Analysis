@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from scipy.fftpack import fft, ifft
+from scipy.fftpack import fft, ifft, next_fast_len, fftfreq
 from scipy.linalg import eigvals_banded
 from scipy.signal import detrend
 
@@ -16,7 +16,6 @@ class Multitaper(object):
     sampling_frequency : float, optional
         Number of samples per time unit the signal(s) are recorded at.
     time_halfbandwidth_product : float, optional
-    pad : int, optional
     detrend_type : string, optional
     start_time : float, optional
     time_window_duration : float, optional
@@ -29,7 +28,7 @@ class Multitaper(object):
     '''
 
     def __init__(self, time_series, sampling_frequency=1000,
-                 time_halfbandwidth_product=3, pad=0,
+                 time_halfbandwidth_product=3,
                  detrend_type='constant', time_window_duration=None,
                  time_window_step=None, n_tapers=None,  tapers=None,
                  start_time=0, n_fft_samples=None, n_time_samples=None,
@@ -89,9 +88,7 @@ class Multitaper(object):
     @property
     def n_fft_samples(self):
         if self._n_fft_samples is None:
-            next_exponent = _nextpower2(self.n_time_samples)
-            self._n_fft_samples = max(2 ** (next_exponent + self.pad),
-                                      self.n_time_samples)
+            self._n_fft_samples = next_fast_len(self.n_time_samples)
         return self._n_fft_samples
 
     @property
@@ -273,13 +270,6 @@ def _make_tapers(n_time_samples, sampling_frequency,
     tapers, _ = dpss_windows(
         n_time_samples, time_halfbandwidth_product, n_tapers)
     return tapers.T * np.sqrt(sampling_frequency)
-
-
-def _nextpower2(n):
-    '''Return the next integer exponent of two greater than the given number.
-    This is useful for ensuring fast FFT sizes.
-    '''
-    return np.ceil(np.log2(n)).astype(int)
 
 
 def tridisolve(d, e, b, overwrite_b=True):
@@ -511,7 +501,7 @@ def _fix_taper_sign(tapers, n_time_samples):
 
 
 def _auto_correlation(tapers, n_time_samples):
-    n_fft_samples = 2 ** _nextpower2(2 * n_time_samples - 1)
+    n_fft_samples = next_fast_len(n_time_samples)
     dpss_fft = fft(tapers, n_fft_samples)
     return np.real(ifft(dpss_fft * dpss_fft.conj()))[:, :n_time_samples]
 
