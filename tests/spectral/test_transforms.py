@@ -194,3 +194,13 @@ def test_time(time_window_duration):
         start_time=start_time,
         time_window_duration=time_window_duration)
     assert np.allclose(m.time, expected_time)
+
+
+def test_tapers():
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(time_series, is_low_bias=False)
+    assert np.allclose(m.tapers.shape, (n_time_samples, m.n_tapers))
+
+    m = Multitaper(time_series, tapers=np.zeros((10, 3)))
+    assert np.allclose(m.tapers.shape, (10, 3))
