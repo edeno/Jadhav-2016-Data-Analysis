@@ -45,9 +45,80 @@ def test__sliding_window(
     [(3, 5), (1, 1), (1.75, 2)])
 def test_n_tapers(time_halfbandwidth_product, expected_n_tapers):
     n_time_samples, n_trials, n_signals = 100, 10, 2
-    time_series = np.zeros(
-        (n_time_samples, n_trials, n_signals), dtype=np.complex)
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
     m = Multitaper(
         time_series=time_series,
         time_halfbandwidth_product=time_halfbandwidth_product)
     assert m.n_tapers == expected_n_tapers
+
+
+@mark.parametrize(
+    'sampling_frequency, time_window_duration, expected_duration',
+    [(1000, None, 0.1), (2000, None, 0.05), (1000, 0.1, 0.1)])
+def test_time_window_duration(sampling_frequency, time_window_duration,
+                              expected_duration):
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(
+        time_series=time_series,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration)
+    assert m.time_window_duration == expected_duration
+
+
+@mark.parametrize(
+    'sampling_frequency, time_window_step, expected_step',
+    [(1000, None, 0.1), (2000, None, 0.05), (1000, 0.1, 0.1)])
+def test_time_window_step(
+        sampling_frequency, time_window_step, expected_step):
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(
+        time_series=time_series,
+        sampling_frequency=sampling_frequency,
+        time_window_step=time_window_step)
+    assert m.time_window_duration == expected_step
+
+
+@mark.parametrize(
+    'sampling_frequency, time_window_duration, expected_n_time_samples',
+    [(1000, None, 100), (1000, 0.1, 100), (2000, 0.025, 50)])
+def test_n_time_samples(
+        sampling_frequency, time_window_duration, expected_n_time_samples):
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(
+        time_series=time_series,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration)
+    assert m.n_time_samples == expected_n_time_samples
+
+
+@mark.parametrize(
+    ('sampling_frequency, time_window_duration, n_fft_samples,'
+     'expected_n_fft_samples'),
+    [(1000, None, 5, 5), (1000, 0.1, None, 100)])
+def test_n_fft_samples(
+    sampling_frequency, time_window_duration, n_fft_samples,
+        expected_n_fft_samples):
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(
+        time_series=time_series,
+        sampling_frequency=sampling_frequency,
+        time_window_duration=time_window_duration,
+        n_fft_samples=n_fft_samples)
+    assert m.n_fft_samples == expected_n_fft_samples
+
+
+def test_frequencies():
+    n_time_samples, n_trials, n_signals = 100, 10, 2
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    n_fft_samples = 4
+    sampling_frequency = 1000
+    m = Multitaper(
+        time_series=time_series,
+        sampling_frequency=sampling_frequency,
+        n_fft_samples=n_fft_samples)
+    expected_frequencies = np.array([0, 250, -500, -250])
+    assert np.allclose(m.frequencies, expected_frequencies)
