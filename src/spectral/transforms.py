@@ -485,27 +485,37 @@ def _find_tapers_from_optimization(n_time_samples, time_index,
 
 
 def _fix_taper_sign(tapers, n_time_samples):
-    # By convention (Percival and Walden, 1993 pg 379)
-    # * symmetric tapers (k=0,2,4,...) should have a positive average.
-    # * antisymmetric tapers should begin with a positive lobe
-    is_not_symmetric = tapers[0::2].sum(axis=1) < 0
-    for taper_ind, not_symmetric in enumerate(is_not_symmetric):
-        if not_symmetric:
-            tapers[2 * taper_ind] *= -1
+    '''By convention (Percival and Walden, 1993 pg 379)
+    symmetric tapers (k=0,2,4,...) should have a positive average and
+    antisymmetric tapers should begin with a positive lobe.
+
+    Parameters
+    ----------
+    tapers : array, shape (n_tapers, n_time_samples)
+    '''
+
+    # Fix sign of symmetric tapers
+    is_not_symmetric = tapers[::2, :].sum(axis=1) < 0
+    fix_sign = is_not_symmetric * -1
+    fix_sign[fix_sign == 0] = 1
+    tapers[::2, :] *= fix_sign[:, np.newaxis]
+
+    # Fix sign of antisymmetric tapers.
     # rather than test the sign of one point, test the sign of the
     # linear slope up to the first (largest) peak
     largest_peak_ind = np.argmax(
         np.abs(tapers[1::2, :n_time_samples // 2]), axis=1)
     for taper_ind, peak_ind in enumerate(largest_peak_ind):
         if np.sum(tapers[2 * taper_ind + 1, :peak_ind]) < 0:
-            tapers[2 * taper_ind + 1] *= -1
+            tapers[2 * taper_ind + 1, :] *= -1
     return tapers
 
 
 def _auto_correlation(tapers, n_time_samples):
     n_fft_samples = next_fast_len(n_time_samples)
     dpss_fft = fft(tapers, n_fft_samples)
-    return np.real(ifft(dpss_fft * dpss_fft.conj()))[:, :n_time_samples]
+    power = dpss_fft * dpss_fft.conj()
+    return np.real(ifft(power))[:, :n_time_samples]
 
 
 def _get_low_bias_tapers(tapers, eigenvalues):
@@ -520,9 +530,22 @@ def _get_low_bias_tapers(tapers, eigenvalues):
 def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
     '''Finds the eigenvalues of the original spectral concentration
     problem using the autocorr sequence technique from Percival and Walden,
-    1993 pg 390'''
+    1993 pg 390
+
+    Parameters
+    ----------
+    tapers : array, shape (n_tapers, n_time_samples)
+    half_bandwidth : float
+    time_index : array, (n_time_samples,)
+
+    Returns
+    -------
+    eigenvalues : array, shape (n_tapers,)
+
+    '''
 
     ideal_filter = 4 * half_bandwidth * np.sinc(
         2 * half_bandwidth * time_index)
     ideal_filter[0] = 2 * half_bandwidth
-    return np.dot(_auto_correlation(tapers, len(time_index)), ideal_filter)
+    n_time_samples = len(time_index)
+    return np.dot(_auto_correlation(tapers, n_time_samples), ideal_filter)
