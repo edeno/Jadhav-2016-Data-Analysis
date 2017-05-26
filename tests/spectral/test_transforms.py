@@ -2,12 +2,13 @@ import numpy as np
 from pytest import mark
 from scipy.signal import correlate
 
-from src.spectral.transforms import (_add_trial_axis, _sliding_window,
-                                     Multitaper, _get_low_bias_tapers,
-                                     _get_taper_eigenvalues,
-                                     _fix_taper_sign, dpss_windows,
-                                     _auto_correlation, _multitaper_fft)
 from nitime.algorithms.spectral import dpss_windows as nitime_dpss_windows
+from src.spectral.transforms import (Multitaper, _add_trial_axis,
+                                     _auto_correlation, _fix_taper_sign,
+                                     _get_low_bias_tapers,
+                                     _get_taper_eigenvalues,
+                                     _multitaper_fft, _sliding_window,
+                                     dpss_windows)
 
 
 def test__add_trial_axis():
@@ -175,10 +176,10 @@ def test_n_samples_per_time_step(
     time_series = np.zeros((n_time_samples, n_trials, n_signals))
 
     m = Multitaper(
-            time_window_duration=0.10,
-            n_samples_per_time_step=n_samples_per_time_step,
-            time_series=time_series,
-            time_window_step=time_window_step)
+        time_window_duration=0.10,
+        n_samples_per_time_step=n_samples_per_time_step,
+        time_series=time_series,
+        time_window_step=time_window_step)
     assert m.n_samples_per_time_step == expected_n_samples_per_time_step
 
 
@@ -274,7 +275,7 @@ def test__auto_correlation():
     for taper_ind in np.arange(n_tapers):
         expected_correlation = correlate(
             test_data[taper_ind, :], test_data[taper_ind, :])[
-                n_time_samples-1:]
+                n_time_samples - 1:]
         assert np.allclose(rxx[taper_ind], expected_correlation)
 
 
