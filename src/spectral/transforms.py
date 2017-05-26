@@ -73,6 +73,12 @@ class Multitaper(object):
 
     @property
     def n_tapers(self):
+        '''Number of desired tapers.
+
+        Note that the number of tapers may be less than this number if
+        the bias of the tapers is too high (eigenvalues > 0.9)
+
+        '''
         return int(np.floor(
             2 * self.time_halfbandwidth_product - 1))
 
@@ -238,8 +244,8 @@ def _multitaper_fft(tapers, time_series, n_fft_samples,
 
     Returns
     -------
-    fourier_coefficients : array_like, shape (n_windows, n_trials,
-                                              n_fft_samples, n_tapers)
+    fourier_coefficients : array_like, shape (n_windows, n_trials, n_tapers
+                                              n_fft_samples, n_signals)
 
     '''
     projected_time_series = (time_series[..., np.newaxis] *
