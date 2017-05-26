@@ -148,6 +148,7 @@ class Multitaper(object):
         fourier_coefficients : array, shape (n_time_samples, n_trials,
                                              n_tapers, n_fft_samples,
                                              n_signals)
+
         '''
         time_series = _add_trial_axis(self.time_series)
         time_series = _sliding_window(
@@ -155,9 +156,9 @@ class Multitaper(object):
             step_size=self.n_samples_per_time_step, axis=0)
         time_series = detrend(time_series, type=self.detrend_type)
 
-        return _multitaper_fft(self.tapers, time_series,
-                               self.n_fft_samples, self.sampling_frequency,
-                               axis=3).swapaxes(2, -1)
+        return _multitaper_fft(
+            self.tapers, time_series, self.n_fft_samples,
+            self.sampling_frequency).swapaxes(2, -1)
 
 
 def _add_trial_axis(time_series):
