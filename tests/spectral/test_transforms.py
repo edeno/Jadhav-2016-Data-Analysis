@@ -290,3 +290,13 @@ def test__multitaper_fft():
     assert np.allclose(
         fourier_coefficients.shape,
         (n_windows, n_trials, n_fft_samples, n_tapers))
+
+
+def test_fft():
+    n_time_samples, n_trials, n_signals, n_windows = 100, 10, 2, 1
+    time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    m = Multitaper(time_series=time_series)
+    assert np.allclose(
+        m.fft().shape,
+        (n_windows, n_trials, m.tapers.shape[1], m.n_fft_samples,
+         n_signals))
