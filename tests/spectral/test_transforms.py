@@ -248,4 +248,17 @@ def test_dpss_windows(
     assert np.allclose(np.sum(tapers ** 2, axis=1), 1.0)
     assert np.allclose(tapers, nitime_tapers)
     assert np.allclose(eigenvalues, nitime_eigenvalues)
-    assert np.allclose(dpss_windows(31, 6, 4)[1], 1.0)
+
+
+@mark.parametrize(
+    'n_time_samples, time_halfbandwidth_product, n_tapers',
+    [(31, 6, 4), (31, 7, 4), (31, 8, 4), (31, 8, 4.2)])
+def test__get_taper_eigenvalues(
+        n_time_samples, time_halfbandwidth_product, n_tapers):
+    time_index = np.arange(n_time_samples, dtype='d')
+    half_bandwidth = float(time_halfbandwidth_product) / n_time_samples
+    nitime_tapers, _ = nitime_dpss_windows(
+        n_time_samples, time_halfbandwidth_product, n_tapers)
+    eigenvalues = _get_taper_eigenvalues(
+        nitime_tapers, half_bandwidth, time_index)
+    assert np.allclose(eigenvalues, 1.0)
