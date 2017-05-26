@@ -1,10 +1,12 @@
 import numpy as np
 from pytest import mark
+from scipy.signal import correlate
 
 from src.spectral.transforms import (_add_trial_axis, _sliding_window,
                                      Multitaper, _get_low_bias_tapers,
                                      _get_taper_eigenvalues,
-                                     _fix_taper_sign, dpss_windows)
+                                     _fix_taper_sign, dpss_windows,
+                                     _auto_correlation)
 from nitime.algorithms.spectral import dpss_windows as nitime_dpss_windows
 
 
@@ -262,3 +264,15 @@ def test__get_taper_eigenvalues(
     eigenvalues = _get_taper_eigenvalues(
         nitime_tapers, half_bandwidth, time_index)
     assert np.allclose(eigenvalues, 1.0)
+
+
+def test__auto_correlation():
+    n_time_samples, n_tapers = 100, 3
+    test_data = np.random.rand(n_tapers, n_time_samples)
+    rxx = _auto_correlation(test_data)[:, :n_time_samples]
+
+    for taper_ind in np.arange(n_tapers):
+        expected_correlation = correlate(
+            test_data[taper_ind, :], test_data[taper_ind, :])[
+                n_time_samples-1:]
+        assert np.allclose(rxx[taper_ind], expected_correlation)
