@@ -225,7 +225,7 @@ def _sliding_window(data, window_size, step_size=1,
 
 
 def _multitaper_fft(tapers, time_series, n_fft_samples,
-                    sampling_frequency, axis=0):
+                    sampling_frequency, axis=-2):
     '''Projects the data on the tapers and returns the discrete Fourier
     transform
 
@@ -242,9 +242,8 @@ def _multitaper_fft(tapers, time_series, n_fft_samples,
                                               n_fft_samples, n_tapers)
 
     '''
-    projected_time_series = (
-        np.reshape(time_series, (*time_series.shape, 1)) *
-        np.reshape(tapers, (1, 1, *tapers.shape)))
+    projected_time_series = (time_series[..., np.newaxis] *
+                             tapers[np.newaxis, np.newaxis, ...])
     return (fft(projected_time_series, n=n_fft_samples, axis=axis) /
             sampling_frequency)
 
