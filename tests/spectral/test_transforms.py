@@ -6,7 +6,7 @@ from src.spectral.transforms import (_add_trial_axis, _sliding_window,
                                      Multitaper, _get_low_bias_tapers,
                                      _get_taper_eigenvalues,
                                      _fix_taper_sign, dpss_windows,
-                                     _auto_correlation)
+                                     _auto_correlation, _multitaper_fft)
 from nitime.algorithms.spectral import dpss_windows as nitime_dpss_windows
 
 
@@ -276,3 +276,17 @@ def test__auto_correlation():
             test_data[taper_ind, :], test_data[taper_ind, :])[
                 n_time_samples-1:]
         assert np.allclose(rxx[taper_ind], expected_correlation)
+
+
+def test__multitaper_fft():
+    n_windows, n_trials, n_time_samples, n_tapers, n_fft_samples = (
+        2, 10, 100, 3, 100)
+    sampling_frequency = 1000
+    time_series = np.ones((n_windows, n_trials, n_time_samples))
+    tapers = np.ones((n_time_samples, n_tapers))
+
+    fourier_coefficients = _multitaper_fft(
+        tapers, time_series, n_fft_samples, sampling_frequency)
+    assert np.allclose(
+        fourier_coefficients.shape,
+        (n_windows, n_trials, n_fft_samples, n_tapers))
