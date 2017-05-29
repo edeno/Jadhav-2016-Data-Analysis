@@ -1,8 +1,9 @@
 import numpy as np
-from pytest import mark
+from scipy.signal import freqz_zpk
 
 from src.spectral.minimum_phase_decomposition import (
-    _check_convergence, _conjugate_transpose)
+    _check_convergence, _conjugate_transpose, _get_causal_signal,
+    minimum_phase_decomposition)
 
 
 def test__check_convergence():
@@ -30,3 +31,27 @@ def test__conjugate_transpose():
     expected_array = np.zeros((2, 4, 2), dtype=np.complex)
     expected_array[1, ...] = test_array[1, ...].conj().transpose()
     assert np.allclose(_conjugate_transpose(test_array), expected_array)
+
+
+def test_minimum_phase_decomposition():
+    n_signals = 1
+    # minimum phase is all poles and zeros inside the unit circle
+    zero, pole, gain = 0.25, 0.50, 2.00
+    _, transfer_function = freqz_zpk(zero, pole, gain, whole=True)
+    n_fft_samples = transfer_function.shape[0]
+    expected_minimum_phase_factor = np.zeros(
+        (1, n_fft_samples, n_signals, n_signals), dtype=np.complex)
+    expected_minimum_phase_factor[
+        0, :n_fft_samples, 0, 0] = transfer_function
+
+    cross_spectral_matrix = np.matmul(
+        expected_minimum_phase_factor,
+        _conjugate_transpose(expected_minimum_phase_factor))
+    minimum_phase_factor = minimum_phase_decomposition(
+        cross_spectral_matrix)
+
+    assert np.all(_check_convergence(
+        minimum_phase_factor, expected_minimum_phase_factor))
+    assert np.all(_check_convergence(
+        minimum_phase_factor *
+        _conjugate_transpose(minimum_phase_factor), cross_spectral_matrix))
