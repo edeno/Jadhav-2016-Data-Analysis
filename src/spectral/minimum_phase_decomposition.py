@@ -16,7 +16,7 @@ def _get_intial_conditions(cross_spectral_matrix):
 
 def _get_causal_signal(linear_predictor):
     '''Takes half the roots on the unit circle (zero lag) and all the roots
-    inside the unit circle (positive lags)
+    inside the unit circle (positive lags).
 
     Gives you A_(t+1)(Z) / A_(t)(Z)
     This is the plus operator in [1]
@@ -24,8 +24,9 @@ def _get_causal_signal(linear_predictor):
     n_signals = linear_predictor.shape[-1]
     n_fft_samples = linear_predictor.shape[-3]
     linear_predictor_coefficients = ifft(linear_predictor, axis=-3)
+    # Take half of the roots on the unit circle
     linear_predictor_coefficients[..., 0, :, :] *= 0.5
-    # Form S_tau
+    # Form S_tau by making the matrix upper triangular
     lower_triangular_ind = np.tril_indices(n_signals, k=-1)
     linear_predictor_coefficients[
         ..., 0, lower_triangular_ind[0], lower_triangular_ind[1]] = 0
