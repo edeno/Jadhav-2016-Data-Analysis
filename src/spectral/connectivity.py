@@ -421,6 +421,8 @@ class Connectivity(object):
         '''The amount of power at a node in a frequency explained by (is
         predictive of) the power at other nodes.
 
+        Also known as spectral granger causality.
+
         References
         ----------
         .. [1] Geweke, J. (1982). Measurement of Linear Dependence and
