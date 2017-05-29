@@ -690,7 +690,7 @@ def _estimate_noise_covariance(minimum_phase):
 
     '''
     A_0 = minimum_phase[..., 0, :, :]
-    return np.matmul(A_0, A_0.swapaxes(-1, -2)).real
+    return _complex_inner_product(A_0, A_0).real
 
 
 def _estimate_transfer_function(minimum_phase):
