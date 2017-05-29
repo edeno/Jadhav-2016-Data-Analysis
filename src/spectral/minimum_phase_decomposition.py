@@ -33,14 +33,29 @@ def _get_causal_signal(linear_predictor):
     return fft(linear_predictor_coefficients, axis=-3)
 
 
-def _check_convergence(minimum_phase_factor, old_minimum_phase_factor,
-                       tolerance):
-    '''Check convergence of Wilson algorithm at each time point'''
-    n_time_points = minimum_phase_factor.shape[0]
-    psi_error = np.linalg.norm(
-        np.reshape(minimum_phase_factor - old_minimum_phase_factor,
-                   (n_time_points, -1)), ord=np.inf, axis=1)
-    return psi_error < tolerance
+def _check_convergence(current, old, tolerance=1E-8):
+    '''Check convergence of Wilson algorithm at each time point.
+
+    Parameters
+    ----------
+    current : array, shape (n_time_points, ...)
+        Current guess.
+    old : array, shape (n_time_points, ...)
+        Previous guess.
+    tolerance : float
+        Largest difference between guesses for the matrix to be judged as
+        similar.
+
+    Returns
+    -------
+    is_converged : array, shape (n_time_points,)
+        Boolean array that indicates whether the array has converged for
+        each time point.
+    '''
+    n_time_points = current.shape[0]
+    error = np.linalg.norm(
+        np.reshape(current - old, (n_time_points, -1)), ord=np.inf, axis=1)
+    return error < tolerance
 
 
 def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
