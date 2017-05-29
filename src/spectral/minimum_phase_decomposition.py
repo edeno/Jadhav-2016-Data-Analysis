@@ -86,8 +86,28 @@ def _check_convergence(current, old, tolerance=1E-8):
 
 def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
                                 max_iterations=30):
-    '''Using the Wilson algorithm to find a minimum phase matrix square
-    root of the cross spectral density'''
+    '''Find a minimum phase matrix square root of the cross spectral
+    density using the Wilson algorithm.
+
+    Parameters
+    ----------
+    cross_spectral_matrix : array, shape (n_time_samples, ...,
+                                          n_fft_samples, n_signals,
+                                          n_signals)
+    tolerance : float
+        The maximum difference between guesses.
+    max_iterations : int
+        The maximum number of iterations for the algorithm to converge.
+
+    Returns
+    -------
+    minimum_phase_factor : array, shape (n_time_samples, ...,
+                                         n_fft_samples, n_signals,
+                                         n_signals)
+        The square root of the `cross_spectral_matrix` where all the poles
+        are inside the unit circle (minimum phase).
+
+    '''
     n_time_points = cross_spectral_matrix.shape[0]
     n_signals = cross_spectral_matrix.shape[-1]
     I = np.eye(n_signals)
