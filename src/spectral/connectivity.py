@@ -80,6 +80,7 @@ class Connectivity(object):
     group_delay
     phase_lag_index
     pairwise_spectral_granger_prediction
+    conditional_spectral_granger_prediction (Not implemented)
 
     References
     ----------
@@ -433,6 +434,9 @@ class Connectivity(object):
                            rotated_covariance[..., np.newaxis, :, :] *
                            _squared_magnitude(self.transfer_function))
         return np.log(self.power[..., np.newaxis] / intrinsic_power)
+
+    def conditional_spectral_granger_prediction():
+        raise NotImplementedError
 
     def directed_transfer_function(self):
         '''The transfer function coupling strength normalized by the total
