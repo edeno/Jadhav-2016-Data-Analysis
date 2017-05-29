@@ -8,7 +8,20 @@ def _conjugate_transpose(x):
 
 
 def _get_intial_conditions(cross_spectral_matrix):
-    '''Returns a guess for the minimum phase factor'''
+    '''Returns a guess for the minimum phase factor using the Cholesky
+    factorization.
+
+    Parameters
+    ----------
+    cross_spectral_matrix : array, shape (n_time_samples, ...,
+                                          n_fft_samples, n_signals,
+                                          n_signals)
+
+    Returns
+    -------
+    minimum_phase_factor : array, shape (n_time_samples, ..., 1, n_signals,
+                                         n_signals)
+    '''
     return np.linalg.cholesky(
         ifft(cross_spectral_matrix, axis=-3)[..., 0:1, :, :].real
     ).swapaxes(-1, -2)
@@ -20,6 +33,17 @@ def _get_causal_signal(linear_predictor):
 
     Gives you A_(t+1)(Z) / A_(t)(Z)
     This is the plus operator in [1]
+
+    Parameters
+    ----------
+    linear_predictor : array, shape (..., n_fft_samples, n_signals,
+                                     n_signals)
+
+    Returns
+    -------
+    causal_part_of_linear_predictor : array, shape (..., n_fft_samples,
+                                                    n_signals, n_signals)
+
     '''
     n_signals = linear_predictor.shape[-1]
     n_fft_samples = linear_predictor.shape[-3]
