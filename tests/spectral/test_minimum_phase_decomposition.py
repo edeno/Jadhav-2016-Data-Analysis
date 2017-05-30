@@ -36,12 +36,14 @@ def test__conjugate_transpose():
 def test_minimum_phase_decomposition():
     n_signals = 1
     # minimum phase is all poles and zeros inside the unit circle
-    zero, pole, gain = 0.25, 0.50, 1.00
-    _, transfer_function = freqz_zpk(zero, pole, gain, whole=True)
+    _, transfer_function = freqz_zpk(0.25, 0.50, 1.00, whole=True)
     n_fft_samples = transfer_function.shape[0]
     expected_minimum_phase_factor = np.zeros(
-        (1, n_fft_samples, n_signals, n_signals), dtype=np.complex)
+        (2, n_fft_samples, n_signals, n_signals), dtype=np.complex)
     expected_minimum_phase_factor[0, :, 0, 0] = transfer_function
+
+    _, transfer_function2 = freqz_zpk(0.125, 0.25, 1.00, whole=True)
+    expected_minimum_phase_factor[1, :, 0, 0] = transfer_function2
 
     expected_cross_spectral_matrix = np.matmul(
         expected_minimum_phase_factor,
