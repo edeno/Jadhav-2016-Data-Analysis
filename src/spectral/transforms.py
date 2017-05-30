@@ -484,7 +484,7 @@ def _find_tapers_from_optimization(n_time_samples, time_index,
     t = np.linspace(0, np.pi, n_time_samples)
     tapers = np.zeros((n_tapers, n_time_samples), dtype='d')
     for taper_ind in range(n_tapers):
-        tapers[taper_ind] = tridi_inverse_iteration(
+        tapers[taper_ind, :] = tridi_inverse_iteration(
             diagonal, off_diag, w[taper_ind],
             x0=np.sin((taper_ind + 1) * t))
     return tapers
