@@ -128,7 +128,8 @@ class Multitaper(object):
 
     @property
     def n_signals(self):
-        return self.time_series.shape[-1]
+        return (1 if len(self.time_series.shape) < 2 else
+                self.time_series.shape[-1])
 
     @property
     def n_trials(self):
@@ -164,8 +165,13 @@ class Multitaper(object):
 def _add_trial_axis(time_series):
     '''If no trial axis included, add one in
     '''
-    return (time_series[:, np.newaxis, ...]
-            if len(time_series.shape) < 3 else time_series)
+    n_axes = len(time_series.shape)
+    if n_axes == 1:  # add trials and signals axes
+        return time_series[:, np.newaxis, np.newaxis]
+    elif n_axes == 2:  # add trials axis
+        return time_series[:, np.newaxis, ...]
+    else:
+        return time_series
 
 
 def _sliding_window(data, window_size, step_size=1,
