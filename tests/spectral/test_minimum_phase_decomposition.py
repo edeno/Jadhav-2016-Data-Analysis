@@ -33,6 +33,22 @@ def test__conjugate_transpose():
     assert np.allclose(_conjugate_transpose(test_array), expected_array)
 
 
+def test__get_causal_signal():
+    n_signals = 1
+    _, transfer_function = freqz_zpk(4, 2, 1.00, whole=True)
+    n_fft_samples = transfer_function.shape[0]
+    linear_predictor = np.zeros(
+        (1, n_fft_samples, n_signals, n_signals), dtype=np.complex)
+    linear_predictor[0, :, 0, 0] = transfer_function
+
+    expected_causal_signal = np.ones(
+        (1, n_fft_samples, n_signals, n_signals), dtype=np.complex)
+
+    causal_signal = _get_causal_signal(linear_predictor)
+
+    assert np.allclose(causal_signal, expected_causal_signal)
+
+
 def test_minimum_phase_decomposition():
     n_signals = 1
     # minimum phase is all poles and zeros inside the unit circle
