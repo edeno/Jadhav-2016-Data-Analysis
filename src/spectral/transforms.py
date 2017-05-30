@@ -141,6 +141,10 @@ class Multitaper(object):
         return (self.time_halfbandwidth_product /
                 self.time_window_duration)
 
+    @property
+    def nyquist_frequency(self):
+        return self.sampling_frequency / 2
+
     def fft(self):
         '''Compute the fast Fourier transform using the multitaper method.
 
