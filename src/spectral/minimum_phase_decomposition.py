@@ -48,12 +48,15 @@ def _get_causal_signal(linear_predictor):
     n_signals = linear_predictor.shape[-1]
     n_fft_samples = linear_predictor.shape[-3]
     linear_predictor_coefficients = ifft(linear_predictor, axis=-3)
+
     # Take half of the roots on the unit circle
     linear_predictor_coefficients[..., 0, :, :] *= 0.5
-    # Form S_tau by making the matrix upper triangular
+
+    # Make the unit circle roots upper triangular
     lower_triangular_ind = np.tril_indices(n_signals, k=-1)
     linear_predictor_coefficients[
         ..., 0, lower_triangular_ind[0], lower_triangular_ind[1]] = 0
+
     # Take only the roots inside the unit circle (positive lags)
     linear_predictor_coefficients[..., (n_fft_samples + 1) // 2:, :, :] = 0
     return fft(linear_predictor_coefficients, axis=-3)
