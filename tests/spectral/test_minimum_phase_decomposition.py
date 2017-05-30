@@ -3,7 +3,7 @@ from scipy.signal import freqz_zpk
 
 from src.spectral.minimum_phase_decomposition import (
     _check_convergence, _conjugate_transpose, _get_causal_signal,
-    minimum_phase_decomposition)
+    minimum_phase_decomposition, _get_intial_conditions)
 
 
 def test__check_convergence():
@@ -31,6 +31,21 @@ def test__conjugate_transpose():
     expected_array = np.zeros((2, 4, 2), dtype=np.complex)
     expected_array[1, ...] = test_array[1, ...].conj().transpose()
     assert np.allclose(_conjugate_transpose(test_array), expected_array)
+
+
+def test__get_initial_conditions():
+    n_time_samples, n_fft_samples, n_signals = 3, 11, 2
+    cross_spectral_matrix = np.ones(
+        (n_time_samples, n_fft_samples, n_signals, n_signals),
+        dtype=np.complex) * 4
+    cross_spectral_matrix[..., 1, 0] = 0
+    minimum_phase_factor = _get_intial_conditions(cross_spectral_matrix)
+    expected_cross_spectral_matrix = np.zeros(
+        (n_time_samples, 1, n_signals, n_signals),
+        dtype=np.complex)
+    expected_cross_spectral_matrix[..., :, :] = np.eye(n_signals) * 2
+    assert np.allclose(
+        minimum_phase_factor, expected_cross_spectral_matrix)
 
 
 def test__get_causal_signal():
