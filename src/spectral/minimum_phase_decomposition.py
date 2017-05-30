@@ -87,6 +87,38 @@ def _check_convergence(current, old, tolerance=1E-8):
     return error < tolerance
 
 
+def _get_linear_predictor(minimum_phase_factor, cross_spectral_matrix, I):
+    '''Measure how close the minimum phase factor is to the original
+    cross spectral matrix.
+
+    Parameters
+    ----------
+    minimum_phase_factor : array, shape (n_time_samples, ...,
+                                         n_fft_samples, n_signals,
+                                         n_signals)
+        The current minimum phase square root guess.
+    cross_spectral_matrix : array, shape (n_time_samples, ...,
+                                          n_fft_samples, n_signals,
+                                          n_signals)
+        The matrix to be factored.
+    I : array, shape (n_signals, n_signals)
+        Identity matrix.
+
+    Returns
+    -------
+    linear_predictor : array, shape (n_time_samples, ..., n_fft_samples,
+                                     n_signals, n_signals)
+        How much to adjust for the next guess for minimum phase factor.
+
+    '''
+    covariance_sandwich_estimator = np.linalg.solve(
+        minimum_phase_factor, cross_spectral_matrix)
+    covariance_sandwich_estimator = np.linalg.solve(
+        minimum_phase_factor,
+        _conjugate_transpose(covariance_sandwich_estimator))
+    return covariance_sandwich_estimator + I
+
+
 def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
                                 max_iterations=30):
     '''Find a minimum phase matrix square root of the cross spectral
@@ -121,15 +153,12 @@ def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
 
     for iteration in range(max_iterations):
         old_minimum_phase_factor = minimum_phase_factor.copy()
-        linear_predictor = (np.linalg.solve(
-            minimum_phase_factor,
-            _conjugate_transpose(
-                np.linalg.solve(minimum_phase_factor,
-                                cross_spectral_matrix)))
-                            + I)
+        linear_predictor = _get_linear_predictor(
+            minimum_phase_factor, cross_spectral_matrix, I)
         minimum_phase_factor = np.matmul(
             minimum_phase_factor, _get_causal_signal(linear_predictor))
 
+        # If already converged at a time point, don't change.
         minimum_phase_factor[is_converged, ...] = old_minimum_phase_factor[
             is_converged, ...]
         is_converged = _check_convergence(
