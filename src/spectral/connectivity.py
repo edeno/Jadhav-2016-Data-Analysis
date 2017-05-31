@@ -612,7 +612,7 @@ class Connectivity(object):
         return full_frequency_DTF * self.partial_directed_coherence()
 
     def group_delay(self, frequencies_of_interest=None,
-                    frequencies=None, frequency_resolution=None):
+                    frequency_resolution=None,
         '''The average time-delay of a broadband signal.
 
         Parameters
@@ -635,6 +635,7 @@ class Connectivity(object):
                Neurophysiology 56, 501-514.
 
         '''
+        frequencies = self.frequencies
         frequency_difference = frequencies[1] - frequencies[0]
         independent_frequency_step = _get_independent_frequency_step(
             frequency_difference, frequency_resolution)
@@ -659,7 +660,7 @@ class Connectivity(object):
         return delay, slope, r_value
 
     def phase_slope_index(self, frequencies_of_interest=None,
-                          frequencies=None, frequency_resolution=None):
+                          frequency_resolution=None):
         '''The weighted average of slopes of a broadband signal projected
         onto the imaginary axis.
 
@@ -686,6 +687,7 @@ class Connectivity(object):
                Physical Systems. Physical Review Letters 100.
 
         '''
+        frequencies = self.frequencies
         bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
 
