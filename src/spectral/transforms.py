@@ -1,6 +1,7 @@
 import numpy as np
+from numpy.fft import fftfreq
 from scipy import interpolate
-from scipy.fftpack import fft, ifft, next_fast_len, fftfreq
+from scipy.fftpack import fft, ifft, next_fast_len
 from scipy.linalg import eigvals_banded
 from scipy.signal import detrend
 
