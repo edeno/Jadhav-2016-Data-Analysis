@@ -156,7 +156,7 @@ class Multitaper(object):
                                              n_signals)
 
         '''
-        time_series = _add_trial_axis(self.time_series)
+        time_series = _add_axes(self.time_series)
         time_series = _sliding_window(
             time_series, window_size=self.n_time_samples,
             step_size=self.n_samples_per_time_step, axis=0)
