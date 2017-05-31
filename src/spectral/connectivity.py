@@ -274,10 +274,13 @@ class Connectivity(object):
 
         '''
         labels = np.unique(group_labels)
+        n_frequencies = self.fourier_coefficients.shape[-2]
+        non_negative_frequencies = np.arange(0, (n_frequencies + 1) // 2)
         normalized_fourier_coefficients = [
             _normalize_fourier_coefficients(
                 self.fourier_coefficients[
-                    ..., np.in1d(group_labels, label)])
+                    ..., non_negative_frequencies,
+                    np.in1d(group_labels, label)])
             for label in labels]
         coherence = _squared_magnitude(np.stack([
             _estimate_canonical_coherence(
