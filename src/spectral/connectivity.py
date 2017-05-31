@@ -613,6 +613,7 @@ class Connectivity(object):
 
     def group_delay(self, frequencies_of_interest=None,
                     frequency_resolution=None,
+                    significance_threshold=0.05):
         '''The average time-delay of a broadband signal.
 
         Parameters
@@ -643,7 +644,8 @@ class Connectivity(object):
             self.coherency(), frequencies, frequencies_of_interest)
         bias = coherence_bias(self.n_observations)
         is_significant = _find_significant_frequencies(
-            bandpassed_coherency, bias, independent_frequency_step)
+            bandpassed_coherency, bias, independent_frequency_step,
+            significance_threshold=significance_threshold)
         coherence_phase = np.ma.masked_array(
             np.unwrap(np.angle(bandpassed_coherency), axis=-3),
             mask=~is_significant)
