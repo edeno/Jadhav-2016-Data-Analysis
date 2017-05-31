@@ -137,7 +137,7 @@ class Connectivity(object):
                                       fourier_coefficients)
 
     @lazyproperty
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies(axis=-3)
     def minimum_phase_factor(self):
         return minimum_phase_decomposition(
             self.expectation(self.cross_spectral_matrix))
@@ -168,11 +168,11 @@ class Connectivity(object):
                 [self.fourier_coefficients.shape[axis]
                  for axis in axes])
 
-    @non_negative_frequencies(-2)
+    @non_negative_frequencies(axis=-2)
     def power(self):
         return self._power
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies(axis=-3)
     def coherency(self):
         '''The complex-valued linear association between time series in the
          frequency domain.
@@ -214,7 +214,7 @@ class Connectivity(object):
         '''
         return _squared_magnitude(self.coherency())
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies(axis=-3)
     def imaginary_coherence(self):
         '''The normalized imaginary component of the cross-spectrum.
 
@@ -291,7 +291,7 @@ class Connectivity(object):
         pair_labels = list(combinations(labels, 2))
         return coherence, pair_labels
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies(axis=-3)
     def phase_locking_value(self):
         '''The cross-spectrum with the power for each signal scaled to
         a magnitude of 1.
@@ -318,7 +318,7 @@ class Connectivity(object):
             self.cross_spectral_matrix /
             np.abs(self.cross_spectral_matrix))
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies(axis=-3)
     def phase_lag_index(self):
         '''A non-parametric synchrony measure designed to mitigate power
         differences between realizations (tapers, trials) and
