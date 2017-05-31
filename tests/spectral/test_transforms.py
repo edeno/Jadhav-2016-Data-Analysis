@@ -3,7 +3,7 @@ from pytest import mark
 from scipy.signal import correlate
 
 from nitime.algorithms.spectral import dpss_windows as nitime_dpss_windows
-from src.spectral.transforms import (Multitaper, _add_trial_axis,
+from src.spectral.transforms import (Multitaper, _add_axes,
                                      _auto_correlation, _fix_taper_sign,
                                      _get_low_bias_tapers,
                                      _get_taper_eigenvalues,
@@ -11,23 +11,23 @@ from src.spectral.transforms import (Multitaper, _add_trial_axis,
                                      dpss_windows)
 
 
-def test__add_trial_axis():
+def test__add_axes():
     # Add dimension if no trials
     n_time_samples, n_signals = (2, 3)
     test_data = np.ones((n_time_samples, n_signals))
     expected_shape = (n_time_samples, 1, n_signals)
-    assert np.allclose(_add_trial_axis(test_data).shape, expected_shape)
+    assert np.allclose(_add_axes(test_data).shape, expected_shape)
 
     # Add two dimensions if no trials and signals
     test_data = np.ones((n_time_samples,))
     expected_shape = (n_time_samples, 1, 1)
-    assert np.allclose(_add_trial_axis(test_data).shape, expected_shape)
+    assert np.allclose(_add_axes(test_data).shape, expected_shape)
 
     # if there is a trial dimension, do nothing
     n_trials = 10
     test_data = np.ones((n_time_samples, n_trials, n_signals))
     expected_shape = (n_time_samples, n_trials, n_signals)
-    assert np.allclose(_add_trial_axis(test_data).shape, expected_shape)
+    assert np.allclose(_add_axes(test_data).shape, expected_shape)
 
 
 @mark.parametrize(
