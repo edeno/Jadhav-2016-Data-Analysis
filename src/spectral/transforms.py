@@ -167,7 +167,6 @@ class Multitaper(object):
             self.sampling_frequency).swapaxes(2, -1)
 
 
-
 def _add_axes(time_series):
     '''If no trial or signal axes included, add one in.
     '''
