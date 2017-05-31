@@ -119,13 +119,16 @@ class Connectivity(object):
 
     @lazyproperty
     def power(self):
-        return self.expectation(self.fourier_coefficients *
-                                self.fourier_coefficients.conjugate()).real
+        p = self.positive_frequencies(axis=-2)
+        fourier_coefficients = p(self.fourier_coefficients)
+        return self.expectation(
+            fourier_coefficients * fourier_coefficients.conjugate()).real
 
     @lazyproperty
     def minimum_phase_factor(self):
-        return minimum_phase_decomposition(
-            self.expectation(self.cross_spectral_matrix))
+        return self.positive_frequencies(
+            minimum_phase_decomposition(
+                self.expectation(self.cross_spectral_matrix)))
 
     @lazyproperty
     def transfer_function(self):
@@ -153,6 +156,11 @@ class Connectivity(object):
                 [self.fourier_coefficients.shape[axis]
                  for axis in axes])
 
+    def positive_frequencies(self, axis=-3):
+        n_frequencies = self.fourier_coefficients.shape[-2]
+        non_neg_frequency_ind = np.arange(0, (n_frequencies + 1) // 2)
+        return partial(np.take, indices=non_neg_frequency_ind, axis=axis)
+
     def coherency(self):
         '''The complex-valued linear association between time series in the
          frequency domain.
@@ -163,8 +171,9 @@ class Connectivity(object):
                                            n_signals)
 
          '''
-        complex_coherencey = (
-            self.expectation(self.cross_spectral_matrix) / np.sqrt(
+        cross_spectrum = self.expectation(
+            self.positive_frequencies(self.cross_spectral_matrix))
+        complex_coherencey = (cross_spectrum / np.sqrt(
                 self.power[..., :, np.newaxis] *
                 self.power[..., np.newaxis, :]))
         n_signals = self.fourier_coefficients.shape[-1]
@@ -218,8 +227,10 @@ class Connectivity(object):
                Neurophysiology 115, 2292-2307.
 
         '''
+        cross_spectrum = self.expectation(
+            self.positive_frequencies(self.cross_spectral_matrix)).imag
         return np.abs(
-            self.expectation(self.cross_spectral_matrix).imag /
+            cross_spectrum /
             np.sqrt(self.power[..., :, np.newaxis] *
                     self.power[..., np.newaxis, :]))
 
@@ -253,9 +264,11 @@ class Connectivity(object):
 
         '''
         labels = np.unique(group_labels)
+        p = self.positive_frequencies(axis=-2)
+        fourier_coefficients = p(self.fourier_coefficients)
         normalized_fourier_coefficients = [
             _normalize_fourier_coefficients(
-                self.fourier_coefficients[
+                fourier_coefficients[
                     ..., np.in1d(group_labels, label)])
             for label in labels]
         coherence = _squared_magnitude(np.stack([
@@ -290,7 +303,7 @@ class Connectivity(object):
 
         '''
         return self.expectation(
-            self.cross_spectral_matrix /
+            self.positive_frequencies(self.cross_spectral_matrix) /
             np.abs(self.cross_spectral_matrix))
 
     def phase_lag_index(self):
@@ -316,7 +329,8 @@ class Connectivity(object):
                sources. Human Brain Mapping 28, 1178-1193.
 
         '''
-        return self.expectation(np.sign(self.cross_spectral_matrix.imag))
+        return self.expectation(np.sign(
+            self.positive_frequencies(self.cross_spectral_matrix).imag))
 
     def weighted_phase_lag_index(self):
         '''Weighted average of the phase lag index using the imaginary
@@ -336,9 +350,12 @@ class Connectivity(object):
                NeuroImage 55, 1548-1565.
 
         '''
-        weights = self.expectation(np.abs(self.cross_spectral_matrix.imag))
+        weights = self.expectation(np.abs(
+            self.positive_frequencies(self.cross_spectral_matrix).imag))
         weights[weights < np.finfo(float).eps] = 1
-        return self.expectation(self.cross_spectral_matrix.imag) / weights
+        return (self.expectation(
+            self.positive_frequencies(self.cross_spectral_matrix).imag) /
+             weights)
 
     def debiased_squared_phase_lag_index(self):
         '''The square of the phase lag index corrected for the positive
@@ -382,12 +399,14 @@ class Connectivity(object):
 
         '''
         n_observations = self.n_observations
+        imag_cross_spectrum = self.positive_frequencies(
+            self.cross_spectral_matrix).imag
         imaginary_cross_spectral_matrix_sum = self.expectation(
-            self.cross_spectral_matrix.imag) * n_observations
+            imag_cross_spectrum) * n_observations
         squared_imaginary_cross_spectral_matrix_sum = self.expectation(
-            self.cross_spectral_matrix.imag ** 2) * n_observations
+            imag_cross_spectrum ** 2) * n_observations
         imaginary_cross_spectral_matrix_magnitude_sum = self.expectation(
-            np.abs(self.cross_spectral_matrix.imag)) * n_observations
+            np.abs(imag_cross_spectrum)) * n_observations
         weights = (imaginary_cross_spectral_matrix_magnitude_sum ** 2 -
                    squared_imaginary_cross_spectral_matrix_sum)
         return (imaginary_cross_spectral_matrix_sum ** 2 -
