@@ -66,7 +66,7 @@ class Connectivity(object):
 
     Attributes
     ----------
-    fourier_coefficients : array, shape (n_time_samples, n_trials,
+    fourier_coefficients : array, shape (n_time_windows, n_trials,
                                          n_tapers, n_fft_samples,
                                          n_signals)
         The compex-valued coefficients from a fourier transform. Note that
@@ -79,7 +79,7 @@ class Connectivity(object):
         the trials dimensions (leaving tapers) and 'tapers' only averages
         over tapers (leaving trials).
     frequencies : array, shape (n_fft_samples,)
-    time : array, shape (n_time_samples,)
+    time : array, shape (n_time_windows,)
 
     Methods
     -------
@@ -138,13 +138,13 @@ class Connectivity(object):
 
         Parameters
         ----------
-        fourier_coefficients : array, shape (n_time_samples, n_trials,
+        fourier_coefficients : array, shape (n_time_windows, n_trials,
                                              n_tapers, n_fft_samples,
                                              n_signals)
 
         Returns
         -------
-        cross_spectral_matrix : array, shape (n_time_samples, n_trials,
+        cross_spectral_matrix : array, shape (n_time_windows, n_trials,
                                               n_tapers, n_fft_samples,
                                               n_signals, n_signals)
 
@@ -718,13 +718,13 @@ def _estimate_noise_covariance(minimum_phase):
 
     Parameters
     ----------
-    minimum_phase : array, shape (n_time_samples, n_fft_samples,
+    minimum_phase : array, shape (n_time_windows, n_fft_samples,
                                   n_signals, n_signals)
         The matrix square root of a cross spectral matrix.
 
     Returns
     -------
-    noise_covariance : array, shape (n_time_samples, n_signals, n_signals)
+    noise_covariance : array, shape (n_time_windows, n_signals, n_signals)
         The noise covariance of a MVAR model.
 
     References
@@ -745,13 +745,13 @@ def _estimate_transfer_function(minimum_phase):
 
     Parameters
     ----------
-    minimum_phase : array, shape (n_time_samples, n_fft_samples,
+    minimum_phase : array, shape (n_time_windows, n_fft_samples,
                                   n_signals, n_signals)
         The matrix square root of a cross spectral matrix.
 
     Returns
     -------
-    transfer_function : array, shape (n_time_samples, n_fft_samples,
+    transfer_function : array, shape (n_time_windows, n_fft_samples,
                                       n_signals, n_signals)
         The transfer function of a MVAR model.
 
@@ -834,19 +834,19 @@ def _reshape(fourier_coefficients):
 
     Parameters
     ----------
-    fourier_coefficients : array, shape (n_time_samples, n_trials,
+    fourier_coefficients : array, shape (n_time_windows, n_trials,
                                          n_tapers, n_fft_samples,
                                          n_signals)
 
     Returns
     -------
-    fourier_coefficients : array, shape (n_time_samples, n_fft_samples,
+    fourier_coefficients : array, shape (n_time_windows, n_fft_samples,
                                          n_signals, n_trials * n_tapers)
 
     '''
-    (n_time_samples, _, _, n_fft_samples,
+    (n_time_windows, _, _, n_fft_samples,
      n_signals) = fourier_coefficients.shape
-    new_shape = (n_time_samples, -1, n_fft_samples, n_signals)
+    new_shape = (n_time_windows, -1, n_fft_samples, n_signals)
     return np.moveaxis(fourier_coefficients.reshape(new_shape), 1, -1)
 
 
@@ -855,13 +855,13 @@ def _normalize_fourier_coefficients(fourier_coefficients):
 
     Parameters
     ----------
-    fourier_coefficients : array, shape (n_time_samples, n_trials,
+    fourier_coefficients : array, shape (n_time_windows, n_trials,
                                          n_tapers, n_fft_samples,
                                          n_signals)
 
     Returns
     -------
-    normalized_fourier_coefficients : array, shape (n_time_samples,
+    normalized_fourier_coefficients : array, shape (n_time_windows,
                                                     n_fft_samples,
                                                     n_signals,
                                                     n_trials * n_tapers)
@@ -878,18 +878,18 @@ def _estimate_canonical_coherence(normalized_fourier_coefficients1,
 
     Parameters
     ----------
-    normalized_fourier_coefficients1 : array, shape (n_time_samples,
+    normalized_fourier_coefficients1 : array, shape (n_time_windows,
                                                      n_fft_samples,
                                                      n_signals,
                                                      n_trials * n_tapers)
-    normalized_fourier_coefficients2 : array, shape (n_time_samples,
+    normalized_fourier_coefficients2 : array, shape (n_time_windows,
                                                      n_fft_samples,
                                                      n_signals,
                                                      n_trials * n_tapers)
 
     Returns
     -------
-    canonical_coherence : array, shape (n_time_samples, n_fft_samples)
+    canonical_coherence : array, shape (n_time_windows, n_fft_samples)
 
     '''
     group_cross_spectrum = _complex_inner_product(

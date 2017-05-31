@@ -91,17 +91,20 @@ def test_time_window_step(
 
 
 @mark.parametrize(
-    'sampling_frequency, time_window_duration, expected_n_time_samples',
+    ('sampling_frequency, time_window_duration,'
+     'expected_n_time_samples_per_window'),
     [(1000, None, 100), (1000, 0.1, 100), (2000, 0.025, 50)])
 def test_n_time_samples(
-        sampling_frequency, time_window_duration, expected_n_time_samples):
+        sampling_frequency, time_window_duration,
+        expected_n_time_samples_per_window):
     n_time_samples, n_trials, n_signals = 100, 10, 2
     time_series = np.zeros((n_time_samples, n_trials, n_signals))
     m = Multitaper(
         time_series=time_series,
         sampling_frequency=sampling_frequency,
         time_window_duration=time_window_duration)
-    assert m.n_time_samples == expected_n_time_samples
+    assert (m.n_time_samples_per_window ==
+            expected_n_time_samples_per_window)
 
 
 @mark.parametrize(
@@ -169,22 +172,22 @@ def test_frequency_resolution(
 
 
 @mark.parametrize(
-    ('time_window_step, n_samples_per_time_step, '
+    ('time_window_step, n_time_samples_per_step, '
      'expected_n_samples_per_time_step'),
     [(None, None, 100), (0.001, None, 1), (0.002, None, 2),
      (None, 10, 10)])
 def test_n_samples_per_time_step(
-        time_window_step, n_samples_per_time_step,
+        time_window_step, n_time_samples_per_step,
         expected_n_samples_per_time_step):
     n_time_samples, n_trials, n_signals = 100, 10, 2
     time_series = np.zeros((n_time_samples, n_trials, n_signals))
 
     m = Multitaper(
         time_window_duration=0.10,
-        n_samples_per_time_step=n_samples_per_time_step,
+        n_time_samples_per_step=n_time_samples_per_step,
         time_series=time_series,
         time_window_step=time_window_step)
-    assert m.n_samples_per_time_step == expected_n_samples_per_time_step
+    assert m.n_time_samples_per_step == expected_n_samples_per_time_step
 
 
 @mark.parametrize('time_window_duration', [0.1, 0.2, 2.4, 0.16])

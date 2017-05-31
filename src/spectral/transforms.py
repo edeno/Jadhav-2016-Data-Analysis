@@ -13,7 +13,7 @@ class Multitaper(object):
     Attributes
     ----------
     time_series : array, shape (n_time_samples, n_trials, n_signals) or
-                  shape (n_time_samples, n_signals)
+                               (n_time_samples, n_signals)
     sampling_frequency : float, optional
         Number of samples per time unit the signal(s) are recorded at.
     time_halfbandwidth_product : float, optional
@@ -23,8 +23,8 @@ class Multitaper(object):
     time_window_step : float, optional
     tapers : array, optional
     n_tapers : int, optional
-    n_time_samples : int, optional
-    n_samples_per_time_step : int, optional
+    n_time_samples_per_window : int, optional
+    n_time_samples_per_step : int, optional
 
     '''
 
@@ -32,8 +32,9 @@ class Multitaper(object):
                  time_halfbandwidth_product=3,
                  detrend_type='constant', time_window_duration=None,
                  time_window_step=None, n_tapers=None,  tapers=None,
-                 start_time=0, n_fft_samples=None, n_time_samples=None,
-                 n_samples_per_time_step=None, is_low_bias=True):
+                 start_time=0, n_fft_samples=None,
+                 n_time_samples_per_window=None,
+                 n_time_samples_per_step=None, is_low_bias=True):
 
         self.time_series = time_series
         self.sampling_frequency = sampling_frequency
@@ -46,14 +47,14 @@ class Multitaper(object):
         self._n_fft_samples = n_fft_samples
         self._tapers = tapers
         self._n_tapers = n_tapers
-        self._n_time_samples = n_time_samples
-        self._n_samples_per_time_step = n_samples_per_time_step
+        self._n_time_samples_per_window = n_time_samples_per_window
+        self._n_samples_per_time_step = n_time_samples_per_step
 
     @property
     def tapers(self):
         if self._tapers is None:
             self._tapers = _make_tapers(
-                self.n_time_samples, self.sampling_frequency,
+                self.n_time_samples_per_window, self.sampling_frequency,
                 self.time_halfbandwidth_product, self.n_tapers,
                 is_low_bias=self.is_low_bias)
         return self._tapers
@@ -61,14 +62,14 @@ class Multitaper(object):
     @property
     def time_window_duration(self):
         if self._time_window_duration is None:
-            self._time_window_duration = (self.n_time_samples /
+            self._time_window_duration = (self.n_time_samples_per_window /
                                           self.sampling_frequency)
         return self._time_window_duration
 
     @property
     def time_window_step(self):
         if self._time_window_step is None:
-            self._time_window_step = (self.n_samples_per_time_step /
+            self._time_window_step = (self.n_time_samples_per_step /
                                       self.sampling_frequency)
         return self._time_window_step
 
@@ -84,19 +85,20 @@ class Multitaper(object):
             2 * self.time_halfbandwidth_product - 1))
 
     @property
-    def n_time_samples(self):
-        if (self._n_time_samples is None and
+    def n_time_samples_per_window(self):
+        if (self._n_time_samples_per_window is None and
                 self._time_window_duration is None):
-            self._n_time_samples = self.time_series.shape[0]
+            self._n_time_samples_per_window = self.time_series.shape[0]
         elif self._time_window_duration is not None:
-            self._n_time_samples = int(np.round(
+            self._n_time_samples_per_window = int(np.round(
                 self.time_window_duration * self.sampling_frequency))
-        return self._n_time_samples
+        return self._n_time_samples_per_window
 
     @property
     def n_fft_samples(self):
         if self._n_fft_samples is None:
-            self._n_fft_samples = next_fast_len(self.n_time_samples)
+            self._n_fft_samples = next_fast_len(
+                self.n_time_samples_per_window)
         return self._n_fft_samples
 
     @property
@@ -104,15 +106,15 @@ class Multitaper(object):
         return fftfreq(self.n_fft_samples, 1.0 / self.sampling_frequency)
 
     @property
-    def n_samples_per_time_step(self):
+    def n_time_samples_per_step(self):
         '''If `time_window_step` is set, then calculate the
-        `n_samples_per_time_step` based on the time window duration. If
-        `time_window_step` and `n_samples_per_time_step` are both not set,
+        `n_time_samples_per_step` based on the time window duration. If
+        `time_window_step` and `n_time_samples_per_step` are both not set,
         default the window step size to the same size as the window.
         '''
         if (self._n_samples_per_time_step is None and
                 self._time_window_step is None):
-            self._n_samples_per_time_step = self.n_time_samples
+            self._n_samples_per_time_step = self.n_time_samples_per_window
         elif self._time_window_step is not None:
             self._n_samples_per_time_step = int(
                 self.time_window_step * self.sampling_frequency)
@@ -123,8 +125,8 @@ class Multitaper(object):
         original_time = (np.arange(0, self.time_series.shape[0]) /
                          self.sampling_frequency)
         window_start_time = _sliding_window(
-            original_time, self.n_time_samples,
-            self.n_samples_per_time_step)[:, 0]
+            original_time, self.n_time_samples_per_window,
+            self.n_time_samples_per_step)[:, 0]
         return self.start_time + window_start_time
 
     @property
@@ -151,15 +153,15 @@ class Multitaper(object):
 
         Returns
         -------
-        fourier_coefficients : array, shape (n_time_samples, n_trials,
+        fourier_coefficients : array, shape (n_time_windows, n_trials,
                                              n_tapers, n_fft_samples,
                                              n_signals)
 
         '''
         time_series = _add_axes(self.time_series)
         time_series = _sliding_window(
-            time_series, window_size=self.n_time_samples,
-            step_size=self.n_samples_per_time_step, axis=0)
+            time_series, window_size=self.n_time_samples_per_window,
+            step_size=self.n_time_samples_per_step, axis=0)
         time_series = detrend(time_series, type=self.detrend_type)
 
         return _multitaper_fft(
@@ -249,8 +251,9 @@ def _multitaper_fft(tapers, time_series, n_fft_samples,
 
     Parameters
     ----------
-    tapers : array_like, shape (n_time_samples, n_tapers)
-    time_series : array_like, shape (n_windows, n_trials, n_time_samples)
+    tapers : array_like, shape (n_time_samples_per_window, n_tapers)
+    time_series : array_like, shape (n_windows, n_trials,
+                                     n_time_samples_per_window)
     n_fft_samples : int
     sampling_frequency : int
 
@@ -266,14 +269,14 @@ def _multitaper_fft(tapers, time_series, n_fft_samples,
             sampling_frequency)
 
 
-def _make_tapers(n_time_samples, sampling_frequency,
+def _make_tapers(n_time_samples_per_window, sampling_frequency,
                  time_halfbandwidth_product, n_tapers, is_low_bias=True):
     '''Returns the Discrete prolate spheroidal sequences (tapers) for
     multi-taper spectral analysis.
 
     Parameters
     ----------
-    n_time_samples : int
+    n_time_samples_per_window : int
     sampling_frequency : int
     time_halfbandwidth_product : float
     n_tapers : int
@@ -282,11 +285,11 @@ def _make_tapers(n_time_samples, sampling_frequency,
 
     Returns
     -------
-    tapers : array_like, shape (n_time_samples, n_tapers)
+    tapers : array_like, shape (n_time_samples_per_window, n_tapers)
 
     '''
     tapers, _ = dpss_windows(
-        n_time_samples, time_halfbandwidth_product, n_tapers,
+        n_time_samples_per_window, time_halfbandwidth_product, n_tapers,
         is_low_bias=is_low_bias)
     return tapers.T * np.sqrt(sampling_frequency)
 
@@ -370,29 +373,31 @@ def tridi_inverse_iteration(d, e, w, x0=None, rtol=1e-8):
     return x0
 
 
-def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
-                 is_low_bias=True, interp_from=None, interp_kind='linear'):
+def dpss_windows(n_time_samples_per_window, time_halfbandwidth_product,
+                 n_tapers, is_low_bias=True, interp_from=None,
+                 interp_kind='linear'):
     '''Compute Discrete Prolate Spheroidal Sequences.
 
     Will give of orders [0, n_tapers-1] for a given frequency-spacing
-    multiple NW and sequence length `n_time_samples`.
+    multiple NW and sequence length `n_time_samples_per_window`.
 
     Copied from NiTime and MNE-Python
 
     Parameters
     ----------
-    n_time_samples : int
+    n_time_samples_per_window : int
         Sequence length
     time_halfbandwidth_product : float, unitless
         Standardized half bandwidth corresponding to 2 * half_bw = BW * f0
-        = BW * `n_time_samples` / dt but with dt taken as 1
+        = BW * `n_time_samples_per_window` / dt but with dt taken as 1
     n_tapers : int
         Number of DPSS windows to return
     is_low_bias : bool
         Keep only tapers with eigenvalues > 0.9
     interp_from : int (optional)
         The tapers can be calculated using interpolation from a set of
-        tapers with the same NW and n_tapers, but shorter n_time_samples.
+        tapers with the same NW and n_tapers, but shorter
+        n_time_samples_per_window.
         This is the length of the shorter set of tapers.
     interp_kind : str (optional)
         This input variable is passed to scipy.interpolate.interp1d and
@@ -403,7 +408,7 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
     Returns
     -------
     tapers, eigenvalues : tuple
-        tapers is an array, shape (n_tapers, n_time_samples)
+        tapers is an array, shape (n_tapers, n_time_samples_per_window)
 
     Notes
     -----
@@ -414,18 +419,20 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
 
     '''
     n_tapers = int(n_tapers)
-    half_bandwidth = float(time_halfbandwidth_product) / n_time_samples
-    time_index = np.arange(n_time_samples, dtype='d')
+    half_bandwidth = (float(time_halfbandwidth_product) /
+                      n_time_samples_per_window)
+    time_index = np.arange(n_time_samples_per_window, dtype='d')
 
     if interp_from is not None:
         tapers = _find_tapers_from_interpolation(
             interp_from, time_halfbandwidth_product, n_tapers,
-            n_time_samples, interp_kind)
+            n_time_samples_per_window, interp_kind)
     else:
         tapers = _find_tapers_from_optimization(
-            n_time_samples, time_index, half_bandwidth, n_tapers)
+            n_time_samples_per_window, time_index, half_bandwidth,
+            n_tapers)
 
-    tapers = _fix_taper_sign(tapers, n_time_samples)
+    tapers = _fix_taper_sign(tapers, n_time_samples_per_window)
     eigenvalues = _get_taper_eigenvalues(
         tapers, half_bandwidth, time_index)
 
@@ -434,28 +441,29 @@ def dpss_windows(n_time_samples, time_halfbandwidth_product, n_tapers,
 
 
 def _find_tapers_from_interpolation(
-    interp_from, time_halfbandwidth_product, n_tapers, n_time_samples,
-        interp_kind):
+    interp_from, time_halfbandwidth_product, n_tapers,
+        n_time_samples_per_window, interp_kind):
     '''Create the tapers of the smaller size `interp_from` and then
-    interpolate to the larger size `n_time_samples`.'''
+    interpolate to the larger size `n_time_samples_per_window`.'''
     smaller_tapers, _ = dpss_windows(
         interp_from, time_halfbandwidth_product, n_tapers,
         is_low_bias=False)
 
-    return [_interpolate_taper(taper, interp_kind, n_time_samples)
+    return [_interpolate_taper(
+        taper, interp_kind, n_time_samples_per_window)
             for taper in smaller_tapers]
 
 
-def _interpolate_taper(taper, interp_kind, n_time_samples):
+def _interpolate_taper(taper, interp_kind, n_time_samples_per_window):
     interpolation_function = interpolate.interp1d(
         np.arange(taper.shape[-1]), taper, kind=interp_kind)
     interpolated_taper = interpolation_function(
-        np.linspace(0, taper.shape[-1] - 1, n_time_samples,
+        np.linspace(0, taper.shape[-1] - 1, n_time_samples_per_window,
                     endpoint=False))
     return interpolated_taper / np.sqrt(np.sum(interpolated_taper ** 2))
 
 
-def _find_tapers_from_optimization(n_time_samples, time_index,
+def _find_tapers_from_optimization(n_time_samples_per_window, time_index,
                                    half_bandwidth, n_tapers):
     '''here we want to set up an optimization problem to find a sequence
     whose energy is maximally concentrated within band
@@ -473,27 +481,30 @@ def _find_tapers_from_optimization(n_time_samples, time_index,
     Here I set up an alternative symmetric tri-diagonal eigenvalue
     problem such that
     (B - (l2)I)v = 0, and v are our DPSS (but eigenvalues l2 != l1)
-    the main diagonal = ([n_time_samples-1-2*t]/2)**2 cos(2PIW),
-    t=[0,1,2,...,n_time_samples-1] and the first off-diagonal =
-    t(n_time_samples-t)/2, t=[1,2,...,n_time_samples-1]
-    [see Percival and Walden, 1993]'''
-    diagonal = ((n_time_samples - 1 - 2 * time_index) / 2.) ** 2 * np.cos(
-        2 * np.pi * half_bandwidth)
+    the main diagonal = ([n_time_samples_per_window-1-2*t]/2)**2 cos(2PIW),
+    t=[0,1,2,...,n_time_samples_per_window-1] and the first off-diagonal =
+    t(n_time_samples_per_window-t)/2, t=[1,2,...,
+    n_time_samples_per_window-1] [see Percival and Walden, 1993]'''
+    diagonal = (
+        ((n_time_samples_per_window - 1 - 2 * time_index) / 2.) ** 2
+        * np.cos(2 * np.pi * half_bandwidth))
     off_diag = np.zeros_like(time_index)
-    off_diag[:-1] = time_index[1:] * (n_time_samples - time_index[1:]) / 2.
+    off_diag[:-1] = (
+        time_index[1:] * (n_time_samples_per_window - time_index[1:]) / 2.)
     # put the diagonals in LAPACK 'packed' storage
-    ab = np.zeros((2, n_time_samples), dtype='d')
+    ab = np.zeros((2, n_time_samples_per_window), dtype='d')
     ab[1] = diagonal
     ab[0, 1:] = off_diag[:-1]
     # only calculate the highest n_tapers eigenvalues
     w = eigvals_banded(
         ab, select='i',
-        select_range=(n_time_samples - n_tapers, n_time_samples - 1))
+        select_range=(n_time_samples_per_window - n_tapers,
+                      n_time_samples_per_window - 1))
     w = w[::-1]
 
     # find the corresponding eigenvectors via inverse iteration
-    t = np.linspace(0, np.pi, n_time_samples)
-    tapers = np.zeros((n_tapers, n_time_samples), dtype='d')
+    t = np.linspace(0, np.pi, n_time_samples_per_window)
+    tapers = np.zeros((n_tapers, n_time_samples_per_window), dtype='d')
     for taper_ind in range(n_tapers):
         tapers[taper_ind, :] = tridi_inverse_iteration(
             diagonal, off_diag, w[taper_ind],
@@ -501,14 +512,14 @@ def _find_tapers_from_optimization(n_time_samples, time_index,
     return tapers
 
 
-def _fix_taper_sign(tapers, n_time_samples):
+def _fix_taper_sign(tapers, n_time_samples_per_window):
     '''By convention (Percival and Walden, 1993 pg 379)
     symmetric tapers (k=0,2,4,...) should have a positive average and
     antisymmetric tapers should begin with a positive lobe.
 
     Parameters
     ----------
-    tapers : array, shape (n_tapers, n_time_samples)
+    tapers : array, shape (n_tapers, n_time_samples_per_window)
     '''
 
     # Fix sign of symmetric tapers
@@ -521,7 +532,7 @@ def _fix_taper_sign(tapers, n_time_samples):
     # rather than test the sign of one point, test the sign of the
     # linear slope up to the first (largest) peak
     largest_peak_ind = np.argmax(
-        np.abs(tapers[1::2, :n_time_samples // 2]), axis=1)
+        np.abs(tapers[1::2, :n_time_samples_per_window // 2]), axis=1)
     for taper_ind, peak_ind in enumerate(largest_peak_ind):
         if np.sum(tapers[2 * taper_ind + 1, :peak_ind]) < 0:
             tapers[2 * taper_ind + 1, :] *= -1
@@ -529,8 +540,8 @@ def _fix_taper_sign(tapers, n_time_samples):
 
 
 def _auto_correlation(data, axis=-1):
-    n_time_samples = data.shape[axis]
-    n_fft_samples = next_fast_len(2 * n_time_samples - 1)
+    n_time_samples_per_window = data.shape[axis]
+    n_fft_samples = next_fast_len(2 * n_time_samples_per_window - 1)
     dpss_fft = fft(data, n_fft_samples, axis=axis)
     power = dpss_fft * dpss_fft.conj()
     return np.real(ifft(power, axis=axis))
@@ -552,9 +563,9 @@ def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
 
     Parameters
     ----------
-    tapers : array, shape (n_tapers, n_time_samples)
+    tapers : array, shape (n_tapers, n_time_samples_per_window)
     half_bandwidth : float
-    time_index : array, (n_time_samples,)
+    time_index : array, (n_time_samples_per_window,)
 
     Returns
     -------
@@ -565,6 +576,7 @@ def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
     ideal_filter = 4 * half_bandwidth * np.sinc(
         2 * half_bandwidth * time_index)
     ideal_filter[0] = 2 * half_bandwidth
-    n_time_samples = len(time_index)
+    n_time_samples_per_window = len(time_index)
     return np.dot(
-        _auto_correlation(tapers)[:, :n_time_samples], ideal_filter)
+        _auto_correlation(tapers)[:, :n_time_samples_per_window],
+        ideal_filter)
