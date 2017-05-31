@@ -1,4 +1,4 @@
-from functools import partial
+from functools import partial, wraps
 from inspect import signature
 from itertools import combinations
 
@@ -36,6 +36,20 @@ class lazyproperty:
             value = self.func(instance)
             setattr(instance, self.func.__name__, value)
             return value
+
+
+def non_negative_frequencies(axis):
+    '''Decorator that removes the negative frequencies.'''
+    def decorator(connectivity_measure):
+        @wraps(connectivity_measure)
+        def wrapper(*args, **kwargs):
+            measure = connectivity_measure(*args, **kwargs)
+            n_frequencies = measure.shape[axis]
+            non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
+            return np.take(measure, indices=non_neg_index, axis=axis)
+        return wrapper
+        wrapper.__docstring__ = connectivity_measure.__docstring__
+    return decorator
 
 
 class Connectivity(object):
@@ -96,6 +110,11 @@ class Connectivity(object):
         self.expectation_type = expectation_type
 
     @lazyproperty
+    def _power(self):
+        return self.expectation(self.fourier_coefficients *
+                                self.fourier_coefficients.conjugate()).real
+
+    @lazyproperty
     def cross_spectral_matrix(self):
         '''The complex-valued linear association between fourier
         coefficients at each frequency.
@@ -118,11 +137,7 @@ class Connectivity(object):
                                       fourier_coefficients)
 
     @lazyproperty
-    def power(self):
-        return self.expectation(self.fourier_coefficients *
-                                self.fourier_coefficients.conjugate()).real
-
-    @lazyproperty
+    @non_negative_frequencies(-3)
     def minimum_phase_factor(self):
         return minimum_phase_decomposition(
             self.expectation(self.cross_spectral_matrix))
@@ -153,6 +168,11 @@ class Connectivity(object):
                 [self.fourier_coefficients.shape[axis]
                  for axis in axes])
 
+    @non_negative_frequencies(-2)
+    def power(self):
+        return self._power
+
+    @non_negative_frequencies(-3)
     def coherency(self):
         '''The complex-valued linear association between time series in the
          frequency domain.
@@ -165,11 +185,11 @@ class Connectivity(object):
          '''
         complex_coherencey = (
             self.expectation(self.cross_spectral_matrix) / np.sqrt(
-                self.power[..., :, np.newaxis] *
-                self.power[..., np.newaxis, :]))
+                self._power[..., :, np.newaxis] *
+                self._power[..., np.newaxis, :]))
         n_signals = self.fourier_coefficients.shape[-1]
         diagonal_ind = np.arange(0, n_signals)
-        complex_coherencey[..., diagonal_ind, diagonal_ind] = self.power
+        complex_coherencey[..., diagonal_ind, diagonal_ind] = self._power
         return complex_coherencey
 
     def coherence_phase(self):
@@ -194,6 +214,7 @@ class Connectivity(object):
         '''
         return _squared_magnitude(self.coherency())
 
+    @non_negative_frequencies(-3)
     def imaginary_coherence(self):
         '''The normalized imaginary component of the cross-spectrum.
 
@@ -220,8 +241,8 @@ class Connectivity(object):
         '''
         return np.abs(
             self.expectation(self.cross_spectral_matrix).imag /
-            np.sqrt(self.power[..., :, np.newaxis] *
-                    self.power[..., np.newaxis, :]))
+            np.sqrt(self._power[..., :, np.newaxis] *
+                    self._power[..., np.newaxis, :]))
 
     def canonical_coherence(self, group_labels):
         '''Finds the maximal coherence between all combinations of groups.
@@ -267,6 +288,7 @@ class Connectivity(object):
         pair_labels = list(combinations(labels, 2))
         return coherence, pair_labels
 
+    @non_negative_frequencies(-3)
     def phase_locking_value(self):
         '''The cross-spectrum with the power for each signal scaled to
         a magnitude of 1.
@@ -293,6 +315,7 @@ class Connectivity(object):
             self.cross_spectral_matrix /
             np.abs(self.cross_spectral_matrix))
 
+    @non_negative_frequencies(-3)
     def phase_lag_index(self):
         '''A non-parametric synchrony measure designed to mitigate power
         differences between realizations (tapers, trials) and
@@ -318,6 +341,7 @@ class Connectivity(object):
         '''
         return self.expectation(np.sign(self.cross_spectral_matrix.imag))
 
+    @non_negative_frequencies(-3)
     def weighted_phase_lag_index(self):
         '''Weighted average of the phase lag index using the imaginary
         coherency magnitudes as weights.
@@ -362,6 +386,7 @@ class Connectivity(object):
         return ((n_observations * self.phase_lag_index() ** 2 - 1.0) /
                 (n_observations - 1.0))
 
+    @non_negative_frequencies(-3)
     def debiased_squared_weighted_phase_lag_index(self):
         '''The square of the weighted phase lag index corrected for the
         positive bias induced by using the magnitude of the complex
@@ -432,10 +457,10 @@ class Connectivity(object):
         '''
         rotated_covariance = _remove_instantaneous_causality(
             self.noise_covariance)
-        intrinsic_power = (self.power[..., np.newaxis] -
+        intrinsic_power = (self.power()[..., np.newaxis] -
                            rotated_covariance[..., np.newaxis, :, :] *
                            _squared_magnitude(self.transfer_function))
-        return np.log(self.power[..., np.newaxis] / intrinsic_power)
+        return np.log(self.power()[..., np.newaxis] / intrinsic_power)
 
     def conditional_spectral_granger_prediction():
         raise NotImplementedError
