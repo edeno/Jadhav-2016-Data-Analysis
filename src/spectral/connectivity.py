@@ -44,9 +44,12 @@ def non_negative_frequencies(axis):
         @wraps(connectivity_measure)
         def wrapper(*args, **kwargs):
             measure = connectivity_measure(*args, **kwargs)
-            n_frequencies = measure.shape[axis]
-            non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
-            return np.take(measure, indices=non_neg_index, axis=axis)
+            if measure is not None:
+                n_frequencies = measure.shape[axis]
+                non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
+                return np.take(measure, indices=non_neg_index, axis=axis)
+            else:
+                return None
         return wrapper
         wrapper.__docstring__ = connectivity_measure.__docstring__
     return decorator
@@ -105,9 +108,18 @@ class Connectivity(object):
     '''
 
     def __init__(self, fourier_coefficients,
-                 expectation_type='trials_tapers'):
+                 expectation_type='trials_tapers', frequencies=None,
+                 time=None):
         self.fourier_coefficients = fourier_coefficients
         self.expectation_type = expectation_type
+        self._frequencies = frequencies
+        self.time = time
+
+    @property
+    @non_negative_frequencies(axis=0)
+    def frequencies(self):
+        if self._frequencies is not None:
+            return self._frequencies
 
     @lazyproperty
     def _power(self):
