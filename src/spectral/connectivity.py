@@ -69,12 +69,17 @@ class Connectivity(object):
     fourier_coefficients : array, shape (n_time_samples, n_trials,
                                          n_tapers, n_fft_samples,
                                          n_signals)
-        The compex-valued coefficients from a fourier transform.
+        The compex-valued coefficients from a fourier transform. Note that
+        this is expected to be the two-sided fourier coefficients
+        (both the positive and negative lags). This is needed for the
+        Granger-based methods to work.
     expectation_type : ('trials_tapers' | 'trials' | 'tapers')
         How to average the cross spectral matrix. 'trials_tapers' averages
         over the trials and tapers dimensions. 'trials' only averages over
         the trials dimensions (leaving tapers) and 'tapers' only averages
         over tapers (leaving trials).
+    frequencies : array, shape (n_fft_samples,)
+    time : array, shape (n_time_samples,)
 
     Methods
     -------
