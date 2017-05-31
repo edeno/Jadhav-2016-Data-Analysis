@@ -965,7 +965,7 @@ def _find_largest_significant_group(is_significant):
     labeled, _ = label(is_significant)
     label_groups, label_counts = np.unique(labeled, return_counts=True)
 
-    if len(label_groups) > 1:
+    if not np.all(label_groups == 0):
         label_counts[0] = 0
         max_group = label_groups[np.argmax(label_counts)]
         return labeled == max_group

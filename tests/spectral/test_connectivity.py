@@ -413,14 +413,14 @@ def test__get_independent_frequency_step(
     assert step == expected_step
 
 
-def test__find_largest_significant_group():
-    is_significant = np.zeros((10,), dtype=bool)
-    is_significant[1:3] = True
-    is_significant[4:7] = True
-    is_significant[8] = True
-
-    expected_is_significant = np.zeros((10,), dtype=bool)
-    expected_is_significant[4:7] = True
+@mark.parametrize(
+    'is_significant, expected_is_significant',
+    [(np.array([False, True, True, False, True, True, True, False]),
+      np.array([False, False, False, False, True, True, True, False])),
+     (np.ones((10,), dtype=bool), np.ones((10,), dtype=bool))
+     ])
+def test__find_largest_significant_group(
+        is_significant, expected_is_significant):
 
     assert np.allclose(
         _find_largest_significant_group(is_significant),
