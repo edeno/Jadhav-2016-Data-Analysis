@@ -20,7 +20,7 @@ def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
         null hypothesis has been rejected (True) or failed to reject
         (False).
     '''
-    p_values = np.asarray(p_values)
+    p_values = np.array(p_values)
     threshold_line = np.linspace(0, alpha, num=p_values.size + 1,
                                  endpoint=True)[1:]
     sorted_p_values = np.sort(p_values.flatten())
@@ -29,7 +29,7 @@ def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
             np.where(sorted_p_values <= threshold_line)[0])
         threshold = sorted_p_values[threshold_ind]
     except ValueError:  # There are no values below threshold
-        threshold = 0
+        threshold = -1
     return p_values <= threshold
 
 
