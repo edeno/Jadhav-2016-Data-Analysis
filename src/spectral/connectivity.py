@@ -200,10 +200,11 @@ class Connectivity(object):
                                            n_signals)
 
          '''
+        norm = np.sqrt(self._power[..., :, np.newaxis] *
+                       self._power[..., np.newaxis, :])
+        norm[norm == 0] = np.nan
         complex_coherencey = (
-            self.expectation(self.cross_spectral_matrix) / np.sqrt(
-                self._power[..., :, np.newaxis] *
-                self._power[..., np.newaxis, :]))
+            self.expectation(self.cross_spectral_matrix) / norm)
         n_signals = self.fourier_coefficients.shape[-1]
         diagonal_ind = np.arange(0, n_signals)
         complex_coherencey[..., diagonal_ind, diagonal_ind] = self._power
@@ -435,6 +436,7 @@ class Connectivity(object):
             np.abs(self.cross_spectral_matrix.imag)) * n_observations
         weights = (imaginary_cross_spectral_matrix_magnitude_sum ** 2 -
                    squared_imaginary_cross_spectral_matrix_sum)
+        weights[weights == 0] = np.nan
         return (imaginary_cross_spectral_matrix_sum ** 2 -
                 squared_imaginary_cross_spectral_matrix_sum) / weights
 
@@ -477,10 +479,14 @@ class Connectivity(object):
         '''
         rotated_covariance = _remove_instantaneous_causality(
             self.noise_covariance)
-        intrinsic_power = (self.power()[..., np.newaxis] -
+        total_power = self.power()[..., np.newaxis]
+        intrinsic_power = (total_power -
                            rotated_covariance[..., np.newaxis, :, :] *
                            _squared_magnitude(self.transfer_function))
-        return np.log(self.power()[..., np.newaxis] / intrinsic_power)
+        intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
+        predictive_power = total_power / intrinsic_power
+        predictive_power[predictive_power <= 0] = np.nan
+        return np.log(predictive_power)
 
     def conditional_spectral_granger_prediction():
         raise NotImplementedError
