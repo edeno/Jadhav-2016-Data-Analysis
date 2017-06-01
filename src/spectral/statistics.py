@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import norm
 
+np.seterr(invalid='ignore')
+
 
 def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
     '''Corrects for multiple comparisons and returns the significant
