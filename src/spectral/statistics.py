@@ -92,8 +92,16 @@ def fisher_z_transform(coherency1, bias1, coherency2=0, bias2=0):
         provided, the difference from that coherency.
 
     '''
-    z1 = np.arctanh(np.abs(coherency1)) - bias1
-    z2 = np.arctanh(np.abs(coherency2)) - bias2
+    coherence_magnitude1 = np.abs(coherency1)
+    coherence_magnitude1[coherence_magnitude1 >= 1] = (
+        1 - np.finfo(float).eps)
+
+    coherence_magnitude2 = np.array(np.abs(coherency2))
+    coherence_magnitude2[coherence_magnitude2 >= 1] = (
+        1 - np.finfo(float).eps)
+
+    z1 = np.arctanh(coherence_magnitude1) - bias1
+    z2 = np.arctanh(coherence_magnitude2) - bias2
     return (z1 - z2) / np.sqrt(bias1 + bias2)
 
 
