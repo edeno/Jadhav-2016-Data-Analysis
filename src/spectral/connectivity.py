@@ -635,9 +635,9 @@ class Connectivity(object):
 
         Returns
         -------
-        delay : array, shape (..., n_signals, n_signals)
-        slope : array, shape (..., n_signals, n_signals)
-        r_value : array, shape (..., n_signals, n_signals)
+        delay : array, shape (..., n_signal_combintaions)
+        slope : array, shape (..., n_signal_combintaions)
+        r_value : array, shape (..., n_signal_combintaions)
 
         References
         ----------
@@ -654,22 +654,29 @@ class Connectivity(object):
         bandpassed_coherency, bandpassed_frequencies = _bandpass(
             self.coherency(), frequencies, frequencies_of_interest)
         bias = coherence_bias(self.n_observations)
+
+        n_signals = bandpassed_coherency.shape[-1]
+        signal_combination_ind = np.array(
+            list(combinations(np.arange(n_signals), 2)))
+        bandpassed_coherency = bandpassed_coherency[
+            ..., signal_combination_ind[:, 0],
+            signal_combination_ind[:, 1]]
+
         is_significant = _find_significant_frequencies(
             bandpassed_coherency, bias, independent_frequency_step,
             significance_threshold=significance_threshold)
         coherence_phase = np.ma.masked_array(
-            np.unwrap(np.angle(bandpassed_coherency), axis=-3),
+            np.unwrap(np.angle(bandpassed_coherency), axis=-2),
             mask=~is_significant)
 
         def _linear_regression(response):
             return linregress(bandpassed_frequencies, y=response)
 
         regression_results = np.ma.apply_along_axis(
-            _linear_regression, -3, coherence_phase)
-        slope = np.array(regression_results[..., 0, :, :], dtype=np.float)
+            _linear_regression, -2, coherence_phase)
+        slope = np.array(regression_results[..., 0, :], dtype=np.float)
         delay = slope / (2 * np.pi)
-        r_value = np.array(
-            regression_results[..., 2, :, :], dtype=np.float)
+        r_value = np.array(regression_results[..., 2, :], dtype=np.float)
         return delay, slope, r_value
 
     def phase_slope_index(self, frequencies_of_interest=None,
@@ -1064,15 +1071,15 @@ def _find_significant_frequencies(
 
     Returns
     -------
-    is_significant : bool array, shape (..., n_frequencies, n_signals,
-                                        n_signals)
+    is_significant : bool array, shape (..., n_frequencies,
+                                        n_signal_combintaions)
 
     '''
     z_coherence = fisher_z_transform(coherency, bias)
     p_values = get_normal_distribution_p_values(z_coherence)
     is_significant = adjust_for_multiple_comparisons(
         p_values, alpha=significance_threshold)
-    return np.apply_along_axis(_find_largest_independent_group, -3,
+    return np.apply_along_axis(_find_largest_independent_group, -2,
                                is_significant, frequency_step,
                                min_group_size)
 
