@@ -50,6 +50,16 @@ class Multitaper(object):
         self._n_time_samples_per_window = n_time_samples_per_window
         self._n_samples_per_time_step = n_time_samples_per_step
 
+    def __repr__(self):
+        return (
+            'Multitaper('
+            'sampling_frequency={0.sampling_frequency!r}, '
+            'time_halfbandwidth_product={0.time_halfbandwidth_product!r}, '
+            'time_window_duration={0.time_window_duration!r}, '
+            'time_window_step={0.time_window_step!r}, '
+            'detrend_type={0.detrend_type!r}, '
+            'start_time={0.start_time})'.format(self))
+
     @property
     def tapers(self):
         if self._tapers is None:
