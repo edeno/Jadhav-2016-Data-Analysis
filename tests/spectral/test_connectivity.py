@@ -44,7 +44,7 @@ def test_cross_spectrum(axis):
 
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
     assert np.allclose(
-        expected_cross_spectral_matrix, this_Conn.cross_spectral_matrix)
+        expected_cross_spectral_matrix, this_Conn._cross_spectral_matrix)
 
 
 def test_power():
@@ -82,7 +82,7 @@ def test_expectation(expectation_type, expected_shape):
         fourier_coefficients=fourier_coefficients,
         expectation_type=expectation_type,
     )
-    expectation_function = this_Conn.expectation
+    expectation_function = this_Conn._expectation
     assert np.allclose(
         expected_shape, expectation_function(fourier_coefficients).shape)
 

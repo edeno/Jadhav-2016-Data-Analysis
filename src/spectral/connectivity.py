@@ -128,11 +128,12 @@ class Connectivity(object):
 
     @lazyproperty
     def _power(self):
-        return self.expectation(self.fourier_coefficients *
-                                self.fourier_coefficients.conjugate()).real
+        return self._expectation(
+            self.fourier_coefficients *
+            self.fourier_coefficients.conjugate()).real
 
     @lazyproperty
-    def cross_spectral_matrix(self):
+    def _cross_spectral_matrix(self):
         '''The complex-valued linear association between fourier
         coefficients at each frequency.
 
@@ -155,29 +156,29 @@ class Connectivity(object):
 
     @lazyproperty
     @non_negative_frequencies(axis=-3)
-    def minimum_phase_factor(self):
+    def _minimum_phase_factor(self):
         return minimum_phase_decomposition(
-            self.expectation(self.cross_spectral_matrix))
+            self._expectation(self._cross_spectral_matrix))
 
     @lazyproperty
-    def transfer_function(self):
-        return _estimate_transfer_function(self.minimum_phase_factor)
+    def _transfer_function(self):
+        return _estimate_transfer_function(self._minimum_phase_factor)
 
     @lazyproperty
-    def noise_covariance(self):
-        return _estimate_noise_covariance(self.minimum_phase_factor)
+    def _noise_covariance(self):
+        return _estimate_noise_covariance(self._minimum_phase_factor)
 
     @lazyproperty
-    def MVAR_Fourier_coefficients(self):
-        return np.linalg.inv(self.transfer_function)
+    def _MVAR_Fourier_coefficients(self):
+        return np.linalg.inv(self._transfer_function)
 
     @property
-    def expectation(self):
+    def _expectation(self):
         return EXPECTATION[self.expectation_type]
 
     @property
     def n_observations(self):
-        axes = signature(self.expectation).parameters['axis'].default
+        axes = signature(self._expectation).parameters['axis'].default
         if isinstance(axes, int):
             return self.fourier_coefficients.shape[axes]
         else:
@@ -204,7 +205,7 @@ class Connectivity(object):
                        self._power[..., np.newaxis, :])
         norm[norm == 0] = np.nan
         complex_coherencey = (
-            self.expectation(self.cross_spectral_matrix) / norm)
+            self._expectation(self._cross_spectral_matrix) / norm)
         n_signals = self.fourier_coefficients.shape[-1]
         diagonal_ind = np.arange(0, n_signals)
         complex_coherencey[..., diagonal_ind, diagonal_ind] = self._power
@@ -258,7 +259,7 @@ class Connectivity(object):
 
         '''
         return np.abs(
-            self.expectation(self.cross_spectral_matrix).imag /
+            self._expectation(self._cross_spectral_matrix).imag /
             np.sqrt(self._power[..., :, np.newaxis] *
                     self._power[..., np.newaxis, :]))
 
@@ -332,9 +333,9 @@ class Connectivity(object):
                signals. Human Brain Mapping 8, 194-208.
 
         '''
-        return self.expectation(
-            self.cross_spectral_matrix /
-            np.abs(self.cross_spectral_matrix))
+        return self._expectation(
+            self._cross_spectral_matrix /
+            np.abs(self._cross_spectral_matrix))
 
     @non_negative_frequencies(axis=-3)
     def phase_lag_index(self):
@@ -360,7 +361,7 @@ class Connectivity(object):
                sources. Human Brain Mapping 28, 1178-1193.
 
         '''
-        return self.expectation(np.sign(self.cross_spectral_matrix.imag))
+        return self._expectation(np.sign(self._cross_spectral_matrix.imag))
 
     @non_negative_frequencies(-3)
     def weighted_phase_lag_index(self):
@@ -381,9 +382,11 @@ class Connectivity(object):
                NeuroImage 55, 1548-1565.
 
         '''
-        weights = self.expectation(np.abs(self.cross_spectral_matrix.imag))
+        weights = self._expectation(
+            np.abs(self._cross_spectral_matrix.imag))
         weights[weights < np.finfo(float).eps] = 1
-        return self.expectation(self.cross_spectral_matrix.imag) / weights
+        return self._expectation(
+            self._cross_spectral_matrix.imag) / weights
 
     def debiased_squared_phase_lag_index(self):
         '''The square of the phase lag index corrected for the positive
@@ -428,12 +431,12 @@ class Connectivity(object):
 
         '''
         n_observations = self.n_observations
-        imaginary_cross_spectral_matrix_sum = self.expectation(
-            self.cross_spectral_matrix.imag) * n_observations
-        squared_imaginary_cross_spectral_matrix_sum = self.expectation(
-            self.cross_spectral_matrix.imag ** 2) * n_observations
-        imaginary_cross_spectral_matrix_magnitude_sum = self.expectation(
-            np.abs(self.cross_spectral_matrix.imag)) * n_observations
+        imaginary_cross_spectral_matrix_sum = self._expectation(
+            self._cross_spectral_matrix.imag) * n_observations
+        squared_imaginary_cross_spectral_matrix_sum = self._expectation(
+            self._cross_spectral_matrix.imag ** 2) * n_observations
+        imaginary_cross_spectral_matrix_magnitude_sum = self._expectation(
+            np.abs(self._cross_spectral_matrix.imag)) * n_observations
         weights = (imaginary_cross_spectral_matrix_magnitude_sum ** 2 -
                    squared_imaginary_cross_spectral_matrix_sum)
         weights[weights == 0] = np.nan
@@ -478,11 +481,11 @@ class Connectivity(object):
 
         '''
         rotated_covariance = _remove_instantaneous_causality(
-            self.noise_covariance)
+            self._noise_covariance)
         total_power = self.power()[..., np.newaxis]
         intrinsic_power = (total_power -
                            rotated_covariance[..., np.newaxis, :, :] *
-                           _squared_magnitude(self.transfer_function))
+                           _squared_magnitude(self._transfer_function))
         intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
         predictive_power = total_power / intrinsic_power
         predictive_power[predictive_power <= 0] = np.nan
@@ -510,8 +513,8 @@ class Connectivity(object):
 
         '''
 
-        return (_squared_magnitude(self.transfer_function) /
-                _total_inflow(self.transfer_function))
+        return (_squared_magnitude(self._transfer_function) /
+                _total_inflow(self._transfer_function))
 
     def directed_coherence(self):
         '''The transfer function coupling strength normalized by the total
@@ -533,10 +536,10 @@ class Connectivity(object):
                causality. Applied Signal Processing 5, 40.
 
         '''
-        noise_variance = _get_noise_variance(self.noise_covariance)
+        noise_variance = _get_noise_variance(self._noise_covariance)
         return (np.sqrt(noise_variance) *
-                _squared_magnitude(self.transfer_function) /
-                _total_inflow(self.transfer_function, noise_variance))
+                _squared_magnitude(self._transfer_function) /
+                _total_inflow(self._transfer_function, noise_variance))
 
     def partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
@@ -558,8 +561,8 @@ class Connectivity(object):
                Biological Cybernetics 84, 463-474.
 
         '''
-        return (_squared_magnitude(self.MVAR_Fourier_coefficients) /
-                _total_outflow(self.MVAR_Fourier_coefficients))
+        return (_squared_magnitude(self._MVAR_Fourier_coefficients) /
+                _total_outflow(self._MVAR_Fourier_coefficients))
 
     def generalized_partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
@@ -587,10 +590,10 @@ class Connectivity(object):
                pp. 163-166.
 
         '''
-        noise_variance = _get_noise_variance(self.noise_covariance)
-        return (_squared_magnitude(self.MVAR_Fourier_coefficients) /
+        noise_variance = _get_noise_variance(self._noise_covariance)
+        return (_squared_magnitude(self._MVAR_Fourier_coefficients) /
                 np.sqrt(noise_variance) / _total_outflow(
-                    self.MVAR_Fourier_coefficients, noise_variance))
+                    self._MVAR_Fourier_coefficients, noise_variance))
 
     def direct_directed_transfer_function(self):
         '''A combination of the directed transfer function estimate of
@@ -612,9 +615,10 @@ class Connectivity(object):
                Journal of Neuroscience Methods 125, 195-207.
 
         '''
-        full_frequency_DTF = (_squared_magnitude(self.transfer_function) /
-                              np.sum(_total_inflow(self.transfer_function),
-                              axis=-3, keepdims=True))
+        full_frequency_DTF = (
+            _squared_magnitude(self._transfer_function) /
+            np.sum(_total_inflow(self._transfer_function),
+                   axis=-3, keepdims=True))
         return full_frequency_DTF * self.partial_directed_coherence()
 
     def group_delay(self, frequencies_of_interest=None,
