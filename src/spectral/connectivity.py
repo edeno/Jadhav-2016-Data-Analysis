@@ -264,7 +264,7 @@ class Connectivity(object):
                     self._power[..., np.newaxis, :]))
 
     def canonical_coherence(self, group_labels):
-        '''Finds the maximal coherence between all combinations of groups.
+        '''Finds the maximal coherence between each combination of groups.
 
         The canonical coherence finds two sets of weights such that the
         coherence between the linear combination of group1 and the linear
