@@ -103,6 +103,7 @@ class Connectivity(object):
     phase_lag_index
     pairwise_spectral_granger_prediction
     conditional_spectral_granger_prediction (Not implemented)
+    blockwise_spectral_granger_prediction (Not implemented)
 
     References
     ----------
@@ -493,6 +494,9 @@ class Connectivity(object):
         return np.log(predictive_power)
 
     def conditional_spectral_granger_prediction():
+        raise NotImplementedError
+
+    def blockwise_spectral_granger_prediction():
         raise NotImplementedError
 
     def directed_transfer_function(self):
