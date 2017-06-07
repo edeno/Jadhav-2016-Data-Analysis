@@ -517,7 +517,6 @@ class Connectivity(object):
                structures. Biological Cybernetics 65, 203-210.
 
         '''
-        print(self._transfer_function)
         return _squared_magnitude(
             self._transfer_function /
             _total_inflow(self._transfer_function))
