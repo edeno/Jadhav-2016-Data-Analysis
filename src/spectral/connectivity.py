@@ -517,9 +517,10 @@ class Connectivity(object):
                structures. Biological Cybernetics 65, 203-210.
 
         '''
-
-        return (_squared_magnitude(self._transfer_function) /
-                _total_inflow(self._transfer_function))
+        print(self._transfer_function)
+        return _squared_magnitude(
+            self._transfer_function /
+            _total_inflow(self._transfer_function))
 
     def directed_coherence(self):
         '''The transfer function coupling strength normalized by the total
@@ -566,8 +567,9 @@ class Connectivity(object):
                Biological Cybernetics 84, 463-474.
 
         '''
-        return (_squared_magnitude(self._MVAR_Fourier_coefficients) /
-                _total_outflow(self._MVAR_Fourier_coefficients))
+        return _squared_magnitude(
+            self._MVAR_Fourier_coefficients /
+            _total_outflow(self._MVAR_Fourier_coefficients))
 
     def generalized_partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
@@ -596,8 +598,9 @@ class Connectivity(object):
 
         '''
         noise_variance = _get_noise_variance(self._noise_covariance)
-        return (_squared_magnitude(self._MVAR_Fourier_coefficients) /
-                np.sqrt(noise_variance) / _total_outflow(
+        return _squared_magnitude(
+            self._MVAR_Fourier_coefficients /
+            np.sqrt(noise_variance) / _total_outflow(
                     self._MVAR_Fourier_coefficients, noise_variance))
 
     def direct_directed_transfer_function(self):

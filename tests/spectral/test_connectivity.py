@@ -1,5 +1,6 @@
 import numpy as np
 from pytest import mark
+from unittest.mock import PropertyMock
 
 from src.spectral.connectivity import (Connectivity, _bandpass,
                                        _complex_inner_product,
@@ -526,3 +527,21 @@ def test__inner_combination():
 
     assert np.allclose(
         _inner_combination(test_data, axis=-2), expected_combination)
+
+
+def test_directed_transfer_function():
+    c = Connectivity(fourier_coefficients=np.empty((1,)))
+    type(c)._transfer_function = PropertyMock(
+        return_value=np.arange(1, 5).reshape((2, 2)))
+    dtf = c.directed_transfer_function()
+    assert np.allclose(dtf.sum(axis=-1), 1.0)
+    assert np.all((dtf >= 0.0) & (dtf <= 1.0))
+
+
+def test_partial_directed_coherence():
+    c = Connectivity(fourier_coefficients=np.empty((1,)))
+    type(c)._MVAR_Fourier_coefficients = PropertyMock(
+        return_value=np.arange(1, 5).reshape((2, 2)))
+    pdc = c.partial_directed_coherence()
+    assert np.allclose(pdc.sum(axis=-2), 1.0)
+    assert np.all((pdc >= 0.0) & (pdc <= 1.0))
