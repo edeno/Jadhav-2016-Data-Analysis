@@ -835,12 +835,12 @@ def _set_diagonal_to_zero(x):
     return x
 
 
-def _total_inflow(transfer_function, noise_variance=1.0):
+def _total_inflow(transfer_function, noise_variance=1.0, axis=-1):
     '''Measures the effect of incoming signals onto a node via sum of
     squares.'''
     return np.sqrt(np.sum(
         noise_variance * _squared_magnitude(transfer_function),
-        keepdims=True, axis=-1))
+        keepdims=True, axis=axis))
 
 
 def _get_noise_variance(noise_covariance):
