@@ -624,10 +624,10 @@ class Connectivity(object):
 
         '''
         full_frequency_DTF = (
-            _squared_magnitude(self._transfer_function) /
-            np.sum(_total_inflow(self._transfer_function),
-                   axis=-3, keepdims=True))
-        return full_frequency_DTF * self.partial_directed_coherence()
+            self._transfer_function /
+            _total_inflow(self._transfer_function, axis=(-1, -3)))
+        return (np.abs(full_frequency_DTF) *
+                np.sqrt(self.partial_directed_coherence()))
 
     def group_delay(self, frequencies_of_interest=None,
                     frequency_resolution=None,
