@@ -175,6 +175,8 @@ class Multitaper(object):
             step_size=self.n_time_samples_per_step, axis=0)
         time_series = detrend(time_series, type=self.detrend_type)
 
+        print(self)
+
         return _multitaper_fft(
             self.tapers, time_series, self.n_fft_samples,
             self.sampling_frequency).swapaxes(2, -1)
