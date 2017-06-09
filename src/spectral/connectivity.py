@@ -823,7 +823,7 @@ def _remove_instantaneous_causality(noise_covariance):
     '''
     variance = np.diagonal(noise_covariance, axis1=-1,
                            axis2=-2)[..., np.newaxis]
-    return (variance - noise_covariance ** 2 / variance.swapaxes(-1, -2))
+    return (variance.swapaxes(-1, -2) - noise_covariance ** 2 / variance)
 
 
 def _set_diagonal_to_zero(x):
