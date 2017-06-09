@@ -5,6 +5,7 @@ from itertools import combinations
 import numpy as np
 from scipy.ndimage import label
 from scipy.stats.mstats import linregress
+from scipy.fftpack import ifft
 
 from .minimum_phase_decomposition import minimum_phase_decomposition
 from .statistics import (adjust_for_multiple_comparisons,
@@ -156,16 +157,17 @@ class Connectivity(object):
                                       fourier_coefficients)
 
     @lazyproperty
-    @non_negative_frequencies(axis=-3)
     def _minimum_phase_factor(self):
         return minimum_phase_decomposition(
             self._expectation(self._cross_spectral_matrix))
 
     @lazyproperty
+    @non_negative_frequencies(axis=-3)
     def _transfer_function(self):
         return _estimate_transfer_function(self._minimum_phase_factor)
 
     @lazyproperty
+    @non_negative_frequencies(axis=-3)
     def _noise_covariance(self):
         return _estimate_noise_covariance(self._minimum_phase_factor)
 
@@ -762,8 +764,10 @@ def _estimate_noise_covariance(minimum_phase):
            causality. NeuroImage 41, 354-362.
 
     '''
-    A_0 = minimum_phase[..., 0, :, :]
-    return _complex_inner_product(A_0, A_0).real
+    inverse_fourier_coefficients = ifft(minimum_phase, axis=-3).real
+    return _complex_inner_product(
+        inverse_fourier_coefficients[..., 0, :, :],
+        inverse_fourier_coefficients[..., 0, :, :]).real
 
 
 def _estimate_transfer_function(minimum_phase):
@@ -790,8 +794,10 @@ def _estimate_transfer_function(minimum_phase):
            causality. NeuroImage 41, 354-362.
 
     '''
+    inverse_fourier_coefficients = ifft(minimum_phase, axis=-3).real
     return np.matmul(
-        minimum_phase, np.linalg.inv(minimum_phase[..., 0:1, :, :]))
+        minimum_phase,
+        np.linalg.inv(inverse_fourier_coefficients[..., 0:1, :, :]))
 
 
 def _squared_magnitude(x):
