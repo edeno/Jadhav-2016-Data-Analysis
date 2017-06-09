@@ -53,7 +53,6 @@ class Multitaper(object):
     def __repr__(self):
         return (
             'Multitaper('
-            'frequency_resolution={0.frequency_resolution!r}, '
             'sampling_frequency={0.sampling_frequency!r}, '
             'time_halfbandwidth_product={0.time_halfbandwidth_product!r}, '
             'time_window_duration={0.time_window_duration!r}, '
