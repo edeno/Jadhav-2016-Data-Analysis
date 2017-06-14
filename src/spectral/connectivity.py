@@ -167,7 +167,6 @@ class Connectivity(object):
         return _estimate_transfer_function(self._minimum_phase_factor)
 
     @lazyproperty
-    @non_negative_frequencies(axis=-3)
     def _noise_covariance(self):
         return _estimate_noise_covariance(self._minimum_phase_factor)
 
