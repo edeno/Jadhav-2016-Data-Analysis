@@ -42,3 +42,5 @@ notebooks/.ipynb_checkpoints/*.ipynb
 
 # Unit test / coverage reports
 .coverage
+
+*.nc
