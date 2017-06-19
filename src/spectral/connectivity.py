@@ -279,13 +279,11 @@ class Connectivity(object):
 
         Returns
         -------
-        canonical_coherence : array, shape (..., n_fft_samples,
-                                            n_group_pairs)
-            The maximimal coherence for each group pair where
-            n_group_pairs = (n_groups) * (n_groups - 1) / 2
-        pair_labels : list of tuples, shape (n_group_pairs, 2)
-            The label for the group pair for which the coherence was
-            maximized.
+        canonical_coherence : array, shape (n_time_samples, n_fft_samples,
+                                            n_groups, n_groups)
+            The maximimal coherence for each group pair
+        labels : array, shape (n_groups,)
+            The sorted unique group labels that correspond to `n_groups`
 
         References
         ----------
@@ -303,14 +301,28 @@ class Connectivity(object):
             _normalize_fourier_coefficients(
                 fourier_coefficients[..., np.in1d(group_labels, label)])
             for label in labels]
-        coherence = _squared_magnitude(np.stack([
+
+        n_groups = len(labels)
+        new_shape = (self.time.size, self.frequencies.size, n_groups,
+                     n_groups)
+        magnitude = _squared_magnitude(np.stack([
             _estimate_canonical_coherence(
                 fourier_coefficients1, fourier_coefficients2)
             for fourier_coefficients1, fourier_coefficients2
             in combinations(normalized_fourier_coefficients, 2)
         ], axis=-1))
-        pair_labels = list(combinations(labels, 2))
-        return coherence, pair_labels
+
+        canonical_coherence_magnitude = np.zeros(new_shape) * np.nan
+        group_combination_ind = np.array(
+            list(combinations(np.arange(n_groups), 2)))
+        canonical_coherence_magnitude[
+            ..., group_combination_ind[:, 0],
+            group_combination_ind[:, 1]] = magnitude
+        canonical_coherence_magnitude[
+            ..., group_combination_ind[:, 1],
+            group_combination_ind[:, 0]] = magnitude
+
+        return canonical_coherence_magnitude, labels
 
     @non_negative_frequencies(axis=-3)
     def phase_locking_value(self):
