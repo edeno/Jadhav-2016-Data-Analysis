@@ -1,209 +1,64 @@
 '''Higher level functions for analyzing the data
 
 '''
+from os.path import isfile
 from copy import deepcopy
 from functools import partial, wraps
-from itertools import combinations
 from logging import getLogger
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from dask import async, compute, delayed
 
-from .data_processing import (get_area_pair_from_hdf,
-                              get_interpolated_position_dataframe,
-                              get_LFP_dataframe, get_lfps_by_area,
+from .data_processing import (get_interpolated_position_dataframe,
+                              get_LFP_dataframe,
                               get_mark_indicator_dataframe,
                               get_spike_indicator_dataframe,
-                              get_tetrode_pair_from_hdf,
                               make_neuron_dataframe,
-                              make_tetrode_dataframe, reshape_to_segments,
-                              save_area_pair, save_area_pair_info,
-                              save_tetrode_pair)
+                              make_tetrode_dataframe, reshape_to_segments)
 from .ripple_decoding import (combined_likelihood,
                               estimate_marked_encoding_model,
                               estimate_sorted_spike_encoding_model,
                               estimate_state_transition, get_bin_centers,
                               predict_state, set_initial_conditions)
 from .ripple_detection import Kay_method
+from .spectral.connectivity import Connectivity
+from .spectral.transforms import Multitaper
 
 logger = getLogger(__name__)
 
 
-def coherence_by_ripple_type(lfps, ripple_info, ripple_covariate,
-                             multitaper_params,
-                             multitaper_parameter_name=''):
+def connectivity_by_ripple_type(
+    lfps, epoch_key, tetrode_info, ripple_info, ripple_covariate,
+        multitaper_params, FREQUENCY_BANDS, multitaper_parameter_name=''):
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
 
-    num_lfps = len(lfps)
-    num_pairs = int(num_lfps * (num_lfps - 1) / 2)
-
     ripples_by_covariate = ripple_info.groupby(ripple_covariate)
-    params = deepcopy(multitaper_params)
-    window_of_interest = params.pop('window_of_interest')
-    reshape_to_trials = partial(
-        reshape_to_segments,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest, concat_axis=1)
 
     logger.info(
-        'Computing {multitaper_parameter_name} for each level of the '
-        'covariate "{covariate}" for {num_pairs} pairs of '
-        'electrodes:'.format(
+        'Computing for each level of the covariate "{covariate}":'.format(
+            covariate=ripple_covariate))
+    for level_name, ripples_df in ripples_by_covariate:
+        ripple_times = _get_ripple_times(ripples_df)
+        logger.info(
+            '...Level: {level_name} ({num_ripples} ripples)'.format(
+                level_name=level_name,
+                num_ripples=len(ripple_times)))
+        ripple_triggered_connectivity(
+            lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
             multitaper_parameter_name=multitaper_parameter_name,
-            covariate=ripple_covariate,
-            num_pairs=num_pairs))
-    for level_name, ripples_df in ripples_by_covariate:
-        ripple_times = _get_ripple_times(ripples_df)
-        logger.info(
-            '...Level: {level_name} ({num_ripples} ripples)'.format(
-                level_name=level_name,
-                num_ripples=len(ripple_times)))
-        ripple_locked_lfps = {
-            lfp_name: _subtract_event_related_potential(
-                reshape_to_trials(lfps[lfp_name], ripple_times))
-            for lfp_name in lfps}
-        for tetrode1, tetrode2 in combinations(
-                sorted(ripple_locked_lfps), 2):
-            coherence_df = multitaper_coherogram(
-                [ripple_locked_lfps[tetrode1],
-                 ripple_locked_lfps[tetrode2]],
-                **params)
-            save_tetrode_pair(
-                '{}/coherence'.format(multitaper_parameter_name),
-                ripple_covariate, level_name, tetrode1,
-                tetrode2, coherence_df)
-            save_tetrode_pair(
-                '{}/power'.format(multitaper_parameter_name),
-                ripple_covariate, level_name, tetrode1,
-                tetrode1, _get_power_spectrum(
-                    coherence_df, 'power_spectrum1'))
-            save_tetrode_pair(
-                '{}/power'.format(multitaper_parameter_name),
-                ripple_covariate, level_name, tetrode2,
-                tetrode2, _get_power_spectrum(
-                    coherence_df, 'power_spectrum2'))
-    logger.info(
-        'Computing the difference in coherence between all levels:')
-    for level1, level2 in combinations(
-            sorted(ripples_by_covariate.groups.keys()), 2):
-        level_difference_name = '{level2}_{level1}'.format(
-            level1=level1, level2=level2)
-        logger.info('...Level Difference: {level2} - {level1}'.format(
-            level1=level1, level2=level2))
-        for tetrode1, tetrode2 in combinations(
-                sorted(ripple_locked_lfps), 2):
-            logger.debug(
-                '......Tetrode Pair: {tetrode1} - {tetrode2}'.format(
-                    tetrode1=tetrode1, tetrode2=tetrode2))
-            level1_coherence_df = get_tetrode_pair_from_hdf(
-                '{}/coherence'.format(multitaper_parameter_name),
-                ripple_covariate, level1, tetrode1, tetrode2)
-            level2_coherence_df = get_tetrode_pair_from_hdf(
-                '{}/coherence'.format(multitaper_parameter_name),
-                ripple_covariate, level2, tetrode1, tetrode2)
-            coherence_difference_df = power_and_coherence_change(
-                level1_coherence_df, level2_coherence_df)
-            save_tetrode_pair(
-                '{}/coherence'.format(multitaper_parameter_name),
-                ripple_covariate, level_difference_name, tetrode1,
-                tetrode2, coherence_difference_df)
-            save_tetrode_pair(
-                '{}/power'.format(multitaper_parameter_name),
-                ripple_covariate, level_difference_name, tetrode1,
-                tetrode1, _get_power_spectrum(
-                    coherence_difference_df, 'power_spectrum1'))
-            save_tetrode_pair(
-                '{}/power'.format(multitaper_parameter_name),
-                ripple_covariate, level_difference_name, tetrode2,
-                tetrode2, _get_power_spectrum(
-                    coherence_difference_df, 'power_spectrum2'))
+            group_name=level_name)
 
 
-def canonical_coherence_by_ripple_type(lfps, epoch_key, tetrode_info,
-                                       ripple_info, ripple_covariate,
-                                       multitaper_params,
-                                       multitaper_parameter_name=''):
-    '''Computes the canonical coherence at each level of a ripple covariate
-    from the ripple info dataframe and the differences between those
-    levels'''
-
-    ripples_by_covariate = ripple_info.groupby(ripple_covariate)
-    params = deepcopy(multitaper_params)
-    window_of_interest = params.pop('window_of_interest')
-    reshape_to_trials = partial(
-        reshape_to_segments,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest, concat_axis=1)
-
-    logger.info('Computing canonical {multitaper_parameter_name} for each '
-                'level of the covariate "{covariate}":'.format(
-                    multitaper_parameter_name=multitaper_parameter_name,
-                    covariate=ripple_covariate))
-
-    for level_name, ripples_df in ripples_by_covariate:
-        ripple_times = _get_ripple_times(ripples_df)
-        logger.info(
-            '...Level: {level_name} ({num_ripples} ripples)'.format(
-                level_name=level_name,
-                num_ripples=len(ripple_times)))
-        ripple_locked_lfps = {
-            lfp_name: _subtract_event_related_potential(
-                reshape_to_trials(
-                    lfps[lfp_name], ripple_times).dropna(axis=1))
-            for lfp_name in lfps}
-        area_pairs = combinations(
-            sorted(tetrode_info.area.unique()), 2)
-        for area1, area2 in area_pairs:
-            logger.debug('......Area Pair: {area1} - {area2}'.format(
-                area1=area1, area2=area2))
-            area1_lfps = get_lfps_by_area(
-                area1, tetrode_info, ripple_locked_lfps)
-            area2_lfps = get_lfps_by_area(
-                area2, tetrode_info, ripple_locked_lfps)
-            coherogram = multitaper_canonical_coherogram(
-                [area1_lfps, area2_lfps], **params)
-            save_area_pair(
-                multitaper_parameter_name,
-                ripple_covariate, level_name,
-                area1, area2, coherogram, epoch_key)
-
-    logger.info(
-        'Computing the difference in coherence between all levels:')
-    for level1, level2 in combinations(
-            sorted(ripples_by_covariate.groups.keys()), 2):
-        level_difference_name = '{level2}_{level1}'.format(
-            level1=level1, level2=level2)
-        logger.info(
-            '...Level Difference: {level2} - {level1}'.format(
-                level1=level1, level2=level2))
-        area_pairs = combinations(
-            sorted(tetrode_info.area.unique()), 2)
-        for area1, area2 in area_pairs:
-            logger.debug('......Area Pair: {area1} - {area2}'.format(
-                area1=area1, area2=area2))
-            level1_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name,
-                ripple_covariate, level1, area1, area2, epoch_key)
-            level2_coherence_df = get_area_pair_from_hdf(
-                multitaper_parameter_name,
-                ripple_covariate, level2, area1, area2, epoch_key)
-            coherence_difference_df = power_and_coherence_change(
-                level1_coherence_df, level2_coherence_df)
-            save_area_pair(
-                multitaper_parameter_name,
-                ripple_covariate, level_difference_name, area1, area2,
-                coherence_difference_df, epoch_key)
-    logger.info('Saving Parameters')
-    save_area_pair_info(epoch_key, tetrode_info)
-
-
-def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
-                               multitaper_parameter_name=''):
-    num_lfps = len(lfps)
-    num_pairs = int(num_lfps * (num_lfps - 1) / 2)
+def ripple_triggered_connectivity(
+    lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
+        FREQUENCY_BANDS, multitaper_parameter_name='',
+        group_name='all_ripples'):
+    n_lfps = len(lfps)
+    n_pairs = int(n_lfps * (n_lfps - 1) / 2)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
     reshape_to_trials = partial(
@@ -214,163 +69,138 @@ def ripple_triggered_coherence(lfps, ripple_times, multitaper_params,
     logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
                     multitaper_parameter_name=multitaper_parameter_name,
-                    num_pairs=num_pairs))
+                    num_pairs=n_pairs))
 
-    ripple_locked_lfps = {
+    ripple_locked_lfps = pd.Panel({
         lfp_name: _subtract_event_related_potential(
             reshape_to_trials(lfps[lfp_name], ripple_times))
-        for lfp_name in lfps}
-    for tetrode1, tetrode2 in combinations(
-            sorted(ripple_locked_lfps), 2):
-        logger.debug('...Tetrode Pair: {tetrode1} - {tetrode2}'.format(
-            tetrode1=tetrode1, tetrode2=tetrode2
-        ))
-        coherogram = multitaper_coherogram(
-            [ripple_locked_lfps[tetrode1], ripple_locked_lfps[tetrode2]],
-            **params)
-        coherence_baseline = coherogram.xs(
-            coherogram.index.min()[1], level='time')
-        coherence_change = power_and_coherence_change(
-            coherence_baseline, coherogram)
+        for lfp_name in lfps})
+    m = Multitaper(
+        np.rollaxis(ripple_locked_lfps.values, 0, 3),
+        **params,
+        start_time=ripple_locked_lfps.major_axis.min())
+    c = Connectivity(
+        fourier_coefficients=m.fft(),
+        frequencies=m.frequencies,
+        time=m.time)
 
-        # Save coherence
-        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
-                          'all_ripples', 'baseline', tetrode1, tetrode2,
-                          coherence_baseline)
-        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_locked', tetrode1,
-                          tetrode2, coherogram)
-        save_tetrode_pair('{}/coherence'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_difference_from_baseline',
-                          tetrode1, tetrode2, coherence_change)
-        # Save power for tetrode1
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'baseline', tetrode1, tetrode1,
-                          _get_power_spectrum(
-            coherence_baseline, 'power_spectrum1'))
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_locked', tetrode1,
-                          tetrode1, _get_power_spectrum(
-            coherogram, 'power_spectrum1'))
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_difference_from_baseline',
-                          tetrode1, tetrode1, _get_power_spectrum(
-            coherence_change, 'power_spectrum1'))
-        # Save power for tetrode2
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'baseline', tetrode2, tetrode2,
-                          _get_power_spectrum(
-            coherence_baseline, 'power_spectrum2'))
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_locked', tetrode2,
-                          tetrode2, _get_power_spectrum(
-            coherogram, 'power_spectrum2'))
-        save_tetrode_pair('{}/power'.format(multitaper_parameter_name),
-                          'all_ripples', 'ripple_difference_from_baseline',
-                          tetrode2, tetrode2, _get_power_spectrum(
-            coherence_change, 'power_spectrum2'))
+    save_coherence(
+        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
+    save_group_delay(
+        c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name)
+    save_pairwise_spectral_granger(
+        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
+    save_canonical_coherence(
+        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
 
 
-def ripple_triggered_group_delay(tetrode_pair_info,
-                                 multitaper_parameter_name,
-                                 frequency_band, frequency_band_name,
-                                 alpha=0.01):
-    '''Depends on the coherence already being computed.
-    '''
-    tetrode_pair_keys = tetrode_pair_info.index.tolist()
-    logger.info('Computing ripple-triggered group delay for '
-                '{multitaper_parameter_name} in the '
-                '{frequency_band_name} band'.format(
-                    multitaper_parameter_name=multitaper_parameter_name,
-                    frequency_band_name=frequency_band_name))
-    for tetrode1, tetrode2 in tetrode_pair_keys:
-        estimate_group_delay_by_tetrode(
-            tetrode1, tetrode2, 'all_ripples', 'ripple_locked',
-            multitaper_parameter_name, frequency_band, frequency_band_name,
-            alpha)
+def save_coherence(
+        c, m, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name):
+    dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
+    data_vars = {
+     'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
+    coordinates = {
+        'time': c.time + np.diff(c.time)[0] / 2,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode1': tetrode_info.tetrode_id.values,
+        'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
+        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
+    }
+    ds = xr.Dataset(data_vars, coords=coordinates)
+    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
+    group = '{0}/{1}/coherence_magnitude'.format(
+        multitaper_parameter_name, group_name)
+    write_mode = 'a' if isfile(path) else 'w'
+    ds.to_netcdf(path=path, group=group, mode=write_mode)
 
 
-def group_delay_by_ripple_type(tetrode_pair_info, ripple_info,
-                               ripple_covariate, multitaper_parameter_name,
-                               frequency_band, frequency_band_name,
-                               alpha=0.01):
-    tetrode_pair_keys = tetrode_pair_info.index.tolist()
-    for level_name, _ in ripple_info.groupby(ripple_covariate):
-        for tetrode1, tetrode2 in tetrode_pair_keys:
-            estimate_group_delay_by_tetrode(
-                tetrode1, tetrode2, ripple_covariate, level_name,
-                multitaper_parameter_name, frequency_band,
-                frequency_band_name, alpha)
+def save_pairwise_spectral_granger(
+        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name):
+    dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
+    data_vars = {'pairwise_spectral_granger_prediction': (
+        dimension_names, c.pairwise_spectral_granger_prediction())}
+    coordinates = {
+        'time': c.time + np.diff(c.time)[0] / 2,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode1': tetrode_info.tetrode_id.values,
+        'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
+        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
+    }
+    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
+    group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
+        multitaper_parameter_name, group_name)
+    write_mode = 'a' if isfile(path) else 'w'
+    (xr.Dataset(data_vars, coords=coordinates)
+     .to_netcdf(path=path, group=group, mode=write_mode))
 
 
-def estimate_group_delay_by_tetrode(tetrode1, tetrode2, covariate,
-                                    level, multitaper_parameter_name,
-                                    frequency_band, frequency_band_name,
-                                    alpha=0.01):
-    coherogram = get_tetrode_pair_from_hdf(
-        '{}/coherence'.format(multitaper_parameter_name), covariate, level,
-        tetrode1, tetrode2)
-    group_delay = estimate_significant_group_delay(
-        coherogram.loc(axis=0)[slice(*frequency_band), :], alpha=alpha)
-    if not group_delay.empty:
-        save_tetrode_pair('{}/group_delay/{}'.format(
-            multitaper_parameter_name, frequency_band_name), covariate,
-            level, tetrode1, tetrode2, group_delay)
+def save_canonical_coherence(
+    c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name):
+    canonical_coherence, area_labels = c.canonical_coherence(
+        tetrode_info.area.tolist())
+    dimension_names = ['time', 'frequency', 'brain_area1', 'brain_area2']
+    data_vars = {
+        'canonical_coherence': (dimension_names, canonical_coherence)}
+    coordinates = {
+        'time': c.time + np.diff(c.time)[0] / 2,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'brain_area1': area_labels,
+        'brain_area2': area_labels,
+        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
+    }
+    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
+    group = '{0}/{1}/canonical_coherence'.format(
+        multitaper_parameter_name, group_name)
+    write_mode = 'a' if isfile(path) else 'w'
+    (xr.Dataset(data_vars, coords=coordinates)
+     .to_netcdf(path=path, group=group, mode=write_mode))
 
 
-def _get_power_spectrum(df, spectrum_name):
-    power_spectrum_columns = [spectrum_name, 'n_trials',
-                              'frequency_resolution', 'n_tapers']
-    return (df.loc[:, power_spectrum_columns]
-            .rename(index=str, columns={spectrum_name: 'power_spectrum'}))
+def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
+                     multitaper_parameter_name, group_name):
+    n_bands = len(FREQUENCY_BANDS)
+    delay, slope, r_value = (
+        np.zeros((c.time.size, n_bands, m.n_signals, m.n_signals)),) * 3
 
+    for band_ind, frequency_band in enumerate(FREQUENCY_BANDS):
+        (delay[:, band_ind, ...],
+         slope[:, band_ind, ...],
+         r_value[:, band_ind, ...]) = c.group_delay(
+            FREQUENCY_BANDS[frequency_band],
+            frequency_resolution=m.frequency_resolution)
 
-def ripple_triggered_canonical_coherence(lfps, epoch_key, tetrode_info,
-                                         ripple_times, multitaper_params,
-                                         multitaper_parameter_name=''):
-    params = deepcopy(multitaper_params)
-    window_of_interest = params.pop('window_of_interest')
-    reshape_to_trials = partial(
-        reshape_to_segments,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest,
-        concat_axis=1)
-
-    ripple_locked_lfps = {
-        lfp_name: _subtract_event_related_potential(
-            reshape_to_trials(lfps[lfp_name], ripple_times).dropna(axis=1))
-        for lfp_name in lfps}
-
-    logger.info('Computing ripple-triggered '
-                'canonical {multitaper_parameter_name}'.format(
-                    multitaper_parameter_name=multitaper_parameter_name))
-    for area1, area2 in combinations(
-            sorted(tetrode_info.area.unique()), 2):
-        logger.debug('...Area Pair: {area1} - {area2}'.format(
-            area1=area1, area2=area2))
-        area1_lfps = get_lfps_by_area(
-            area1, tetrode_info, ripple_locked_lfps)
-        area2_lfps = get_lfps_by_area(
-            area2, tetrode_info, ripple_locked_lfps)
-        coherogram = multitaper_canonical_coherogram(
-            [area1_lfps, area2_lfps], **params)
-        coherence_baseline = coherogram.xs(
-            coherogram.index.min()[1], level='time')
-        coherence_change = power_and_coherence_change(
-            coherence_baseline, coherogram)
-        save_area_pair(
-            multitaper_parameter_name,
-            'all_ripples', 'baseline', area1, area2, coherence_baseline,
-            epoch_key)
-        save_area_pair(
-            multitaper_parameter_name,
-            'all_ripples', 'ripple_locked', area1, area2, coherogram,
-            epoch_key)
-        save_area_pair(
-            multitaper_parameter_name,
-            'all_ripples', 'ripple_difference_from_baseline', area1, area2,
-            coherence_change, epoch_key)
-    save_area_pair_info(epoch_key, tetrode_info)
+    dimension_names = ['time', 'frequency_band', 'tetrode1', 'tetrode2']
+    data_vars = {
+        'delay': (dimension_names, delay),
+        'slope': (dimension_names, slope),
+        'r_value': (dimension_names, r_value)}
+    coordinates = {
+        'time': c.time + np.diff(c.time)[0] / 2,
+        'frequency_band': list(FREQUENCY_BANDS.keys()),
+        'tetrode1': tetrode_info.tetrode_id.values,
+        'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
+        'session': np.array(
+            ['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
+        }
+    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
+    group = '{0}/{1}/group_delay'.format(
+        multitaper_parameter_name, group_name)
+    write_mode = 'a' if isfile(path) else 'w'
+    (xr.Dataset(data_vars, coords=coordinates)
+     .to_netcdf(path=path, group=group, mode=write_mode))
 
 
 def _get_ripple_times(df):
@@ -762,88 +592,6 @@ def _ripple_session_time(ripple_times, session_time):
              .value_counts()
              .argmax())
             for ripple_start, ripple_end in ripple_times]
-
-
-def Benjamini_Hochberg_procedure(p_values, alpha=0.05):
-    '''Corrects for multiple comparisons and returns the significant
-    p-values by controlling the false discovery rate at level `alpha`
-    using the Benjamani-Hochberg procedure.
-
-    Parameters
-    ----------
-    p_values : array_like
-    alpha : float, optional
-        The expected proportion of false positive tests.
-
-    Returns
-    -------
-    is_significant : boolean nd-array
-        A boolean array the same shape as `p_values` indicating whether the
-        null hypothesis has been rejected (True) or failed to reject
-        (False).
-
-    '''
-    p_values = np.asarray(p_values)
-    threshold_line = (alpha * np.arange(1, p_values.size + 1) /
-                      p_values.size)
-    sorted_p_values = np.sort(p_values.flatten())
-    try:
-        threshold_ind = np.max(
-            np.where(sorted_p_values <= threshold_line)[0])
-        threshold = sorted_p_values[threshold_ind]
-    except ValueError:  # There are no values below threshold
-        threshold = 0
-    return p_values <= threshold
-
-
-def Bonferroni_correction(p_values, alpha=0.05):
-    p_values = np.asarray(p_values)
-    return p_values <= alpha / p_values.size
-
-
-def adjust_for_multiple_comparisons(p_values, alpha=0.05,
-                                    method='Benjamini_Hochberg_procedure'):
-    '''Corrects for multiple comparisons and returns the significant
-    p-values.
-
-    Parameters
-    ----------
-    p_values : array_like
-    alpha : float, optional
-        The expected proportion of false positive tests.
-    method : string, optional
-        Name of the method to use to correct for multiple comparisons.
-        Options are "Benjamini_Hochberg_procedure", "Bonferroni_correction"
-
-    Returns
-    -------
-    is_significant : boolean nd-array
-        A boolean array the same shape as `p_values` indicating whether the
-        null hypothesis has been rejected (True) or failed to reject
-        (False).
-
-    '''
-    methods = dict(
-        Benjamini_Hochberg_procedure=Benjamini_Hochberg_procedure,
-        Bonferroni_correction=Bonferroni_correction
-    )
-
-    return methods[method](p_values, alpha=alpha)
-
-
-def estimate_significant_group_delay(coherogram, alpha=0.01):
-    z_coherence = fisher_z_transform(coherogram)
-    try:
-        frequency_resolution = coherogram.frequency_resolution.unique()[0]
-    except IndexError:
-        frequency_resolution = np.nan
-    adjusted_p_values = adjust_for_multiple_comparisons(
-        z_coherence.p_value, alpha=alpha)
-    is_significant = (
-        pd.Series(adjusted_p_values, index=z_coherence.index)
-        .groupby(level='time')
-        .transform(filter_significant_groups, frequency_resolution))
-    return group_delay_over_time(coherogram.mask(~is_significant))
 
 
 def _subtract_event_related_potential(df):
