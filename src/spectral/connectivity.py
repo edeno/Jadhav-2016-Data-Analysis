@@ -642,9 +642,9 @@ class Connectivity(object):
 
         Returns
         -------
-        delay : array, shape (..., n_signal_combintaions)
-        slope : array, shape (..., n_signal_combintaions)
-        r_value : array, shape (..., n_signal_combintaions)
+        delay : array, shape (..., n_signals, n_signals)
+        slope : array, shape (..., n_signals, n_signals)
+        r_value : array, shape (..., n_signals, n_signals)
 
         References
         ----------
@@ -681,9 +681,25 @@ class Connectivity(object):
 
         regression_results = np.ma.apply_along_axis(
             _linear_regression, -2, coherence_phase)
-        slope = np.array(regression_results[..., 0, :], dtype=np.float)
+        new_shape = (
+            *bandpassed_coherency.shape[:-2], n_signals, n_signals)
+        slope = np.zeros(new_shape)
+        slope[..., signal_combination_ind[:, 0],
+              signal_combination_ind[:, 1]] = np.array(
+              regression_results[..., 0, :], dtype=np.float)
+        slope[..., signal_combination_ind[:, 1],
+              signal_combination_ind[:, 0]] = -1 * np.array(
+              regression_results[..., 0, :], dtype=np.float)
+
         delay = slope / (2 * np.pi)
-        r_value = np.array(regression_results[..., 2, :], dtype=np.float)
+
+        r_value = np.ones(new_shape)
+        r_value[..., signal_combination_ind[:, 0],
+                signal_combination_ind[:, 1]] = np.array(
+                regression_results[..., 2, :], dtype=np.float)
+        r_value[..., signal_combination_ind[:, 1],
+                signal_combination_ind[:, 0]] = np.array(
+                regression_results[..., 2, :], dtype=np.float)
         return delay, slope, r_value
 
     def phase_slope_index(self, frequencies_of_interest=None,
