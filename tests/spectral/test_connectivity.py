@@ -117,17 +117,17 @@ def test_coherency():
     fourier_coefficients[..., :] = [2 * np.exp(1j * np.pi / 2),
                                     3 * np.exp(1j * -np.pi / 2)]
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
-    expected_coherence_magnitude = [[2, 1], [1, 3]]
-    expected_phase = np.zeros((2, 2))
+    expected_coherence_magnitude = np.array([[np.nan, 1], [1, np.nan]])
+    expected_phase = np.zeros((2, 2)) * np.nan
     expected_phase[0, 1] = np.pi
     expected_phase[1, 0] = -np.pi
 
     assert np.allclose(
         np.abs(this_Conn.coherency().squeeze()),
-        expected_coherence_magnitude)
+        expected_coherence_magnitude, equal_nan=True)
     assert np.allclose(
         np.angle(this_Conn.coherency().squeeze()),
-        expected_phase)
+        expected_phase, equal_nan=True)
 
 
 def test_imaginary_coherence():
