@@ -210,8 +210,7 @@ class Connectivity(object):
             self._expectation(self._cross_spectral_matrix) / norm)
         n_signals = self.fourier_coefficients.shape[-1]
         diagonal_ind = np.arange(0, n_signals)
-        complex_coherencey[..., diagonal_ind, diagonal_ind] = np.sqrt(
-            self._power)
+        complex_coherencey[..., diagonal_ind, diagonal_ind] = np.nan
         return complex_coherencey
 
     def coherence_phase(self):
