@@ -11,6 +11,7 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from scipy.io import loadmat
 
 logger = getLogger(__name__)
@@ -749,3 +750,40 @@ def get_ripple_info(epoch_key):
     file_name = '{}_{:02d}_{:02d}.nc'.format(*epoch_key)
     file_path = join(abspath(pardir), 'Processed-Data', file_name)
     return pd.read_hdf(file_path, key='/ripple_info')
+
+
+def read_netcdfs(files, dim, transform_func=None, group=None):
+    '''Load multiple netcdf files, concatenate along a dimension, and
+    transform the dataset if desired.
+
+    Parameters
+    ----------
+    files : str or list of str
+    dim : str
+    transform_func : function
+    group : str
+
+    Returns
+    -------
+    combined_dataset : xarray dataset or dataarray
+
+    References
+    ----------
+     .. [1] http://xarray.pydata.org/en/stable/io.html
+
+    '''
+    def process_one_path(path):
+        # use a context manager, to ensure the file gets closed after use
+        with xr.open_dataset(path, group=group) as ds:
+            # transform_func should do some sort of selection or
+            # aggregation
+            if transform_func is not None:
+                ds = transform_func(ds)
+            # load all data from the transformed dataset, to ensure we can
+            # use it after closing each original file
+            ds.load()
+            return ds
+
+    paths = sorted(glob(files))
+    datasets = [process_one_path(p) for p in paths]
+    return xr.concat(datasets, dim)
