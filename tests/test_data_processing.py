@@ -3,7 +3,6 @@ from collections import namedtuple
 from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from src.data_processing import (find_closest_ind,
