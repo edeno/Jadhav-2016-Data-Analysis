@@ -85,6 +85,9 @@ def ripple_triggered_connectivity(
         frequencies=m.frequencies,
         time=m.time)
 
+    save_power(
+        c, m, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name)
     save_coherence(
         c, m, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
@@ -97,6 +100,23 @@ def ripple_triggered_connectivity(
     save_canonical_coherence(
         c, m, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
+
+
+def save_power(
+        c, m, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name):
+    dimension_names = ['time', 'frequency', 'tetrode']
+    data_vars = {
+     'power': (dimension_names, c.power())}
+    coordinates = {
+        'time': c.time + np.diff(c.time)[0] / 2,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode': tetrode_info.tetrode_id.values,
+    }
+    group = '{0}/{1}/power'.format(
+        multitaper_parameter_name, group_name)
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_coherence(
