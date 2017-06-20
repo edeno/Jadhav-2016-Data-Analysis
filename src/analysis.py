@@ -114,6 +114,7 @@ def save_power(
         'time': c.time + np.diff(c.time)[0] / 2,
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode': tetrode_info.tetrode_id.values,
+        'brain_area': ('tetrode', tetrode_info.area.tolist()),
     }
     group = '{0}/{1}/power'.format(
         multitaper_parameter_name, group_name)
@@ -132,6 +133,8 @@ def save_coherence(
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
     }
     group = '{0}/{1}/coherence'.format(
         multitaper_parameter_name, group_name)
@@ -150,6 +153,8 @@ def save_pairwise_spectral_granger(
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
     }
     group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
         multitaper_parameter_name, group_name)
@@ -200,6 +205,8 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'frequency_band': list(FREQUENCY_BANDS.keys()),
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
         }
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
