@@ -130,7 +130,6 @@ def save_coherence(
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
-        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
     group = '{0}/{1}/coherence'.format(
         multitaper_parameter_name, group_name)
@@ -149,7 +148,6 @@ def save_pairwise_spectral_granger(
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
-        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
     group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
         multitaper_parameter_name, group_name)
@@ -170,7 +168,6 @@ def save_canonical_coherence(
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'brain_area1': area_labels,
         'brain_area2': area_labels,
-        'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
     group = '{0}/{1}/canonical_coherence'.format(
         multitaper_parameter_name, group_name)
@@ -201,8 +198,6 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'frequency_band': list(FREQUENCY_BANDS.keys()),
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
-        'session': np.array(
-            ['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
         }
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
