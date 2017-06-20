@@ -5,7 +5,7 @@
 from glob import glob
 from itertools import combinations
 from logging import getLogger
-from os.path import abspath, join, pardir
+from os.path import abspath, join, pardir, isfile
 from sys import exit
 from warnings import catch_warnings, simplefilter
 
@@ -693,84 +693,8 @@ def get_lfps_by_area(area, tetrode_info, lfps):
                      in tetrode_info[tetrode_info.area == area].index})
 
 
-def save_tetrode_pair(multitaper_parameter_name, covariate, level,
-                      tetrode1, tetrode2, save_df):
-    animal, day, epoch = tetrode1[0:3]
-    hdf_path = tetrode_pair_hdf_path(
-        multitaper_parameter_name, covariate, level, tetrode1[-1],
-        tetrode2[-1])
-    with pd.HDFStore(get_analysis_file_path(animal, day, epoch)) as store:
-        store.put(hdf_path, save_df)
-
-
-def save_area_pair(multitaper_parameter_name, covariate, level, area1,
-                   area2, save_df, epoch_key):
-    animal, day, epoch = epoch_key
-    hdf_path = area_pair_hdf_path(
-        multitaper_parameter_name, covariate, level, area1, area2)
-    with pd.HDFStore(get_analysis_file_path(animal, day, epoch)) as store:
-        store.put(hdf_path, save_df)
-
-
-def get_tetrode_pair_from_hdf(multitaper_parameter_name, covariate, level,
-                              tetrode1, tetrode2):
-    animal, day, epoch = tetrode1[0:3]
-    hdf_path = tetrode_pair_hdf_path(
-        multitaper_parameter_name, covariate, level, tetrode1[-1],
-        tetrode2[-1])
-    try:
-        return pd.read_hdf(
-            get_analysis_file_path(animal, day, epoch), key=hdf_path)
-    except KeyError:
-        logger.warn(
-            'Could not load tetrode pair: '
-            'animal={animal}, day={day}, epoch={epoch}, '
-            'tetrode {tetrode1} - tetrode {tetrode2} '
-            'for {multitaper_parameter_name}, {covariate}, {level}'.format(
-                animal=animal, day=day, epoch=epoch, tetrode1=tetrode1,
-                tetrode2=tetrode2, covariate=covariate, level=level,
-                multitaper_parameter_name=multitaper_parameter_name
-            ))
-
-
-def get_area_pair_from_hdf(multitaper_parameter_name, covariate, level,
-                           area1, area2, epoch_key):
-    animal, day, epoch = epoch_key
-    hdf_path = area_pair_hdf_path(
-        multitaper_parameter_name, covariate, level, area1, area2)
-    try:
-        return pd.read_hdf(
-            get_analysis_file_path(animal, day, epoch), key=hdf_path)
-    except KeyError:
-        logger.warn(
-            'Could not load brain area pair:'
-            'animal={animal}, day={day}, epoch={epoch}, '
-            'area {area1} - area {area2}'.format(
-                animal=animal, day=day, epoch=epoch, area1=area1,
-                area2=area2
-            ))
-
-
-def tetrode_pair_hdf_path(multitaper_parameter_name, covariate, level,
-                          tetrode1, tetrode2):
-    return ('/{multitaper_parameter_name}/'
-            'tetrode{tetrode1:04d}_tetrode{tetrode2:04d}'
-            '/{covariate}/{level}').format(
-        multitaper_parameter_name=multitaper_parameter_name,
-        covariate=covariate, level=level, tetrode1=tetrode1,
-        tetrode2=tetrode2)
-
-
-def area_pair_hdf_path(multitaper_parameter_name, covariate, level, area1,
-                       area2):
-    return ('/{multitaper_parameter_name}/canonical_coherence/'
-            '{area1}_{area2}/{covariate}/{level}').format(
-        multitaper_parameter_name=multitaper_parameter_name,
-        covariate=covariate, level=level, area1=area1, area2=area2)
-
-
 def get_analysis_file_path(animal, day, epoch):
-    filename = '{animal}_{day:02d}_{epoch:02d}.h5'.format(
+    filename = '{animal}_{day:02d}_{epoch:02d}.nc'.format(
         animal=animal, day=day, epoch=epoch)
     return join(abspath(pardir), 'Processed-Data', filename)
 
@@ -789,13 +713,6 @@ def save_ripple_info(epoch_key, ripple_info):
         store.put('/ripple_info', ripple_info)
 
 
-def save_tetrode_pair_info(epoch_key, tetrode_pair_info):
-    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
-        with catch_warnings():
-            simplefilter('ignore')
-            store.put('/tetrode_pair_info', tetrode_pair_info)
-
-
 def save_tetrode_info(epoch_key, tetrode_info):
     with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
         with catch_warnings():
@@ -803,55 +720,25 @@ def save_tetrode_info(epoch_key, tetrode_info):
             store.put('/tetrode_info', tetrode_info)
 
 
-def save_area_pair_info(epoch_key, tetrode_info):
-    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
-        with catch_warnings():
-            simplefilter('ignore')
-            store.put('/area_pair_info', make_area_pair_info(
-                tetrode_info, epoch_key))
-
-
-def get_tetrode_pair_group_from_hdf(tetrode_pair_key,
-                                    multitaper_parameter_name, covariate,
-                                    level):
-    '''Given a list of tetrode indices and specifiers for the path,
-    returns a panel object of the corresponding coherence dataframes'''
-    return pd.Panel({(tetrode1, tetrode2): get_tetrode_pair_from_hdf(
-        multitaper_parameter_name, covariate, level, tetrode1, tetrode2)
-        for tetrode1, tetrode2 in tetrode_pair_key})
-
-
-def get_all_tetrode_pair_info():
-    '''Retrieves all the hdf5 files from the Processed Data directory and
-    returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
-    hdf5_files = glob(file_path)
-    return pd.concat([pd.read_hdf(filename, key='/tetrode_pair_info')
-                      for filename in hdf5_files]).sort_index()
+def save_xarray(epoch_key, dataset, group):
+    path = get_analysis_file_path(*epoch_key)
+    write_mode = 'a' if isfile(path) else 'w'
+    dataset.to_netcdf(path=path, group=group, mode=write_mode)
 
 
 def get_all_tetrode_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
+    file_path = join(abspath(pardir), 'Processed-Data', '*.nc')
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/tetrode_info')
-                      for filename in hdf5_files]).sort_index()
-
-
-def get_all_area_pair_info():
-    '''Retrieves all the hdf5 files from the Processed Data directory
-    and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
-    hdf5_files = glob(file_path)
-    return pd.concat([pd.read_hdf(filename, key='/area_pair_info')
                       for filename in hdf5_files]).sort_index()
 
 
 def get_all_ripple_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.h5')
+    file_path = join(abspath(pardir), 'Processed-Data', '*.nc')
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/ripple_info')
                       for filename in hdf5_files]).sort_index()
@@ -859,167 +746,6 @@ def get_all_ripple_info():
 
 def get_ripple_info(epoch_key):
     '''Retrieves ripple info dataframe given an epoch'''
-    file_name = '{}_{:02d}_{:02d}.h5'.format(*epoch_key)
+    file_name = '{}_{:02d}_{:02d}.nc'.format(*epoch_key)
     file_path = join(abspath(pardir), 'Processed-Data', file_name)
     return pd.read_hdf(file_path, key='/ripple_info')
-
-
-def get_brain_area_pairs_coherence(multitaper_parameter_name, covariate,
-                                   level, tetrode_pair_info):
-    brain_area_pairs = merge_symmetric_key_pairs(
-        tetrode_pair_info.groupby(['area_1', 'area_2']).groups,
-        pd.MultiIndex.union)
-    return {
-        brain_area_pair: (get_tetrode_pair_group_from_hdf(
-            brain_area_pairs[brain_area_pair],
-            '{}/coherence'.format(multitaper_parameter_name),
-            covariate, level)
-                .drop(['power_spectrum1', 'power_spectrum2'], axis=2)
-                .mean(axis=0))
-        for brain_area_pair in brain_area_pairs}
-
-
-def get_area_tetrode_key_from_tetrode_pairs(brain_area,
-                                            tetrode_pair_info):
-    tetrode1_keys = (tetrode_pair_info[
-        tetrode_pair_info.area_1 == brain_area]
-        .index
-        .get_level_values('tetrode1')
-        .unique()
-        .tolist())
-    tetrode2_keys = (tetrode_pair_info[
-        tetrode_pair_info.area_2 == brain_area]
-        .index
-        .get_level_values('tetrode2')
-        .unique()
-        .tolist())
-    return set(tetrode1_keys + tetrode2_keys)
-
-
-def get_power_spectra_for_area(multitaper_parameter_name,
-                               covariate, level, tetrode_info):
-    tetrode_keys = [[tetrode_key, tetrode_key]
-                    for tetrode_key in tetrode_info.index]
-    return get_tetrode_pair_group_from_hdf(
-        tetrode_keys, multitaper_parameter_name,
-        covariate, level)
-
-
-def get_brain_area_power(multitaper_parameter_name, covariate, level,
-                         tetrode_info):
-    '''Given a tetrode_pair_info data structure,
-    '''
-
-    return {brain_area: get_power_spectra_for_area(
-        '{}/power'.format(multitaper_parameter_name), covariate, level,
-        area_tetrodes).mean(axis=0)
-        for brain_area, area_tetrodes in tetrode_info.groupby('area')}
-
-
-def get_brain_area_pairs_group_delay(multitaper_parameter_name, covariate,
-                                     level, frequency_band,
-                                     tetrode_pair_info):
-    group_delay = {brain_area_pair: get_tetrode_pair_group_from_hdf(
-        brain_areas_pair_info.index, '{}/group_delay/{}'.format(
-            multitaper_parameter_name, frequency_band),
-        covariate, level)
-        for brain_area_pair, brain_areas_pair_info
-        in tetrode_pair_info.groupby(['area_1', 'area_2'])}
-    group_delay = merge_symmetric_key_pairs(
-        group_delay, _merge_group_delay_pairs)
-    return {brain_area_pair: data.dropna().mean(axis=0)
-            for brain_area_pair, data in group_delay.items()}
-
-
-def merge_symmetric_key_pairs(pair_dict, merge_function):
-    '''If a 2-element key is the same except for the order, merge the
-    values.
-
-    For example, a dictionary with keys ('a', 'b') and ('b', 'a') will be
-    combined into a key ('a', 'b')
-
-    Parameters
-    ----------
-    pair_dict : dict
-        A dictionary with keys that are 2-element tuples
-    merge_function : func
-        If 2-elements are symmetrically similar, merge them
-
-    Returns
-    -------
-    merged_dict : dict
-
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> test_dict = {('a', 'a'): pd.Index([1, 2, 3]),
-                     ('a', 'b'): pd.Index([4, 5, 6]),
-                     ('b', 'a'): pd.Index([7, 8, 9]),
-                     ('b', 'c'): pd.Index([10, 11, 12])}
-    >>> merge_symmetric_key_pairs(test_dict, pd.Index.union)
-    {('a', 'a'): Int64Index([1, 2, 3], dtype='int64'),
-     ('a', 'b'): Int64Index([4, 5, 6, 7, 8, 9], dtype='int64'),
-     ('b', 'c'): Int64Index([10, 11, 12], dtype='int64')}
-
-    '''
-    skip_list = list()
-    merged_dict = dict()
-
-    for area1, area2 in sorted(pair_dict):
-        if area1 == area2:
-            merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
-        elif ((area2, area1) in pair_dict and
-              (area1, area2) not in skip_list):
-            skip_list.append((area2, area1))
-            merged_dict[(area1, area2)] = merge_function(
-                pair_dict[(area1, area2)], pair_dict[(area2, area1)])
-        elif (area1, area2) not in skip_list:
-            merged_dict[(area1, area2)] = pair_dict[(area1, area2)]
-
-    return merged_dict
-
-
-def _merge_group_delay_pairs(pair_group1, pair_group2):
-    pair_group2 = pd.Panel({
-        tetrode_pair: pair_group2[tetrode_pair].apply(_flip_sign, axis=0)
-        for tetrode_pair in pair_group2})
-    return pd.concat((pair_group1, pair_group2))
-
-
-def _flip_sign(x):
-    return -x if x.name in ['delay', 'slope'] else x
-
-
-def find_power_spectrum_from_pair_key(target_tetrode,
-                                      multitaper_parameter_name,
-                                      covariate, level,
-                                      tetrode_pair_info):
-    tetrode1, tetrode2 = next(
-        (tetrode1, tetrode2) for tetrode1, tetrode2
-        in tetrode_pair_info.index
-        if tetrode1 == target_tetrode or tetrode2 == target_tetrode)
-    coherence_df = get_tetrode_pair_from_hdf(
-        multitaper_parameter_name, covariate, level, tetrode1, tetrode2)
-    power_spectrum_name = 'power_spectrum{}'.format(
-        (tetrode1, tetrode2).index(target_tetrode) + 1)
-    return pd.DataFrame(
-        coherence_df[power_spectrum_name].rename('power'))
-
-
-def get_area_pair_group_from_hdf(multitaper_parameter_name, covariate,
-                                 level, area_pair_keys):
-    return pd.Panel(
-        {(animal, day, epoch): get_area_pair_from_hdf(
-            multitaper_parameter_name, covariate, level, area1, area2,
-            (animal, day, epoch))
-         for animal, day, epoch, area1, area2 in area_pair_keys})
-
-
-def get_brain_area_pairs_canonical_coherence(multitaper_parameter_name,
-                                             covariate, level,
-                                             area_pair_info):
-    return {(area1, area2): get_area_pair_group_from_hdf(
-                multitaper_parameter_name, covariate,
-                level, info.index).mean(axis=0)
-            for (area1, area2), info in area_pair_info.groupby(
-                ['area_1', 'area_2'])}

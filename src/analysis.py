@@ -1,7 +1,6 @@
 '''Higher level functions for analyzing the data
 
 '''
-from os.path import isfile
 from copy import deepcopy
 from functools import partial, wraps
 from logging import getLogger
@@ -16,7 +15,8 @@ from .data_processing import (get_interpolated_position_dataframe,
                               get_mark_indicator_dataframe,
                               get_spike_indicator_dataframe,
                               make_neuron_dataframe,
-                              make_tetrode_dataframe, reshape_to_segments)
+                              make_tetrode_dataframe, reshape_to_segments,
+                              save_xarray)
 from .ripple_decoding import (combined_likelihood,
                               estimate_marked_encoding_model,
                               estimate_sorted_spike_encoding_model,
@@ -49,6 +49,7 @@ def connectivity_by_ripple_type(
                 num_ripples=len(ripple_times)))
         ripple_triggered_connectivity(
             lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
+            FREQUENCY_BANDS,
             multitaper_parameter_name=multitaper_parameter_name,
             group_name=level_name)
 
@@ -113,12 +114,10 @@ def save_coherence(
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
         'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
-    ds = xr.Dataset(data_vars, coords=coordinates)
-    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
-    group = '{0}/{1}/coherence_magnitude'.format(
+    group = '{0}/{1}/coherence'.format(
         multitaper_parameter_name, group_name)
-    write_mode = 'a' if isfile(path) else 'w'
-    ds.to_netcdf(path=path, group=group, mode=write_mode)
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_pairwise_spectral_granger(
@@ -136,12 +135,10 @@ def save_pairwise_spectral_granger(
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
         'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
-    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
     group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
         multitaper_parameter_name, group_name)
-    write_mode = 'a' if isfile(path) else 'w'
-    (xr.Dataset(data_vars, coords=coordinates)
-     .to_netcdf(path=path, group=group, mode=write_mode))
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_canonical_coherence(
@@ -159,12 +156,10 @@ def save_canonical_coherence(
         'brain_area2': area_labels,
         'session': np.array(['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
     }
-    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
     group = '{0}/{1}/canonical_coherence'.format(
         multitaper_parameter_name, group_name)
-    write_mode = 'a' if isfile(path) else 'w'
-    (xr.Dataset(data_vars, coords=coordinates)
-     .to_netcdf(path=path, group=group, mode=write_mode))
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
@@ -195,12 +190,10 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'session': np.array(
             ['{0}_{1:02d}_{2:02d}'.format(*epoch_key)]),
         }
-    path = '{0}_{1:02d}_{2:02d}.nc'.format(*epoch_key)
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
-    write_mode = 'a' if isfile(path) else 'w'
-    (xr.Dataset(data_vars, coords=coordinates)
-     .to_netcdf(path=path, group=group, mode=write_mode))
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def _get_ripple_times(df):
