@@ -7,8 +7,7 @@ import pandas as pd
 import pytest
 
 from src.data_processing import (find_closest_ind,
-                                 get_data_filename, get_epochs,
-                                 merge_symmetric_key_pairs)
+                                 get_data_filename, get_epochs)
 
 
 @pytest.mark.parametrize('day, expected_name', [
@@ -61,18 +60,3 @@ def test_get_epochs(mock_loadmat):
     expected_length = 5
 
     assert len(get_epochs(animal, day)) == expected_length
-
-
-def test_merge_symmetric_key_pairs():
-    test_dict = {('a', 'a'): pd.Index([1, 2, 3]),
-                 ('a', 'b'): pd.Index([4, 5, 6]),
-                 ('b', 'a'): pd.Index([7, 8, 9]),
-                 ('b', 'c'): pd.Index([10, 11, 12])}
-    merged_dict = merge_symmetric_key_pairs(test_dict, pd.Index.union)
-    expected_dict = {('a', 'a'): pd.Index([1, 2, 3]),
-                     ('a', 'b'): pd.Index([4, 5, 6, 7, 8, 9]),
-                     ('b', 'c'): pd.Index([10, 11, 12])}
-    assert expected_dict.keys() == merged_dict.keys()
-    assert all(
-        [np.all(expected_dict[expected_key] == merged_dict[expected_key])
-         for expected_key in expected_dict])
