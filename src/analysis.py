@@ -51,7 +51,9 @@ def connectivity_by_ripple_type(
             lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
             FREQUENCY_BANDS,
             multitaper_parameter_name=multitaper_parameter_name,
-            group_name=level_name)
+            group_name='{covariate_name}/{level_name}'.format(
+                covariate_name=ripple_covariate,
+                level_name=level_name))
 
 
 def ripple_triggered_connectivity(
