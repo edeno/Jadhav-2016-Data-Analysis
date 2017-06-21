@@ -122,6 +122,17 @@ class Connectivity(object):
         self._frequencies = frequencies
         self.time = time
 
+    @classmethod
+    def from_multitaper(cls, multitaper_instance,
+                        expectation_type='trials_tapers'):
+        '''Construct connectivity class using a multitaper instance'''
+        return cls(
+            fourier_coefficients=multitaper_instance.fft(),
+            expectation_type=expectation_type,
+            time=multitaper_instance.time,
+            frequencies=multitaper_instance.frequencies
+        )
+
     @property
     @non_negative_frequencies(axis=0)
     def frequencies(self):
