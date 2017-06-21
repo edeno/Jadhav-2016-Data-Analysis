@@ -91,8 +91,10 @@ class Multitaper(object):
         the bias of the tapers is too high (eigenvalues > 0.9)
 
         '''
-        return int(np.floor(
-            2 * self.time_halfbandwidth_product - 1))
+        if self._n_tapers is None:
+            return int(np.floor(
+                2 * self.time_halfbandwidth_product - 1))
+        return self._n_tapers
 
     @property
     def n_time_samples_per_window(self):
