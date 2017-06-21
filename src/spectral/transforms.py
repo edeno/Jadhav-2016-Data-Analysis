@@ -58,7 +58,9 @@ class Multitaper(object):
             'time_window_duration={0.time_window_duration!r}, '
             'time_window_step={0.time_window_step!r}, '
             'detrend_type={0.detrend_type!r}, '
-            'start_time={0.start_time})'.format(self))
+            'start_time={0.start_time}, '
+            'n_tapers={0.n_tapers}'
+            ')'.format(self))
 
     @property
     def tapers(self):
