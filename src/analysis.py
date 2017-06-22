@@ -82,10 +82,7 @@ def ripple_triggered_connectivity(
         np.rollaxis(ripple_locked_lfps.values, 0, 3),
         **params,
         start_time=ripple_locked_lfps.major_axis.min())
-    c = Connectivity(
-        fourier_coefficients=m.fft(),
-        frequencies=m.frequencies,
-        time=m.time)
+    c = Connectivity.from_multitaper(m)
 
     save_power(
         c, m, tetrode_info, epoch_key,
