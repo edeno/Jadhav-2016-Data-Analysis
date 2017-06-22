@@ -27,3 +27,8 @@ conda env create -f environment.yml
 source activate Jadhav-2016-Data-Analysis
 python setup.py develop
 ```
+
+3. Finally, to verify that the code has been installed correctly, run the tests:
+```bash
+pytest
+```
