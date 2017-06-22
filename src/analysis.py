@@ -138,11 +138,12 @@ def ripple_triggered_connectivity(
 def save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
+    print('...saving power')
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
      'power': (dimension_names, c.power())}
     coordinates = {
-        'time': c.time + np.diff(c.time)[0] / 2,
+        'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode': tetrode_info.tetrode_id.values,
         'brain_area': ('tetrode', tetrode_info.area.tolist()),
@@ -156,11 +157,12 @@ def save_power(
 def save_coherence(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
+    print('...saving coherence')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {
      'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
     coordinates = {
-        'time': c.time + np.diff(c.time)[0] / 2,
+        'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
@@ -176,11 +178,12 @@ def save_coherence(
 def save_pairwise_spectral_granger(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
+    print('...saving pairwise spectral granger')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {'pairwise_spectral_granger_prediction': (
         dimension_names, c.pairwise_spectral_granger_prediction())}
     coordinates = {
-        'time': c.time + np.diff(c.time)[0] / 2,
+        'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
@@ -196,13 +199,14 @@ def save_pairwise_spectral_granger(
 def save_canonical_coherence(
     c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
+    print('...saving canonical_coherence')
     canonical_coherence, area_labels = c.canonical_coherence(
         tetrode_info.area.tolist())
     dimension_names = ['time', 'frequency', 'brain_area1', 'brain_area2']
     data_vars = {
         'canonical_coherence': (dimension_names, canonical_coherence)}
     coordinates = {
-        'time': c.time + np.diff(c.time)[0] / 2,
+        'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'brain_area1': area_labels,
         'brain_area2': area_labels,
@@ -215,6 +219,7 @@ def save_canonical_coherence(
 
 def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
                      multitaper_parameter_name, group_name):
+    print('...saving group delay')
     n_bands = len(FREQUENCY_BANDS)
     delay, slope, r_value = (
         np.zeros((c.time.size, n_bands, m.n_signals, m.n_signals)),) * 3
@@ -232,7 +237,7 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'slope': (dimension_names, slope),
         'r_value': (dimension_names, r_value)}
     coordinates = {
-        'time': c.time + np.diff(c.time)[0] / 2,
+        'time': _center_time(c.time),
         'frequency_band': list(FREQUENCY_BANDS.keys()),
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
@@ -249,6 +254,11 @@ def match_frequency_resolution(lfps, parameters, time_window_duration=2.0):
     desired_half_bandwidth = (parameters['time_halfbandwidth_product'] /
                               parameters['time_window_duration'])
     return time_window_duration * desired_half_bandwidth
+
+
+def _center_time(time):
+    time_diff = np.diff(time)[0] if np.diff(time).size > 0 else 0
+    return time + time_diff / 2
 
 
 def _get_ripple_times(df):
