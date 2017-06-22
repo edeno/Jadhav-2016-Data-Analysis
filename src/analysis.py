@@ -31,18 +31,21 @@ logger = getLogger(__name__)
 
 def entire_session_connectivity(
     lfps, epoch_key, tetrode_info, multitaper_params,
-        FREQUENCY_BANDS, multitaper_parameter_name='', n_tapers=10,
-        group_name='entire_epoch'):
+        FREQUENCY_BANDS, multitaper_parameter_name='',
+        group_name='entire_epoch', time_window_duration=2.0):
     lfps = pd.Panel(lfps)
     time_halfbandwidth_product = match_frequency_resolution(
-        lfps, multitaper_params)
+        lfps, multitaper_params, time_window_duration)
     m = Multitaper(
         lfps.values.squeeze().T,
         sampling_frequency=multitaper_params['sampling_frequency'],
         time_halfbandwidth_product=time_halfbandwidth_product,
-        n_tapers=n_tapers,
+        time_window_duration=time_window_duration,
         start_time=lfps.major_axis.min())
-    c = Connectivity.from_multitaper(m)
+    c = Connectivity(
+        fourier_coefficients=m.fft().mean(axis=0, keepdims=True),
+        frequencies=m.frequencies,
+        time=m.time)
     save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
@@ -242,11 +245,10 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
-def match_frequency_resolution(lfps, parameters):
-    total_time = lfps.major_axis.max() - lfps.major_axis.min()
+def match_frequency_resolution(lfps, parameters, time_window_duration=2.0):
     desired_half_bandwidth = (parameters['time_halfbandwidth_product'] /
                               parameters['time_window_duration'])
-    return total_time * desired_half_bandwidth
+    return time_window_duration * desired_half_bandwidth
 
 
 def _get_ripple_times(df):
