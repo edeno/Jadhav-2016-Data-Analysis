@@ -45,7 +45,7 @@ def entire_session_connectivity(
     c = Connectivity(
         fourier_coefficients=m.fft().mean(axis=0, keepdims=True),
         frequencies=m.frequencies,
-        time=m.time)
+        time=lfps.major_axis.min())
     save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
