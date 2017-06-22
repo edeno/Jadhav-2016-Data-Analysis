@@ -29,6 +29,37 @@ from .spectral.transforms import Multitaper
 logger = getLogger(__name__)
 
 
+def entire_session_connectivity(
+    lfps, epoch_key, tetrode_info, multitaper_params,
+        FREQUENCY_BANDS, multitaper_parameter_name='', n_tapers=10,
+        group_name='entire_epoch'):
+    lfps = pd.Panel(lfps)
+    time_halfbandwidth_product = match_frequency_resolution(
+        lfps, multitaper_params)
+    m = Multitaper(
+        lfps.values.squeeze().T,
+        sampling_frequency=multitaper_params['sampling_frequency'],
+        time_halfbandwidth_product=time_halfbandwidth_product,
+        n_tapers=n_tapers,
+        start_time=lfps.major_axis.min())
+    c = Connectivity.from_multitaper(m)
+    save_power(
+        c, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name)
+    save_coherence(
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
+    save_group_delay(
+        c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
+        multitaper_parameter_name, group_name)
+    save_pairwise_spectral_granger(
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
+    save_canonical_coherence(
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
+
+
 def connectivity_by_ripple_type(
     lfps, epoch_key, tetrode_info, ripple_info, ripple_covariate,
         multitaper_params, FREQUENCY_BANDS, multitaper_parameter_name=''):
@@ -85,24 +116,24 @@ def ripple_triggered_connectivity(
     c = Connectivity.from_multitaper(m)
 
     save_power(
-        c, m, tetrode_info, epoch_key,
+        c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
     save_coherence(
-        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
     save_group_delay(
         c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
     save_pairwise_spectral_granger(
-        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
     save_canonical_coherence(
-        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
 
 
 def save_power(
-        c, m, tetrode_info, epoch_key,
+        c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
@@ -120,7 +151,7 @@ def save_power(
 
 
 def save_coherence(
-        c, m, tetrode_info, epoch_key,
+        c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {
@@ -140,7 +171,7 @@ def save_coherence(
 
 
 def save_pairwise_spectral_granger(
-        c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {'pairwise_spectral_granger_prediction': (
@@ -160,7 +191,7 @@ def save_pairwise_spectral_granger(
 
 
 def save_canonical_coherence(
-    c, m, tetrode_info, epoch_key, multitaper_parameter_name,
+    c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
     canonical_coherence, area_labels = c.canonical_coherence(
         tetrode_info.area.tolist())
@@ -209,6 +240,13 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
     save_xarray(
         epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+
+
+def match_frequency_resolution(lfps, parameters):
+    total_time = lfps.major_axis.max() - lfps.major_axis.min()
+    desired_half_bandwidth = (parameters['time_halfbandwidth_product'] /
+                              parameters['time_window_duration'])
+    return total_time * desired_half_bandwidth
 
 
 def _get_ripple_times(df):
