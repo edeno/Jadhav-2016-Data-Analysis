@@ -47,9 +47,16 @@ def multitaper_Kay_method(lfps, minimum_duration=0.015,
     '''Uses the multitaper ripple-band power from each tetrode and combines
     using
     '''
-    ripple_power = [_get_ripple_power_multitaper(lfp, sampling_frequency,
-                                                 **multitaper_kwargs)
-                    for lfp in lfps]
+    m = Multitaper(
+        pd.Panel(lfps).values.squeeze().T,
+        sampling_frequency=sampling_frequency,
+        time_halfbandwidth_product=1,
+        time_window_duration=0.020,
+        time_window_step=0.020,
+        start_time=0)
+    c = Connectivity.from_multitaper(m)
+    ripple_band_index = (c.frequencies >= 150) & (c.frequencies <= 250)
+    ripple_power = np.mean(c.power()[..., ripple_band_index, :], axis=-2)
     return _get_candidate_ripples_Kay(
         ripple_power, is_multitaper=True,
         zscore_threshold=zscore_threshold,
@@ -59,9 +66,16 @@ def multitaper_Kay_method(lfps, minimum_duration=0.015,
 def mulititaper_Karlsson_method(lfps, minimum_duration=0.015,
                                 sampling_frequency=1500,
                                 zscore_threshold=2, multitaper_kwargs={}):
-    ripple_power = [_get_ripple_power_multitaper(lfp, sampling_frequency,
-                                                 **multitaper_kwargs)
-                    for lfp in lfps]
+    m = Multitaper(
+        pd.Panel(lfps).values.squeeze().T,
+        sampling_frequency=sampling_frequency,
+        time_halfbandwidth_product=1,
+        time_window_duration=0.020,
+        time_window_step=0.020,
+        start_time=0)
+    c = Connectivity.from_multitaper(m)
+    ripple_band_index = (c.frequencies >= 150) & (c.frequencies <= 250)
+    ripple_power = np.mean(c.power()[..., ripple_band_index, :], axis=-2)
     return _get_candidate_ripples_Karlsson(
         ripple_power, minimum_duration=minimum_duration,
         zscore_threshold=zscore_threshold)
@@ -194,34 +208,6 @@ def _get_candidate_ripples_Karlsson(filtered_lfps, minimum_duration=0.015,
 def _flatten_list(original_list):
     '''Takes a list of lists and turns it into a single list'''
     return [item for sublist in original_list for item in sublist]
-
-
-def _get_ripple_power_multitaper(lfp, sampling_frequency,
-                                 time_halfbandwidth_product=1,
-                                 time_window_duration=0.020,
-                                 time_window_step=0.004):
-    '''Extracts the smoothed spectral power time course in the ripple
-    frequency band (150-250 Hz)
-
-    Parameters
-    ----------
-    lfp : Pandas series or array_like
-        Local field electric potential with time as the index
-    sampling_frequency : int
-
-    Returns
-    -------
-    ripple_power : Pandas series
-
-    '''
-    return multitaper_spectrogram(
-        lfp,
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        time_window_duration=time_window_duration,
-        sampling_frequency=sampling_frequency,
-        time_window_step=time_window_step,
-        desired_frequencies=[150, 250],
-        pad=None).loc[200, :]
 
 
 def _ripple_bandpass_filter(data):
