@@ -1,9 +1,13 @@
+from logging import getLogger
+
 import numpy as np
 from numpy.fft import fftfreq
 from scipy import interpolate
 from scipy.fftpack import fft, ifft, next_fast_len
 from scipy.linalg import eigvals_banded
 from scipy.signal import detrend
+
+logger = getLogger(__name__)
 
 
 class Multitaper(object):
@@ -178,7 +182,7 @@ class Multitaper(object):
             step_size=self.n_time_samples_per_step, axis=0)
         time_series = detrend(time_series, type=self.detrend_type)
 
-        print(self)
+        logger.info(self)
 
         return _multitaper_fft(
             self.tapers, time_series, self.n_fft_samples,
@@ -566,8 +570,8 @@ def _auto_correlation(data, axis=-1):
 def _get_low_bias_tapers(tapers, eigenvalues):
     is_low_bias = eigenvalues > 0.9
     if not np.any(is_low_bias):
-        print('Could not properly use low_bias, '
-              'keeping lowest-bias taper')
+        logger.warning('Could not properly use low_bias, '
+                       'keeping lowest-bias taper')
         is_low_bias = [np.argmax(eigenvalues)]
     return tapers[is_low_bias, :], eigenvalues[is_low_bias]
 

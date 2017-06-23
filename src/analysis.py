@@ -133,7 +133,7 @@ def ripple_triggered_connectivity(
 def save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
-    print('...saving power')
+    logger.info('...saving power')
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
      'power': (dimension_names, c.power())}
@@ -152,7 +152,7 @@ def save_power(
 def save_coherence(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name):
-    print('...saving coherence')
+    logger.info('...saving coherence')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {
      'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
@@ -173,7 +173,7 @@ def save_coherence(
 def save_pairwise_spectral_granger(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
-    print('...saving pairwise spectral granger')
+    logger.info('...saving pairwise spectral granger')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {'pairwise_spectral_granger_prediction': (
         dimension_names, c.pairwise_spectral_granger_prediction())}
@@ -194,7 +194,7 @@ def save_pairwise_spectral_granger(
 def save_canonical_coherence(
     c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name):
-    print('...saving canonical_coherence')
+    logger.info('...saving canonical_coherence')
     canonical_coherence, area_labels = c.canonical_coherence(
         tetrode_info.area.tolist())
     dimension_names = ['time', 'frequency', 'brain_area1', 'brain_area2']
@@ -214,7 +214,7 @@ def save_canonical_coherence(
 
 def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
                      multitaper_parameter_name, group_name):
-    print('...saving group delay')
+    logger.info('...saving group delay')
     n_bands = len(FREQUENCY_BANDS)
     delay, slope, r_value = (
         np.zeros((c.time.size, n_bands, m.n_signals, m.n_signals)),) * 3
