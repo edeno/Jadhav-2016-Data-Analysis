@@ -41,11 +41,12 @@ def entire_session_connectivity(
         sampling_frequency=multitaper_params['sampling_frequency'],
         time_halfbandwidth_product=time_halfbandwidth_product,
         time_window_duration=time_window_duration,
+        n_tapers=10,
         start_time=lfps.major_axis.min())
     c = Connectivity(
-        fourier_coefficients=m.fft().mean(axis=0, keepdims=True),
+        fourier_coefficients=np.mean(m.fft(), axis=0, keepdims=True),
         frequencies=m.frequencies,
-        time=lfps.major_axis.min())
+        time=np.array([lfps.major_axis.min()]))
     save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
