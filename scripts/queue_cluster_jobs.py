@@ -51,18 +51,6 @@ def main():
                   log_file=join(log_directory, log_file),
                   job_name=job_name)
 
-    # Collect analysis after all epoch jobs have run
-    analysis_directives = ' '.join(
-        ['-pe omp 4', '-l h_rt=24:00:00', '-P braincom',
-         '-l mem_per_core=2G',
-         '-hold_jid "{epoch_function}*"'.format(
-             epoch_function=python_function.replace('.py', ''))
-         ])
-    queue_job('collect_analysis.py',
-              directives=analysis_directives,
-              log_file=join(log_directory, 'collect_analysis.log'),
-              job_name='collect_analysis')
-
 
 if __name__ == '__main__':
     exit(main())
