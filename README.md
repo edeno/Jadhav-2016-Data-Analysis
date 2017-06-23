@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/edeno/Jadhav-2016-Data-Analysis/badge.svg?branch=master)](https://coveralls.io/github/edeno/Jadhav-2016-Data-Analysis)
+[![Coverage Status](https://coveralls.io/repos/github/edeno/Jadhav-2016-Data-Analysis/badge.svg?branch=master)](https://coveralls.io/github/edeno/Jadhav-2016-Data-Analysis?branch=master)
 
 ### Data Description ###
 
