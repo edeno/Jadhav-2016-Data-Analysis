@@ -1,5 +1,9 @@
+from logging import getLogger
+
 import numpy as np
 from scipy.fftpack import fft, ifft
+
+logger = getLogger(__name__)
 
 
 def _conjugate_transpose(x):
@@ -166,6 +170,7 @@ def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
         if np.all(is_converged):
             return minimum_phase_factor
     else:
-        print('Maximum iterations reached. {} of {} converged'.format(
-            is_converged.sum(), len(is_converged)))
+        logger.warning(
+            'Maximum iterations reached. {} of {} converged'.format(
+                is_converged.sum(), len(is_converged)))
         return minimum_phase_factor
