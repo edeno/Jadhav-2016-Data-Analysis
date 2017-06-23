@@ -710,8 +710,7 @@ def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
 
 
 def save_ripple_info(epoch_key, ripple_info):
-    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
-        store.put('/ripple_info', ripple_info)
+    save_xarray(epoch_key, ripple_info.to_xarray(), '/ripple_info')
 
 
 def save_tetrode_info(epoch_key, tetrode_info):
