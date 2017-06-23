@@ -34,19 +34,13 @@ def entire_session_connectivity(
         FREQUENCY_BANDS, multitaper_parameter_name='',
         group_name='entire_epoch', time_window_duration=2.0):
     lfps = pd.Panel(lfps)
-    time_halfbandwidth_product = match_frequency_resolution(
-        lfps, multitaper_params, time_window_duration)
+    params = deepcopy(multitaper_params)
+    params.pop('window_of_interest')
     m = Multitaper(
         lfps.values.squeeze().T,
-        sampling_frequency=multitaper_params['sampling_frequency'],
-        time_halfbandwidth_product=time_halfbandwidth_product,
-        time_window_duration=time_window_duration,
-        n_tapers=10,
+        **params,
         start_time=lfps.major_axis.min())
-    c = Connectivity(
-        fourier_coefficients=np.mean(m.fft(), axis=0, keepdims=True),
-        frequencies=m.frequencies,
-        time=np.array([lfps.major_axis.min()]))
+    c = Connectivity.from_multitaper(m)
     save_power(
         c, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
