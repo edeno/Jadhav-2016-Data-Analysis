@@ -37,9 +37,9 @@ def main():
     epoch_keys = epoch_info[(epoch_info.type == 'run') & (
         epoch_info.environment != 'lin')].index
 
-    for epoch_key in epoch_keys:
-        print(epoch_key)
-        animal, day, epoch_ind = epoch_key
+    for (animal, day, epoch_ind) in epoch_keys:
+        print('Animal: {0}, Day: {1}, Epoch: {2}'.format(
+            animal, day, epoch_ind))
         log_file = '{animal}_{day:02d}_{epoch:02d}.log'.format(
             animal=animal, day=day, epoch=epoch_ind)
         job_name = (
