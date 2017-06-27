@@ -65,7 +65,8 @@ def get_epochs(animal, day):
         return [(animal, day, ind + 1)
                 for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
     except IOError as err:
-        print('I/O error({0}): {1}'.format(err.errno, err.strerror))
+        logger.error('Failed to load file {0}'.format(
+            get_data_filename(animal, day, 'task')))
         exit()
 
 
@@ -74,7 +75,12 @@ def get_data_structure(animal, day, file_type, variable):
     to the animal, day, file_type, epoch specified.
     '''
     epoch = get_epochs(animal, day)
-    file = loadmat(get_data_filename(animal, day, file_type))
+    try:
+        file = loadmat(get_data_filename(animal, day, file_type))
+    except IOError:
+        logger.error('Failed to load file: {0}'.format(
+            get_data_filename(animal, day, file_type)))
+        exit()
     try:
         return [file[variable][0, day - 1][0, ind - 1]
                 for _, day, ind in epoch]
