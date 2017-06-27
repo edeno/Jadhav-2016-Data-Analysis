@@ -5,7 +5,7 @@
 from glob import glob
 from itertools import combinations
 from logging import getLogger
-from os.path import abspath, join, pardir, isfile
+from os.path import abspath, join, pardir, isfile, dirname
 from sys import exit
 from warnings import catch_warnings, simplefilter
 
@@ -16,6 +16,10 @@ from scipy.io import loadmat
 
 logger = getLogger(__name__)
 
+ROOT_DIR = join(abspath(dirname(__file__)), pardir)
+RAW_DATA_DIR = join(ROOT_DIR, 'Raw-Data')
+PROCESSED_DATA_DIR = join(ROOT_DIR, 'Processed-Data')
+
 
 def get_data_filename(animal, day, file_type):
     '''Returns the Matlab file name assuming it is in the Raw Data
@@ -23,13 +27,12 @@ def get_data_filename(animal, day, file_type):
     structure names (DIO, tasks, linpos) Animal is a named tuple.
     Day is an integer giving the recording session day.
     '''
-    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}{file_type}{day:02d}.mat'.format(
-        data_dir=data_dir,
+        data_dir=RAW_DATA_DIR,
         animal=animal,
         file_type=file_type,
         day=day)
-    return join(data_dir, animal.directory, filename)
+    return join(RAW_DATA_DIR, animal.directory, filename)
 
 
 def get_epochs(animal, day):
@@ -157,15 +160,14 @@ def get_LFP_filename(tetrode_tuple, animals):
     ''' Given an index tuple (animal, day, epoch, tetrode_number) and the
     animals dictionary return a file name for the tetrode file LFP
     '''
-    data_dir = join(abspath(pardir), 'Raw-Data')
     animal, day, epoch, tetrode_number = tetrode_tuple
     filename = ('{animal.short_name}eeg{day:02d}-{epoch}-'
                 '{tetrode_number:02d}.mat').format(
-                    data_dir=data_dir, animal=animals[animal],
+                    data_dir=RAW_DATA_DIR, animal=animals[animal],
                     day=day, epoch=epoch, tetrode_number=tetrode_number
     )
     return join(
-        data_dir, animals[animal].directory, 'EEG', filename)
+        RAW_DATA_DIR, animals[animal].directory, 'EEG', filename)
 
 
 def _get_tetrode_id(dataframe):
@@ -205,9 +207,8 @@ def get_tetrode_info(animal):
     '''Returns the Matlab tetrodeinfo file name assuming it is in the
     Raw Data directory.
     '''
-    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}tetinfo.mat'.format(animal=animal)
-    return join(data_dir, animal.directory, filename)
+    return join(RAW_DATA_DIR, animal.directory, filename)
 
 
 def _convert_to_dict(struct_array):
@@ -246,9 +247,8 @@ def get_neuron_info(animal):
     '''Returns the Matlab cellinfo file name assuming it is in the Raw Data
     directory.
     '''
-    data_dir = join(abspath(pardir), 'Raw-Data')
     filename = '{animal.short_name}cellinfo.mat'.format(animal=animal)
-    return join(data_dir, animal.directory, filename)
+    return join(RAW_DATA_DIR, animal.directory, filename)
 
 
 def _get_neuron_id(dataframe):
@@ -604,17 +604,16 @@ def get_mark_filename(tetrode_key, animals):
     '''Given a tetrode key (animal, day, epoch, tetrode_number) and the
     animals dictionary return a file name for the tetrode file marks
     '''
-    data_dir = join(abspath(pardir), 'Raw-Data')
     animal, day, _, tetrode_number = tetrode_key
     filename = ('{animal.short_name}marks{day:02d}-'
                 '{tetrode_number:02d}.mat').format(
-        data_dir=data_dir,
+        data_dir=RAW_DATA_DIR,
         animal=animals[animal],
         day=day,
         tetrode_number=tetrode_number
     )
     return join(
-        data_dir, animals[animal].directory, 'EEG', filename)
+        RAW_DATA_DIR, animals[animal].directory, 'EEG', filename)
 
 
 def get_mark_indicator_dataframe(tetrode_key, animals):
@@ -703,7 +702,7 @@ def get_lfps_by_area(area, tetrode_info, lfps):
 def get_analysis_file_path(animal, day, epoch):
     filename = '{animal}_{day:02d}_{epoch:02d}.nc'.format(
         animal=animal, day=day, epoch=epoch)
-    return join(abspath(pardir), 'Processed-Data', filename)
+    return join(PROCESSED_DATA_DIR, filename)
 
 
 def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
@@ -735,7 +734,7 @@ def save_xarray(epoch_key, dataset, group):
 def get_all_tetrode_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.nc')
+    file_path = join(PROCESSED_DATA_DIR, '*.nc')
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/tetrode_info')
                       for filename in hdf5_files]).sort_index()
@@ -744,7 +743,7 @@ def get_all_tetrode_info():
 def get_all_ripple_info():
     '''Retrieves all the hdf5 files from the Processed Data directory
     and returns the tetrode pair info dataframe'''
-    file_path = join(abspath(pardir), 'Processed-Data', '*.nc')
+    file_path = join(PROCESSED_DATA_DIR, '*.nc')
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/ripple_info')
                       for filename in hdf5_files]).sort_index()
@@ -753,7 +752,7 @@ def get_all_ripple_info():
 def get_ripple_info(epoch_key):
     '''Retrieves ripple info dataframe given an epoch'''
     file_name = '{}_{:02d}_{:02d}.nc'.format(*epoch_key)
-    file_path = join(abspath(pardir), 'Processed-Data', file_name)
+    file_path = join(PROCESSED_DATA_DIR, file_name)
     return pd.read_hdf(file_path, key='/ripple_info')
 
 
