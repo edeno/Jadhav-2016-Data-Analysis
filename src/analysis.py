@@ -8,7 +8,7 @@ from logging import getLogger
 import numpy as np
 import pandas as pd
 import xarray as xr
-from dask import async, compute, delayed
+from dask import local, compute, delayed
 
 from .data_processing import (get_interpolated_position_dataframe,
                               get_LFP_dataframe,
@@ -389,7 +389,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               n_place_bins=61,
                               place_std_deviation=None,
                               mark_std_deviation=20,
-                              scheduler=async.get_sync,
+                              scheduler=local.get_sync,
                               scheduler_kwargs={}):
     logger.info('Decoding ripples')
     tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
