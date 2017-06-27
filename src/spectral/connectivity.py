@@ -2,6 +2,7 @@ from functools import partial, wraps
 from inspect import signature
 from itertools import combinations
 
+import xarray as xr
 import numpy as np
 from scipy.ndimage import label
 from scipy.stats.mstats import linregress
@@ -39,21 +40,28 @@ class lazyproperty:
             return value
 
 
-def non_negative_frequencies(axis):
+def to_xarray(connectivity_measure):
+    '''Converts connectivity measure to xarray'''
+    @wraps(connectivity_measure)
+    def wrapper(self, *args, **kwargs):
+        values = connectivity_measure(self, *args, **kwargs)
+        return xr.DataArray(
+            values,
+            coords=self.__coordinates__(),
+            dims=['time', 'frequency', 'signals1', 'signals2'],
+            name=connectivity_measure.__name__
+        )
+    return wrapper
+
+
+def non_negative_frequencies(connectivity_measure):
     '''Decorator that removes the negative frequencies.'''
-    def decorator(connectivity_measure):
-        @wraps(connectivity_measure)
-        def wrapper(*args, **kwargs):
-            measure = connectivity_measure(*args, **kwargs)
-            if measure is not None:
-                n_frequencies = measure.shape[axis]
-                non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
-                return np.take(measure, indices=non_neg_index, axis=axis)
-            else:
-                return None
-        return wrapper
-        wrapper.__docstring__ = connectivity_measure.__docstring__
-    return decorator
+    @wraps(connectivity_measure)
+    def wrapper(*args, **kwargs):
+        data_array = connectivity_measure(*args, **kwargs)
+        return data_array.sel(
+            frequency=data_array.frequency >= 0)
+    return wrapper
 
 
 class Connectivity(object):
@@ -116,11 +124,12 @@ class Connectivity(object):
 
     def __init__(self, fourier_coefficients,
                  expectation_type='trials_tapers', frequencies=None,
-                 time=None):
+                 time=None, signal_names=None):
         self.fourier_coefficients = fourier_coefficients
         self.expectation_type = expectation_type
         self._frequencies = frequencies
         self.time = time
+        self._signal_names = signal_names
 
     @classmethod
     def from_multitaper(cls, multitaper_instance,
@@ -134,10 +143,16 @@ class Connectivity(object):
         )
 
     @property
-    @non_negative_frequencies(axis=0)
     def frequencies(self):
         if self._frequencies is not None:
             return self._frequencies
+
+    @property
+    def signal_names(self):
+        if self._signal_names is None:
+            n_signals = self.fourier_coefficients.shape[-1]
+            self._signal_names = np.arange(0, n_signals) + 1
+        return self._signal_names
 
     @lazyproperty
     def _power(self):
@@ -173,7 +188,6 @@ class Connectivity(object):
             self._expectation(self._cross_spectral_matrix))
 
     @lazyproperty
-    @non_negative_frequencies(axis=-3)
     def _transfer_function(self):
         return _estimate_transfer_function(self._minimum_phase_factor)
 
@@ -199,11 +213,29 @@ class Connectivity(object):
                 [self.fourier_coefficients.shape[axis]
                  for axis in axes])
 
-    @non_negative_frequencies(axis=-2)
-    def power(self):
-        return self._power
+    def __coordinates__(self):
+        return {
+            'time': self.time,
+            'frequency': self.frequencies,
+            'signals1': self.signal_names,
+            'signals2': self.signal_names,
+        }
 
-    @non_negative_frequencies(axis=-3)
+    @non_negative_frequencies
+    def power(self):
+        return xr.DataArray(
+            self._power,
+            coords={
+                'time': self.time,
+                'frequency': self.frequencies,
+                'signals': np.arange(
+                    0, self.fourier_coefficients.shape[-1]) + 1,
+            },
+            dims=['time', 'frequency', 'signals'],
+            name='power')
+
+    @non_negative_frequencies
+    @to_xarray
     def coherency(self):
         '''The complex-valued linear association between time series in the
          frequency domain.
@@ -232,7 +264,7 @@ class Connectivity(object):
         phase : array, shape (..., n_fft_samples, n_signals, n_signals)
 
         '''
-        return np.angle(self.coherency())
+        return xr.ufuncs.angle(self.coherency()).rename('coherence_phase')
 
     def coherence_magnitude(self):
         '''The magnitude of the complex coherency.
@@ -244,9 +276,11 @@ class Connectivity(object):
         magnitude : array, shape (..., n_fft_samples, n_signals, n_signals)
 
         '''
-        return _squared_magnitude(self.coherency())
+        return _squared_magnitude(
+            self.coherency()).rename('coherence_magnitude')
 
-    @non_negative_frequencies(axis=-3)
+    @non_negative_frequencies
+    @to_xarray
     def imaginary_coherence(self):
         '''The normalized imaginary component of the cross-spectrum.
 
@@ -314,8 +348,8 @@ class Connectivity(object):
             for label in labels]
 
         n_groups = len(labels)
-        new_shape = (self.time.size, self.frequencies.size, n_groups,
-                     n_groups)
+        new_shape = (self.time.size, non_negative_frequencies.size,
+                     n_groups, n_groups)
         magnitude = _squared_magnitude(np.stack([
             _estimate_canonical_coherence(
                 fourier_coefficients1, fourier_coefficients2)
@@ -333,9 +367,22 @@ class Connectivity(object):
             ..., group_combination_ind[:, 1],
             group_combination_ind[:, 0]] = magnitude
 
-        return canonical_coherence_magnitude, labels
+        dimension_names = ['time', 'frequency', 'brain_area1',
+                           'brain_area2']
+        coordinates = {
+            'time': self.time,
+            'frequency': self.frequencies[non_negative_frequencies],
+            'brain_area1': np.array(labels),
+            'brain_area2': np.array(labels),
+        }
+        return xr.DataArray(
+            canonical_coherence_magnitude,
+            coords=coordinates,
+            dims=dimension_names,
+            name='canonical_coherence')
 
-    @non_negative_frequencies(axis=-3)
+    @non_negative_frequencies
+    @to_xarray
     def phase_locking_value(self):
         '''The cross-spectrum with the power for each signal scaled to
         a magnitude of 1.
@@ -362,7 +409,8 @@ class Connectivity(object):
             self._cross_spectral_matrix /
             np.abs(self._cross_spectral_matrix))
 
-    @non_negative_frequencies(axis=-3)
+    @non_negative_frequencies
+    @to_xarray
     def phase_lag_index(self):
         '''A non-parametric synchrony measure designed to mitigate power
         differences between realizations (tapers, trials) and
@@ -388,7 +436,8 @@ class Connectivity(object):
         '''
         return self._expectation(np.sign(self._cross_spectral_matrix.imag))
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies
+    @to_xarray
     def weighted_phase_lag_index(self):
         '''Weighted average of the phase lag index using the imaginary
         coherency magnitudes as weights.
@@ -435,7 +484,8 @@ class Connectivity(object):
         return ((n_observations * self.phase_lag_index() ** 2 - 1.0) /
                 (n_observations - 1.0))
 
-    @non_negative_frequencies(-3)
+    @non_negative_frequencies
+    @to_xarray
     def debiased_squared_weighted_phase_lag_index(self):
         '''The square of the weighted phase lag index corrected for the
         positive bias induced by using the magnitude of the complex
@@ -492,6 +542,8 @@ class Connectivity(object):
                (n_observations ** 2 - n_observations))
         return ppc.real
 
+    @non_negative_frequencies
+    @to_xarray
     def pairwise_spectral_granger_prediction(self):
         '''The amount of power at a node in a frequency explained by (is
         predictive of) the power at other nodes.
@@ -507,7 +559,7 @@ class Connectivity(object):
         '''
         rotated_covariance = _remove_instantaneous_causality(
             self._noise_covariance)
-        total_power = self.power()[..., np.newaxis]
+        total_power = self._power[..., np.newaxis]
         intrinsic_power = (total_power -
                            rotated_covariance[..., np.newaxis, :, :] *
                            _squared_magnitude(self._transfer_function))
@@ -522,6 +574,8 @@ class Connectivity(object):
     def blockwise_spectral_granger_prediction():
         raise NotImplementedError
 
+    @non_negative_frequencies
+    @to_xarray
     def directed_transfer_function(self):
         '''The transfer function coupling strength normalized by the total
         influence of other signals on that signal (inflow).
@@ -544,6 +598,8 @@ class Connectivity(object):
             self._transfer_function /
             _total_inflow(self._transfer_function))
 
+    @non_negative_frequencies
+    @to_xarray
     def directed_coherence(self):
         '''The transfer function coupling strength normalized by the total
         influence of other signals on that signal (inflow).
@@ -569,6 +625,8 @@ class Connectivity(object):
                 _squared_magnitude(self._transfer_function) /
                 _total_inflow(self._transfer_function, noise_variance))
 
+    @non_negative_frequencies
+    @to_xarray
     def partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
         strength of coupling to other signals (outflow).
@@ -593,6 +651,8 @@ class Connectivity(object):
             self._MVAR_Fourier_coefficients /
             _total_outflow(self._MVAR_Fourier_coefficients))
 
+    @non_negative_frequencies
+    @to_xarray
     def generalized_partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
         strength of coupling to other signals (outflow).
@@ -625,6 +685,8 @@ class Connectivity(object):
             np.sqrt(noise_variance) / _total_outflow(
                     self._MVAR_Fourier_coefficients, noise_variance))
 
+    @non_negative_frequencies
+    @to_xarray
     def direct_directed_transfer_function(self):
         '''A combination of the directed transfer function estimate of
         directional influence between signals and the partial coherence's
@@ -680,14 +742,16 @@ class Connectivity(object):
         frequency_difference = frequencies[1] - frequencies[0]
         independent_frequency_step = _get_independent_frequency_step(
             frequency_difference, frequency_resolution)
-        bandpassed_coherency, bandpassed_frequencies = _bandpass(
-            self.coherency(), frequencies, frequencies_of_interest)
+        bandpassed_coherency = self.coherency().sel(
+            frequency=slice(frequencies_of_interest[0],
+                            frequencies_of_interest[1]))
+        bandpassed_frequencies = bandpassed_coherency.frequency
         bias = coherence_bias(self.n_observations)
 
-        n_signals = bandpassed_coherency.shape[-1]
+        n_signals = bandpassed_coherency.signals1.size
         signal_combination_ind = np.array(
             list(combinations(np.arange(n_signals), 2)))
-        bandpassed_coherency = bandpassed_coherency[
+        bandpassed_coherency = bandpassed_coherency.values[
             ..., signal_combination_ind[:, 0],
             signal_combination_ind[:, 1]]
 
@@ -722,7 +786,18 @@ class Connectivity(object):
         r_value[..., signal_combination_ind[:, 1],
                 signal_combination_ind[:, 0]] = np.array(
                 regression_results[..., 2, :], dtype=np.float)
-        return delay, slope, r_value
+
+        dimension_names = ['time', 'signals1', 'signals2']
+        data_vars = {
+            'delay': (dimension_names, delay),
+            'slope': (dimension_names, slope),
+            'r_value': (dimension_names, r_value)}
+        coordinates = {
+            'time': self.time,
+            'signals1': self.signal_names,
+            'signals2': self.signal_names,
+            }
+        return xr.Dataset(data_vars, coords=coordinates)
 
     def phase_slope_index(self, frequencies_of_interest=None,
                           frequency_resolution=None):
@@ -753,8 +828,12 @@ class Connectivity(object):
 
         '''
         frequencies = self.frequencies
-        bandpassed_coherency, bandpassed_frequencies = _bandpass(
-            self.coherency(), frequencies, frequencies_of_interest)
+        bandpassed_coherency = (
+            self.coherency().sel(
+                frequency=slice(frequencies_of_interest[0],
+                                frequencies_of_interest[1]))
+            .rename('phase_slope_index'))
+        bandpassed_frequencies = bandpassed_coherency.frequency
 
         frequency_difference = frequencies[1] - frequencies[0]
         independent_frequency_step = _get_independent_frequency_step(
@@ -967,28 +1046,6 @@ def _estimate_canonical_coherence(normalized_fourier_coefficients1,
         normalized_fourier_coefficients1, normalized_fourier_coefficients2)
     return np.linalg.svd(group_cross_spectrum,
                          full_matrices=False, compute_uv=False)[..., 0]
-
-
-def _bandpass(data, frequencies, frequencies_of_interest, axis=-3):
-    '''Filters the data matrix along an axis given a maximum and minimum
-    frequency of interest.
-
-    Parameters
-    ----------
-    data : array, shape (..., n_fft_samples, ...)
-    frequencies : array, shape (n_fft_samples,)
-    frequencies_of_interest : array-like, shape (2,)
-
-    Returns
-    -------
-    filtered_data : array
-    filtered_frequencies : array
-
-    '''
-    frequency_index = ((frequencies_of_interest[0] < frequencies) &
-                       (frequencies < frequencies_of_interest[1]))
-    return (np.take(data, frequency_index.nonzero()[0], axis=axis),
-            frequencies[frequency_index])
 
 
 def _get_independent_frequency_step(frequency_difference,
