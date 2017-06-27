@@ -24,7 +24,7 @@ def queue_job(python_cmd, directives=None, log_file='log.log',
 
 def main():
     # Set the maximum number of threads for openBLAS to use.
-    environ['OPENBLAS_NUM_THREADS'] = 16
+    environ['OPENBLAS_NUM_THREADS'] = '16'
     log_directory = join(getcwd(), 'logs')
     makedirs(log_directory,  exist_ok=True)
 
