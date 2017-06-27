@@ -20,7 +20,6 @@ hash -r
 
 2. Go to the local repository (`.../Jadhav-2016-Data-Analysis`) and install the anaconda environment for the repository. Type into bash:
 ```bash
-conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda info -a
 conda env create -f environment.yml
