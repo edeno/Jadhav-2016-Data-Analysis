@@ -787,8 +787,13 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
                 ds = transform_func(ds)
             # load all data from the transformed dataset, to ensure we can
             # use it after closing each original file
-            ds.load()
-            return ds
+            try:
+                ds.load()
+                return ds
+            except IndexError:
+                logger.warn('Selection not found. \n'
+                            'Path: {path} \n\t group: {group}'.format(
+                                path=path, group=group))
 
     paths = sorted(glob(files))
     datasets = [process_one_path(p) for p in paths]
