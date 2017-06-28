@@ -24,14 +24,16 @@ def queue_job(python_cmd, directives=None, log_file='log.log',
 
 def main():
     # Set the maximum number of threads for openBLAS to use.
-    environ['OPENBLAS_NUM_THREADS'] = '16'
+    NUM_THREADS = 16
+    environ['OPENBLAS_NUM_THREADS'] = str(NUM_THREADS)
     log_directory = join(getcwd(), 'logs')
     makedirs(log_directory,  exist_ok=True)
 
     python_function = 'run_by_epoch.py'
-    directives = ' '.join(['-l h_rt=3:00:00', '-pe omp 16', '-P braincom',
-                           '-notify', '-l mem_total=125G',
-                           '-v OPENBLAS_NUM_THREADS'])
+    directives = ' '.join(
+        ['-l h_rt=3:00:00', '-pe omp {0}'.format(NUM_THREADS),
+         '-P braincom', '-notify', '-l mem_total=125G',
+         '-v OPENBLAS_NUM_THREADS'])
 
     epoch_info = make_epochs_dataframe(ANIMALS, range(1, N_DAYS + 1))
     epoch_keys = epoch_info[(epoch_info.type == 'run') & (
