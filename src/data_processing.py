@@ -794,7 +794,9 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
                 logger.warn('Selection not found. \n'
                             'Path: {path} \n\t group: {group}'.format(
                                 path=path, group=group))
+                return None
 
     paths = sorted(glob(files))
-    datasets = [process_one_path(p) for p in paths]
+    datasets = [process_one_path(p) for p in paths
+                if process_one_path(p) is not None]
     return xr.concat(datasets, dim)
