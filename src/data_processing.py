@@ -779,6 +779,8 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
     def process_one_path(path):
         # use a context manager, to ensure the file gets closed after use
         with xr.open_dataset(path, group=group) as ds:
+            logger.debug('Path: {path} \n\t group: {group}'.format(
+                path=path, group=group))
             # transform_func should do some sort of selection or
             # aggregation
             if transform_func is not None:
