@@ -791,8 +791,8 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
                 ds.load()
                 return ds
             except IndexError:
-                logger.warn('Selection not found. \n'
-                            'Path: {path} \n\t group: {group}'.format(
+                logger.debug('Selection not found. \n'
+                             'Path: {path} \n\t group: {group}'.format(
                                 path=path, group=group))
                 return None
 
