@@ -164,7 +164,7 @@ def save_coherence(
         'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
     }
-    group = '{0}/{1}/coherence'.format(
+    group = '{0}/{1}/coherence_magnitude'.format(
         multitaper_parameter_name, group_name)
     save_xarray(
         epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
