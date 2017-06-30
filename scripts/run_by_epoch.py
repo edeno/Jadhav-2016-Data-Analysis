@@ -37,7 +37,7 @@ def estimate_ripple_coherence(epoch_key):
     # Compare different types of ripples
     ripple_info = (
         decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times)[0]
-        .query('ripple_state_probability > 0.8'))
+        .query('ripple_state_probability >= 0.8'))
 
     for covariate in RIPPLE_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
