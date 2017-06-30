@@ -106,7 +106,7 @@ def ripple_triggered_connectivity(
     ripple_locked_lfps = pd.Panel({
         lfp_name: _subtract_event_related_potential(
             reshape_to_trials(lfps[lfp_name], ripple_times))
-        for lfp_name in lfps})
+        for lfp_name in lfps}).dropna(axis=2)
     m = Multitaper(
         np.rollaxis(ripple_locked_lfps.values, 0, 3),
         **params,
