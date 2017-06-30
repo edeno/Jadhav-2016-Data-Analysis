@@ -531,15 +531,17 @@ def get_windowed_dataframe(data, segments, sampling_frequency,
             yield (data
                    .iloc[window_start_ind:window_end_ind, :]
                    .reset_index()
-                   .assign(time=lambda x: np.round(
-                       x.time - segment_start, decimals=4))
+                   .assign(time=lambda df: (
+                      np.arange(0, len(df)) / sampling_frequency) +
+                      window_offset[0])
                    .set_index('time'))
         else:
             yield (data
                    .loc[segment_start:segment_end, :]
                    .reset_index()
-                   .assign(time=lambda x: np.round(
-                        x.time - segment_start, decimals=4))
+                   .assign(
+                    time=lambda df: np.arange(0, len(df)) /
+                    sampling_frequency)
                    .set_index('time'))
 
 
