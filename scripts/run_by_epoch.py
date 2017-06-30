@@ -9,8 +9,7 @@ from sys import exit, stdout
 from src.analysis import (decode_ripple_clusterless,
                           detect_epoch_ripples,
                           ripple_triggered_connectivity,
-                          connectivity_by_ripple_type,
-                          entire_session_connectivity)
+                          connectivity_by_ripple_type)
 from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
                                  save_ripple_info)
 from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
@@ -30,10 +29,6 @@ def estimate_ripple_coherence(epoch_key):
             for tetrode_key in tetrode_info.index}
 
     for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
-        # Baseline
-        entire_session_connectivity(
-            lfps, epoch_key, tetrode_info, parameters,
-            FREQUENCY_BANDS, multitaper_parameter_name=parameters_name)
         # Compare all ripples
         ripple_triggered_connectivity(
             lfps, epoch_key, tetrode_info, ripple_times, parameters,
