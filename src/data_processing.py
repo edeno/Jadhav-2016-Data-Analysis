@@ -228,10 +228,9 @@ def get_LFP_dataframe(tetrode_key, animals):
     lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0][0],
                              lfp_data['data'][0, 0].size,
                              lfp_data['samprate'][0, 0])
-    data_dict = {'time': lfp_time,
-                 'electric_potential': lfp_data['data'][0, 0].squeeze()
-                 }
-    return pd.DataFrame(data_dict).set_index('time').sort_index()
+
+    return pd.Series(data=lfp_data['data'][0, 0].squeeze(),
+                     index=pd.Index(lfp_time, name='time'))
 
 
 def _get_LFP_time(start_time, number_samples, sampling_frequency):
@@ -526,15 +525,13 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
 
 def reshape_to_segments(dataframe, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
-    segment_label = [(segment_ind + 1, segment_start, segment_end)
-                     for segment_ind, (segment_start, segment_end)
-                     in enumerate(segments)]
-    return (pd.concat(
-        list(get_windowed_dataframe(
-            dataframe, segments, window_offset, sampling_frequency)),
-        keys=segment_label,
-        names=['segment_number', 'segment_start', 'segment_end'],
-        axis=concat_axis).sort_index())
+    segment_label = pd.Index(np.arange(1, len(segments) + 1),
+                             name='trials')
+    windowed_data_frame = get_windowed_dataframe(
+        dataframe, segments, window_offset, sampling_frequency)
+    return xr.concat(
+        [xr.DataArray(df, dims=['time', 'signals'])
+         for df in windowed_data_frame], dim=segment_label)
 
 
 def make_tetrode_pair_info(tetrode_info):
