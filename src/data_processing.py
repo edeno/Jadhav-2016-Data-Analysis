@@ -493,45 +493,83 @@ def get_trial_time(key, animals):
     return lfp_df.index
 
 
-def get_windowed_dataframe(dataframe, segments, window_offset,
-                           sampling_frequency):
+def get_windowed_dataframe(data, segments, sampling_frequency,
+                           window_offset=None):
+    '''
+
+    Parameters
+    ----------
+    data : Pandas dataframe with row index as time.
+    segments : list of tuples
+        Each tuple is of the form (start time, end time).
+    sampling_frequency : int
+        Sampling frequency of the time index.
+    window_offset : tuple or None, optional
+        The tuple is of the form (window_start, window_end) where
+        window_start and window_end are relative to the segment start. If
+        None, then segment start and end are used.
+
+    Yields
+    -------
+    windowed_dataframe : Pandas dataframe
+
+    '''
     segments = iter(segments)
     for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index
-        segment_start_ind = dataframe.index.get_loc(
+        segment_start_ind = data.index.get_loc(
             segment_start, method='nearest')
-        segment_start = dataframe.iloc[segment_start_ind].name
+        segment_start = data.iloc[segment_start_ind].name
         if window_offset is not None:
             window_start_ind = np.max(
                 [0, int(segment_start_ind + np.fix(
                     window_offset[0] * sampling_frequency))])
             window_end_ind = np.min(
-                [len(dataframe),
+                [len(data),
                  int(segment_start_ind +
                      np.fix(window_offset[1] * sampling_frequency)) + 1])
-            yield (dataframe
+            yield (data
                    .iloc[window_start_ind:window_end_ind, :]
                    .reset_index()
                    .assign(time=lambda x: np.round(
                        x.time - segment_start, decimals=4))
                    .set_index('time'))
         else:
-            yield (dataframe.loc[segment_start:segment_end, :]
-                            .reset_index()
-                            .assign(time=lambda x: np.round(
-                                x.time - segment_start, decimals=4))
-                            .set_index('time'))
+            yield (data
+                   .loc[segment_start:segment_end, :]
+                   .reset_index()
+                   .assign(time=lambda x: np.round(
+                        x.time - segment_start, decimals=4))
+                   .set_index('time'))
 
 
-def reshape_to_segments(dataframe, segments, window_offset=None,
-                        sampling_frequency=1500, concat_axis=0):
+def reshape_to_segments(data, segments, window_offset=None,
+                        sampling_frequency=1500):
+    '''Extracts segments of time.
+
+    Parameters
+    ----------
+    data : Pandas dataframe with row index as time
+    segments : list of tuples
+        Each tuple is of the form (start time, end time).
+    window_offset : tuple or None, optional
+        The tuple is of the form (window_start, window_end) where
+        window_start and window_end are relative to the segment start. If
+        None, then segment start and end are used.
+
+    Returns
+    -------
+    windowed : xarray DataArray, shape (n_time, n_trials, n_signals)
+
+    '''
     segment_label = pd.Index(np.arange(1, len(segments) + 1),
                              name='trials')
-    windowed_data_frame = get_windowed_dataframe(
-        dataframe, segments, window_offset, sampling_frequency)
     return xr.concat(
         [xr.DataArray(df, dims=['time', 'signals'])
-         for df in windowed_data_frame], dim=segment_label)
+         for df in get_windowed_dataframe(
+             data, segments, sampling_frequency,
+             window_offset=window_offset)],
+        dim=segment_label)
 
 
 def make_tetrode_pair_info(tetrode_info):
