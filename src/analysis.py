@@ -32,7 +32,7 @@ logger = getLogger(__name__)
 def entire_session_connectivity(
     lfps, epoch_key, tetrode_info, multitaper_params,
         FREQUENCY_BANDS, multitaper_parameter_name='',
-        group_name='entire_epoch', time_window_duration=2.0):
+        group_name='entire_epoch'):
     lfps = pd.Panel(lfps)
     params = deepcopy(multitaper_params)
     params.pop('window_of_interest')
