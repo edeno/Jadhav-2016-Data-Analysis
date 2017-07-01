@@ -499,15 +499,16 @@ def get_windowed_dataframe(data, segments, sampling_frequency,
 
     Parameters
     ----------
-    data : Pandas dataframe with row index as time.
+    data : Pandas dataframe with rows indexed as time
     segments : list of tuples
-        Each tuple is of the form (start time, end time).
-    sampling_frequency : int
-        Sampling frequency of the time index.
+        Segments of time to extract. Each tuple is of the form
+        (start time, end time).
     window_offset : tuple or None, optional
         The tuple is of the form (window_start, window_end) where
         window_start and window_end are relative to the segment start. If
         None, then segment start and end are used.
+    sampling_frequency : int
+        Number of samples per time
 
     Yields
     -------
@@ -547,25 +548,28 @@ def get_windowed_dataframe(data, segments, sampling_frequency,
 
 def reshape_to_segments(data, segments, window_offset=None,
                         sampling_frequency=1500):
-    '''Extracts segments of time.
+    '''Extracts data corresponding to segments of time.
 
     Parameters
     ----------
-    data : Pandas dataframe with row index as time
+    data : Pandas dataframe with rows indexed as time
     segments : list of tuples
-        Each tuple is of the form (start time, end time).
+        Segments of time to extract. Each tuple is of the form
+        (start time, end time).
     window_offset : tuple or None, optional
         The tuple is of the form (window_start, window_end) where
         window_start and window_end are relative to the segment start. If
         None, then segment start and end are used.
+    sampling_frequency : int
+        Number of samples per time
 
     Returns
     -------
     windowed : xarray DataArray, shape (n_time, n_trials, n_signals)
 
     '''
-    segment_label = pd.Index(np.arange(1, len(segments) + 1),
-                             name='trials')
+    segment_label = pd.Index(
+        np.arange(1, len(segments) + 1), name='trials')
     return xr.concat(
         [xr.DataArray(df, dims=['time', 'signals'])
          for df in get_windowed_dataframe(
