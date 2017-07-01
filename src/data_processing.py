@@ -575,7 +575,7 @@ def reshape_to_segments(data, segments, window_offset=None,
          for df in get_windowed_dataframe(
              data, segments, sampling_frequency,
              window_offset=window_offset)],
-        dim=segment_label)
+        dim=segment_label).transpose('time', 'trials', 'signals')
 
 
 def make_tetrode_pair_info(tetrode_info):
