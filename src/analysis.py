@@ -2,7 +2,7 @@
 
 '''
 from copy import deepcopy
-from functools import partial, wraps
+from functools import wraps
 from logging import getLogger
 
 import numpy as np
@@ -37,9 +37,7 @@ def entire_session_connectivity(
     params = deepcopy(multitaper_params)
     params.pop('window_of_interest')
     m = Multitaper(
-        lfps.values.squeeze().T,
-        **params,
-        start_time=lfps.major_axis.min())
+        lfps, **params, start_time=lfps.time.min())
     c = Connectivity.from_multitaper(m)
     save_power(
         c, tetrode_info, epoch_key,
@@ -93,24 +91,21 @@ def ripple_triggered_connectivity(
     n_pairs = int(n_lfps * (n_lfps - 1) / 2)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
-    reshape_to_trials = partial(
-        reshape_to_segments,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest, concat_axis=1)
 
     logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
                     multitaper_parameter_name=multitaper_parameter_name,
                     num_pairs=n_pairs))
 
-    ripple_locked_lfps = pd.Panel({
-        lfp_name: _subtract_event_related_potential(
-            reshape_to_trials(lfps[lfp_name], ripple_times))
-        for lfp_name in lfps}).dropna(axis=2)
+    ripple_locked_lfps = reshape_to_segments(
+        lfps, ripple_times, window_offset=window_of_interest,
+        sampling_frequency=params['sampling_frequency']).dropna('trials')
+
+    event_related_potential = ripple_locked_lfps.mean('trials')
+    ripple_locked_lfps = ripple_locked_lfps - event_related_potential
+
     m = Multitaper(
-        np.rollaxis(ripple_locked_lfps.values, 0, 3),
-        **params,
-        start_time=ripple_locked_lfps.major_axis.min())
+        ripple_locked_lfps, **params, start_time=window_of_interest[0])
     c = Connectivity.from_multitaper(m)
 
     save_power(
@@ -645,10 +640,6 @@ def _ripple_session_time(ripple_times, session_time):
              .value_counts()
              .argmax())
             for ripple_start, ripple_end in ripple_times]
-
-
-def _subtract_event_related_potential(df):
-    return df.apply(lambda x: x - df.mean(axis=1), raw=True)
 
 
 def is_overlap(band1, band2):

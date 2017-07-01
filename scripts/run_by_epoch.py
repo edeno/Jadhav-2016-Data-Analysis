@@ -6,6 +6,8 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
+import pandas as pd
+
 from src.analysis import (decode_ripple_clusterless,
                           detect_epoch_ripples,
                           ripple_triggered_connectivity,
@@ -25,8 +27,9 @@ def estimate_ripple_coherence(epoch_key):
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
 
-    lfps = {tetrode_key: get_LFP_dataframe(tetrode_key, ANIMALS)
-            for tetrode_key in tetrode_info.index}
+    lfps = pd.concat(
+        {tetrode_key: get_LFP_dataframe(tetrode_key, ANIMALS)
+         for tetrode_key in tetrode_info.index}, axis=1)
 
     for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
         # Compare all ripples
