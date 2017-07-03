@@ -36,13 +36,13 @@ def _get_intial_conditions(cross_spectral_matrix):
 
         new_shape = list(cross_spectral_matrix.shape)
         N_RAND = 1000
-        new_shape[-3] = 1
-        new_shape[-1] = N_RAND
+        new_shape[-3] = N_RAND
         random_start = np.random.standard_normal(
             size=new_shape)
 
         random_start = np.matmul(
-            random_start, _conjugate_transpose(random_start)) / N_RAND
+            random_start, _conjugate_transpose(random_start)).mean(
+                axis=-3, keepdims=True)
 
         return np.linalg.cholesky(random_start)
 
