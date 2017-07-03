@@ -32,7 +32,8 @@ def _get_intial_conditions(cross_spectral_matrix):
         ).swapaxes(-1, -2)
     except np.linalg.linalg.LinAlgError:
         logger.warn(
-            'Computing the initial conditions using the Cholesky failed.')
+            'Computing the initial conditions using the Cholesky failed. '
+            'Using a random initial condition.')
 
         new_shape = list(cross_spectral_matrix.shape)
         N_RAND = 1000
