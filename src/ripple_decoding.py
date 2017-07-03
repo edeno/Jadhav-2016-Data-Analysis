@@ -174,8 +174,8 @@ def evaluate_mark_space(test_marks, training_marks=None,
 
     '''
     n_training_spikes = training_marks.shape[0]
-    test_marks = np.tile(
-        test_marks[:, np.newaxis], (1, n_training_spikes)).T
+    test_marks = (test_marks[:, np.newaxis].T *
+                  np.ones((n_training_spikes, 1)))
     return np.nanprod(
         _normal_pdf(test_marks, mean=training_marks,
                     std_deviation=mark_std_deviation),
