@@ -26,9 +26,25 @@ def _get_intial_conditions(cross_spectral_matrix):
     minimum_phase_factor : array, shape (n_time_samples, ..., 1, n_signals,
                                          n_signals)
     '''
-    return np.linalg.cholesky(
-        ifft(cross_spectral_matrix, axis=-3)[..., 0:1, :, :].real
-    ).swapaxes(-1, -2)
+    try:
+        return np.linalg.cholesky(
+            ifft(cross_spectral_matrix, axis=-3)[..., 0:1, :, :].real
+        ).swapaxes(-1, -2)
+    except np.linalg.linalg.LinAlgError:
+        logger.warn(
+            'Computing the initial conditions using the Cholesky failed.')
+
+        new_shape = list(cross_spectral_matrix.shape)
+        N_RAND = 1000
+        new_shape[-3] = 1
+        new_shape[-1] = N_RAND
+        random_start = np.random.standard_normal(
+            size=new_shape)
+
+        random_start = np.matmul(
+            random_start, _conjugate_transpose(random_start)) / N_RAND
+
+        return np.linalg.cholesky(random_start)
 
 
 def _get_causal_signal(linear_predictor):
