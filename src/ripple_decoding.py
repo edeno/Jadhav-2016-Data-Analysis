@@ -214,13 +214,17 @@ def joint_mark_intensity(marks, place_field_estimator=None,
     place_mark_estimator = np.zeros((n_signals, n_parameters))
 
     for signal_ind in range(n_signals):
-        place_mark_estimator[signal_ind, :] = np.dot(
-            place_field_estimator[signal_ind],
-            evaluate_mark_space(
-                marks[signal_ind],
-                training_marks=training_marks[signal_ind],
-                mark_std_deviation=mark_std_deviation)
-        )
+        if not np.all(np.isnan(marks[signal_ind])):
+            place_mark_estimator[signal_ind, :] = np.dot(
+                place_field_estimator[signal_ind],
+                evaluate_mark_space(
+                    marks[signal_ind],
+                    training_marks=training_marks[signal_ind],
+                    mark_std_deviation=mark_std_deviation)
+            )
+        else:
+            place_mark_estimator[signal_ind, :] = (
+                place_field_estimator[signal_ind].sum(axis=1))
 
     return (place_mark_estimator / place_occupancy
             / (mark_std_deviation * n_marks))
