@@ -6,5 +6,5 @@ FILES=($@)
 for notebook in "${FILES[@]}"
 do
   echo "Processing $notebook file..."
-  jupyter nbconvert --to notebook $notebook --output $notebook
+  jupyter nbconvert --to notebook --ExecutePreprocessor.timeout=-1 $notebook 
 done
