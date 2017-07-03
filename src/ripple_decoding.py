@@ -222,9 +222,6 @@ def joint_mark_intensity(marks, place_field_estimator=None,
                     training_marks=training_marks[signal_ind],
                     mark_std_deviation=mark_std_deviation)
             )
-        else:
-            place_mark_estimator[signal_ind, :] = (
-                place_field_estimator[signal_ind].sum(axis=1))
 
     return (place_mark_estimator / place_occupancy
             / (mark_std_deviation * n_marks))
