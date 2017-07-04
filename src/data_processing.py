@@ -778,23 +778,23 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
     '''
     def process_one_path(path):
         # use a context manager, to ensure the file gets closed after use
-        with xr.open_dataset(path, group=group) as ds:
-            logger.debug('Path: {path} \n\t group: {group}'.format(
-                path=path, group=group))
-            # transform_func should do some sort of selection or
-            # aggregation
-            if transform_func is not None:
-                ds = transform_func(ds)
-            # load all data from the transformed dataset, to ensure we can
-            # use it after closing each original file
-            try:
+        try:
+            with xr.open_dataset(path, group=group) as ds:
+                logger.debug('Path: {path} \n\t group: {group}'.format(
+                    path=path, group=group))
+                # transform_func should do some sort of selection or
+                # aggregation
+                if transform_func is not None:
+                    ds = transform_func(ds)
+                # load all data from the transformed dataset, to ensure we
+                # can use it after closing each original file
                 ds.load()
                 return ds
-            except IndexError:
-                logger.debug('Selection not found. \n'
-                             'Path: {path} \n\t group: {group}'.format(
-                                path=path, group=group))
-                return None
+        except (IndexError, KeyError):
+            logger.debug('Selection not found. \n'
+                         'Path: {path} \n\t group: {group}'.format(
+                            path=path, group=group))
+            return None
 
     paths = sorted(glob(files))
     datasets = [process_one_path(p) for p in paths
