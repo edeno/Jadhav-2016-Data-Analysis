@@ -795,8 +795,10 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
                          'Path: {path} \n\t group: {group}'.format(
                             path=path, group=group))
             return None
-
-    paths = sorted(glob(files))
+    try:
+        paths = sorted(glob(files))
+    except AttributeError:
+        paths = files
     datasets = [process_one_path(p) for p in paths
                 if process_one_path(p) is not None]
     return xr.concat(datasets, dim)
