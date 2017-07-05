@@ -790,7 +790,7 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
                 # can use it after closing each original file
                 ds.load()
                 return ds
-        except (IndexError, KeyError):
+        except (IndexError, OSError):
             logger.debug('Selection not found. \n'
                          'Path: {path} \n\t group: {group}'.format(
                             path=path, group=group))
