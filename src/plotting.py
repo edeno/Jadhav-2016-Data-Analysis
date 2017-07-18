@@ -5,25 +5,49 @@ from matplotlib.colors import LogNorm
 from src.data_processing import read_netcdfs
 
 
-def plot_power(path, group, brain_area, transform_func=None,
-               figsize=(15, 10), vmin=0.5, vmax=2):
-    ds = read_netcdfs(path, dim='session', group=group,
-                      transform_func=transform_func).power
+def plot_power(path, group, brain_area, frequency, figsize=(15, 10),
+               vmin=0.5, vmax=2):
+
+    def transform_func(ds):
+        return ds.sel(
+            tetrode=ds.tetrode[ds.brain_area == brain_area],
+            frequency=frequency
+        )
+    try:
+        ds = read_netcdfs(path, dim='session', group=group,
+                          transform_func=transform_func).power
+    except ValueError:
+        return
     DIMS = ['session', 'tetrode']
-    baseline = ds.isel(time=0).mean(DIMS)
-    raw_measure = ds.mean(DIMS)
-    diff_from_baseline = (ds / ds.isel(time=0)).mean(DIMS)
 
     fig, axes = plt.subplots(2, 3, figsize=figsize)
-    baseline.plot(ax=axes[0, 0])
+    _plot_distribution(
+        ds.isel(time=0), dims=DIMS, ax=axes[0, 0], color='midnightblue')
     axes[0, 0].set_title('Baseline Power')
-    raw_measure.plot(x='time', y='frequency', ax=axes[0, 1])
+
+    _plot_distribution(
+        ds.isel(time=0), dims=DIMS, ax=axes[1, 0], color='midnightblue')
+    axes[1, 0].set_title('Baseline Power')
+
+    ds.mean(DIMS).plot(x='time', y='frequency', ax=axes[0, 1])
     axes[0, 1].set_title('Raw power')
-    diff_from_baseline.plot(
+
+    _plot_distribution(
+        ds.sel(time=0.0, method='backfill'), dims=DIMS,
+        ax=axes[1, 1], color='midnightblue')
+    axes[1, 1].set_title('Raw power after ripple')
+
+    (ds / ds.isel(time=0)).mean(DIMS).plot(
         x='time', y='frequency', ax=axes[0, 2],
         norm=LogNorm(vmin=vmin, vmax=vmax), cmap='RdBu_r',
         vmin=vmin, vmax=vmax, center=0)
-    axes[0, 2].set_title('Difference from baseline power')
+    axes[0, 2].set_title('Change from baseline power')
+
+    _plot_distribution(
+        ds.sel(time=0.0, method='backfill') / ds.isel(time=0), dims=DIMS,
+        ax=axes[1, 2], color='midnightblue')
+    axes[1, 2].set_title('Change after ripple')
+    axes[1, 2].axhline(1, color='black', linestyle='--')
 
     for ax in axes[0, 1:3]:
         ax.axvline(0, color='black', linestyle='--')
@@ -39,9 +63,9 @@ def plot_connectivity(
         connectivity_measure='coherence_magnitude'):
 
     def get_data(level):
-        group = '{resolution}/{covariate}/{level}/{measure}'.format(
-            resolution=resolution, covariate=covariate, level=level,
-            measure=connectivity_measure)
+        group = (
+            '/'.join([resolution, covariate, level, connectivity_measure])
+            .replace('//', '/'))
 
         def transform_func(ds):
             return ds.sel(
@@ -54,8 +78,10 @@ def plot_connectivity(
             transform_func=transform_func)[connectivity_measure]
 
     DIMS = ['session', 'tetrode1', 'tetrode2']
-
-    ds1 = get_data(level1)
+    try:
+        ds1 = get_data(level1)
+    except ValueError:
+        return
     if level2 is not None:
         ds2 = get_data(level2)
     else:
@@ -63,36 +89,52 @@ def plot_connectivity(
 
     fig, axes = plt.subplots(2, 3, figsize=figsize)
 
-    if level2 is not None:
-        ds2.mean(DIMS).plot(
-            x='time', y='frequency', ax=axes[0, 0], cmap='Purples')
-        axes[0, 0].set_title(level1)
-    else:
-        _plot_distribution(ds2, ax=axes[0, 0], color='purple')
-        axes[0, 0].set_title('Baseline')
-
     ds1.mean(DIMS).plot(
         x='time', y='frequency', ax=axes[0, 1], cmap='Greens')
     axes[0, 1].set_title(level1)
+
+    _plot_distribution(
+        ds1.sel(time=0.0, method='backfill'), dims=DIMS, ax=axes[1, 1],
+        color='green')
+    axes[1, 1].set_title('{level} after ripple'.format(level=level1))
+
+    if level2 is not None:
+        ds2.mean(DIMS).plot(
+            x='time', y='frequency', ax=axes[0, 0], cmap='Purples')
+        axes[0, 0].set_title(level2)
+        _plot_distribution(ds2.sel(time=0.0, method='backfill'),
+                           dims=DIMS, ax=axes[1, 0], color='purple')
+        axes[1, 0].set_title('{level} after ripple'.format(level=level2))
+    else:
+        _plot_distribution(ds2, dims=DIMS, ax=axes[0, 0], color='purple')
+        axes[0, 0].set_title('Baseline')
+        _plot_distribution(ds2, dims=DIMS, ax=axes[1, 0], color='purple')
+        axes[1, 0].set_title('Baseline')
 
     ds_change = (ds1 - ds2).mean(DIMS)
     ds_change.plot(
         x='time', y='frequency', ax=axes[0, 2], cmap='PRGn', center=0)
     axes[0, 2].set_title(
-        '{covariate}: {level2} - {level1}'.format(
+        '{covariate}: {level1} - {level2}'.format(
             level1=level1, level2=level2, covariate=covariate)
     )
 
-    for ax in axes:
-        ax.axvline(0, color='black', linestyle='--')
+    _plot_distribution(
+        (ds1 - ds2).sel(time=0.0, method='backfill'), dims=DIMS,
+        ax=axes[1, 2], color='midnightblue')
+    axes[1, 2].set_title('Change after ripple')
+
+    axes[0, 1].axvline(0, color='black', linestyle='--')
+    axes[0, 2].axvline(0, color='black', linestyle='--')
+    axes[1, 2].axhline(0, color='black', linestyle='--')
 
     plt.tight_layout()
     plt.suptitle(
-        '{brain_area1} - {brain_area2}'.format(
+        '{brain_area1}-{brain_area2}'.format(
             brain_area1=brain_area_pair[0],
             brain_area2=brain_area_pair[1]),
         fontsize=18, fontweight='bold')
-    plt.subplots_adjust(top=0.85)
+    plt.subplots_adjust(top=0.90)
 
 
 def _plot_distribution(
@@ -100,7 +142,8 @@ def _plot_distribution(
         **plot_kwargs):
     alphas = np.array(quantiles)
     alphas[alphas > 0.5] = 1 - alphas[alphas > 0.5]
-    alphas = (alphas / 0.5) * 1.1
+    alphas = (alphas / 0.5)
+    alphas[alphas < 0.2] = 0.2
 
     for q, alpha in zip(quantiles, alphas):
         ds.quantile(q, dims).plot.line(alpha=alpha, **plot_kwargs)
