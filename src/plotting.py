@@ -137,6 +137,84 @@ def plot_connectivity(
     plt.subplots_adjust(top=0.90)
 
 
+def plot_canonical_coherence(path, brain_area_pair, frequency, resolution,
+                             covariate, level1, level2=None,
+                             figsize=(15, 10)):
+
+    def get_data(level):
+        group = (
+            '/'.join([resolution, covariate, level, 'canonical_coherence'])
+            .replace('//', '/'))
+        return read_netcdfs(
+            path,
+            dim='session',
+            group=group
+        ).sel(
+            brain_area1=brain_area_pair[0],
+            brain_area2=brain_area_pair[1],
+            frequency=frequency
+        ).canonical_coherence
+
+    DIMS = 'session'
+    try:
+        ds1 = get_data(level1)
+    except (ValueError, KeyError):
+        return
+    if level2 is not None:
+        ds2 = get_data(level2)
+    else:
+        ds2 = ds1.isel(time=0)
+
+    fig, axes = plt.subplots(2, 3, figsize=figsize)
+
+    ds1.mean(DIMS).plot(
+        x='time', y='frequency', ax=axes[0, 1], cmap='Greens')
+    axes[0, 1].set_title(level1)
+
+    _plot_distribution(
+        ds1.sel(time=0.0, method='backfill'), dims=DIMS, ax=axes[1, 1],
+        color='green')
+    axes[1, 1].set_title('{level} after ripple'.format(level=level1))
+
+    if level2 is not None:
+        ds2.mean(DIMS).plot(
+            x='time', y='frequency', ax=axes[0, 0], cmap='Purples')
+        axes[0, 0].set_title(level2)
+        _plot_distribution(ds2.sel(time=0.0, method='backfill'),
+                           dims=DIMS, ax=axes[1, 0], color='purple')
+        axes[1, 0].set_title('{level} after ripple'.format(level=level2))
+    else:
+        _plot_distribution(ds2, dims=DIMS, ax=axes[0, 0], color='purple')
+        axes[0, 0].set_title('Baseline')
+        _plot_distribution(ds2, dims=DIMS, ax=axes[1, 0], color='purple')
+        axes[1, 0].set_title('Baseline')
+
+    ds_change = (ds1 - ds2).mean(DIMS)
+    ds_change.plot(
+        x='time', y='frequency', ax=axes[0, 2], cmap='PRGn', center=0)
+    axes[0, 2].set_title(
+        '{covariate}: {level1} - {level2}'.format(
+            level1=level1, level2=level2, covariate=covariate)
+    )
+
+    _plot_distribution(
+        (ds1 - ds2).sel(time=0.0, method='backfill'), dims=DIMS,
+        ax=axes[1, 2], color='midnightblue')
+    axes[1, 2].set_title('Change after ripple')
+
+    axes[0, 1].axvline(0, color='black', linestyle='--')
+    axes[0, 2].axvline(0, color='black', linestyle='--')
+    axes[1, 2].axhline(0, color='black', linestyle='--')
+
+    plt.tight_layout()
+    plt.suptitle(
+        '{brain_area1}-{brain_area2}'.format(
+            brain_area1=brain_area_pair[0],
+            brain_area2=brain_area_pair[1]),
+        fontsize=18, fontweight='bold')
+    plt.subplots_adjust(top=0.90)
+
+
 def _plot_distribution(
         ds, dims=None, quantiles=[0.025, 0.25, 0.5, 0.75, 0.975],
         **plot_kwargs):
