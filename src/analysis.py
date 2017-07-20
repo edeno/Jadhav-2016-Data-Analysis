@@ -215,22 +215,17 @@ def save_canonical_coherence(
 def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
                      multitaper_parameter_name, group_name):
     logger.info('...saving group delay')
-    n_bands = len(FREQUENCY_BANDS)
-    delay, slope, r_value = (
-        np.zeros((c.time.size, n_bands, m.n_signals, m.n_signals)),) * 3
+    group_delay = np.array(
+        [c.group_delay(FREQUENCY_BANDS[frequency_band],
+                       frequency_resolution=m.frequency_resolution)
+         for frequency_band in FREQUENCY_BANDS])
 
-    for band_ind, frequency_band in enumerate(FREQUENCY_BANDS):
-        (delay[:, band_ind, ...],
-         slope[:, band_ind, ...],
-         r_value[:, band_ind, ...]) = c.group_delay(
-            FREQUENCY_BANDS[frequency_band],
-            frequency_resolution=m.frequency_resolution)
-
-    dimension_names = ['time', 'frequency_band', 'tetrode1', 'tetrode2']
+    dimension_names = ['frequency_band', 'time', 'tetrode1', 'tetrode2']
     data_vars = {
-        'delay': (dimension_names, delay),
-        'slope': (dimension_names, slope),
-        'r_value': (dimension_names, r_value)}
+        'delay': (dimension_names, group_delay[:, 0, ...]),
+        'slope': (dimension_names, group_delay[:, 1, ...]),
+        'r_value': (dimension_names, group_delay[:, 2, ...])}
+
     coordinates = {
         'time': _center_time(c.time),
         'frequency_band': list(FREQUENCY_BANDS.keys()),
