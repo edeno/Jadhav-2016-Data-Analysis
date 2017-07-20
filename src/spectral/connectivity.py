@@ -514,6 +514,10 @@ class Connectivity(object):
         intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
         predictive_power = total_power / intrinsic_power
         predictive_power[predictive_power <= 0] = np.nan
+        n_signals = predictive_power.shape[-1]
+        diagonal_ind = np.diag_indices(n_signals)
+        predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
+
         return np.log(predictive_power)
 
     def conditional_spectral_granger_prediction():
