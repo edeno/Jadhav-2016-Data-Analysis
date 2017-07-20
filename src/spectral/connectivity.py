@@ -705,7 +705,7 @@ class Connectivity(object):
             _linear_regression, -2, coherence_phase)
         new_shape = (
             *bandpassed_coherency.shape[:-2], n_signals, n_signals)
-        slope = np.zeros(new_shape)
+        slope = np.full(new_shape, np.nan)
         slope[..., signal_combination_ind[:, 0],
               signal_combination_ind[:, 1]] = np.array(
               regression_results[..., 0, :], dtype=np.float)
