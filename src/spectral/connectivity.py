@@ -323,7 +323,7 @@ class Connectivity(object):
             in combinations(normalized_fourier_coefficients, 2)
         ], axis=-1))
 
-        canonical_coherence_magnitude = np.zeros(new_shape) * np.nan
+        canonical_coherence_magnitude = np.full(new_shape, np.nan)
         group_combination_ind = np.array(
             list(combinations(np.arange(n_groups), 2)))
         canonical_coherence_magnitude[
