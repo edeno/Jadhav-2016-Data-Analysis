@@ -548,7 +548,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
 
     Parameters
     ----------
-    posterior_density : array_like
+    posterior_density : list of arrays
     test_spikes : array_like
     ripple_times : list of tuples
     state_names : list of str
