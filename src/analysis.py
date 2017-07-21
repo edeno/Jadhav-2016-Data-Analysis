@@ -376,7 +376,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
                          for ripple_spikes in test_spikes]
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info, epoch_key)
+        state_names, position_info, place_bin_centers, epoch_key)
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -462,7 +462,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info, epoch_key)
+        state_names, position_info, place_bin_centers, epoch_key)
 
 
 def _convert_to_states(function):
@@ -543,7 +543,8 @@ def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, position_info, epoch_key):
+                    state_names, position_info, place_bin_centers,
+                    epoch_key):
     '''Summary statistics for ripple categories
 
     Parameters
@@ -594,6 +595,8 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
          .set_index(ripple_info.index)
          .drop('trajectory_category_ind', axis=1)
          ], axis=1)
+    ripple_info['ripple_motion'] = _get_ripple_motion(
+        ripple_info, posterior_density, state_names, place_bin_centers)
     return (ripple_info, decision_state_probability,
             posterior_density, state_names)
 
@@ -644,6 +647,47 @@ def _ripple_session_time(ripple_times, session_time):
              .value_counts()
              .argmax())
             for ripple_start, ripple_end in ripple_times]
+
+
+def _get_ripple_motion_from_rows(ripple_info, posterior_density,
+                                 state_names, place_bin_centers):
+    '''
+
+    Parameters
+    ----------
+    ripple_info : pandas dataframe row
+    posterior_density : array, shape (n_time, n_position_bins)
+    state_names : list of str, shape (n_states,)
+    place_bin_centers : array (n_position_bins)
+
+    Returns
+    -------
+    is_away : array of str
+
+    '''
+    max_state_name = '_'.join(
+        (ripple_info.ripple_trajectory, ripple_info.ripple_direction))
+    new_shape = (len(posterior_density), len(state_names), -1)
+    max_state_density = np.take(
+        np.reshape(posterior_density, new_shape),
+        state_names.index(max_state_name), axis=1)
+    replay_position_start_end = place_bin_centers[
+        np.argmax(max_state_density[[0, -1]], axis=1)]
+    replay_distance_from_animal_position = abs(
+        ripple_info.linear_position - replay_position_start_end)
+    is_away = np.diff(replay_distance_from_animal_position) > 0
+    return np.where(is_away, 'Away', 'Towards')
+
+
+def _get_ripple_motion(ripple_info, posterior_density, state_names,
+                       place_bin_centers):
+    '''Motion of the ripple relative to the current position of the animal.
+    '''
+    return np.array(
+        [_get_ripple_motion_from_rows(
+            row, density, state_names, place_bin_centers)
+         for (_, row), density
+         in zip(ripple_info.iterrows(), posterior_density)]).squeeze()
 
 
 def _subtract_event_related_potential(df):
