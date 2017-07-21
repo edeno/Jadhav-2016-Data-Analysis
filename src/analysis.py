@@ -376,7 +376,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
                          for ripple_spikes in test_spikes]
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index, epoch_key)
+        state_names, position_info, epoch_key)
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -395,10 +395,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False), :]
     logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
-    position_variables = ['linear_distance', 'trajectory_direction',
-                          'speed']
-    position_info = (get_interpolated_position_dataframe(
-        epoch_key, animals).loc[:, position_variables])
+    position_info = get_interpolated_position_dataframe(epoch_key, animals)
 
     marks = [(get_mark_indicator_dataframe(tetrode_key, animals)
               .loc[:, mark_variables])
@@ -465,7 +462,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     return get_ripple_info(
         posterior_density, test_spikes, ripple_times,
-        state_names, position_info.index, epoch_key)
+        state_names, position_info, epoch_key)
 
 
 def _convert_to_states(function):
@@ -546,7 +543,7 @@ def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, session_time, epoch_key):
+                    state_names, position_info, epoch_key):
     '''Summary statistics for ripple categories
 
     Parameters
@@ -555,7 +552,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     test_spikes : array_like
     ripple_times : list of tuples
     state_names : list of str
-    session_time : array_like
+    position_info : pandas DataFrame
 
     Returns
     -------
@@ -565,6 +562,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     state_names : list of str
 
     '''
+    session_time = position_info.index
     n_states = len(state_names)
     n_ripples = len(ripple_times)
     decision_state_probability = [
@@ -590,6 +588,12 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
                                .map({True: 'isSpike', False: 'noSpike'}))
 
+    ripple_info = pd.concat(
+        [ripple_info,
+         position_info.loc[ripple_info.ripple_start_time]
+         .set_index(ripple_info.index)
+         .drop('trajectory_category_ind', axis=1)
+         ], axis=1)
     return (ripple_info, decision_state_probability,
             posterior_density, state_names)
 
