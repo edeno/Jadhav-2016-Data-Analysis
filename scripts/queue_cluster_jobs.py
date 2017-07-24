@@ -1,5 +1,6 @@
 '''Script for executing run_by_epoch on the cluster
 '''
+from argparse import ArgumentParser
 from os import getcwd, makedirs, environ
 from os.path import join
 from subprocess import run
@@ -7,6 +8,15 @@ from sys import exit
 
 from src.data_processing import make_epochs_dataframe
 from src.parameters import ANIMALS, N_DAYS
+
+
+def get_command_line_arguments():
+    parser = ArgumentParser()
+    parser.add_argument('--Animal', type=str, help='Short name of animal')
+    parser.add_argument('--Day', type=int, help='Day of recording session')
+    parser.add_argument('--Epoch', type=int,
+                        help='Epoch number of recording session')
+    return parser.parse_args()
 
 
 def queue_job(python_cmd, directives=None, log_file='log.log',
@@ -35,9 +45,13 @@ def main():
          '-P braincom', '-notify', '-l mem_total=125G',
          '-v OPENBLAS_NUM_THREADS'])
 
-    epoch_info = make_epochs_dataframe(ANIMALS, range(1, N_DAYS + 1))
-    epoch_keys = epoch_info[(epoch_info.type == 'run') & (
-        epoch_info.environment != 'lin')].index
+    args = get_command_line_arguments()
+    if args.Animal is None and args.Day is None and args.Epoch is None:
+        epoch_info = make_epochs_dataframe(ANIMALS, range(1, N_DAYS + 1))
+        epoch_keys = epoch_info[(epoch_info.type == 'run') & (
+            epoch_info.environment != 'lin')].index
+    else:
+        epoch_keys = [(args.Animal, args.Day, args.Epoch)]
 
     for (animal, day, epoch_ind) in epoch_keys:
         print('Animal: {0}, Day: {1}, Epoch: {2}'.format(
