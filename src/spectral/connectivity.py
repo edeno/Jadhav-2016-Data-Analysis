@@ -728,6 +728,65 @@ class Connectivity(object):
                 regression_results[..., 2, :], dtype=np.float)
         return delay, slope, r_value
 
+    def delay(self, frequencies_of_interest=None,
+              frequency_resolution=None,
+              significance_threshold=0.05, n_range=3):
+        '''Find a range of possible delays from the coherence phase.
+
+        The delay (and phase) at each frequency is indistinguishable from
+        2 \pi phase jumps, but we can look at a range of possible delays
+        and see which one is most likely.
+
+        Parameters
+        ----------
+        frequencies_of_interest : array-like, shape (2,)
+        frequencies : array-like, shape (n_fft_samples,)
+        frequency_resolution : float
+        n_range : int
+            Number of phases to consider.
+
+        Returns
+        -------
+        possible_delays : array, shape (..., n_frequencies,
+                                        (n_range * 2) + 1, n_signals,
+                                        n_signals)
+
+        '''
+        frequencies = self.frequencies
+        frequency_difference = frequencies[1] - frequencies[0]
+        independent_frequency_step = _get_independent_frequency_step(
+            frequency_difference, frequency_resolution)
+        bandpassed_coherency, bandpassed_frequencies = _bandpass(
+            self.coherency(), frequencies, frequencies_of_interest)
+        bias = coherence_bias(self.n_observations)
+        n_signals = bandpassed_coherency.shape[-1]
+        signal_combination_ind = np.array(
+            list(combinations(np.arange(n_signals), 2)))
+        bandpassed_coherency = bandpassed_coherency[
+            ..., signal_combination_ind[:, 0],
+            signal_combination_ind[:, 1]]
+
+        is_significant = _find_significant_frequencies(
+            bandpassed_coherency, bias, independent_frequency_step,
+            significance_threshold=significance_threshold)
+        coherence_phase = np.ma.masked_array(
+            np.unwrap(np.angle(bandpassed_coherency), axis=-2),
+            mask=~is_significant)
+        possible_range = 2 * np.pi * np.arange(-n_range, n_range + 1)
+        delays = np.rollaxis((
+            possible_range + coherence_phase[..., np.newaxis]) /
+            (2 * np.pi), -1, -2)
+        new_shape = (
+            *bandpassed_coherency.shape[:-1], len(possible_range),
+            n_signals, n_signals)
+        possible_delays = np.full(new_shape, np.nan)
+        possible_delays[..., signal_combination_ind[:, 0],
+                        signal_combination_ind[:, 1]] = delays
+        possible_delays[..., signal_combination_ind[:, 1],
+                        signal_combination_ind[:, 0]] = -delays
+
+        return possible_delays
+
     def phase_slope_index(self, frequencies_of_interest=None,
                           frequency_resolution=None):
         '''The weighted average of slopes of a broadband signal projected
