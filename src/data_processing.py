@@ -11,7 +11,9 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
-import xarray as xr
+from xr.backends.api import (basestring, _CONCAT_DIM_DEFAULT,
+                             _default_lock, open_dataset, auto_combine,
+                             _MultiFileCloser)
 from scipy.io import loadmat
 
 logger = getLogger(__name__)
@@ -756,57 +758,106 @@ def get_ripple_info(epoch_key):
     return pd.read_hdf(file_path, key='/ripple_info')
 
 
-def read_netcdfs(files, dim, transform_func=None, group=None):
-    '''Load multiple netcdf files, concatenate along a dimension, and
-    transform the dataset if desired.
+def _open_dataset(*args, **kwargs):
+    try:
+        return open_dataset(**args, **kwargs)
+    except (IndexError, OSError):
+        return None
 
+
+def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
+                   compat='no_conflicts', preprocess=None, engine=None,
+                   lock=None, **kwargs):
+    """Open multiple files as a single dataset.
+    Requires dask to be installed.  Attributes from the first dataset file
+    are used for the combined dataset.
     Parameters
     ----------
-    files : str or list of str
-    dim : str
-    transform_func : function
-    group : str
-
+    paths : str or sequence
+        Either a string glob in the form "path/to/my/files/*.nc" or an
+        explicit list of files to open.
+    chunks : int or dict, optional
+        Dictionary with keys given by dimension names and values given by
+        chunk sizes. In general, these should divide the dimensions of each
+        dataset. If int, chunk each dimension by ``chunks``.
+        By default, chunks will be chosen to load entire input files into
+        memory at once. This has a major impact on performance: please see
+        the full documentation for more details.
+    concat_dim : None, str, DataArray or Index, optional
+        Dimension to concatenate files along. This argument is passed on to
+        :py:func:`xarray.auto_combine` along with the dataset objects. You
+        only need to provide this argument if the dimension along which you
+        want to concatenate is not a dimension in the original datasets,
+        e.g., if you want to stack a collection of 2D arrays along a third
+        dimension. By default, xarray attempts to infer this argument by
+        examining component files. Set ``concat_dim=None`` explicitly to
+        disable concatenation.
+    compat : {'identical', 'equals', 'broadcast_equals',
+              'no_conflicts'}, optional
+        String indicating how to compare variables of the same name for
+        potential conflicts when merging:
+        - 'broadcast_equals': all values must be equal when variables are
+          broadcast against each other to ensure common dimensions.
+        - 'equals': all values and dimensions must be the same.
+        - 'identical': all values, dimensions and attributes must be the
+          same.
+        - 'no_conflicts': only values which are not null in both datasets
+          must be equal. The returned dataset then contains the combination
+          of all non-null values.
+    preprocess : callable, optional
+        If provided, call this function on each dataset prior to
+        concatenation.
+    engine : {'netcdf4', 'scipy', 'pydap', 'h5netcdf', 'pynio'}, optional
+        Engine to use when reading files. If not provided, the default
+        engine is chosen based on available dependencies, with a preference
+        for 'netcdf4'.
+    autoclose : bool, optional
+        If True, automatically close files to avoid OS Error of too many
+        files being open.  However, this option doesn't work with streams,
+        e.g., BytesIO.
+    lock : False, True or threading.Lock, optional
+        This argument is passed on to :py:func:`dask.array.from_array`. By
+        default, a per-variable lock is used when reading data from netCDF
+        files with the netcdf4 and h5netcdf engines to avoid issues with
+        concurrent access when using dask's multithreaded backend.
+    **kwargs : optional
+        Additional arguments passed on to :py:func:`xarray.open_dataset`.
     Returns
     -------
-    combined_dataset : xarray dataset or dataarray
+    xarray.Dataset
+    See Also
+    --------
+    auto_combine
+    open_dataset
+    """
+    if isinstance(paths, basestring):
+        paths = sorted(glob(paths))
+    if not paths:
+        raise IOError('no files to open')
 
-    References
-    ----------
-     .. [1] http://xarray.pydata.org/en/stable/io.html
+    if lock is None:
+        lock = _default_lock(paths[0], engine)
+    datasets = [_open_dataset(p, engine=engine, chunks=chunks or {},
+                              lock=lock, **kwargs) for p in paths]
+    file_objs = [ds._file_obj for ds in datasets]
 
-    '''
-    def process_one_path(path):
-        # use a context manager, to ensure the file gets closed after use
-        try:
-            with xr.open_dataset(path, group=group) as ds:
-                logger.debug('Path: {path} \n\t group: {group}'.format(
-                    path=path, group=group))
-                # transform_func should do some sort of selection or
-                # aggregation
-                if transform_func is not None:
-                    ds = transform_func(ds)
-                # load all data from the transformed dataset, to ensure we
-                # can use it after closing each original file
-                ds.load()
-                return ds
-        except (IndexError, OSError):
-            logger.debug('Selection not found. \n'
-                         'Path: {path} \n\t group: {group}'.format(
-                            path=path, group=group))
-            return None
-    try:
-        paths = sorted(glob(files))
-    except AttributeError:
-        paths = files
-    datasets = [process_one_path(p) for p in paths
-                if process_one_path(p) is not None]
-    return xr.concat(datasets, dim)
+    if preprocess is not None:
+        datasets = [preprocess(ds) for ds in datasets if ds is not None]
+
+    if concat_dim is _CONCAT_DIM_DEFAULT:
+        combined = auto_combine(datasets, compat=compat)
+    else:
+        combined = auto_combine(datasets, concat_dim=concat_dim,
+                                compat=compat)
+    combined._file_obj = _MultiFileCloser(file_objs)
+    combined.attrs = datasets[0].attrs
+
+    return combined
 
 
-def read_analysis_files(epoch_keys, transform_func=None, group=None):
+def read_analysis_files(epoch_keys, **kwargs):
     epoch_keys.name = 'recording_session'
     file_names = [get_analysis_file_path(*epoch_key)
                   for epoch_key in epoch_keys]
-    return read_netcdfs(
-        file_names, transform_func=None, group=None, dim=epoch_keys)
+    return open_mfdataset(
+        file_names, concat_dim=epoch_keys, **kwargs)
