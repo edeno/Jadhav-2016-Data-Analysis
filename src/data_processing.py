@@ -804,8 +804,9 @@ def read_netcdfs(files, dim, transform_func=None, group=None):
     return xr.concat(datasets, dim)
 
 
-def read_analysis_files(epoch_keys, group):
+def read_analysis_files(epoch_keys, transform_func=None, group=None):
     epoch_keys.name = 'recording_session'
     file_names = [get_analysis_file_path(*epoch_key)
                   for epoch_key in epoch_keys]
-    return read_netcdfs(file_names, group=group, dim=epoch_keys)
+    return read_netcdfs(
+        file_names, transform_func=None, group=None, dim=epoch_keys)
