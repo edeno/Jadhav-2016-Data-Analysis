@@ -707,24 +707,8 @@ def get_analysis_file_path(animal, day, epoch):
     return join(PROCESSED_DATA_DIR, filename)
 
 
-def save_multitaper_parameters(epoch_key, multitaper_parameter_name,
-                               multitaper_parameters):
-    coherence_node = '/{multitaper_parameter_name}'.format(
-        multitaper_parameter_name=multitaper_parameter_name)
-    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
-        (store.get_node(coherence_node)
-         ._v_attrs.multitaper_parameters) = multitaper_parameters
-
-
 def save_ripple_info(epoch_key, ripple_info):
     save_xarray(epoch_key, ripple_info.to_xarray(), '/ripple_info')
-
-
-def save_tetrode_info(epoch_key, tetrode_info):
-    with pd.HDFStore(get_analysis_file_path(*epoch_key)) as store:
-        with catch_warnings():
-            simplefilter('ignore')
-            store.put('/tetrode_info', tetrode_info)
 
 
 def save_xarray(epoch_key, dataset, group):
@@ -740,22 +724,6 @@ def get_all_tetrode_info():
     hdf5_files = glob(file_path)
     return pd.concat([pd.read_hdf(filename, key='/tetrode_info')
                       for filename in hdf5_files]).sort_index()
-
-
-def get_all_ripple_info():
-    '''Retrieves all the hdf5 files from the Processed Data directory
-    and returns the tetrode pair info dataframe'''
-    file_path = join(PROCESSED_DATA_DIR, '*.nc')
-    hdf5_files = glob(file_path)
-    return pd.concat([pd.read_hdf(filename, key='/ripple_info')
-                      for filename in hdf5_files]).sort_index()
-
-
-def get_ripple_info(epoch_key):
-    '''Retrieves ripple info dataframe given an epoch'''
-    file_name = '{}_{:02d}_{:02d}.nc'.format(*epoch_key)
-    file_path = join(PROCESSED_DATA_DIR, file_name)
-    return pd.read_hdf(file_path, key='/ripple_info')
 
 
 def _open_dataset(*args, **kwargs):
