@@ -843,7 +843,7 @@ def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
 
     if isinstance(concat_dim, pd.Index):
         concat_dim = concat_dim.take(
-            [ind for ind, ds in datasets if ds is not None])
+            [ind for ind, ds in enumerate(datasets) if ds is not None])
 
     if preprocess is not None:
         datasets = [preprocess(ds) for ds in datasets if ds is not None]
