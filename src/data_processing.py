@@ -839,7 +839,7 @@ def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
         lock = _default_lock(paths[0], engine)
     datasets = [_open_dataset(p, engine=engine, chunks=chunks or {},
                               lock=lock, **kwargs) for p in paths]
-    file_objs = [ds._file_obj for ds in datasets]
+    file_objs = [ds._file_obj for ds in datasets if ds is not None]
 
     if preprocess is not None:
         datasets = [preprocess(ds) for ds in datasets if ds is not None]
