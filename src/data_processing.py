@@ -760,7 +760,7 @@ def get_ripple_info(epoch_key):
 
 def _open_dataset(*args, **kwargs):
     try:
-        return open_dataset(**args, **kwargs)
+        return open_dataset(*args, **kwargs)
     except (IndexError, OSError):
         return None
 
