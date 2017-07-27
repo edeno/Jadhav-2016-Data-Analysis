@@ -736,9 +736,15 @@ def _open_dataset(*args, **kwargs):
 def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
                    compat='no_conflicts', preprocess=None, engine=None,
                    lock=None, **kwargs):
-    """Open multiple files as a single dataset.
+    '''Open multiple files as a single dataset.
+
+    This function is adapted from the xarray function of the same name.
+    The main difference is that instead of failing on files that do not
+    exist, this function keeps processing.
+
     Requires dask to be installed.  Attributes from the first dataset file
     are used for the combined dataset.
+
     Parameters
     ----------
     paths : str or sequence
