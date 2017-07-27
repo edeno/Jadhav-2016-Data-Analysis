@@ -18,6 +18,7 @@ from scipy.io import loadmat
 import warnings
 
 warnings.filterwarnings('ignore', 'elementwise comparison failed;')
+warnings.filterwarnings('ignore', 'numpy equal will not check object')
 
 logger = getLogger(__name__)
 
