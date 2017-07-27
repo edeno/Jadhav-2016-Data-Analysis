@@ -839,3 +839,8 @@ def read_analysis_files(epoch_keys, **kwargs):
                   for epoch_key in epoch_keys]
     return open_mfdataset(
         file_names, concat_dim=epoch_keys, **kwargs)
+
+
+def get_group_name(resolution, covariate, level, connectivity_measure):
+    return ('/'.join([resolution, covariate, level, connectivity_measure])
+            .replace('//', '/'))
