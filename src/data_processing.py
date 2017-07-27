@@ -11,9 +11,9 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import pandas as pd
-from xarray.backends.api import (basestring, _CONCAT_DIM_DEFAULT,
-                             _default_lock, open_dataset, auto_combine,
-                             _MultiFileCloser)
+from xarray.backends.api import (
+    basestring, _CONCAT_DIM_DEFAULT, _default_lock, open_dataset,
+    auto_combine, _MultiFileCloser)
 from scipy.io import loadmat
 
 logger = getLogger(__name__)
