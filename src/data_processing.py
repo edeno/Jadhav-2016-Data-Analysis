@@ -7,7 +7,7 @@ from itertools import combinations
 from logging import getLogger
 from os.path import abspath, join, pardir, isfile, dirname
 from sys import exit
-from warnings import catch_warnings, simplefilter
+from warnings import filterwarnings
 
 import numpy as np
 import pandas as pd
@@ -15,10 +15,6 @@ from xarray.backends.api import (
     basestring, _CONCAT_DIM_DEFAULT, _default_lock, open_dataset,
     auto_combine, _MultiFileCloser)
 from scipy.io import loadmat
-import warnings
-
-warnings.filterwarnings('ignore', 'elementwise comparison failed;')
-warnings.filterwarnings('ignore', 'numpy equal will not check object')
 
 logger = getLogger(__name__)
 
@@ -833,7 +829,11 @@ def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
     --------
     auto_combine
     open_dataset
-    """
+
+    '''
+    filterwarnings('ignore', 'elementwise comparison failed;')
+    filterwarnings('ignore', 'numpy equal will not check object')
+
     if isinstance(paths, basestring):
         paths = sorted(glob(paths))
     if not paths:
