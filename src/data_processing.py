@@ -15,6 +15,9 @@ from xarray.backends.api import (
     basestring, _CONCAT_DIM_DEFAULT, _default_lock, open_dataset,
     auto_combine, _MultiFileCloser)
 from scipy.io import loadmat
+import warnings
+
+warnings.filterwarnings('ignore', 'elementwise comparison failed;')
 
 logger = getLogger(__name__)
 
