@@ -173,7 +173,9 @@ def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
         cross_spectral_matrix)
 
     for iteration in range(max_iterations):
-        logger.debug('iteration: {0}'.format(iteration))
+        logger.debug(
+            'iteration: {0}, {1} of {2} converged'.format(
+                iteration, is_converged.sum(), len(is_converged)))
         old_minimum_phase_factor = minimum_phase_factor.copy()
         linear_predictor = _get_linear_predictor(
             minimum_phase_factor, cross_spectral_matrix, I)
