@@ -173,17 +173,37 @@ class Connectivity(object):
             self._expectation(self._cross_spectral_matrix))
 
     @lazyproperty
-    @non_negative_frequencies(axis=-3)
-    def _transfer_function(self):
-        return _estimate_transfer_function(self._minimum_phase_factor)
+    def _pairwise_minimum_phase_factor(self):
+        cross_spectral_matrix = self._expectation(
+            self._cross_spectral_matrix)
+        n_signals = cross_spectral_matrix.shape[-1]
+        minimum_phase_factor = np.empty_like(cross_spectral_matrix)
 
-    @lazyproperty
-    def _noise_covariance(self):
-        return _estimate_noise_covariance(self._minimum_phase_factor)
+        for pair_indices in combinations(range(n_signals), 2):
+            pair_indices = np.array(pair_indices)[:, np.newaxis]
+            minimum_phase_factor[..., pair_indices, pair_indices.T] = (
+                minimum_phase_decomposition(
+                    cross_spectral_matrix[
+                        ..., pair_indices, pair_indices.T]))
+
+        return minimum_phase_factor
+
+    @non_negative_frequencies(axis=-3)
+    def _transfer_function(self, is_pairwise=False):
+        minimum_phase_factor = (
+            self._pairwise_minimum_phase_factor if is_pairwise
+            else self._minimum_phase_factor)
+        return _estimate_transfer_function(minimum_phase_factor)
+
+    def _noise_covariance(self, is_pairwise=False):
+        minimum_phase_factor = (
+            self._pairwise_minimum_phase_factor if is_pairwise
+            else self._minimum_phase_factor)
+        return _estimate_noise_covariance(minimum_phase_factor)
 
     @lazyproperty
     def _MVAR_Fourier_coefficients(self):
-        return np.linalg.inv(self._transfer_function)
+        return np.linalg.inv(self._transfer_function())
 
     @property
     def _expectation(self):
@@ -506,11 +526,14 @@ class Connectivity(object):
 
         '''
         rotated_covariance = _remove_instantaneous_causality(
-            self._noise_covariance)
+            self._noise_covariance(is_pairwise=True))
         total_power = self.power()[..., np.newaxis]
+        transfer_function = self._transfer_function(is_pairwise=True)
+
         intrinsic_power = (total_power -
                            rotated_covariance[..., np.newaxis, :, :] *
-                           _squared_magnitude(self._transfer_function))
+                           _squared_magnitude(transfer_function))
+
         intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
         predictive_power = total_power / intrinsic_power
         predictive_power[predictive_power <= 0] = np.nan
@@ -544,9 +567,9 @@ class Connectivity(object):
                structures. Biological Cybernetics 65, 203-210.
 
         '''
+        transfer_function = self._transfer_function()
         return _squared_magnitude(
-            self._transfer_function /
-            _total_inflow(self._transfer_function))
+            transfer_function / _total_inflow(transfer_function))
 
     def directed_coherence(self):
         '''The transfer function coupling strength normalized by the total
@@ -568,10 +591,11 @@ class Connectivity(object):
                causality. Applied Signal Processing 5, 40.
 
         '''
-        noise_variance = _get_noise_variance(self._noise_covariance)
+        noise_variance = _get_noise_variance(self._noise_covariance())
+        transfer_function = self._transfer_function()
         return (np.sqrt(noise_variance) *
-                _squared_magnitude(self._transfer_function) /
-                _total_inflow(self._transfer_function, noise_variance))
+                _squared_magnitude(transfer_function) /
+                _total_inflow(transfer_function, noise_variance))
 
     def partial_directed_coherence(self):
         '''The transfer function coupling strength normalized by its
@@ -623,7 +647,7 @@ class Connectivity(object):
                pp. 163-166.
 
         '''
-        noise_variance = _get_noise_variance(self._noise_covariance)
+        noise_variance = _get_noise_variance(self._noise_covariance())
         return _squared_magnitude(
             self._MVAR_Fourier_coefficients /
             np.sqrt(noise_variance) / _total_outflow(
@@ -649,9 +673,10 @@ class Connectivity(object):
                Journal of Neuroscience Methods 125, 195-207.
 
         '''
+        transfer_function = self._transfer_function()
         full_frequency_DTF = (
-            self._transfer_function /
-            _total_inflow(self._transfer_function, axis=(-1, -3)))
+            transfer_function /
+            _total_inflow(transfer_function, axis=(-1, -3)))
         return (np.abs(full_frequency_DTF) *
                 np.sqrt(self.partial_directed_coherence()))
 
