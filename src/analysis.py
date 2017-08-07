@@ -103,15 +103,23 @@ def ripple_triggered_connectivity(
                     multitaper_parameter_name=multitaper_parameter_name,
                     num_pairs=n_pairs))
 
+    ripple_ERP = pd.Panel({
+        lfp_name: reshape_to_trials(
+            lfps[lfp_name], ripple_times).mean(axis=1)
+        for lfp_name in lfps})
+
     ripple_locked_lfps = pd.Panel({
         lfp_name: _subtract_event_related_potential(
             reshape_to_trials(lfps[lfp_name], ripple_times))
         for lfp_name in lfps}).dropna(axis=2)
+
     m = Multitaper(
         np.rollaxis(ripple_locked_lfps.values, 0, 3),
         **params,
         start_time=ripple_locked_lfps.major_axis.min())
     c = Connectivity.from_multitaper(m)
+
+    save_ERP(epoch_key, ripple_ERP, multitaper_parameter_name, group_name)
 
     save_power(
         c, tetrode_info, epoch_key,
@@ -128,6 +136,13 @@ def ripple_triggered_connectivity(
     save_canonical_coherence(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
+
+
+def save_ERP(epoch_key, ERP, multitaper_parameter_name, group_name):
+    group = '{0}/{1}/ERP'.format(
+        multitaper_parameter_name, group_name)
+    save_xarray(
+        epoch_key, ERP.reset_index().to_xarray(), group)
 
 
 def save_power(
