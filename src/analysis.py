@@ -676,7 +676,7 @@ def _get_ripple_motion_from_rows(ripple_info, posterior_density,
     replay_distance_from_animal_position = abs(
         ripple_info.linear_position - replay_position_start_end)
     is_away = np.diff(replay_distance_from_animal_position) > 0
-    return np.where(is_away, 'Away', 'Towards')
+    return np.where(is_away, 'away', 'towards')
 
 
 def _get_ripple_motion(ripple_info, posterior_density, state_names,
