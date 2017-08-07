@@ -505,16 +505,32 @@ class Connectivity(object):
                American Statistical Association 77, 304.
 
         '''
-        rotated_covariance = _remove_instantaneous_causality(
-            self._noise_covariance)
-        total_power = self.power()[..., np.newaxis]
-        intrinsic_power = (total_power -
-                           rotated_covariance[..., np.newaxis, :, :] *
-                           _squared_magnitude(self._transfer_function))
-        intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
-        predictive_power = total_power / intrinsic_power
-        predictive_power[predictive_power <= 0] = np.nan
-        n_signals = predictive_power.shape[-1]
+        cross_spectral_matrix = self._expectation(
+            self._cross_spectral_matrix)
+        n_signals = cross_spectral_matrix.shape[-1]
+        transfer_function = np.empty_like(cross_spectral_matrix)
+        total_power = self.power()
+        n_frequencies = cross_spectral_matrix.shape[-3]
+        non_neg_index = np.arange(0, (n_frequencies + 1) // 2)
+        new_shape = list(cross_spectral_matrix.shape)
+        new_shape[-3] = non_neg_index.size
+        predictive_power = np.empty(new_shape)
+
+        for pair_indices in combinations(range(n_signals), 2):
+            pair_indices = np.array(pair_indices)[:, np.newaxis]
+            minimum_phase_factor = (
+                minimum_phase_decomposition(
+                    cross_spectral_matrix[
+                        ..., pair_indices, pair_indices.T]))
+            transfer_function = _estimate_transfer_function(
+                minimum_phase_factor)[..., non_neg_index, :, :]
+            rotated_covariance = _remove_instantaneous_causality(
+                _estimate_noise_covariance(minimum_phase_factor))
+            predictive_power[..., pair_indices, pair_indices.T] = (
+                _estimate_predictive_power(
+                    total_power[..., pair_indices[:, 0]],
+                    rotated_covariance, transfer_function))
+
         diagonal_ind = np.diag_indices(n_signals)
         predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
 
@@ -898,6 +914,17 @@ def _estimate_transfer_function(minimum_phase):
     return np.matmul(
         minimum_phase,
         np.linalg.inv(inverse_fourier_coefficients[..., 0:1, :, :]))
+
+
+def _estimate_predictive_power(total_power, rotated_covariance,
+                               transfer_function):
+    intrinsic_power = (total_power[..., np.newaxis] -
+                       rotated_covariance[..., np.newaxis, :, :] *
+                       _squared_magnitude(transfer_function))
+    intrinsic_power[intrinsic_power == 0] = np.finfo(float).eps
+    predictive_power = total_power[..., np.newaxis] / intrinsic_power
+    predictive_power[predictive_power <= 0] = np.nan
+    return predictive_power
 
 
 def _squared_magnitude(x):
