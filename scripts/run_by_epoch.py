@@ -11,7 +11,7 @@ from src.analysis import (decode_ripple_clusterless,
                           ripple_triggered_connectivity,
                           connectivity_by_ripple_type)
 from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
-                                 save_ripple_info)
+                                 save_xarray)
 from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
                             MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
                             RIPPLE_COVARIATES)
@@ -46,7 +46,8 @@ def estimate_ripple_coherence(epoch_key):
                 parameters, FREQUENCY_BANDS,
                 multitaper_parameter_name=parameters_name)
 
-    save_ripple_info(epoch_key, ripple_info.reset_index())
+    save_xarray(
+        epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
 
 
 def get_command_line_arguments():

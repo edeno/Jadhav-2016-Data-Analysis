@@ -707,10 +707,6 @@ def get_analysis_file_path(animal, day, epoch):
     return join(PROCESSED_DATA_DIR, filename)
 
 
-def save_ripple_info(epoch_key, ripple_info):
-    save_xarray(epoch_key, ripple_info.to_xarray(), '/ripple_info')
-
-
 def save_xarray(epoch_key, dataset, group):
     path = get_analysis_file_path(*epoch_key)
     write_mode = 'a' if isfile(path) else 'w'
