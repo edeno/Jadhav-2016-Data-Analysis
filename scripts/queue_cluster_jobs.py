@@ -41,7 +41,7 @@ def main():
 
     python_function = 'run_by_epoch.py'
     directives = ' '.join(
-        ['-l h_rt=1:30:00', '-pe omp {0}'.format(NUM_THREADS),
+        ['-l h_rt=3:00:00', '-pe omp {0}'.format(NUM_THREADS),
          '-P braincom', '-notify', '-l mem_total=125G',
          '-v OPENBLAS_NUM_THREADS'])
 
