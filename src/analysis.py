@@ -142,6 +142,7 @@ def ripple_triggered_connectivity(
 
 
 def save_ERP(epoch_key, ERP, multitaper_parameter_name, group_name):
+    logger.info('...saving ERP')
     group = '{0}/{1}/ERP'.format(
         multitaper_parameter_name, group_name)
     save_xarray(epoch_key,
