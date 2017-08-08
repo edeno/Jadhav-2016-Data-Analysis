@@ -141,7 +141,9 @@ def ripple_triggered_connectivity(
 def save_ERP(epoch_key, ERP, multitaper_parameter_name, group_name):
     group = '{0}/{1}/ERP'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(epoch_key, ERP.to_xarray(), group)
+    save_xarray(epoch_key,
+                xr.DataArray(ERP).rename({'dim_1': 'tetrode'}),
+                group)
 
 
 def save_power(
