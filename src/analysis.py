@@ -133,6 +133,9 @@ def ripple_triggered_connectivity(
     save_pairwise_spectral_granger(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
+    save_partial_directed_coherence(
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name)
     save_canonical_coherence(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
@@ -202,6 +205,27 @@ def save_pairwise_spectral_granger(
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
     }
     group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
+        multitaper_parameter_name, group_name)
+    save_xarray(
+        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+
+
+def save_partial_directed_coherence(
+        c, tetrode_info, epoch_key, multitaper_parameter_name,
+        group_name):
+    logger.info('...saving partial directed coherence')
+    dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
+    data_vars = {'partial_directed_coherence': (
+        dimension_names, c.partial_directed_coherence())}
+    coordinates = {
+        'time': _center_time(c.time),
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode1': tetrode_info.tetrode_id.values,
+        'tetrode2': tetrode_info.tetrode_id.values,
+        'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
+        'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
+    }
+    group = '{0}/{1}/partial_directed_coherence'.format(
         multitaper_parameter_name, group_name)
     save_xarray(
         epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
