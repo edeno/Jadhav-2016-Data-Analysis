@@ -35,14 +35,15 @@ def estimate_ripple_coherence(epoch_key):
             FREQUENCY_BANDS, multitaper_parameter_name=parameters_name)
 
     # Compare different types of ripples
-    ripple_info = (
-        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times)[0]
-        .query('ripple_state_probability >= 0.7'))
+    ripple_info = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times)[0]
 
     for covariate in RIPPLE_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             connectivity_by_ripple_type(
-                lfps, epoch_key, tetrode_info, ripple_info, covariate,
+                lfps, epoch_key, tetrode_info,
+                ripple_info.query('ripple_state_probability >= 0.7'),
+                covariate,
                 parameters, FREQUENCY_BANDS,
                 multitaper_parameter_name=parameters_name)
 
