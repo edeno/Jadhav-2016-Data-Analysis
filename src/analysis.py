@@ -103,10 +103,10 @@ def ripple_triggered_connectivity(
                     multitaper_parameter_name=multitaper_parameter_name,
                     num_pairs=n_pairs))
 
-    ripple_ERP = pd.Panel({
-        lfp_name: reshape_to_trials(
+    ripple_ERP = pd.concat({
+        tetrode_info.loc[lfp_name].tetrode_id: reshape_to_trials(
             lfps[lfp_name], ripple_times).mean(axis=1)
-        for lfp_name in lfps})
+        for lfp_name in lfps}, axis=1)
 
     ripple_locked_lfps = pd.Panel({
         lfp_name: _subtract_event_related_potential(
@@ -141,8 +141,7 @@ def ripple_triggered_connectivity(
 def save_ERP(epoch_key, ERP, multitaper_parameter_name, group_name):
     group = '{0}/{1}/ERP'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, ERP.reset_index().to_xarray(), group)
+    save_xarray(epoch_key, ERP.to_xarray(), group)
 
 
 def save_power(
