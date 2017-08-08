@@ -518,18 +518,21 @@ class Connectivity(object):
 
         for pair_indices in combinations(range(n_signals), 2):
             pair_indices = np.array(pair_indices)[:, np.newaxis]
-            minimum_phase_factor = (
-                minimum_phase_decomposition(
-                    cross_spectral_matrix[
-                        ..., pair_indices, pair_indices.T]))
-            transfer_function = _estimate_transfer_function(
-                minimum_phase_factor)[..., non_neg_index, :, :]
-            rotated_covariance = _remove_instantaneous_causality(
-                _estimate_noise_covariance(minimum_phase_factor))
-            predictive_power[..., pair_indices, pair_indices.T] = (
-                _estimate_predictive_power(
-                    total_power[..., pair_indices[:, 0]],
-                    rotated_covariance, transfer_function))
+            try:
+                minimum_phase_factor = (
+                    minimum_phase_decomposition(
+                        cross_spectral_matrix[
+                            ..., pair_indices, pair_indices.T]))
+                transfer_function = _estimate_transfer_function(
+                    minimum_phase_factor)[..., non_neg_index, :, :]
+                rotated_covariance = _remove_instantaneous_causality(
+                    _estimate_noise_covariance(minimum_phase_factor))
+                predictive_power[..., pair_indices, pair_indices.T] = (
+                    _estimate_predictive_power(
+                        total_power[..., pair_indices[:, 0]],
+                        rotated_covariance, transfer_function))
+            except np.linalg.LinAlgError:
+                predictive_power[..., pair_indices, pair_indices.T] = np.nan
 
         diagonal_ind = np.diag_indices(n_signals)
         predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
