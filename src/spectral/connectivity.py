@@ -532,7 +532,8 @@ class Connectivity(object):
                         total_power[..., pair_indices[:, 0]],
                         rotated_covariance, transfer_function))
             except np.linalg.LinAlgError:
-                predictive_power[..., pair_indices, pair_indices.T] = np.nan
+                predictive_power[
+                    ..., pair_indices, pair_indices.T] = np.nan
 
         diagonal_ind = np.diag_indices(n_signals)
         predictive_power[..., diagonal_ind[0], diagonal_ind[1]] = np.nan
