@@ -645,7 +645,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
 def _compute_decision_state_probability(posterior_density, n_states):
     '''The marginal probability of a state given the posterior_density
     '''
-    n_time = len(posterior_density)
+    n_time = posterior_density.shape[0]
     new_shape = (n_time, n_states, -1)
     return np.sum(np.reshape(posterior_density, new_shape), axis=2)
 
