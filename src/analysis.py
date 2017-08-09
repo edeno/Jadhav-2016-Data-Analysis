@@ -325,7 +325,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
                                 sampling_frequency=1500,
-                                n_place_bins=49):
+                                n_place_bins=61):
     '''Labels the ripple by category
 
     Parameters
