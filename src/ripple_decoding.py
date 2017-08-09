@@ -555,9 +555,10 @@ def glm_fit(spikes, design_matrix, ind):
     '''
     try:
         logger.debug('\t\t...Neuron #{}'.format(ind + 1))
-        return GLM(spikes.reindex(design_matrix.index), design_matrix,
-                   family=families.Poisson(),
-                   drop='missing').fit(maxiter=30)
+        fit = GLM(spikes.reindex(design_matrix.index), design_matrix,
+                  family=families.Poisson(),
+                  drop='missing').fit(maxiter=30)
+        return fit if fit.converged else np.nan
     except np.linalg.linalg.LinAlgError:
         warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
         return np.nan
