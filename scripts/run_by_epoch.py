@@ -51,6 +51,18 @@ def estimate_ripple_coherence(epoch_key):
         epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
 
 
+def decode_ripples(epoch_key):
+    ripple_times = detect_epoch_ripples(
+        epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
+
+    # Compare different types of ripples
+    ripple_info = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times)[0]
+
+    save_xarray(
+        epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
+
+
 def get_command_line_arguments():
     parser = ArgumentParser()
     parser.add_argument('Animal', type=str, help='Short name of animal')
@@ -99,7 +111,7 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_coherence(epoch_key)
+    decode_ripples(epoch_key)
 
     logger.info('Finished Processing')
 
