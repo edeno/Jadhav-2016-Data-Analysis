@@ -502,7 +502,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                    for marks in test_marks]
 
     return get_ripple_info(
-        posterior_density, test_spikes, ripple_times,
+        posterior_density, test_spikes, ripple_times, sampling_frequency,
         state_names, position_info, place_bin_centers, epoch_key)
 
 
@@ -584,8 +584,8 @@ def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
 
 
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    state_names, position_info, place_bin_centers,
-                    epoch_key):
+                    sampling_frequency, state_names, position_info,
+                    place_bin_centers, epoch_key):
     '''Summary statistics for ripple categories
 
     Parameters
@@ -600,8 +600,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     -------
     ripple_info : pandas dataframe
     decision_state_probability : array_like
-    posterior_density : array_like
-    state_names : list of str
+    posterior_density : xarray DataArray
 
     '''
     session_time = position_info.index
@@ -638,6 +637,19 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
          ], axis=1)
     ripple_info['ripple_motion'] = _get_ripple_motion(
         ripple_info, posterior_density, state_names, place_bin_centers)
+
+    posterior_density = xr.concat(
+        [xr.DataArray(
+            density.reshape((-1, n_states, place_bin_centers.size)),
+            dims=['time', 'state', 'linear_distance'],
+            coords={
+                 'time': np.arange(density.shape[0]) / sampling_frequency,
+                 'linear_distance': place_bin_centers,
+                 'state': state_names
+            })
+         for density in posterior_density], dims='ripple_number')
+    decision_state_probability = posterior_density.mean('linear_distance')
+
     return (ripple_info, decision_state_probability,
             posterior_density, state_names)
 
