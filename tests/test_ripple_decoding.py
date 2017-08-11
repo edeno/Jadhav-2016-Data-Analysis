@@ -7,7 +7,9 @@ from src.ripple_decoding import (_fix_zero_bins, evaluate_mark_space,
                                  _normalize_column_probability,
                                  combined_likelihood,
                                  normalize_to_probability,
+                                 estimate_place_field,
                                  estimate_ground_process_intensity,
+                                 estimate_place_occupancy,
                                  poisson_mark_likelihood,
                                  _normal_pdf, _update_posterior,
                                  _get_prior, get_bin_centers,
@@ -102,6 +104,41 @@ def test_get_ground_process_intensity():
     expected[31] = 0.50
 
     assert np.allclose(ground_process_intensity, expected)
+
+
+def test_estimate_place_field():
+    '''Tests that there is a Gaussian centered around each given place
+    at spike
+    '''
+    place_bins = np.linspace(0, 150, 61)
+    place_at_spike = np.asarray([25, 100])
+    place_std_deviation = 20
+    place_field_estimator = estimate_place_field(
+        place_bins, place_at_spike,
+        place_std_deviation=place_std_deviation)
+
+    expected1 = norm.pdf(
+        place_bins, place_at_spike[0], place_std_deviation)
+    expected2 = norm.pdf(
+        place_bins, place_at_spike[1], place_std_deviation)
+
+    assert np.allclose(place_field_estimator,
+                       np.vstack((expected1, expected2)).T)
+
+
+def test_estimate_place_occupancy():
+    '''Tests that there is a Gaussian centered around each given place
+    '''
+    place_bins = np.linspace(0, 150, 61)
+    place = np.asarray([25, 100])
+    place_std_deviation = 20
+    place_occupancy = estimate_place_occupancy(
+        place_bins, place, place_std_deviation=place_std_deviation)
+    expected1 = norm.pdf(
+        place_bins, place[0], place_std_deviation)
+    expected2 = norm.pdf(
+        place_bins, place[1], place_std_deviation)
+    assert np.allclose(place_occupancy, expected1 + expected2)
 
 
 def test_poisson_mark_likelihood_is_spike():

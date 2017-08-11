@@ -223,6 +223,34 @@ def joint_mark_intensity(marks, place_field_estimator=None,
             / (mark_std_deviation * n_marks))
 
 
+def estimate_place_field(place_bin_centers, place_at_spike,
+                         place_std_deviation=1):
+    '''Non-parametric estimate of the neuron receptive field with respect
+    to place.
+
+    Puts a Gaussian with a mean at the position the animal is located at
+    when there is a spike
+
+    Parameters
+    ----------
+    place_bin_centers : array_like, shape=(n_parameters,)
+        Evaluate the Gaussian at these bins
+    place_at_spike : array_like, shape=(n_training_spikes,)
+        Position of the animal at spike time
+    place_std_deviation : float, optional
+        Standard deviation of the Gaussian kernel
+
+    Returns
+    -------
+    place_field_estimator : array_like, shape=(n_parameters,
+                                               n_training_spikes)
+
+    '''
+    return _gaussian_kernel(
+        place_bin_centers, means=place_at_spike,
+        std_deviation=place_std_deviation)
+
+
 def estimate_ground_process_intensity(place_field_estimator,
                                       place_occupancy):
     '''The probability of observing a spike regardless of mark. Marginalize
@@ -240,6 +268,29 @@ def estimate_ground_process_intensity(place_field_estimator,
 
     '''
     return place_field_estimator.sum(axis=1) / place_occupancy
+
+
+def estimate_place_occupancy(place_bin_centers, place,
+                             place_std_deviation=1):
+    '''A Gaussian smoothed probability that the animal is in a particular
+    position.
+
+    Denominator in equation #12 and #13 of [1]
+
+    Parameters
+    ----------
+    place_bin_centers : array_like, shape=(n_parameters,)
+    place : array_like, shape=(n_places,)
+    place_std_deviation : float, optional
+
+    Returns
+    -------
+    place_occupancy : array_like, shape=(n_parameters,)
+
+    '''
+    return _gaussian_kernel(
+        place_bin_centers, means=place,
+        std_deviation=place_std_deviation).sum(axis=1)
 
 
 def estimate_marked_encoding_model(place_bin_centers, place,
@@ -269,9 +320,9 @@ def estimate_marked_encoding_model(place_bin_centers, place,
     n_signals, n_states = len(place_at_spike), len(place)
 
     place_occupancy = [
-        _normal_pdf(
-            place_bin_centers[:, np.newaxis], mean=place[state_ind],
-            std_deviation=place_std_deviation).mean(axis=1)
+        estimate_place_occupancy(
+            place_bin_centers, place[state_ind],
+            place_std_deviation=place_std_deviation)
         for state_ind in range(n_states)]
 
     ground_process_intensity = list()
@@ -280,10 +331,9 @@ def estimate_marked_encoding_model(place_bin_centers, place,
 
     for signal_ind in range(n_signals):
         signal_place_field = [
-            _normal_pdf(
-                place_bin_centers[:, np.newaxis],
-                mean=place_at_spike[signal_ind][state_ind],
-                std_deviation=place_std_deviation)
+            estimate_place_field(
+                place_bin_centers, place_at_spike[signal_ind][state_ind],
+                place_std_deviation=place_std_deviation)
             for state_ind in range(n_states)]
 
         signal_ground_process_intensity = [
@@ -603,16 +653,20 @@ def _normal_pdf(x, mean=0, std_deviation=1):
     return np.exp(-0.5 * u ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
 
 
+def _gaussian_kernel(data, means, std_deviation=1):
+    return _normal_pdf(
+        data[:, np.newaxis], mean=means, std_deviation=std_deviation)
+
+
 def estimate_marginalized_joint_mark_intensity(
     mark_bin_edges, place_bin_edges, marks, position_at_spike,
         all_positions, mark_std_deviation, place_std_deviation):
 
-    mark_at_spike = _normal_pdf(mark_bin_edges[:, np.newaxis],
-                                marks, mark_std_deviation)
-    place_at_spike = _normal_pdf(place_bin_edges[:, np.newaxis],
-                                 position_at_spike, place_std_deviation)
-    place_occupancy = _normal_pdf(
-        place_bin_edges[:, np.newaxis], mean=all_positions,
-        std_deviation=place_std_deviation).sum(axis=1)
+    mark_at_spike = _gaussian_kernel(mark_bin_edges, marks,
+                                     mark_std_deviation)
+    place_at_spike = _gaussian_kernel(place_bin_edges, position_at_spike,
+                                      place_std_deviation)
+    place_occupancy = _gaussian_kernel(place_bin_edges, all_positions,
+                                       place_std_deviation).sum(axis=1)
     return (np.dot(place_at_spike, mark_at_spike.T) /
             place_occupancy[:, np.newaxis])
