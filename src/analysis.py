@@ -651,7 +651,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
     decision_state_probability = posterior_density.mean('linear_distance')
 
     return (ripple_info, decision_state_probability,
-            posterior_density, state_names)
+            posterior_density)
 
 
 def _compute_decision_state_probability(posterior_density, n_states):
