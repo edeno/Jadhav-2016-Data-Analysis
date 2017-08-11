@@ -173,13 +173,9 @@ def evaluate_mark_space(test_marks, training_marks=None,
     mark_space_estimator : array_like, shape=(n_training_spikes,)
 
     '''
-    n_training_spikes = training_marks.shape[0]
-    test_marks = (test_marks[:, np.newaxis].T *
-                  np.ones((n_training_spikes, 1)))
     return np.nanprod(
         _normal_pdf(test_marks, mean=training_marks,
-                    std_deviation=mark_std_deviation),
-        axis=1)
+                    std_deviation=mark_std_deviation), axis=1)
 
 
 def joint_mark_intensity(marks, place_field_estimator=None,
@@ -250,14 +246,9 @@ def estimate_place_field(place_bin_centers, place_at_spike,
                                                n_training_spikes)
 
     '''
-    n_parameters, n_spikes = (place_bin_centers.shape[0],
-                              place_at_spike.shape[0])
-    place_bin_centers = np.tile(place_bin_centers[:, np.newaxis],
-                                (1, n_spikes))
-    place_at_spike = np.tile(
-        place_at_spike[:, np.newaxis], (1, n_parameters)).T
-    return _normal_pdf(place_bin_centers, mean=place_at_spike,
-                       std_deviation=place_std_deviation)
+    return _gaussian_kernel(
+        place_bin_centers, means=place_at_spike,
+        std_deviation=place_std_deviation)
 
 
 def estimate_ground_process_intensity(place_field_estimator,
@@ -297,12 +288,9 @@ def estimate_place_occupancy(place_bin_centers, place,
     place_occupancy : array_like, shape=(n_parameters,)
 
     '''
-    n_parameters, n_places = place_bin_centers.shape[0], place.shape[0]
-    place_bin_centers = np.tile(place_bin_centers[:, np.newaxis],
-                                (1, n_places))
-    place = np.tile(place[:, np.newaxis], (1, n_parameters)).T
-    return _normal_pdf(place_bin_centers, mean=place,
-                       std_deviation=place_std_deviation).sum(axis=1)
+    return _gaussian_kernel(
+        place_bin_centers, means=place,
+        std_deviation=place_std_deviation).sum(axis=1)
 
 
 def estimate_marked_encoding_model(place_bin_centers, place,
@@ -666,10 +654,8 @@ def _normal_pdf(x, mean=0, std_deviation=1):
 
 
 def _gaussian_kernel(data, means, std_deviation=1):
-    n_means, n_data = means.shape[0], data.shape[0]
-    means = np.tile(means, (n_data, 1))
-    data = np.tile(data, (n_means, 1)).T
-    return _normal_pdf(data, mean=means, std_deviation=std_deviation)
+    return _normal_pdf(
+        data[:, np.newaxis], mean=means, std_deviation=std_deviation)
 
 
 def estimate_marginalized_joint_mark_intensity(
