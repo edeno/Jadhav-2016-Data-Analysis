@@ -630,7 +630,7 @@ def glm_val(fitted_model, predict_design_matrix):
     try:
         return fitted_model.predict(predict_design_matrix)
     except AttributeError:
-        return np.ones(predict_design_matrix.shape[0]) * np.nan
+        return np.full(predict_design_matrix.shape[0], np.nan)
 
 
 def _get_conditional_intensity(fit, predict_design_matrix):
