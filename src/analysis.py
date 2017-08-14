@@ -647,7 +647,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
                  'linear_distance': place_bin_centers,
                  'state': state_names
             })
-         for density in posterior_density], dims='ripple_number')
+         for density in posterior_density], dim='ripple_number')
     decision_state_probability = posterior_density.sum('linear_distance')
 
     return (ripple_info, decision_state_probability,
