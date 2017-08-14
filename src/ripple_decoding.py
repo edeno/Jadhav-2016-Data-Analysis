@@ -494,8 +494,8 @@ def set_initial_conditions(place_bin_edges,
             prior_probability_of_state)
 
 
-def estimate_state_transition(train_position_info,
-                              place_bin_edges):
+def estimate_state_transition(train_position_info, place_bin_edges,
+                              sequence_compression_factor=16):
     '''The block-diagonal empirical state transition matrix for each state:
     Outbound-Forward, Outbound-Reverse, Inbound-Forward, Inbound-Reverse
 
@@ -515,7 +515,8 @@ def estimate_state_transition(train_position_info,
     '''
     state_transition = {
         state_name: empirical_movement_transition_matrix(
-            position_info.linear_distance, place_bin_edges)
+            position_info.linear_distance, place_bin_edges,
+            sequence_compression_factor=sequence_compression_factor)
         for state_name, position_info
         in train_position_info.groupby('trajectory_direction')}
 
