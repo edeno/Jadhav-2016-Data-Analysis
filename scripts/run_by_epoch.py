@@ -58,7 +58,7 @@ def decode_ripples(epoch_key):
     # Compare different types of ripples
     (ripple_info, decision_state_probability,
      posterior_density) = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)[0]
+        epoch_key, ANIMALS, ripple_times)
 
     save_xarray(
         epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
