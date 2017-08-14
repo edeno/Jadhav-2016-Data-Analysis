@@ -56,11 +56,17 @@ def decode_ripples(epoch_key):
         epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
     # Compare different types of ripples
-    ripple_info = decode_ripple_clusterless(
+    (ripple_info, decision_state_probability,
+     posterior_density) = decode_ripple_clusterless(
         epoch_key, ANIMALS, ripple_times)[0]
 
     save_xarray(
         epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
+    save_xarray(
+        epoch_key, decision_state_probability,
+        '/decision_state_probability')
+    save_xarray(
+        epoch_key, posterior_density, '/posterior_density')
 
 
 def get_command_line_arguments():
