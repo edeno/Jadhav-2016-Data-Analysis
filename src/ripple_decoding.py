@@ -84,15 +84,14 @@ def normalize_to_probability(distribution):
     '''Ensure the distribution integrates to 1 so that it is a probability
     distribution
     '''
-    return distribution / np.nansum(distribution, axis=-1)
+    return distribution / np.nansum(distribution)
 
 
 def _get_prior(posterior, state_transition):
     '''The prior given the current posterior density and a transition
     matrix indicating the state at the next time step.
     '''
-    return np.matmul(
-        state_transition, posterior[..., np.newaxis]).squeeze()
+    return np.dot(state_transition, posterior)
 
 
 def poisson_likelihood(is_spike, conditional_intensity=None,
