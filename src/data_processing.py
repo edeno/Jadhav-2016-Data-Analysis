@@ -216,7 +216,7 @@ def _convert_to_dict(struct_array):
     try:
         return {name: struct_array[name].item().item()
                 for name in struct_array.dtype.names
-                if struct_array[name].item().size > 0}
+                if struct_array[name].item().size == 1}
     except TypeError:
         return {}
 
