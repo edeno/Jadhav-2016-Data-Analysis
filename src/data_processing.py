@@ -3,7 +3,6 @@
 '''
 
 from glob import glob
-from itertools import combinations
 from logging import getLogger
 from os.path import abspath, join, pardir, isfile, dirname
 from sys import exit
@@ -537,40 +536,6 @@ def reshape_to_segments(dataframe, segments, window_offset=None,
         keys=segment_label,
         names=['segment_number', 'segment_start', 'segment_end'],
         axis=concat_axis).sort_index())
-
-
-def make_tetrode_pair_info(tetrode_info):
-    pair_keys = pd.MultiIndex.from_tuples(
-        list(combinations(tetrode_info.index, 2)),
-        names=['tetrode1', 'tetrode2'])
-    no_rename = {'animal_1': 'animal',
-                 'day_1': 'day',
-                 'epoch_1': 'epoch'}
-    tetrode1 = (tetrode_info
-                .loc[pair_keys.get_level_values('tetrode1')]
-                .reset_index(drop=True)
-                .add_suffix('_1')
-                .rename(columns=no_rename)
-                )
-    tetrode2 = (tetrode_info
-                .loc[pair_keys.get_level_values('tetrode2')]
-                .reset_index(drop=True)
-                .drop(['animal', 'day', 'epoch'], axis=1)
-                .add_suffix('_2')
-                )
-    return (pd.concat([tetrode1, tetrode2], axis=1)
-            .set_index(pair_keys))
-
-
-def make_area_pair_info(tetrode_info, epoch_key):
-    area_pairs = area_pairs = list(combinations(
-        sorted(tetrode_info.area.unique()), 2))
-    return (pd.DataFrame(area_pairs, columns=['area_1', 'area_2'])
-            .assign(animal=epoch_key[0],
-                    day=epoch_key[1],
-                    epoch=epoch_key[2])
-            .set_index(['animal', 'day', 'epoch', 'area_1', 'area_2'],
-                       drop=False))
 
 
 def get_mark_dataframe(tetrode_key, animals):
