@@ -214,8 +214,9 @@ def get_tetrode_info(animal):
 
 def _convert_to_dict(struct_array):
     try:
-        return {name: np.squeeze(struct_array[name][0, 0][0])
-                for name in struct_array.dtype.names}
+        return {name: struct_array[name].item().item()
+                for name in struct_array.dtype.names
+                if struct_array[name].item().size > 0}
     except TypeError:
         return {}
 
