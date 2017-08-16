@@ -11,7 +11,8 @@ from src.analysis import (decode_ripple_clusterless,
                           ripple_triggered_connectivity,
                           connectivity_by_ripple_type)
 from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
-                                 save_xarray)
+                                 save_xarray,
+                                 get_interpolated_position_dataframe)
 from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
                             MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
                             RIPPLE_COVARIATES)
@@ -67,6 +68,10 @@ def decode_ripples(epoch_key):
         '/decision_state_probability')
     save_xarray(
         epoch_key, posterior_density, '/posterior_density')
+
+    position_df = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+    save_xarray(
+        epoch_key, position_df, '/position_df')
 
 
 def get_command_line_arguments():
