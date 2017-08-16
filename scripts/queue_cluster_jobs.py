@@ -7,7 +7,7 @@ from subprocess import run
 from sys import exit
 
 from src.data_processing import make_epochs_dataframe
-from src.parameters import ANIMALS, N_DAYS
+from src.parameters import ANIMALS
 
 
 def get_command_line_arguments():
@@ -47,7 +47,7 @@ def main():
 
     args = get_command_line_arguments()
     if args.Animal is None and args.Day is None and args.Epoch is None:
-        epoch_info = make_epochs_dataframe(ANIMALS, range(1, N_DAYS + 1))
+        epoch_info = make_epochs_dataframe(ANIMALS)
         epoch_keys = epoch_info[(epoch_info.type == 'run') & (
             epoch_info.environment != 'lin')].index
     else:

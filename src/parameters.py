@@ -69,5 +69,3 @@ FREQUENCY_BANDS = {
 }
 
 ALPHA = 1E-2
-
-N_DAYS = 8
