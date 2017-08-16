@@ -303,36 +303,32 @@ def _add_to_dict(dictionary, tetrode_ind, neuron_ind):
     return dictionary
 
 
-def make_epochs_dataframe(animals, days):
-    # Get all epochs
-    tasks = [(get_data_structure(
-        animals[animal], day, 'task', 'task'), animal, day)
-        for animal in animals
-        for day in days]
-    epochs = [epoch
-              for day_structure, _, _ in tasks
-              for epoch in day_structure]
+def load_task(file_name, animal):
+    data = loadmat(file_name, variable_names=('task'))['task']
+    day = data.shape[-1]
+    epochs = data[0, -1][0]
+    n_epochs = len(epochs)
+    index = pd.MultiIndex.from_product(
+        ([animal.directory], [day], np.arange(n_epochs) + 1),
+        names=['animal', 'day', 'epoch'])
 
-    task_dataframe = pd.DataFrame([
-        {name: epoch[name][0][0][0]
+    return pd.DataFrame(
+        [{name: epoch[name].item().squeeze()
          for name in epoch.dtype.names
-         if name not in 'linearcoord'}
-        for epoch in epochs])
+         if name in ['environment', 'exposure', 'type']}
+         for epoch in epochs]).set_index(index)
 
-    index_labels = pd.DataFrame([{'animal': animal,
-                                  'day': day,
-                                  'epoch': epoch_ind + 1}
-                                 for day_structure, animal, day in tasks
-                                 for epoch_ind, _ in enumerate(
-        day_structure)])
 
-    return (pd.concat(
-        [index_labels, task_dataframe],
-        axis=1, join_axes=[task_dataframe.index])
-        .set_index(['animal', 'day', 'epoch'], drop=False)
-        .sort_index()
-        .assign(environment=lambda x: pd.Categorical(x['environment']))
-        .assign(type=lambda x: pd.Categorical(x['type'])))
+def get_task(animal):
+    task_files = glob(join(RAW_DATA_DIR, animal.directory, '*task*.mat'))
+    return pd.concat(load_task(task_file, animal)
+                     for task_file in task_files)
+
+
+def make_epochs_dataframe(animals):
+    return (
+        pd.concat([get_task(animal) for animal in animals.values()])
+        .sort_index())
 
 
 def make_tetrode_dataframe(animals):
