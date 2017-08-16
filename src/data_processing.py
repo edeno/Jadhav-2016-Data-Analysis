@@ -333,10 +333,10 @@ def make_epochs_dataframe(animals):
 
 
 def make_tetrode_dataframe(animals):
-    tetrode_file_names = [(get_tetrode_info(animals[animal]), animal)
-                          for animal in animals]
-    tetrode_data = [(loadmat(file_name[0]), file_name[1])
-                    for file_name in tetrode_file_names]
+    tetrode_file_names = [(get_tetrode_info(animal), animal.short_name)
+                          for animal in animals.values()]
+    tetrode_data = [(loadmat(file_name), animal)
+                    for file_name, animal in tetrode_file_names]
 
     # Make a dictionary with (animal, day, epoch) as the keys
     return {(animal, day_ind + 1, epoch_ind + 1):
