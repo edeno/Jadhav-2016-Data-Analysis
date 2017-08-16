@@ -6,7 +6,8 @@ Animal = namedtuple('Animal', {'directory', 'short_name'})
 ANIMALS = {
     'HPa': Animal(directory='HPa_direct', short_name='HPa'),
     'HPb': Animal(directory='HPb_direct', short_name='HPb'),
-    'HPc': Animal(directory='HPc_direct', short_name='HPc')
+    'HPc': Animal(directory='HPc_direct', short_name='HPc'),
+    'Bond': Animal(directory='Bond', short_name='bon')
 }
 
 
