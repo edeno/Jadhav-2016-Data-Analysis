@@ -22,7 +22,7 @@ def estimate_ripple_coherence(epoch_key):
     ripple_times = detect_epoch_ripples(
         epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
-    tetrode_info = make_tetrode_dataframe(ANIMALS)[epoch_key]
+    tetrode_info = make_tetrode_dataframe(ANIMALS).loc[epoch_key]
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
 

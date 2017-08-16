@@ -310,7 +310,7 @@ def load_task(file_name, animal):
     epochs = data[0, -1][0]
     n_epochs = len(epochs)
     index = pd.MultiIndex.from_product(
-        ([animal.directory], [day], np.arange(n_epochs) + 1),
+        ([animal.short_name], [day], np.arange(n_epochs) + 1),
         names=['animal', 'day', 'epoch'])
 
     return pd.DataFrame(
@@ -339,13 +339,13 @@ def make_tetrode_dataframe(animals):
                     for file_name, animal in tetrode_file_names]
 
     # Make a dictionary with (animal, day, epoch) as the keys
-    return {(animal, day_ind + 1, epoch_ind + 1):
-            convert_tetrode_epoch_to_dataframe(
+    return pd.concat(
+        [convert_tetrode_epoch_to_dataframe(
                 epoch, animal, day_ind + 1, epoch_ind + 1)
-            for info, animal in tetrode_data
-            for day_ind, day in enumerate(info['tetinfo'].T)
-            for epoch_ind, epoch in enumerate(day[0].T)
-            }
+         for info, animal in tetrode_data
+         for day_ind, day in enumerate(info['tetinfo'].T)
+         for epoch_ind, epoch in enumerate(day[0].T)
+         ]).sort_index()
 
 
 def filter_list_by_pandas_series(list_to_filter, pandas_boolean_series):
@@ -486,7 +486,11 @@ def get_trial_time(key, animals):
     except ValueError:
         # no tetrode number provided
         tetrode_info = make_tetrode_dataframe(animals)
-        animal, day, epoch, tetrode_number = tetrode_info[key].index[0]
+        animal, day, epoch, tetrode_number = (
+            tetrode_info
+            .loc[key]
+            .set_index(['animal', 'day', 'epoch', 'tetrode_number'])
+            .index[0])
     lfp_df = get_LFP_dataframe(
         (animal, day, epoch, tetrode_number), animals)
     return lfp_df.index

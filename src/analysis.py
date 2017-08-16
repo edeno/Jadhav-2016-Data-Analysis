@@ -307,18 +307,23 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     still moving.
     '''
     logger.info('Detecting ripples')
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_key]
+    tetrode_info = (
+        make_tetrode_dataframe(animals)
+        .loc[epoch_key]
+        .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
+                   drop=False))
     # Get cell-layer CA1, iCA1 LFPs
-    is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1']) &
-                      tetrode_info.descrip.isin(['riptet']))
+    is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1', 'CA3']) &
+                      (tetrode_info.descrip.isin(['riptet']) |
+                       tetrode_info.validripple)
+                      )
     logger.debug(tetrode_info[is_hippocampal]
                  .loc[:, ['area', 'depth', 'descrip']])
     tetrode_keys = tetrode_info[is_hippocampal].index.tolist()
-    CA1_lfps = [get_LFP_dataframe(tetrode_key, animals)
-                for tetrode_key in tetrode_keys]
+    hippocampus_lfps = [get_LFP_dataframe(tetrode_key, animals)
+                        for tetrode_key in tetrode_keys]
     candidate_ripple_times = ripple_detection_function(
-        CA1_lfps, **ripple_detection_kwargs)
+        hippocampus_lfps, **ripple_detection_kwargs)
     return exclude_movement_during_ripples(
         candidate_ripple_times, epoch_key, animals, speed_threshold)
 
@@ -428,12 +433,19 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               scheduler=local.get_sync,
                               scheduler_kwargs={}):
     logger.info('Decoding ripples')
-    tetrode_info = make_tetrode_dataframe(animals)[epoch_key]
     mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
                       'channel_4_max']
-    hippocampal_tetrodes = tetrode_info.loc[
-        tetrode_info.area.isin(['CA1', 'iCA1']) &
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False), :]
+    tetrode_info = (
+        make_tetrode_dataframe(animals)
+        .loc[epoch_key]
+        .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
+                   drop=False))
+    # Get cell-layer CA1, iCA1 LFPs
+    is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1', 'CA3']) &
+                      (tetrode_info.descrip.isin(['riptet']) |
+                       tetrode_info.validripple)
+                      )
+    hippocampal_tetrodes = tetrode_info[is_hippocampal]
     logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
