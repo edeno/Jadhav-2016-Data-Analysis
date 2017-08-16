@@ -4,7 +4,10 @@
 
 from glob import glob
 from logging import getLogger
+from os import listdir, makedirs, walk
 from os.path import abspath, join, pardir, isfile, dirname
+from shutil import copyfile
+import re
 from sys import exit
 from warnings import filterwarnings
 
@@ -805,3 +808,92 @@ def read_analysis_files(epoch_keys, **kwargs):
 def get_group_name(resolution, covariate, level, connectivity_measure):
     return ('/'.join([resolution, covariate, level, connectivity_measure])
             .replace('//', '/'))
+
+
+def copy_animal(animal, src_directory, target_directory):
+    '''
+
+    Parameters
+    ----------
+    animal : namedtuple
+    src_directory : str
+    target_directory : str
+
+    '''
+    processed_data_dir = join(src_directory, animal.short_name)
+    target_data_dir = join(target_directory, animal.directory)
+    try:
+        makedirs(target_data_dir)
+    except FileExistsError:
+        pass
+
+    FILE_TYPES = ['cellinfo', 'linpos', 'pos', 'rawpos', 'task', 'tetinfo',
+                  'spikes']
+    data_files = [file_name for file_name in listdir(processed_data_dir)
+                  if any(
+                    [file_type in file_name for file_type in FILE_TYPES])]
+    for file_name in data_files:
+        old_path = join(processed_data_dir, file_name)
+        new_path = join(target_data_dir, file_name)
+
+        print('Copying {old_path}\nto \n{new_path}\n'.format(
+            old_path=old_path,
+            new_path=new_path
+        ))
+        copyfile(old_path, new_path)
+
+    src_lfp_data_dir = join(processed_data_dir, 'EEG')
+    target_lfp_data_dir = join(target_data_dir, 'EEG')
+    try:
+        makedirs(target_lfp_data_dir)
+    except FileExistsError:
+        pass
+    lfp_files = [file for file in listdir(src_lfp_data_dir)
+                 if 'gnd' not in file and 'eeg' in file]
+
+    for file_name in lfp_files:
+        old_path = join(src_lfp_data_dir, file_name)
+        new_path = join(target_lfp_data_dir, file_name)
+
+        print('Copying {old_path}\nto \n{new_path}\n'.format(
+            old_path=old_path,
+            new_path=new_path
+        ))
+        copyfile(old_path, new_path)
+
+    marks_directory = join(src_directory, animal.directory)
+    mark_files = [join(root, f) for root, _, files in walk(marks_directory)
+                  for f in files if f.endswith('_params.mat')
+                  and not f.startswith('matclust')]
+    new_mark_filenames = [rename_mark_file(mark_file, animal)
+                          for mark_file in mark_files]
+    for mark_file, new_filename in zip(mark_files, new_mark_filenames):
+        mark_path = join(target_lfp_data_dir, new_filename)
+        print('Copying {mark_file}\nto \n{new_filename}\n'.format(
+            mark_file=mark_file,
+            new_filename=mark_path
+        ))
+        copyfile(mark_file, mark_path)
+
+
+def rename_mark_file(file_str, animal):
+    matched = re.match(
+        r'.*(\d.+)-(\d.+)_params.mat', file_str.split('/')[-1])
+    try:
+        day, tetrode_number = matched.groups()
+    except AttributeError:
+        matched = re.match(
+            r'.*(\d+)-.*-(\d+)_params.mat', file_str.split('/')[-1])
+        try:
+            day, tetrode_number = matched.groups()
+        except AttributeError:
+            print(file_str)
+            raise
+
+    new_name = ('{animal}marks{day:02d}-{tetrode_number:02d}.mat'.format(
+        animal=animal.short_name,
+        day=int(day),
+        tetrode_number=int(tetrode_number)
+    ))
+
+    return new_name
