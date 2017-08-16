@@ -67,7 +67,7 @@ def get_epochs(animal, day):
         task_file = loadmat(
             get_data_filename(animal, day, 'task'))
         return [(animal, day, ind + 1)
-                for ind, epoch in enumerate(task_file['task'][0, - 1][0])]
+                for ind, epoch in enumerate(task_file['task'][0, -1][0])]
     except IOError as err:
         logger.error('Failed to load file {0}'.format(
             get_data_filename(animal, day, 'task')))
