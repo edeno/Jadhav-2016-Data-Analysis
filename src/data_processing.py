@@ -656,13 +656,6 @@ def get_computed_consensus_ripple_times(epoch_key, animals):
     return list(map(tuple, ripples_data[epoch - 1]['riptimes'][0][0]))
 
 
-def get_lfps_by_area(area, tetrode_info, lfps):
-    '''Returns a Pandas Panel of lfps with shape: (lfps x time x trials)'''
-    return pd.Panel({tetrode_key: lfps[tetrode_key]
-                     for tetrode_key
-                     in tetrode_info[tetrode_info.area == area].index})
-
-
 def get_analysis_file_path(animal, day, epoch):
     filename = '{animal}_{day:02d}_{epoch:02d}.nc'.format(
         animal=animal, day=day, epoch=epoch)
@@ -673,15 +666,6 @@ def save_xarray(epoch_key, dataset, group):
     path = get_analysis_file_path(*epoch_key)
     write_mode = 'a' if isfile(path) else 'w'
     dataset.to_netcdf(path=path, group=group, mode=write_mode)
-
-
-def get_all_tetrode_info():
-    '''Retrieves all the hdf5 files from the Processed Data directory
-    and returns the tetrode pair info dataframe'''
-    file_path = join(PROCESSED_DATA_DIR, '*.nc')
-    hdf5_files = glob(file_path)
-    return pd.concat([pd.read_hdf(filename, key='/tetrode_info')
-                      for filename in hdf5_files]).sort_index()
 
 
 def _open_dataset(*args, **kwargs):
