@@ -118,20 +118,18 @@ def get_position_dataframe(epoch_key, animals):
     list of tuples with the format (animal, day, epoch_number)
     '''
     animal, day, epoch = epoch_key
-    epoch_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
+    position_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
         epoch - 1]['data'][0, 0]
-    return _convert_position_array_to_dataframe(epoch_data)
-
-
-def _convert_position_array_to_dataframe(array):
-    column_names = ['time', 'x_position', 'y_position', 'head_direction',
-                    'speed', 'smoothed_x_position', 'smoothed_y_position',
-                    'smoothed_head_direction', 'smoothed_speed']
-    drop_columns = ['smoothed_x_position', 'smoothed_y_position',
-                    'smoothed_speed', 'smoothed_head_direction']
-    return (pd.DataFrame(array, columns=column_names)
-            .set_index('time')
-            .drop(drop_columns, axis=1))
+    field_names = get_data_structure(animals[animal], day, 'pos', 'pos')[
+        epoch - 1]['fields'][0, 0].item().split()
+    NEW_NAMES = {'x': 'x_position',
+                 'y': 'y_position',
+                 'dir': 'head_direction',
+                 'vel': 'speed'}
+    return (pd.DataFrame(
+                position_data, columns=field_names, index=time_index)
+            .rename(columns=NEW_NAMES)
+            .drop('time', axis=1))
 
 
 def find_closest_ind(search_array, target):
