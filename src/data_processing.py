@@ -227,13 +227,13 @@ def get_LFP_dataframe(tetrode_key, animals):
     '''
     lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
     lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-    lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0][0],
+    lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0].item(),
                              lfp_data['data'][0, 0].size,
                              lfp_data['samprate'][0, 0])
-    data_dict = {'time': lfp_time,
-                 'electric_potential': lfp_data['data'][0, 0].squeeze()
-                 }
-    return pd.DataFrame(data_dict).set_index('time').sort_index()
+    return pd.Series(
+        data=lfp_data['data'][0, 0].squeeze(),
+        index=lfp_time,
+        name='electric_potential')
 
 
 def _get_LFP_time(start_time, number_samples, sampling_frequency):
