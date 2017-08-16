@@ -186,11 +186,8 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal,
     tetrode_dict_list = [_convert_to_dict(
         tetrode) for tetrode in tetrodes_in_epoch[0][0]]
     return (pd.DataFrame(tetrode_dict_list)
-            # convert numcells to integer type
-              .assign(numcells=lambda x: x['numcells'].astype(int))
-            # convert depth to integer type
-              .assign(depth=lambda x: x['depth'].astype(int))
-            # convert numcells to integer type
+              .assign(numcells=lambda x: x['numcells'])
+              .assign(depth=lambda x: x['depth'])
               .assign(area=lambda x: x['area'])
               .assign(animal=lambda x: animal)
               .assign(day=lambda x: day)
