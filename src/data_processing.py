@@ -126,6 +126,7 @@ def get_position_dataframe(epoch_key, animals):
                  'y': 'y_position',
                  'dir': 'head_direction',
                  'vel': 'speed'}
+    time_index = position_data[:, field_names.index('time')]
     return (pd.DataFrame(
                 position_data, columns=field_names, index=time_index)
             .rename(columns=NEW_NAMES)
