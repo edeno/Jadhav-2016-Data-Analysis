@@ -215,7 +215,11 @@ def _ripple_bandpass_filter(data):
     Frank lab filter
     '''
     filter_numerator, filter_denominator = _get_ripplefilter_kernel()
-    return filtfilt(filter_numerator, filter_denominator, data, axis=0)
+    is_nan = np.isnan(data)
+    filtered_data = np.full_like(data, np.nan)
+    filtered_data[~is_nan] = filtfilt(
+        filter_numerator, filter_denominator, data[~is_nan], axis=0)
+    return filtered_data
 
 
 def _get_ripplefilter_kernel():
