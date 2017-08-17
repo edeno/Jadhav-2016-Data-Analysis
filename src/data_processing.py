@@ -131,7 +131,8 @@ def get_position_dataframe(epoch_key, animals):
     return (pd.DataFrame(
                 position_data, columns=field_names, index=time_index)
             .rename(columns=NEW_NAMES)
-            .drop('time', axis=1))
+            .drop([name for name in field_names
+                   if name not in NEW_NAMES], axis=1))
 
 
 def find_closest_ind(search_array, target):
