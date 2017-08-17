@@ -84,7 +84,7 @@ def mulititaper_Karlsson_method(lfps, minimum_duration=0.015,
 def Kay_method(lfps, minimum_duration=0.015, zscore_threshold=2,
                smoothing_sigma=0.004, sampling_frequency=1500):
     filtered_lfps = [pd.Series(
-        _ripple_bandpass_filter(lfp.values.flatten()), index=lfp.index)
+        _ripple_bandpass_filter(lfp.values.ravel()), index=lfp.index)
         for lfp in lfps]
     return _get_candidate_ripples_Kay(
         filtered_lfps, is_multitaper=False,
