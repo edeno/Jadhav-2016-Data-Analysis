@@ -71,7 +71,7 @@ def decode_ripples(epoch_key):
 
     position_df = get_interpolated_position_dataframe(epoch_key, ANIMALS)
     save_xarray(
-        epoch_key, position_df, '/position_df')
+        epoch_key, position_df.to_xarray(), '/position_df')
 
 
 def get_command_line_arguments():
