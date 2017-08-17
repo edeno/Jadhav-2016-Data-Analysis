@@ -79,22 +79,17 @@ def get_epochs(animal, day):
 
 def get_data_structure(animal, day, file_type, variable):
     '''Returns a filtered list containing the data structures corresponding
-    to the animal, day, file_type, epoch specified.
+    to the animal, day, file_type for all epochs
     '''
-    epoch = get_epochs(animal, day)
     try:
         file = loadmat(get_data_filename(animal, day, file_type))
     except IOError:
         logger.error('Failed to load file: {0}'.format(
             get_data_filename(animal, day, file_type)))
         exit()
-    try:
-        return [file[variable][0, day - 1][0, ind - 1]
-                for _, day, ind in epoch]
-    except IndexError:
-        # candripples file doesn't have a cell for the last epoch.
-        return [file[variable][0, day - 1][0, ind - 1]
-                for _, day, ind in epoch[:-1]]
+    n_epochs = file[variable][0, -1].size
+    return [file[variable][0, -1][0, ind]
+            for ind in np.arange(n_epochs)]
 
 
 def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):
