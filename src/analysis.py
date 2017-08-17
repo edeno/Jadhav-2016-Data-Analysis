@@ -450,8 +450,11 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     marks = [(get_mark_indicator_dataframe(tetrode_key, animals)
               .loc[:, mark_variables])
              for tetrode_key in hippocampal_tetrodes.index]
+
+    # NOTE: This excludes tetrodes unaligned to the first tetrode
     marks = [tetrode_marks for tetrode_marks in marks
-             if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
+             if (tetrode_marks.join(position_info.speed)
+                 .query('speed > 4').dropna()
                  .shape[0]) != 0]
 
     train_position_info = position_info.query('speed > 4')
