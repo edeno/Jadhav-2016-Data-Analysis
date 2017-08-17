@@ -320,8 +320,11 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     logger.debug(tetrode_info[is_hippocampal]
                  .loc[:, ['area', 'depth', 'descrip']])
     tetrode_keys = tetrode_info[is_hippocampal].index.tolist()
-    hippocampus_lfps = [get_LFP_dataframe(tetrode_key, animals)
-                        for tetrode_key in tetrode_keys]
+    hippocampus_lfps = pd.concat(
+        [get_LFP_dataframe(tetrode_key, animals)
+         for tetrode_key in tetrode_keys], axis=1)
+    hippocampus_lfps = [hippocampus_lfps.iloc[:, ind]
+                        for ind in range(hippocampus_lfps.shape[1])]
     candidate_ripple_times = ripple_detection_function(
         hippocampus_lfps, **ripple_detection_kwargs)
     return exclude_movement_during_ripples(
