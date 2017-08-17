@@ -126,7 +126,8 @@ def get_position_dataframe(epoch_key, animals):
                  'y': 'y_position',
                  'dir': 'head_direction',
                  'vel': 'speed'}
-    time_index = position_data[:, field_names.index('time')]
+    time_index = pd.Index(
+        position_data[:, field_names.index('time')], name='time')
     return (pd.DataFrame(
                 position_data, columns=field_names, index=time_index)
             .rename(columns=NEW_NAMES)
@@ -226,9 +227,10 @@ def get_LFP_dataframe(tetrode_key, animals):
     '''
     lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
     lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-    lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0].item(),
-                             lfp_data['data'][0, 0].size,
-                             lfp_data['samprate'][0, 0])
+    lfp_time = pd.Index(_get_LFP_time(lfp_data['starttime'][0, 0].item(),
+                                      lfp_data['data'][0, 0].size,
+                                      lfp_data['samprate'][0, 0]),
+                        name='time')
     return pd.Series(
         data=lfp_data['data'][0, 0].squeeze(),
         index=lfp_time,
@@ -584,7 +586,9 @@ def get_mark_filename(tetrode_key, animals):
 
 
 def get_mark_indicator_dataframe(tetrode_key, animals):
-    time = get_trial_time(tetrode_key, animals)
+    # NOTE: Using first tetrode time because of a problem with LFP
+    # extraction in Bond. In general this is not desirable.
+    time = get_trial_time(tetrode_key[:3], animals)
     mark_dataframe = (get_mark_dataframe(tetrode_key, animals)
                       .loc[time.min():time.max()])
     mark_dataframe.index = time[
