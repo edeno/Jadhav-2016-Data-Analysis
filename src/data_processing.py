@@ -225,16 +225,20 @@ def get_LFP_dataframe(tetrode_key, animals):
     ''' Given a tetrode key tuple and the animals dictionary,
     return the LFP data and start time
     '''
-    lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
-    lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-    lfp_time = pd.Index(_get_LFP_time(lfp_data['starttime'][0, 0].item(),
-                                      lfp_data['data'][0, 0].size,
-                                      lfp_data['samprate'][0, 0]),
-                        name='time')
-    return pd.Series(
-        data=lfp_data['data'][0, 0].squeeze(),
-        index=lfp_time,
-        name='electric_potential')
+    try:
+        lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
+        lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
+        lfp_time = pd.Index(
+            _get_LFP_time(lfp_data['starttime'][0, 0].item(),
+                          lfp_data['data'][0, 0].size,
+                          lfp_data['samprate'][0, 0]),
+            name='time')
+        return pd.Series(
+            data=lfp_data['data'][0, 0].squeeze(),
+            index=lfp_time,
+            name='electric_potential')
+    except FileNotFoundError:
+        pass
 
 
 def _get_LFP_time(start_time, number_samples, sampling_frequency):
@@ -412,9 +416,7 @@ def get_interpolated_position_dataframe(epoch_key, animals):
     position_categorical = (position
                             .drop(continuous_columns, axis=1)
                             .reindex(index=time, method='pad'))
-    position_continuous = (position
-                           .drop(categorical_columns, axis=1)
-                           .dropna())
+    position_continuous = position.drop(categorical_columns, axis=1)
     new_index = pd.Index(np.unique(np.concatenate(
         (position_continuous.index, time))), name='time')
     interpolated_position = (position_continuous
@@ -484,16 +486,19 @@ def get_spike_indicator_dataframe(neuron_key, animals):
 def get_trial_time(key, animals):
     try:
         animal, day, epoch, tetrode_number = key[:4]
+        lfp_df = get_LFP_dataframe(
+            (animal, day, epoch, tetrode_number), animals)
     except ValueError:
         # no tetrode number provided
-        tetrode_info = make_tetrode_dataframe(animals)
-        animal, day, epoch, tetrode_number = (
-            tetrode_info
+        tetrode_info = (
+            make_tetrode_dataframe(animals)
             .loc[key]
-            .set_index(['animal', 'day', 'epoch', 'tetrode_number'])
-            .index[0])
-    lfp_df = get_LFP_dataframe(
-        (animal, day, epoch, tetrode_number), animals)
+            .set_index(['animal', 'day', 'epoch', 'tetrode_number']))
+        lfp_df = pd.concat(
+            [get_LFP_dataframe(tetrode_key, animals)
+             for tetrode_key in tetrode_info.index],
+            axis=1)
+
     return lfp_df.index
 
 
