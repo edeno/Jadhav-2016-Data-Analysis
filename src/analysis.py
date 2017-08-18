@@ -371,7 +371,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
                            how='right', right_index=True).set_index(
         neuron_info.index)
     neuron_info = neuron_info[
-        neuron_info.area.isin(['CA1', 'iCA1']) &
+        neuron_info.area.isin(['CA1', 'iCA1', 'CA3']) &
         (neuron_info.numspikes > 0) &
         ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
     logger.debug(neuron_info.loc[:, ['area', 'numspikes']])
