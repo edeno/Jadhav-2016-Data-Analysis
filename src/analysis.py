@@ -445,7 +445,10 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                    drop=False))
     # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = tetrode_info.area.isin(['CA1', 'iCA1', 'CA3'])
-    hippocampal_tetrodes = tetrode_info[is_hippocampal]
+    hippocampal_tetrodes = tetrode_info[
+        is_hippocampal &
+        ~tetrode_info.descrip.str.endswith('Ref').dropna() &
+        ~tetrode_info.descrip.str.startswith('Ref').dropna())]
     logger.debug(hippocampal_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
