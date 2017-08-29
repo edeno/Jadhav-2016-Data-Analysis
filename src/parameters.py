@@ -7,7 +7,9 @@ ANIMALS = {
     'HPa': Animal(directory='HPa_direct', short_name='HPa'),
     'HPb': Animal(directory='HPb_direct', short_name='HPb'),
     'HPc': Animal(directory='HPc_direct', short_name='HPc'),
-    'bon': Animal(directory='Bond', short_name='bon')
+    'bon': Animal(directory='Bond', short_name='bon'),
+    'Fra': Animal(directory='frank', short_name='Fra'),
+    'Cor': Animal(directory='CorrianderData', short_name='Cor'),
 }
 
 
