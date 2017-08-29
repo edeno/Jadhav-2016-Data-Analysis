@@ -2,7 +2,7 @@
 potentials
 
 '''
-import os
+from os.path import abspath, join, dirname
 
 import numpy as np
 import pandas as pd
@@ -10,9 +10,6 @@ from scipy.io import loadmat
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import filtfilt, hilbert
 from scipy.stats import zscore
-
-from .spectral.transforms import Multitaper
-from .spectral.connectivity import Connectivity
 
 
 def _get_series_start_end_times(series):
@@ -227,10 +224,8 @@ def _get_ripplefilter_kernel():
     The kernel is 150-250 Hz bandpass with 40 db roll off and 10 Hz
     sidebands.
     '''
-    data_dir = '{working_dir}/Raw-Data'.format(
-        working_dir=os.path.abspath(os.path.pardir))
-    ripplefilter = loadmat(
-        '{data_dir}/ripplefilter.mat'.format(data_dir=data_dir))
+    filter_file = join(abspath(dirname(__file__)), 'ripplefilter.mat')
+    ripplefilter = loadmat(filter_file)
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
