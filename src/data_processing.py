@@ -352,8 +352,9 @@ def _get_LFP_time(start_time, n_samples, sampling_frequency):
     '''
     sampling_frequency = int(np.round(sampling_frequency))
 
-    return start_time + np.arange(
-        0, number_samples) * (1 / sampling_frequency)
+    return pd.Index(
+        start_time + np.arange(0, n_samples) / sampling_frequency,
+        name='time')
 
 
 def get_neuron_info_path(animal):
