@@ -27,9 +27,23 @@ PROCESSED_DATA_DIR = join(ROOT_DIR, 'Processed-Data')
 
 def get_data_filename(animal, day, file_type):
     '''Returns the Matlab file name assuming it is in the Raw Data
-    directory. File type is a string that refers to the various data
-    structure names (DIO, tasks, linpos) Animal is a named tuple.
-    Day is an integer giving the recording session day.
+    directory.
+
+    Parameters
+    ----------
+    animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
+    day : int
+        Day of recording
+    file_type : str
+        Data structure name (e.g. linpos, dio)
+
+    Returns
+    -------
+    filename : str
+        Path to data file
+
     '''
     filename = '{animal.short_name}{file_type}{day:02d}.mat'.format(
         data_dir=RAW_DATA_DIR,
@@ -53,7 +67,7 @@ def get_epochs(animal, day):
 
     Returns
     -------
-    epochs : list of tuples
+    epochs : list of tuples, shape (n_epochs,)
          A list of three-element tuples (animal, day, epoch key) that
          uniquely identifys the recording epochs in that day.
 
@@ -78,8 +92,26 @@ def get_epochs(animal, day):
 
 
 def get_data_structure(animal, day, file_type, variable):
-    '''Returns a filtered list containing the data structures corresponding
-    to the animal, day, file_type for all epochs
+    '''Returns data structures corresponding to the animal, day, file_type
+    for all epochs
+
+    Parameters
+    ----------
+    animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
+    day : int
+        Day of recording
+    file_type : str
+        Data structure name (e.g. linpos, dio)
+    variable : str
+        Variable in data structure
+
+    Returns
+    -------
+    variable : list, shape (n_epochs,)
+        Elements of list are data structures corresponding to variable
+
     '''
     try:
         file = loadmat(get_data_filename(animal, day, file_type))
@@ -111,6 +143,20 @@ def get_position_dataframe(epoch_key, animals):
     '''Returns a list of position dataframes with a length corresponding
      to the number of epochs in the epoch key -- either a tuple or a
     list of tuples with the format (animal, day, epoch_number)
+
+    Parameters
+    ----------
+    epoch_key : tuple
+        Defines a single epoch (animal, day, epoch)
+    animals : dictionary of namedtuples
+        Maps animal name to namedtuple with animal file directory
+
+    Returns
+    -------
+    position : pandas dataframe
+        Contains information about the animal's position, head direction,
+        and speed.
+
     '''
     animal, day, epoch = epoch_key
     position_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
@@ -134,6 +180,17 @@ def find_closest_ind(search_array, target):
     '''Finds the index position in the search_array that is closest to the
     target. This works for large search_arrays. See:
     http://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
+
+    Parameters
+    ----------
+    search_array : ndarray
+    target : ndarray element
+
+    Returns
+    -------
+    index : int
+        Index closest to target element.
+
     '''
     # Get insertion index, need to be sorted
     ind = search_array.searchsorted(target)
@@ -156,11 +213,22 @@ def get_pulse_position_ind(pulse_times, position_times):
         for pin_pulse_times in pulse_times]
 
 
-def get_LFP_filename(tetrode_tuple, animals):
-    ''' Given an index tuple (animal, day, epoch, tetrode_number) and the
-    animals dictionary return a file name for the tetrode file LFP
+def get_LFP_filename(tetrode_key, animals):
+    '''Returns a file name for the tetrode file LFP for an epoch.
+
+    Parameters
+    ----------
+    tetrode_key : tuple
+        Four element tuple with format (animal, day, epoch, tetrode_number)
+    animals : dictionary of namedtuples
+        Maps animal name to namedtuple with animal file directory
+
+    Returns
+    -------
+    filename : str
+        File path to tetrode file LFP
     '''
-    animal, day, epoch, tetrode_number = tetrode_tuple
+    animal, day, epoch, tetrode_number = tetrode_key
     filename = ('{animal.short_name}eeg{day:02d}-{epoch}-'
                 '{tetrode_number:02d}.mat').format(
                     data_dir=RAW_DATA_DIR, animal=animals[animal],
@@ -177,11 +245,20 @@ def _get_tetrode_id(dataframe):
         dataframe.tetrode_number.astype(str)
 
 
-def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal,
-                                       day, epoch):
+def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, epoch_key):
+    '''Convert tetrode information data structure to dataframe.
+
+    Parameters
+    ----------
+    tetrodes_in_epoch : ?
+    epoch_key : tuple
+
+    Returns
+    -------
+    tetrode_info : dataframe
+        Tetrode information
     '''
-    Given an epoch data structure, return a cleaned up DataFrame
-    '''
+    animal, day, epoch = epoch_key
     tetrode_dict_list = [_convert_to_dict(
         tetrode) for tetrode in tetrodes_in_epoch[0][0]]
     return (pd.DataFrame(tetrode_dict_list)
@@ -200,9 +277,21 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, animal,
             )
 
 
-def get_tetrode_info(animal):
-    '''Returns the Matlab tetrodeinfo file name assuming it is in the
+def get_tetrode_info_path(animal):
+    '''Returns the Matlab tetrode info file name assuming it is in the
     Raw Data directory.
+
+    Parameters
+    ----------
+    animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
+
+    Returns
+    -------
+    filename : str
+        The path to the information about the tetrodes for a given animal.
+
     '''
     filename = '{animal.short_name}tetinfo.mat'.format(animal=animal)
     return join(RAW_DATA_DIR, animal.directory, filename)
@@ -218,17 +307,25 @@ def _convert_to_dict(struct_array):
 
 
 def get_LFP_dataframe(tetrode_key, animals):
-    ''' Given a tetrode key tuple and the animals dictionary,
-    return the LFP data and start time
+    '''Gets the LFP data for a given epoch and tetrode.
+
+    Parameters
+    ----------
+    tetrode_key : tuple, (animal, day, epoch, tetrode_number)
+    animals : dictionary of namedtuples
+        Maps animal name to namedtuple with animal file directory
+
+    Returns
+    -------
+    LFP : pandas dataframe
+        Contains the electric potential and time
     '''
     try:
         lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
         lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-        lfp_time = pd.Index(
-            _get_LFP_time(lfp_data['starttime'][0, 0].item(),
-                          lfp_data['data'][0, 0].size,
-                          lfp_data['samprate'][0, 0]),
-            name='time')
+        lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0].item(),
+                                 lfp_data['data'][0, 0].size,
+                                 lfp_data['samprate'][0, 0])
         return pd.Series(
             data=lfp_data['data'][0, 0].squeeze(),
             index=lfp_time,
@@ -237,8 +334,22 @@ def get_LFP_dataframe(tetrode_key, animals):
         pass
 
 
-def _get_LFP_time(start_time, number_samples, sampling_frequency):
-    ''' Returns an array of time stamps
+def _get_LFP_time(start_time, n_samples, sampling_frequency):
+    '''The recording time for a tetrode
+
+    Parameters
+    ----------
+    start_time : float
+        Start time of recording.
+    n_samples : int
+        Number of samples in recording.
+    sampling_frequency : float
+        Number of samples per time
+
+    Returns
+    -------
+    time : pandas Index
+
     '''
     sampling_frequency = int(np.round(sampling_frequency))
 
@@ -246,9 +357,19 @@ def _get_LFP_time(start_time, number_samples, sampling_frequency):
         0, number_samples) * (1 / sampling_frequency)
 
 
-def get_neuron_info(animal):
-    '''Returns the Matlab cellinfo file name assuming it is in the Raw Data
-    directory.
+def get_neuron_info_path(animal):
+    '''Returns the path to the neuron info matlab file
+
+    Parameters
+    ----------
+    animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
+
+    Returns
+    -------
+    path : str
+
     '''
     filename = '{animal.short_name}cellinfo.mat'.format(animal=animal)
     return join(RAW_DATA_DIR, animal.directory, filename)
@@ -380,7 +501,7 @@ def get_spikes_dataframe(neuron_key, animals):
 
 
 def make_neuron_dataframe(animals):
-    neuron_file_names = [(get_neuron_info(animals[animal]), animal)
+    neuron_file_names = [(get_neuron_info_path(animals[animal]), animal)
                          for animal in animals]
     neuron_data = [(loadmat(file_name[0]), file_name[1])
                    for file_name in neuron_file_names]
@@ -559,13 +680,13 @@ def get_mark_dataframe(tetrode_key, animals):
         (in seconds). THe other values are values that can be used as the
         marks.
     '''
-    TIME_CONSTANT = 1E4
+    TO_SECONDS = 1E4
     mark_file = loadmat(get_mark_filename(tetrode_key, animals))
     mark_names = [name[0][0].lower().replace(' ', '_')
                   for name in mark_file['filedata'][0, 0]['paramnames']]
     mark_data = mark_file['filedata'][0, 0]['params']
     mark_data[:, mark_names.index('time')] = mark_data[
-        :, mark_names.index('time')] / TIME_CONSTANT
+        :, mark_names.index('time')] / TO_SECONDS
 
     return pd.DataFrame(mark_data, columns=mark_names).set_index('time')
 
@@ -808,6 +929,8 @@ def copy_animal(animal, src_directory, target_directory):
     Parameters
     ----------
     animal : namedtuple
+        First element is the directory where the animal's data is located.
+        The second element is the animal shortened name.
     src_directory : str
     target_directory : str
 
