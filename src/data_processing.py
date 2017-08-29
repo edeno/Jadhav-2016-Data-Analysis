@@ -4,6 +4,7 @@
 
 from glob import glob
 from logging import getLogger
+from itertools import chain
 from os import listdir, makedirs, walk
 from os.path import abspath, join, pardir, isfile, dirname
 from shutil import copyfile
@@ -944,12 +945,12 @@ def copy_animal(animal, src_directory, target_directory):
 
     FILE_TYPES = ['cellinfo', 'linpos', 'pos', 'rawpos', 'task', 'tetinfo',
                   'spikes']
-    data_files = [file_name for file_name in listdir(processed_data_dir)
-                  if any(
-                    [file_type in file_name for file_type in FILE_TYPES])]
-    for file_name in data_files:
-        old_path = join(processed_data_dir, file_name)
-        new_path = join(target_data_dir, file_name)
+    data_files = [glob(join(processed_data_dir,
+                       '{animal.short_name}{file_type}*.mat').format(
+                        animal=animal, file_type=file_type))
+                  for file_type in FILE_TYPES]
+    for old_path in chain.from_iterable(data_files):
+        new_path = join(target_data_dir, old_path.split('/')[-1])
 
         print('Copying {old_path}\nto \n{new_path}\n'.format(
             old_path=old_path,
