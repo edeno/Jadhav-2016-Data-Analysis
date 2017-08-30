@@ -96,12 +96,14 @@ def Karlsson_ripple_detector(time, LFPs, speed, sampling_frequency,
     '''
     candidate_ripple_times = []
     for lfp in LFPs.T:
-        filtered_lfp = ripple_bandpass_filter(lfp)
+        is_nan = np.isnan(lfp)
+        filtered_lfp = ripple_bandpass_filter(lfp[~is_nan])
         filtered_lfp = gaussian_smooth(
             get_envelope(filtered_lfp), sigma=smoothing_sigma,
             sampling_frequency=sampling_frequency)
         lfp_ripple_times = threshold_by_zscore(
-            filtered_lfp, time, minimum_duration, zscore_threshold)
+            filtered_lfp, time[~is_nan], minimum_duration,
+            zscore_threshold)
         candidate_ripple_times.append(lfp_ripple_times)
 
     candidate_ripple_times = list(merge_overlapping_ranges(
