@@ -179,9 +179,12 @@ def threshold_by_zscore(data, time, minimum_duration=0.004,
 
     '''
     zscored_data = zscore(data)
-    return pd.DataFrame(
-        {'is_above_threshold': zscored_data >= zscore_threshold,
-         'is_above_mean': zscored_data >= 0}, index=data.index)
+    is_above_mean = zscored_data >= 0
+    is_above_threshold = zscored_data >= zscore_threshold
+
+    return extend_threshold_to_mean(
+        is_above_mean, is_above_threshold, time,
+        minimum_duration=minimum_duration)
 
 
 def merge_overlapping_ranges(ranges):
