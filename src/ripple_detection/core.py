@@ -132,13 +132,13 @@ def _extend_segment(segments_to_extend, containing_segments):
     return list(set(segments))  # remove duplicate segments
 
 
-def _get_envelope(data, axis=0):
+def get_envelope(data, axis=0):
     '''Extracts the instantaneous amplitude (envelope) of an analytic
      signal using the Hilbert transform'''
     return np.abs(hilbert(data, axis=axis))
 
 
-def _smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
+def gaussian_smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
     '''1D convolution of the data with a Gaussian.
 
     The standard deviation of the gaussian is in the units of the sampling
