@@ -76,18 +76,17 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
 
     Parameters
     ----------
-    is_above_mean : Pandas series
+    is_above_mean : ndarray, shape (n_time,)
         Time series indicator function specifying when the
-        time series is above the mean. Index of the series is time.
-    is_above_threshold : Pandas series
+        time series is above the mean
+    is_above_threshold : ndarray, shape (n_time,)
         Time series indicator function specifying when the
-        time series is above the the threshold. Index of the series is
-        time.
+        time series is above the the threshold.
+    time : ndarray, shape (n_time,)
 
     Returns
     -------
-    extended_segments : list of 2-element tuples
-        Elements correspond to the start and end time of segments
+    candidate_ripple_times : pandas DataFrame
 
     '''
     above_mean_segments = segment_boolean_series(
