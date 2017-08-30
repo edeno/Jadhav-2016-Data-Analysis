@@ -22,7 +22,7 @@ from .ripple_decoding import (combined_likelihood,
                               estimate_sorted_spike_encoding_model,
                               estimate_state_transition, get_bin_centers,
                               predict_state, set_initial_conditions)
-from .ripple_detection import Kay_method
+from .ripple_detection.detectors import Kay_ripple_detector
 from .spectral.connectivity import Connectivity
 from .spectral.transforms import Multitaper
 
@@ -299,8 +299,7 @@ def _get_ripple_times(df):
 
 
 def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
-                         ripple_detection_function=Kay_method,
-                         ripple_detection_kwargs={}, speed_threshold=4):
+                         speed_threshold=4):
     '''Returns a list of tuples containing the start and end times of
     ripples. Candidate ripples are computed via the ripple detection
     function and then filtered to exclude ripples where the animal was
@@ -323,12 +322,11 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     hippocampus_lfps = pd.concat(
         [get_LFP_dataframe(tetrode_key, animals)
          for tetrode_key in tetrode_keys], axis=1)
-    hippocampus_lfps = [hippocampus_lfps.iloc[:, ind]
-                        for ind in range(hippocampus_lfps.shape[1])]
-    candidate_ripple_times = ripple_detection_function(
-        hippocampus_lfps, **ripple_detection_kwargs)
-    return exclude_movement_during_ripples(
-        candidate_ripple_times, epoch_key, animals, speed_threshold)
+    speed = get_interpolated_position_dataframe(
+        epoch_key, animals).speed.values
+    time = hippocampus_lfps.index.values
+    return Kay_ripple_detector(
+        time, hippocampus_lfps.values, speed, sampling_frequency)
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
