@@ -1,17 +1,43 @@
-class KayDetector(object):
+from itertools import chain
+
+import numpy as np
+import pandas as pd
+
+from .core import (exclude_movement_during_ripples, gaussian_smooth,
+                   get_envelope, merge_overlapping_ranges,
+                   ripple_bandpass_filter, threshold_by_zscore)
+
+
+def Kay_ripple_detector(time, LFPs, speed, sampling_frequency=None,
+                        speed_threshold=4.0, minimum_duration=0.015,
+                        zscore_threshold=2.0, smoothing_sigma=0.004):
     '''
 
-    Attributes
+    Parameters
     ----------
     time : array_like, shape (n_time,)
     LFPs : array_like, shape (n_time, n_signals)
         Time series of electric potentials
     speed : array_like, shape (n_time,)
         Running speed of animal
-    sampling_frequency : float, optional
-        Number of samples per second. If None, the sampling frequency will
-        be inferred from the time. Note that this can less accurate
-        because of floating point differences.
+    sampling_frequency : float
+        Number of samples per second.
+    speed_threshold : float, optional
+        Maximum running speed of animal for a ripple
+    minimum_duration : float, optional
+        Minimum time the z-score has to stay above threshold to be
+        considered a ripple. The default is given assuming time is in
+        units of seconds.
+    zscore_threshold : float, optional
+        Number of standard deviations the ripple power must exceed to
+        be considered a ripple
+    smoothing_sigma : float, optional
+        Amount to smooth the time series over time. The default is
+        given assuming time is in units of seconds.
+
+    Returns
+    -------
+    ripple_times : pandas DataFrame
 
     References
     ----------
@@ -20,94 +46,93 @@ class KayDetector(object):
     immobility and sleep. Nature 531, 185-190.
 
     '''
-    def __init__(self, time, LFPs, speed, sampling_frequency=None):
-        self.time = time
-        self.LFPs = LFPs
-        self.speed = speed
-        self.sampling_frequency = (sampling_frequency
-                                   if sampling_frequency is not None
-                                   else 1 / (time[1] - time[0]))
-
-    def detect(self, speed_threshold=4.0, minimum_duration=0.015,
-               zscore_threshold=2.0, smoothing_sigma=0.004):
-        '''
-
-        Parameters
-        ----------
-        speed_threshold : float, optional
-            Maximum running speed of animal for a ripple
-        minimum_duration : float, optional
-            Minimum time the z-score has to stay above threshold to be
-            considered a ripple. The default is given assuming time is in
-            units of seconds.
-        zscore_threshold : float, optional
-            Number of standard deviations the ripple power must exceed to
-            be considered a ripple
-        smoothing_sigma : float, optional
-            Amount to smooth the time series over time. The default is
-            given assuming time is in units of seconds.
-        '''
-        pass
+    filtered_lfps = np.apply_along_axis(ripple_bandpass_filter, 0, LFPs)
+    combined_filtered_lfps = np.sqrt(
+        gaussian_smooth(np.nansum(filtered_lfps, axis=1) ** 2,
+                        sigma=smoothing_sigma,
+                        sampling_frequency=sampling_frequency))
+    candidate_ripple_times = threshold_by_zscore(
+        combined_filtered_lfps, time, minimum_duration, zscore_threshold)
+    ripple_times = exclude_movement_during_ripples(
+        candidate_ripple_times, speed, time,
+        speed_threshold=speed_threshold)
+    index = pd.Index(np.arange(len(ripple_times)) + 1,
+                     name='ripple_number')
+    return pd.DataFrame(ripple_times, columns=['start_time', 'end_time'],
+                        index=index)
 
 
-class KarlssonDetector(object):
+def Karlsson_ripple_detector(time, LFPs, speed, sampling_frequency,
+                             speed_threshold=4.0, minimum_duration=0.015,
+                             zscore_threshold=3.0, smoothing_sigma=0.004):
     '''
 
-    Attributes
+    Parameters
     ----------
     time : array_like, shape (n_time,)
     LFPs : array_like, shape (n_time, n_signals)
         Time series of electric potentials
     speed : array_like, shape (n_time,)
         Running speed of animal
-    sampling_frequency : float, optional
-        Number of samples per second. If None, the sampling frequency will
-        be inferred from the time. Note that this can less accurate
-        because of floating point differences.
+    sampling_frequency : float
+        Number of samples per second.
+    speed_threshold : float, optional
+        Maximum running speed of animal for a ripple
+    minimum_duration : float, optional
+        Minimum time the z-score has to stay above threshold to be
+        considered a ripple. The default is given assuming time is in
+        units of seconds.
+    zscore_threshold : float, optional
+        Number of standard deviations the ripple power must exceed to
+        be considered a ripple
+    smoothing_sigma : float, optional
+        Amount to smooth the time series over time. The default is
+        given assuming time is in units of seconds.
 
-    References
-    ----------
-    .. [1] Karlsson, M.P., and Frank, L.M. (2009). Awake replay of remote
-    experiences in the hippocampus. Nature Neuroscience 12, 913-918.
+    Returns
+    -------
+    ripple_times : pandas DataFrame
 
     '''
-    def __init__(self, time, LFPs, speed, sampling_frequency=None,
-                 speed_threshold=4.0, minimum_duration=0.015,
-                 zscore_threshold=2.0, smoothing_sigma=0.004):
-        self.time = time
-        self.LFPs = LFPs
-        self.speed = speed
-        self.sampling_frequency = (sampling_frequency
-                                   if sampling_frequency is not None
-                                   else 1 / (time[1] - time[0]))
-        self.speed_threshold = speed_threshold
-        self.minimum_duration = minimum_duration
-        self.zscore_threshold = zscore_threshold
-        self.minimum_duration = minimum_duration
+    candidate_ripple_times = []
+    for lfp in LFPs.T:
+        filtered_lfp = ripple_bandpass_filter(lfp)
+        filtered_lfp = gaussian_smooth(
+            get_envelope(filtered_lfp), sigma=smoothing_sigma,
+            sampling_frequency=sampling_frequency)
+        lfp_ripple_times = threshold_by_zscore(
+            filtered_lfp, time, minimum_duration, zscore_threshold)
+        candidate_ripple_times.append(lfp_ripple_times)
 
-    def detect(self, speed_threshold=4.0, minimum_duration=0.015,
-               zscore_threshold=2.0, smoothing_sigma=0.004):
-        '''
-
-        Parameters
-        ----------
-        speed_threshold : float, optional
-            Maximum running speed of animal for a ripple
-        minimum_duration : float, optional
-            Minimum time the z-score has to stay above threshold to be
-            considered a ripple. The default is given assuming time is in
-            units of seconds.
-        zscore_threshold : float, optional
-            Number of standard deviations the ripple power must exceed to
-            be considered a ripple
-        smoothing_sigma : float, optional
-            Amount to smooth the time series over time. The default is
-            given assuming time is in units of seconds.
-        '''
-        pass
+    candidate_ripple_times = merge_overlapping_ranges(
+        chain.from_iterable(candidate_ripple_times))
+    ripple_times = exclude_movement_during_ripples(
+        candidate_ripple_times, speed, time,
+        speed_threshold=speed_threshold)
+    return pd.DataFrame(ripple_times, columns=['start_time', 'end_time'],
+                        index=np.arange(len(ripple_times)) + 1)
 
 
-class LongTaoDetector(object):
-    def __init__(self, time, LFPs=None, speed=None, spikes=None,
-                 sampling_frequency=None):
-        pass
+def Tao_ripple_detector(time, LFPs, speed, spikes=None,
+                        sampling_frequency=None):
+    '''
+
+    Parameters
+    ----------
+    time : array_like, shape (n_time,)
+    LFPs : array_like, shape (n_time, n_signals)
+        Time series of electric potentials
+    speed : array_like, shape (n_time,)
+        Running speed of animal
+    spikes : array_like, optional, shape (n_time, n_units)
+    sampling_frequency : float
+        Number of samples per second.
+
+    Returns
+    -------
+    ripple_times : pandas DataFrame
+
+    '''
+    candidate_ripple_times = Karlsson_ripple_detector(
+        time, LFPs, speed, sampling_frequency)
+    pass
