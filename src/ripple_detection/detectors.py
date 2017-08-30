@@ -104,8 +104,8 @@ def Karlsson_ripple_detector(time, LFPs, speed, sampling_frequency,
             filtered_lfp, time, minimum_duration, zscore_threshold)
         candidate_ripple_times.append(lfp_ripple_times)
 
-    candidate_ripple_times = merge_overlapping_ranges(
-        chain.from_iterable(candidate_ripple_times))
+    candidate_ripple_times = list(merge_overlapping_ranges(
+        chain.from_iterable(candidate_ripple_times)))
     ripple_times = exclude_movement_during_ripples(
         candidate_ripple_times, speed, time,
         speed_threshold=speed_threshold)
