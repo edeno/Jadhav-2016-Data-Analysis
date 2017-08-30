@@ -193,7 +193,7 @@ def gaussian_smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
         data, sigma * sampling_frequency, truncate=truncate, axis=axis)
 
 
-def threshold_by_zscore(data, time, minimum_duration=0.004,
+def threshold_by_zscore(data, time, minimum_duration=0.015,
                         zscore_threshold=2):
     '''Standardize the data and determine whether it is above a given
     number.
