@@ -72,7 +72,7 @@ def _get_ripplefilter_kernel():
 def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
                              minimum_duration=0.015):
     '''Extract segments above threshold if they remain above the threshold
-    for a minimum amount of time and extend them to the mean
+    for a minimum amount of time and extend them to the mean.
 
     Parameters
     ----------
@@ -86,7 +86,8 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
 
     Returns
     -------
-    candidate_ripple_times : pandas DataFrame
+    candidate_ripple_times : list of 2-element tuples
+        Each tuple is the start and end time of the candidate ripple.
 
     '''
     is_above_threshold = pd.Series(is_above_threshold, index=time)
@@ -101,7 +102,7 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
 
 def exclude_movement_during_ripples(candidate_ripple_times, speed, time,
                                     speed_threshold=4.0):
-    '''
+    '''Removes candidate ripples if the animal is moving.
 
     Parameters
     ----------
