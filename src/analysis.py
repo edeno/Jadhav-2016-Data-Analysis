@@ -298,8 +298,7 @@ def _get_ripple_times(df):
             .values.tolist())
 
 
-def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
-                         speed_threshold=4):
+def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     '''Returns a list of tuples containing the start and end times of
     ripples. Candidate ripples are computed via the ripple detection
     function and then filtered to exclude ripples where the animal was
