@@ -95,7 +95,8 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
         is_above_mean, minimum_duration=minimum_duration)
     above_threshold_segments = segment_boolean_series(
         is_above_threshold, minimum_duration=minimum_duration)
-    return _extend_segment(above_threshold_segments, above_mean_segments)
+    return sorted(
+        _extend_segment(above_threshold_segments, above_mean_segments))
 
 
 def _find_containing_interval(interval_candidates, target_interval):
