@@ -69,8 +69,8 @@ def _get_ripplefilter_kernel():
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
-def _extend_threshold_to_mean(is_above_mean, is_above_threshold,
-                              minimum_duration=0.015):
+def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
+                             minimum_duration=0.015):
     '''Extract segments above threshold if they remain above the threshold
     for a minimum amount of time and extend them to the mean
 
@@ -164,7 +164,8 @@ def _smooth(data, sigma, sampling_frequency, axis=0, truncate=8):
         data, sigma * sampling_frequency, truncate=truncate, axis=axis)
 
 
-def _threshold_by_zscore(data, zscore_threshold=2):
+def threshold_by_zscore(data, time, minimum_duration=0.004,
+                        zscore_threshold=2):
     '''Standardize the data and determine whether it is above a given
     number.
 
@@ -184,7 +185,7 @@ def _threshold_by_zscore(data, zscore_threshold=2):
          'is_above_mean': zscored_data >= 0}, index=data.index)
 
 
-def _merge_overlapping_ranges(ranges):
+def merge_overlapping_ranges(ranges):
     '''Merge overlapping and adjacent ranges
 
     Parameters
