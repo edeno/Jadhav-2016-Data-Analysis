@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.ripple_detection import (_extend_segment,
-                                  _find_containing_interval,
-                                  _get_series_start_end_times,
-                                  _merge_overlapping_ranges,
-                                  segment_boolean_series,
-                                  _threshold_by_zscore)
+from src.ripple_detection.core import (_extend_segment,
+                                       _find_containing_interval,
+                                       _get_series_start_end_times,
+                                       merge_overlapping_ranges,
+                                       segment_boolean_series,
+                                       threshold_by_zscore)
 
 
 @pytest.mark.parametrize('series, expected_segments', [
@@ -91,15 +91,12 @@ def test__extend_segment(interval_candidates, target_intervals,
         ([], []),
     ])
 def test_merge_overlapping_ranges(ranges, expected_ranges):
-    assert list(_merge_overlapping_ranges(ranges)) == expected_ranges
+    assert list(merge_overlapping_ranges(ranges)) == expected_ranges
 
 
-def test__threshold_by_zscore():
-    index = ['a', 'b', 'c', 'd', 'e']
-    data = pd.Series(np.arange(0, 5), index=index)
-    zscore_df = _threshold_by_zscore(data, zscore_threshold=1)
-    assert zscore_df.index.tolist() == index
-    assert (zscore_df.is_above_threshold.tolist() ==
-            [False, False, False, False, True])
-    assert (zscore_df.is_above_mean.tolist() ==
-            [False, False, True, True, True])
+def test_threshold_by_zscore():
+    data = np.array([0, 0, 10, 10, 0, 0, 0, 1, 5,
+                     10, 10, 10, 10, 10, 5, 1, 0])
+    time = np.arange(len(data)) / 1000
+    segments = threshold_by_zscore(data, time, zscore_threshold=1)
+    assert np.allclose(segments, [(0.008, 0.014)])
