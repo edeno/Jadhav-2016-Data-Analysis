@@ -8,7 +8,7 @@ from .core import (exclude_movement_during_ripples, gaussian_smooth,
                    ripple_bandpass_filter, threshold_by_zscore)
 
 
-def Kay_ripple_detector(time, LFPs, speed, sampling_frequency=None,
+def Kay_ripple_detector(time, LFPs, speed, sampling_frequency,
                         speed_threshold=4.0, minimum_duration=0.015,
                         zscore_threshold=2.0, smoothing_sigma=0.004):
     '''
