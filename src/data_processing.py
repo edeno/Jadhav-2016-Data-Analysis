@@ -240,8 +240,10 @@ def get_LFP_filename(tetrode_key, animals):
 
 
 def _get_tetrode_id(dataframe):
-    return ('{df.anmial}_{df.day:02}_{df.epoch:02}'
-            '_{df.tetrode_number:03}').format(df=dataframe)
+    return (dataframe.animal + '_' +
+            dataframe.day.map('{:02d}'.format) + '_' +
+            dataframe.epoch.map('{:02}'.format) + '_' +
+            dataframe.tetrode_number.map('{:03}'.format))
 
 
 def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, epoch_key):
