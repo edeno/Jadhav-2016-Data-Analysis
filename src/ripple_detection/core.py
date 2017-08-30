@@ -121,7 +121,7 @@ def exclude_movement_during_ripples(candidate_ripple_times, speed, time,
     '''
     candidate_ripple_times = np.array(candidate_ripple_times)
     ripple_start_time = candidate_ripple_times[:, 0]
-    speed_at_ripple_start = speed[np.isclose(time, ripple_start_time)]
+    speed_at_ripple_start = speed[np.in1d(time, ripple_start_time)]
     is_below_speed_threshold = speed_at_ripple_start <= speed_threshold
     return candidate_ripple_times[is_below_speed_threshold]
 
