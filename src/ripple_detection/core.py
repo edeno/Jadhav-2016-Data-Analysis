@@ -99,6 +99,33 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
         _extend_segment(above_threshold_segments, above_mean_segments))
 
 
+def exclude_movement_during_ripples(candidate_ripple_times, speed, time,
+                                    speed_threshold=4.0):
+    '''
+
+    Parameters
+    ----------
+    candidate_ripple_times : array_like, shape (n_ripples, 2)
+    speed : ndarray, shape (n_time,)
+        Speed of animal during recording session.
+    time : ndarray, shape (n_time,)
+        Time in recording session.
+    speed_threshold : float, optional
+        Maximum speed for animal to be considered to be moving.
+
+    Returns
+    -------
+    ripple_times : ndarray, shape (n_ripples, 2)
+        Ripple times where the animal is not moving.
+
+    '''
+    candidate_ripple_times = np.array(candidate_ripple_times)
+    ripple_start_time = candidate_ripple_times[:, 0]
+    speed_at_ripple_start = speed[np.isclose(time, ripple_start_time)]
+    is_below_speed_threshold = speed_at_ripple_start <= speed_threshold
+    return candidate_ripple_times[is_below_speed_threshold]
+
+
 def _find_containing_interval(interval_candidates, target_interval):
     '''Returns the interval that contains the target interval out of a list
     of interval candidates.
