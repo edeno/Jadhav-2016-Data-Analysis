@@ -89,6 +89,8 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
     candidate_ripple_times : pandas DataFrame
 
     '''
+    is_above_threshold = pd.Series(is_above_threshold, index=time)
+    is_above_mean = pd.Series(is_above_mean, index=time)
     above_mean_segments = segment_boolean_series(
         is_above_mean, minimum_duration=minimum_duration)
     above_threshold_segments = segment_boolean_series(
