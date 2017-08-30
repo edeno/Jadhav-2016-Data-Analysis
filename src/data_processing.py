@@ -262,20 +262,23 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, epoch_key):
     animal, day, epoch = epoch_key
     tetrode_dict_list = [_convert_to_dict(
         tetrode) for tetrode in tetrodes_in_epoch[0][0]]
-    return (pd.DataFrame(tetrode_dict_list)
-              .assign(numcells=lambda x: x['numcells'])
-              .assign(depth=lambda x: x['depth'])
-              .assign(area=lambda x: x['area'])
-              .assign(animal=lambda x: animal)
-              .assign(day=lambda x: day)
-              .assign(epoch=lambda x: epoch)
-              .assign(tetrode_number=lambda x: x.index + 1)
-              .assign(tetrode_id=_get_tetrode_id)
-            # set index to identify rows
-              .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
-                         drop=False)
-              .sort_index()
-            )
+    try:
+        return (pd.DataFrame(tetrode_dict_list)
+                  .assign(numcells=lambda x: x['numcells'])
+                  .assign(depth=lambda x: x['depth'])
+                  .assign(area=lambda x: x['area'])
+                  .assign(animal=lambda x: animal)
+                  .assign(day=lambda x: day)
+                  .assign(epoch=lambda x: epoch)
+                  .assign(tetrode_number=lambda x: x.index + 1)
+                  .assign(tetrode_id=_get_tetrode_id)
+                # set index to identify rows
+                  .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
+                             drop=False)
+                  .sort_index()
+                )
+    except KeyError:
+        return pd.DataFrame(tetrode_dict_list)
 
 
 def get_tetrode_info_path(animal):
