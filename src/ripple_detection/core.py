@@ -13,9 +13,21 @@ from scipy.stats import zscore
 
 
 def _get_series_start_end_times(series):
-    '''Returns a two element tuple with of the start of the segment and the
-     end of the segment. Each element is an numpy array, The input series
-    must be a boolean pandas series where the index is time.
+    '''Extracts the start and end times of segements defined by a boolean
+    pandas Series.
+
+    Parameters
+    ----------
+    series : pandas boolean Series (n_time,)
+        Consecutive Trues define each segement.
+
+    Returns
+    -------
+    start_times : ndarray, shape (n_segments,)
+        Beginning time of each segment based on the index of the series.
+    end_times : ndarray, shape (n_segments,)
+        End time of each segment based on the index of the series.
+
     '''
     is_start_time = (~series.shift(1).fillna(False)) & series
     start_times = series.index[is_start_time].get_values()
@@ -30,6 +42,18 @@ def segment_boolean_series(series, minimum_duration=0.015):
     '''Returns a list of tuples where each tuple contains the start time of
      segement and end time of segment. It takes a boolean pandas series as
      input where the index is time.
+
+     Parameters
+     ----------
+     series : pandas boolean Series (n_time,)
+         Consecutive Trues define each segement.
+     minimum_duration : float, optional
+         Segments must be at least this duration to be included.
+
+     Returns
+     -------
+     segments : list of 2-element tuples
+
      '''
     start_times, end_times = _get_series_start_end_times(series)
 
@@ -69,7 +93,7 @@ def _get_ripplefilter_kernel():
     return ripplefilter['ripplefilter']['kernel'][0][0].flatten(), 1
 
 
-def extend_threshold_to_mean(is_above_mean, is_above_threshold,  time,
+def extend_threshold_to_mean(is_above_mean, is_above_threshold, time,
                              minimum_duration=0.015):
     '''Extract segments above threshold if they remain above the threshold
     for a minimum amount of time and extend them to the mean.
@@ -226,6 +250,7 @@ def merge_overlapping_ranges(ranges):
     ranges : iterable with 2-elements
         Element 1 is the start of the range.
         Element 2 is the end of the range.
+
     Yields
     -------
     sorted_merged_range : 2-element tuple
