@@ -99,7 +99,8 @@ def test_threshold_by_zscore():
     data = np.array([0, 0, 10, 10, 0, 0, 0, 1, 5,
                      10, 10, 10, 10, 10, 5, 1, 0])
     time = np.arange(len(data)) / 1000
-    segments = threshold_by_zscore(data, time, zscore_threshold=1)
+    segments = threshold_by_zscore(
+        data, time, zscore_threshold=1, minimum_duration=0.004)
     assert np.allclose(segments, [(0.008, 0.014)])
 
 
