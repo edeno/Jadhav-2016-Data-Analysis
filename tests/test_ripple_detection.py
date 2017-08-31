@@ -8,7 +8,7 @@ from src.ripple_detection.core import (_extend_segment,
                                        merge_overlapping_ranges,
                                        segment_boolean_series,
                                        threshold_by_zscore,
-                                       exclude_movement_during_ripples)
+                                       exclude_movement)
 
 
 @pytest.mark.parametrize('series, expected_segments', [
@@ -104,13 +104,13 @@ def test_threshold_by_zscore():
     assert np.allclose(segments, [(0.008, 0.014)])
 
 
-def test_exclude_movement_during_ripples():
+def test_exclude_movement():
     n_samples = 100
     time = np.arange(n_samples) / 1000
     speed = np.ones_like(time) * 5
     speed[3:11] = 1
     candidate_ripple_times = [(0.004, 0.010), (0.094, 0.095)]
-    ripple_times = exclude_movement_during_ripples(
+    ripple_times = exclude_movement(
         candidate_ripple_times, speed, time, speed_threshold=4.0)
     expected_ripple_times = np.array([(0.004, 0.010)])
     assert np.allclose(ripple_times, expected_ripple_times)
