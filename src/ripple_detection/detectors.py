@@ -53,7 +53,7 @@ def Kay_ripple_detector(time, LFPs, speed, sampling_frequency,
                         sampling_frequency=sampling_frequency))
     candidate_ripple_times = threshold_by_zscore(
         combined_filtered_lfps, time, minimum_duration, zscore_threshold)
-    ripple_times = exclude_movement_during_ripples(
+    ripple_times = exclude_movement(
         candidate_ripple_times, speed, time,
         speed_threshold=speed_threshold)
     index = pd.Index(np.arange(len(ripple_times)) + 1,
@@ -108,7 +108,7 @@ def Karlsson_ripple_detector(time, LFPs, speed, sampling_frequency,
 
     candidate_ripple_times = list(merge_overlapping_ranges(
         chain.from_iterable(candidate_ripple_times)))
-    ripple_times = exclude_movement_during_ripples(
+    ripple_times = exclude_movement(
         candidate_ripple_times, speed, time,
         speed_threshold=speed_threshold)
     return pd.DataFrame(ripple_times, columns=['start_time', 'end_time'],

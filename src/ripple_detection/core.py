@@ -124,8 +124,8 @@ def extend_threshold_to_mean(is_above_mean, is_above_threshold, time,
         _extend_segment(above_threshold_segments, above_mean_segments))
 
 
-def exclude_movement_during_ripples(candidate_ripple_times, speed, time,
-                                    speed_threshold=4.0):
+def exclude_movement(candidate_ripple_times, speed, time,
+                     speed_threshold=4.0):
     '''Removes candidate ripples if the animal is moving.
 
     Parameters
