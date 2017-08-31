@@ -2,7 +2,7 @@
 potentials
 
 '''
-from os.path import abspath, join, dirname
+from os.path import abspath, dirname, join
 
 import numpy as np
 import pandas as pd

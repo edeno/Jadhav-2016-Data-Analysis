@@ -3,9 +3,9 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 
-from .core import (exclude_movement_during_ripples, gaussian_smooth,
-                   get_envelope, merge_overlapping_ranges,
-                   ripple_bandpass_filter, threshold_by_zscore)
+from .core import (exclude_movement, gaussian_smooth, get_envelope,
+                   merge_overlapping_ranges, ripple_bandpass_filter,
+                   threshold_by_zscore)
 
 
 def Kay_ripple_detector(time, LFPs, speed, sampling_frequency,
