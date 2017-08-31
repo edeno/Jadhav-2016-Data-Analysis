@@ -25,7 +25,7 @@ class ClusterlessDecoder(object):
         states : array_like, shape (n_time,)
 
         '''
-        pass
+        return self
 
     def predict(self, spike_marks):
         '''Predicts the state from spike_marks.
@@ -67,7 +67,7 @@ class SortedSpikeDecoder(object):
         states : array_like, shape (n_time,)
 
         '''
-        pass
+        return self
 
     def predict(self, spikes):
         '''Predicts the state from the spikes.
