@@ -213,3 +213,5 @@ def set_initial_conditions(place_bin_edges,
          np.ones(place_bin_centers.shape)) -
         outbound_initial_conditions)
 
+    return {'Inbound': inbound_initial_conditions,
+            'Outbound': outbound_initial_conditions}
