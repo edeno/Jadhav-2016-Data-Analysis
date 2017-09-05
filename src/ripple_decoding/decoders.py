@@ -16,31 +16,40 @@ class ClusterlessDecoder(object):
 
     Attributes
     ----------
+    position : ndarray, shape (n_time,)
+        Position of the animal to train the model on.
+    trajectory_direction : array_like, shape (n_time,)
+        Task of the animal. Element must be either
+         'Inbound' or 'Outbound'.
+    spike_marks : ndarray, shape (n_time, n_marks, n_signals)
+        Marks to train the model on.
+        If spike does not occur, the row must be marked with np.nan
     n_position_bins : int, optional
     mark_std_deviation : float, optional
 
     '''
 
-    def __init__(self, n_position_bins=61, mark_std_deviation=20,
+    def __init__(self, position, trajectory_direction, spike_marks,
+                 n_position_bins=61, mark_std_deviation=20,
                  sequence_compression_factor=16):
+        self.position = np.array(position)
+        self.trajectory_direction = np.array(trajectory_direction)
+        self.spike_marks = np.array(spike_marks)
         self.n_position_bins = n_position_bins
         self.mark_std_deviation = mark_std_deviation
         self.sequence_compression_factor = sequence_compression_factor
         self.posterior_density = []
+        self.STATE_NAMES = ['Outbound-Forward', 'Outbound-Reverse',
+                            'Inbound-Forward', 'Inbound-Reverse']
 
-    def fit(self, position, trajectory_direction, spike_marks):
+    def fit(self):
         '''Fits the decoder model for each trajectory_direction.
 
         Relates the position and spike_marks to the trajectory_direction.
 
         Parameters
         ----------
-        position : ndarray, shape (n_time,)
-        trajectory_direction : array_like, shape (n_time,)
-            Task at the current time. Element must be either
-             'Inbound' or 'Outbound'.
-        spike_marks : ndarray, shape (n_time, n_marks, n_signals)
-            If spike does not occur, the row must be marked with np.nan.
+
 
         Returns
         -------
@@ -48,10 +57,8 @@ class ClusterlessDecoder(object):
 
         '''
 
-        trajectory_direction = np.array(trajectory_direction)
-
         self.place_bin_edges = np.linspace(
-            np.floor(position.min()), np.ceil(position.max()),
+            np.floor(self.position.min()), np.ceil(self.position.max()),
             self.n_position_bins + 1)
         self.place_std_deviation = np.diff(self.place_bin_edges)[0]
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
@@ -65,7 +72,7 @@ class ClusterlessDecoder(object):
             [initial_conditions[state] for state in LIKELIHOOD_STATE_ORDER]
         ) * 0.25
 
-        trajectory_directions = np.unique(trajectory_direction)
+        trajectory_directions = np.unique(self.trajectory_direction)
 
         logger.info('Fitting state transitions...')
         STATE_TRANSITION_ORDER = ['Outbound', 'Inbound',
@@ -73,7 +80,8 @@ class ClusterlessDecoder(object):
 
         state_transition_by_state = {
             direction: empirical_movement_transition_matrix(
-                position[np.in1d(trajectory_direction, direction)],
+                self.position[
+                    np.in1d(self.trajectory_direction, direction)],
                 self.place_bin_edges, self.sequence_compression_factor)
             for direction in trajectory_directions}
         self.state_transition_matrix = np.stack(
@@ -84,11 +92,12 @@ class ClusterlessDecoder(object):
         joint_mark_intensity_functions = []
         ground_process_intensity = []
 
-        for marks in spike_marks:
+        for marks in self.spike_marks:
             jmi_by_state = {
                 direction: build_joint_mark_intensity(
-                    position[np.in1d(trajectory_direction, direction)],
-                    marks[np.in1d(trajectory_direction, direction)],
+                    self.position[
+                        np.in1d(self.trajectory_direction, direction)],
+                    marks[np.in1d(self.trajectory_direction, direction)],
                     self.place_bin_centers, self.place_std_deviation,
                     self.mark_std_deviation)
                 for direction in trajectory_directions}
@@ -97,8 +106,9 @@ class ClusterlessDecoder(object):
 
             gpi = {
                 direction: estimate_ground_process_intensity(
-                    position[np.in1d(trajectory_direction, direction)],
-                    marks[np.in1d(trajectory_direction, direction)],
+                    self.position[
+                        np.in1d(self.trajectory_direction, direction)],
+                    marks[np.in1d(self.trajectory_direction, direction)],
                     self.place_bin_centers, self.place_std_deviation)
                 for direction in trajectory_directions}
             ground_process_intensity.append(
