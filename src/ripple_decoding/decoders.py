@@ -159,17 +159,10 @@ class SortedSpikeDecoder(object):
         '''
         self.n_position_bins = n_position_bins
 
-    def fit(self, position, spikes, trajectory_direction):
+    def fit(self):
         '''Fits the decoder model by state
 
         Relates the position and spikes to the state.
-
-        Parameters
-        ----------
-        position : ndarray, shape (n_time,)
-        spike : ndarray, shape (n_time,)
-        trajectory_direction : ndarray, shape (n_time,)
-
         '''
         return self
 
