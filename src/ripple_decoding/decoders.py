@@ -63,14 +63,16 @@ class ClusterlessDecoder(object):
         self.place_std_deviation = np.diff(self.place_bin_edges)[0]
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
 
-        LIKELIHOOD_STATE_ORDER = ['Outbound', 'Outbound',
-                                  'Inbound', 'Inbound']
+        OBSERVATION_STATE_ORDER = ['Outbound', 'Outbound',
+                                   'Inbound', 'Inbound']
+        STATE_TRANSITION_ORDER = ['Outbound', 'Inbound',
+                                  'Inbound', 'Outbound']
 
         initial_conditions = set_initial_conditions(
             self.place_bin_edges, self.place_bin_centers)
-        self.initial_conditions = np.stack(
-            [initial_conditions[state] for state in LIKELIHOOD_STATE_ORDER]
-        ) * 0.25
+        initial_conditions = np.stack(
+            [initial_conditions[state] for state in STATE_TRANSITION_ORDER]
+        ) / len(STATE_TRANSITION_ORDER)
 
         trajectory_directions = np.unique(self.trajectory_direction)
 
