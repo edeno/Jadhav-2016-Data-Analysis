@@ -175,11 +175,15 @@ class ClusterlessDecoder(object):
 
 class SortedSpikeDecoder(object):
 
-    def __init__(self, n_position_bins=61):
+    def __init__(self, position, spikes, trajectory_direction,
+                 n_position_bins=61):
         '''
 
         Attributes
         ----------
+        position : ndarray, shape (n_time,)
+        spike : ndarray, shape (n_time,)
+        trajectory_direction : ndarray, shape (n_time,)
         n_position_bins : int, optional
 
         '''
