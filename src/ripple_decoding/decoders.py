@@ -205,3 +205,17 @@ class SortedSpikeDecoder(object):
 
         '''
         pass
+
+
+class DecodingResults():
+    def __init__(self, posterior_density):
+        self.posterior_density = posterior_density
+
+    def state_probability(self):
+        return self.posterior_density.sum('position').to_series().unstack()
+
+    def predicted_state(self):
+        return self.state_probability().iloc[-1].argmax()
+
+    def posterior_density(self):
+        return self.posterior_density
