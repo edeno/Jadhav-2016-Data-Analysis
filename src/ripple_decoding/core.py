@@ -39,33 +39,17 @@ def predict_state(data, initial_conditions=None, state_transition=None,
     Returns
     -------
     posterior_over_time : array_like, shape=(n_time_points,
-                                             n_parameters * n_states)
-    likelihood_over_time : array_like, shape=(n_time_points,
-                                              n_parameters * n_states)
-    prior_over_time : array_like, shape=(n_time_points,
-                                         n_parameters * n_states)
+                                             n_states, n_parameters)
 
     '''
     posterior = initial_conditions
-    n_parameters = initial_conditions.shape[0]
-    n_time_points = data.shape[0]
-    posterior_over_time = np.zeros((n_time_points, n_parameters))
-    if debug:
-        likelihood_over_time = np.zeros((n_time_points, n_parameters))
-        prior_over_time = np.zeros((n_time_points, n_parameters))
     for time_ind in np.arange(n_time_points):
         posterior_over_time[time_ind, :] = posterior
         prior = _get_prior(posterior, state_transition)
         likelihood = likelihood_function(
             data[time_ind, ...], **likelihood_kwargs)
         posterior = _update_posterior(prior, likelihood)
-        if debug:
-            likelihood_over_time[time_ind, :] = likelihood
-            prior_over_time[time_ind, :] = prior
-    if not debug:
-        return posterior_over_time
-    else:
-        return posterior_over_time, likelihood_over_time, prior_over_time
+    return posterior_over_time
 
 
 def _update_posterior(prior, likelihood):
