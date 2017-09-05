@@ -1,6 +1,9 @@
 import numpy as np
 from logging import getLogger
 
+import numpy as np
+import xarray as xr
+
 from .clusterless import (build_joint_mark_intensity,
                           estimate_ground_process_intensity,
                           poisson_mark_likelihood)
@@ -73,6 +76,11 @@ class ClusterlessDecoder(object):
         initial_conditions = np.stack(
             [initial_conditions[state] for state in STATE_TRANSITION_ORDER]
         ) / len(STATE_TRANSITION_ORDER)
+        self.initial_conditions = xr.DataArray(
+            initial_conditions, dims=['state', 'position'],
+            coords=dict(position=self.place_bin_centers,
+                        state=self.STATE_NAMES),
+            name='initial_conditions')
 
         trajectory_directions = np.unique(self.trajectory_direction)
 
@@ -86,11 +94,18 @@ class ClusterlessDecoder(object):
                     np.in1d(self.trajectory_direction, direction)],
                 self.place_bin_edges, self.sequence_compression_factor)
             for direction in trajectory_directions}
-        self.state_transition_matrix = np.stack(
+        state_transition_matrix = np.stack(
             [state_transition_by_state[state]
              for state in STATE_TRANSITION_ORDER])
+        self.state_transition_matrix = xr.DataArray(
+            state_transition_matrix,
+            dims=['state', 'position_t', 'position_t_1'],
+            coords=dict(state=self.STATE_NAMES,
+                        position_t=self.place_bin_centers,
+                        position_t_1=self.place_bin_centers),
+            name='state_transition_matrix')
 
-        logger.info('Fitting likelihood model...')
+        logger.info('Fitting observation model...')
         joint_mark_intensity_functions = []
         ground_process_intensity = []
 
@@ -127,26 +142,38 @@ class ClusterlessDecoder(object):
 
         return self
 
-    def predict(self, spike_marks):
+    def predict(self, spike_marks, time=None):
         '''Predicts the state from spike_marks.
 
         Parameters
         ----------
         spike_marks : ndarray, shape (n_time, n_marks)
             If spike does not occur, the row must be marked with np.nan.
+        time : ndarray, optional, shape (n_time,)
 
         Returns
         -------
         predicted_state : str
 
         '''
-        self.posterior_density.append(
-            predict_state(
-                spike_marks,
-                initial_conditions=self.initial_conditions,
-                state_transition=self.state_transition_matrix,
-                likelihood_function=combined_likelihood,
-                likelihood_kwargs=self._combined_likelihood_kwargs))
+        posterior_density = predict_state(
+            spike_marks,
+            initial_conditions=self.initial_conditions.values,
+            state_transition=self.state_transition_matrix.values,
+            likelihood_function=combined_likelihood,
+            likelihood_kwargs=self._combined_likelihood_kwargs)
+        coords = dict(
+            time=(time if time is not None
+                  else np.arange(posterior_density.shape[0])),
+            position=self.place_bin_centers,
+            state=self.STATE_NAMES
+        )
+
+        return xr.DataArray(
+            posterior_density,
+            dims=['time', 'state', 'position'],
+            coords=coords,
+            name='posterior_density')
 
 
 class SortedSpikeDecoder(object):
