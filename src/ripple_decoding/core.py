@@ -12,6 +12,7 @@ from logging import getLogger
 
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
+from scipy.stats import norm
 
 logger = getLogger(__name__)
 
@@ -204,8 +205,8 @@ def set_initial_conditions(place_bin_edges,
     place_bin_size = place_bin_edges[1] - place_bin_edges[0]
 
     outbound_initial_conditions = normalize_to_probability(
-        _normal_pdf(place_bin_centers, mean=0,
-                    std_deviation=place_bin_size * 2))
+        norm.pdf(place_bin_centers, loc=0,
+                 scale=place_bin_size * 2))
 
     inbound_initial_conditions = normalize_to_probability(
         (np.max(outbound_initial_conditions) *
