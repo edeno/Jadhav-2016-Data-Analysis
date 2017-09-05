@@ -1,4 +1,3 @@
-import numpy as np
 from logging import getLogger
 
 import numpy as np
@@ -84,9 +83,7 @@ class ClusterlessDecoder(object):
 
         trajectory_directions = np.unique(self.trajectory_direction)
 
-        logger.info('Fitting state transitions...')
-        STATE_TRANSITION_ORDER = ['Outbound', 'Inbound',
-                                  'Inbound', 'Outbound']
+        logger.info('Fitting state transition model...')
 
         state_transition_by_state = {
             direction: empirical_movement_transition_matrix(
