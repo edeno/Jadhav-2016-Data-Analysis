@@ -12,7 +12,6 @@ from logging import getLogger
 
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
-from statsmodels.api import GLM, families
 
 logger = getLogger(__name__)
 
