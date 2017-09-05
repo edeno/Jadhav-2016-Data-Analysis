@@ -119,9 +119,9 @@ class ClusterlessDecoder(object):
                     self.mark_std_deviation)
                 for direction in trajectory_directions}
             joint_mark_intensity_functions.append(
-                [jmi_by_state[state] for state in LIKELIHOOD_STATE_ORDER])
+                [jmi_by_state[state] for state in OBSERVATION_STATE_ORDER])
 
-            gpi = {
+            gpi_by_state = {
                 direction: estimate_ground_process_intensity(
                     self.position[
                         np.in1d(self.trajectory_direction, direction)],
@@ -129,7 +129,7 @@ class ClusterlessDecoder(object):
                     self.place_bin_centers, self.place_std_deviation)
                 for direction in trajectory_directions}
             ground_process_intensity.append(
-                [gpi[state] for state in LIKELIHOOD_STATE_ORDER])
+                [gpi_by_state[state] for state in OBSERVATION_STATE_ORDER])
 
         ground_process_intensity = np.stack(ground_process_intensity)
         likelihood_kwargs = dict(
