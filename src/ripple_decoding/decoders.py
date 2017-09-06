@@ -108,7 +108,7 @@ class ClusterlessDecoder(object):
             coords=dict(state=self.state_names,
                         position_t=self.place_bin_centers,
                         position_t_1=self.place_bin_centers),
-            name='state_transition_matrix')
+            name='state_transition_probability')
 
         logger.info('Fitting observation model...')
         joint_mark_intensity_functions = []
