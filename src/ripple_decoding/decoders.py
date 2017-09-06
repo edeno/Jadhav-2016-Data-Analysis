@@ -176,11 +176,16 @@ class ClusterlessDecoder(object):
             state=self.state_names
         )
 
-        return xr.DataArray(
+        posterior_density = xr.DataArray(
             posterior_density,
             dims=['time', 'state', 'position'],
             coords=coords,
             name='posterior_density')
+
+        return DecodingResults(
+            posterior_density=posterior_density,
+            test_marks=spike_marks
+        )
 
 
 class SortedSpikeDecoder(object):
