@@ -12,6 +12,15 @@ from .core import (combined_likelihood,
 
 logger = getLogger(__name__)
 
+_DEFAULT_STATE_NAMES = ['Outbound-Forward', 'Outbound-Reverse',
+                        'Inbound-Forward', 'Inbound-Reverse']
+
+_DEFAULT_OBSERVATION_STATE_ORDER = ['Outbound', 'Outbound',
+                                    'Inbound', 'Inbound']
+
+_DEFAULT_STATE_TRANSITION_STATE_ORDER = ['Outbound', 'Inbound',
+                                         'Inbound', 'Outbound']
+
 
 class ClusterlessDecoder(object):
     '''
@@ -34,15 +43,17 @@ class ClusterlessDecoder(object):
     def __init__(self, position, trajectory_direction, spike_marks,
                  n_position_bins=61, mark_std_deviation=20,
                  sequence_compression_factor=16):
+                 state_names=_DEFAULT_STATE_NAMES,
+                 observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
+                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER):
         self.position = np.array(position)
         self.trajectory_direction = np.array(trajectory_direction)
         self.spike_marks = np.array(spike_marks)
         self.n_position_bins = n_position_bins
         self.mark_std_deviation = mark_std_deviation
-        self.sequence_compression_factor = sequence_compression_factor
-        self.posterior_density = []
-        self.STATE_NAMES = ['Outbound-Forward', 'Outbound-Reverse',
-                            'Inbound-Forward', 'Inbound-Reverse']
+        self.state_names = state_names
+        self.observation_state_order = observation_state_order
+        self.state_transition_state_order = state_transition_state_order
 
     def fit(self):
         '''Fits the decoder model for each trajectory_direction.
@@ -65,20 +76,16 @@ class ClusterlessDecoder(object):
         self.place_std_deviation = np.diff(self.place_bin_edges)[0]
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
 
-        OBSERVATION_STATE_ORDER = ['Outbound', 'Outbound',
-                                   'Inbound', 'Inbound']
-        STATE_TRANSITION_ORDER = ['Outbound', 'Inbound',
-                                  'Inbound', 'Outbound']
-
         initial_conditions = set_initial_conditions(
             self.place_bin_edges, self.place_bin_centers)
         initial_conditions = np.stack(
-            [initial_conditions[state] for state in STATE_TRANSITION_ORDER]
-        ) / len(STATE_TRANSITION_ORDER)
+            [initial_conditions[state]
+             for state in self.state_transition_state_order]
+        ) / len(self.state_names)
         self.initial_conditions = xr.DataArray(
             initial_conditions, dims=['state', 'position'],
             coords=dict(position=self.place_bin_centers,
-                        state=self.STATE_NAMES),
+                        state=self.state_names),
             name='initial_conditions')
 
         trajectory_directions = np.unique(self.trajectory_direction)
@@ -93,11 +100,11 @@ class ClusterlessDecoder(object):
             for direction in trajectory_directions}
         state_transition_matrix = np.stack(
             [state_transition_by_state[state]
-             for state in STATE_TRANSITION_ORDER])
+             for state in self.state_transition_state_order])
         self.state_transition_matrix = xr.DataArray(
             state_transition_matrix,
             dims=['state', 'position_t', 'position_t_1'],
-            coords=dict(state=self.STATE_NAMES,
+            coords=dict(state=self.state_names,
                         position_t=self.place_bin_centers,
                         position_t_1=self.place_bin_centers),
             name='state_transition_matrix')
@@ -116,7 +123,8 @@ class ClusterlessDecoder(object):
                     self.mark_std_deviation)
                 for direction in trajectory_directions}
             joint_mark_intensity_functions.append(
-                [jmi_by_state[state] for state in OBSERVATION_STATE_ORDER])
+                [jmi_by_state[state]
+                 for state in self.observation_state_order])
 
             gpi_by_state = {
                 direction: estimate_ground_process_intensity(
@@ -126,7 +134,8 @@ class ClusterlessDecoder(object):
                     self.place_bin_centers, self.place_std_deviation)
                 for direction in trajectory_directions}
             ground_process_intensity.append(
-                [gpi_by_state[state] for state in OBSERVATION_STATE_ORDER])
+                [gpi_by_state[state]
+                 for state in self.observation_state_order])
 
         ground_process_intensity = np.stack(ground_process_intensity)
         likelihood_kwargs = dict(
@@ -163,7 +172,7 @@ class ClusterlessDecoder(object):
             time=(time if time is not None
                   else np.arange(posterior_density.shape[0])),
             position=self.place_bin_centers,
-            state=self.STATE_NAMES
+            state=self.state_names
         )
 
         return xr.DataArray(
