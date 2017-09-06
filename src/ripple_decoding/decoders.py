@@ -1,13 +1,13 @@
 from logging import getLogger
 
 import numpy as np
+
 import xarray as xr
 
 from .clusterless import (build_joint_mark_intensity,
                           estimate_ground_process_intensity,
                           poisson_mark_likelihood)
-from .core import (combined_likelihood,
-                   empirical_movement_transition_matrix,
+from .core import (combined_likelihood, empirical_movement_transition_matrix,
                    get_bin_centers, predict_state, set_initial_conditions)
 
 logger = getLogger(__name__)
