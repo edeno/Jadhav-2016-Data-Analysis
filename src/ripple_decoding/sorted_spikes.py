@@ -1,7 +1,7 @@
 from logging import getLogger
 
 import numpy as np
-from patsy import build_design_matrices, dmatrix
+from patsy import build_design_matrices
 from statsmodels.api import GLM, families
 
 logger = getLogger(__name__)
@@ -39,7 +39,7 @@ def predictors_by_trajectory_direction(trajectory_direction,
                                        design_matrix):
     '''The design matrix for a given trajectory direction
     '''
-    predictors = {'linear_distance': place_bin_centers,
+    predictors = {'position': place_bin_centers,
                   'trajectory_direction': [trajectory_direction] *
                   len(place_bin_centers)}
     return build_design_matrices(
