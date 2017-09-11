@@ -329,8 +329,6 @@ class SortedSpikeDecoder(object):
 
         return self
 
-    def predict(self, spikes):
-        '''Predicts the state from the spikes.
     def plot_initial_conditions(self):
         return self.initial_conditions.to_series().unstack().T.plot()
 
@@ -354,17 +352,43 @@ class SortedSpikeDecoder(object):
             conditional_intensity, row='signal', col='state')
         return g.map(plt.plot, 'position', 'firing_rate')
 
+    def predict(self, spikes, time=None):
+        '''Predicts the state from spike_marks.
 
         Parameters
         ----------
-        spike : ndarray, shape (n_time,)
+        spikes : ndarray, shape (n_time, n_neurons)
+            If spike does not occur, the row must be marked with np.nan.
+        time : ndarray, optional, shape (n_time,)
 
         Returns
         -------
         predicted_state : str
 
         '''
-        pass
+        posterior_density = predict_state(
+            spikes,
+            initial_conditions=self.initial_conditions.values,
+            state_transition=self.state_transition_matrix.values,
+            likelihood_function=combined_likelihood,
+            likelihood_kwargs=self._combined_likelihood_kwargs)
+        coords = dict(
+            time=(time if time is not None
+                  else np.arange(posterior_density.shape[0])),
+            position=self.place_bin_centers,
+            state=self.state_names
+        )
+
+        posterior_density = xr.DataArray(
+            posterior_density,
+            dims=['time', 'state', 'position'],
+            coords=coords,
+            name='posterior_density')
+
+        return DecodingResults(
+            posterior_density=posterior_density,
+            spikes=spikes
+        )
 
 
 class DecodingResults():
