@@ -1,6 +1,10 @@
 from logging import getLogger
 
 import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from patsy import dmatrix
 
 import xarray as xr
 
@@ -9,6 +13,9 @@ from .clusterless import (build_joint_mark_intensity,
                           poisson_mark_likelihood)
 from .core import (combined_likelihood, empirical_movement_transition_matrix,
                    get_bin_centers, predict_state, set_initial_conditions)
+from .sorted_spikes import (get_conditional_intensity, glm_fit,
+                            poisson_likelihood,
+                            predictors_by_trajectory_direction)
 
 logger = getLogger(__name__)
 
@@ -191,24 +198,98 @@ class ClusterlessDecoder(object):
 class SortedSpikeDecoder(object):
 
     def __init__(self, position, spikes, trajectory_direction,
-                 n_position_bins=61):
+                 n_position_bins=61, replay_speedup_factor=16,
+                 state_names=_DEFAULT_STATE_NAMES,
+                 observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
+                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER):
         '''
 
         Attributes
         ----------
         position : ndarray, shape (n_time,)
-        spike : ndarray, shape (n_time,)
+        spike : ndarray, shape (n_time, n_neurons)
         trajectory_direction : ndarray, shape (n_time,)
         n_position_bins : int, optional
 
         '''
+        self.position = position
+        self.trajectory_direction = trajectory_direction
+        self.spikes = spikes
         self.n_position_bins = n_position_bins
+        self.replay_speedup_factor = replay_speedup_factor
+        self.state_names = state_names
+        self.observation_state_order = observation_state_order
+        self.state_transition_state_order = state_transition_state_order
 
     def fit(self):
         '''Fits the decoder model by state
 
         Relates the position and spikes to the state.
         '''
+        self.place_bin_edges = np.linspace(
+            np.floor(self.position.min()), np.ceil(self.position.max()),
+            self.n_position_bins + 1)
+        self.place_bin_centers = get_bin_centers(self.place_bin_edges)
+
+        initial_conditions = set_initial_conditions(
+            self.place_bin_edges, self.place_bin_centers)
+        initial_conditions = np.stack(
+            [initial_conditions[state]
+             for state in self.state_transition_state_order]
+        ) / len(self.state_names)
+        self.initial_conditions = xr.DataArray(
+            initial_conditions, dims=['state', 'position'],
+            coords=dict(position=self.place_bin_centers,
+                        state=self.state_names),
+            name='probability')
+
+        trajectory_directions = np.unique(self.trajectory_direction)
+
+        logger.info('Fitting state transition model...')
+
+        state_transition_by_state = {
+            direction: empirical_movement_transition_matrix(
+                self.position[
+                    np.in1d(self.trajectory_direction, direction)],
+                self.place_bin_edges, self.replay_speedup_factor)
+            for direction in trajectory_directions}
+        state_transition_matrix = np.stack(
+            [state_transition_by_state[state]
+             for state in self.state_transition_state_order])
+        self.state_transition_matrix = xr.DataArray(
+            state_transition_matrix,
+            dims=['state', 'position_t', 'position_t_1'],
+            coords=dict(state=self.state_names,
+                        position_t=self.place_bin_centers,
+                        position_t_1=self.place_bin_centers),
+            name='state_transition_probability')
+
+        logger.info('Fitting observation model...')
+        formula = ('1 + trajectory_direction * '
+                   'bs(position, df=5, degree=3)')
+
+        training_data = pd.DataFrame(dict(
+            position=self.position,
+            trajectory_direction=self.trajectory_direction))
+        design_matrix = dmatrix(
+            formula, training_data, return_type='dataframe')
+        fit = [glm_fit(spikes, design_matrix, ind)
+               for ind, spikes in enumerate(self.spikes.T)]
+
+        ci_by_state = {
+            direction: get_conditional_intensity(
+                fit, predictors_by_trajectory_direction(
+                    direction, self.place_bin_centers, design_matrix))
+            for direction in trajectory_directions}
+        conditional_intensity = np.stack(
+            [ci_by_state[state] for state in self.observation_state_order],
+            axis=1)
+        self._combined_likelihood_kwargs = dict(
+            likelihood_function=poisson_likelihood,
+            likelihood_kwargs=dict(
+                conditional_intensity=conditional_intensity)
+        )
+
         return self
 
     def predict(self, spikes):
