@@ -34,9 +34,9 @@ def glm_fit(spikes, design_matrix, ind):
         return np.nan
 
 
-def _predictors_by_trajectory_direction(trajectory_direction,
-                                        place_bin_centers,
-                                        design_matrix):
+def predictors_by_trajectory_direction(trajectory_direction,
+                                       place_bin_centers,
+                                       design_matrix):
     '''The design matrix for a given trajectory direction
     '''
     predictors = {'linear_distance': place_bin_centers,
@@ -56,7 +56,7 @@ def glm_val(fitted_model, predict_design_matrix):
         return np.full(predict_design_matrix.shape[0], np.nan)
 
 
-def _get_conditional_intensity(fit, predict_design_matrix):
+def get_conditional_intensity(fit, predict_design_matrix):
     '''The conditional intensity for each model
     '''
     return np.vstack([glm_val(fitted_model, predict_design_matrix)
