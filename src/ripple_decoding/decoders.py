@@ -406,3 +406,9 @@ class DecodingResults():
     def predicted_state_probability(self):
         return self.state_probability().iloc[-1].max()
 
+    def plot_posterior_density(self):
+        return self.posterior_density.plot(
+            x='time', y='position', col='state', col_wrap=2, robust=True)
+
+    def plot_state_probability(self):
+        return self.state_probability().plot()
