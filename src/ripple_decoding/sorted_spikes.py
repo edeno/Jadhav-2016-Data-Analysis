@@ -34,53 +34,6 @@ def glm_fit(spikes, design_matrix, ind):
         return np.nan
 
 
-def estimate_sorted_spike_encoding_model(train_position_info,
-                                         train_spikes_data,
-                                         place_bin_centers):
-    '''The conditional intensities for each state (Outbound-Forward,
-    Outbound-Reverse, Inbound-Forward, Inbound-Reverse)
-
-    Parameters
-    ----------
-    train_position_info : pandas dataframe
-    train_spikes_data : array_like
-    place_bin_centers : array_like, shape=(n_parameters,)
-
-    Returns
-    -------
-    combined_likelihood_kwargs : dict
-
-    '''
-    formula = ('1 + trajectory_direction * '
-               'bs(linear_distance, df=10, degree=3)')
-    design_matrix = dmatrix(
-        formula, train_position_info, return_type='dataframe')
-    fit = [glm_fit(spikes, design_matrix, ind)
-           for ind, spikes in enumerate(train_spikes_data)]
-
-    inbound_predict_design_matrix = _predictors_by_trajectory_direction(
-        'Inbound', place_bin_centers, design_matrix)
-    outbound_predict_design_matrix = _predictors_by_trajectory_direction(
-        'Outbound', place_bin_centers, design_matrix)
-
-    inbound_conditional_intensity = _get_conditional_intensity(
-        fit, inbound_predict_design_matrix)
-    outbound_conditional_intensity = _get_conditional_intensity(
-        fit, outbound_predict_design_matrix)
-
-    conditional_intensity = np.vstack(
-        [outbound_conditional_intensity,
-         outbound_conditional_intensity,
-         inbound_conditional_intensity,
-         inbound_conditional_intensity]).T
-
-    return dict(
-        likelihood_function=poisson_likelihood,
-        likelihood_kwargs=dict(
-            conditional_intensity=conditional_intensity)
-    )
-
-
 def _predictors_by_trajectory_direction(trajectory_direction,
                                         place_bin_centers,
                                         design_matrix):
