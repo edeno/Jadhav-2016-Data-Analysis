@@ -191,7 +191,7 @@ class ClusterlessDecoder(object):
 
         return DecodingResults(
             posterior_density=posterior_density,
-            test_marks=spike_marks
+            spikes=spike_marks
         )
 
 
@@ -332,9 +332,9 @@ class SortedSpikeDecoder(object):
 
 class DecodingResults():
 
-    def __init__(self, posterior_density, test_marks=None):
+    def __init__(self, posterior_density, spikes=None):
         self.posterior_density = posterior_density
-        self.test_marks = test_marks
+        self.spikes = spikes
 
     def state_probability(self):
         return self.posterior_density.sum('position').to_series().unstack()
@@ -345,5 +345,3 @@ class DecodingResults():
     def predicted_state_probability(self):
         return self.state_probability().iloc[-1].max()
 
-    def spike_train(self):
-        return np.any(~np.isnan(self.test_marks), axis=-1) * 1
