@@ -714,8 +714,6 @@ def get_mark_filename(tetrode_key, animals):
 
 
 def get_mark_indicator_dataframe(tetrode_key, animals):
-    # NOTE: Using first tetrode time because of a problem with LFP
-    # extraction in Bond. In general this is not desirable.
     time = get_trial_time(tetrode_key[:3], animals)
     mark_dataframe = (get_mark_dataframe(tetrode_key, animals)
                       .loc[time.min():time.max()])
