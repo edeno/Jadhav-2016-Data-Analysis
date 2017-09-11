@@ -7,21 +7,16 @@ from logging import getLogger
 
 import numpy as np
 import pandas as pd
+from dask import compute, delayed, local
+
 import xarray as xr
-from dask import local, compute, delayed
 
 from .data_processing import (get_interpolated_position_dataframe,
-                              get_LFP_dataframe,
-                              get_mark_indicator_dataframe,
+                              get_LFP_dataframe, get_mark_indicator_dataframe,
                               get_spike_indicator_dataframe,
-                              make_neuron_dataframe,
-                              make_tetrode_dataframe, reshape_to_segments,
-                              save_xarray)
-from .ripple_decoding import (combined_likelihood,
-                              estimate_marked_encoding_model,
-                              estimate_sorted_spike_encoding_model,
-                              estimate_state_transition, get_bin_centers,
-                              predict_state, set_initial_conditions)
+                              make_neuron_dataframe, make_tetrode_dataframe,
+                              reshape_to_segments, save_xarray)
+from .ripple_decoding import ClusterlessDecoder, SortedSpikeDecoder
 from .ripple_detection.detectors import Kay_ripple_detector
 from .spectral.connectivity import Connectivity
 from .spectral.transforms import Multitaper
@@ -156,7 +151,7 @@ def save_power(
     logger.info('...saving power')
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
-     'power': (dimension_names, c.power())}
+        'power': (dimension_names, c.power())}
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
@@ -175,7 +170,7 @@ def save_coherence(
     logger.info('...saving coherence')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {
-     'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
+        'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
@@ -274,7 +269,7 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'tetrode2': tetrode_info.tetrode_id.values,
         'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
-        }
+    }
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
     save_xarray(
@@ -387,42 +382,17 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = get_bin_centers(
-        place_bin_edges)
-
-    logger.info('...Fitting encoding model')
-    combined_likelihood_kwargs = estimate_sorted_spike_encoding_model(
-        train_position_info, train_spikes_data, place_bin_centers)
-
-    logger.info('...Fitting state transition model')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    logger.info('...Setting initial conditions')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    logger.info('...Decoding ripples')
-    decoder_params = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_kwargs
+    decoder = SortedSpikeDecoder(
+        position=train_position_info.linear_distance.values,
+        spikes=np.stack(train_spikes_data, axis=0),
+        trajectory_direction=train_position_info.trajectory_direction.values
     )
+
     test_spikes = _get_ripple_spikes(
         spikes_data, ripple_times, sampling_frequency)
-    posterior_density = [predict_state(ripple_spikes, **decoder_params)
+    posterior_density = [decoder.predict(ripple_spikes)
                          for ripple_spikes in test_spikes]
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times,
-        state_names, position_info, place_bin_centers, epoch_key)
+    return posterior_density
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -459,102 +429,23 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     train_position_info = position_info.query('speed > 4')
 
-    place = _get_place(train_position_info)
-    place_at_spike = [_get_place_at_spike(tetrode_marks,
-                                          train_position_info)
-                      for tetrode_marks in marks]
-    training_marks = [_get_training_marks(tetrode_marks,
-                                          train_position_info,
-                                          mark_variables)
-                      for tetrode_marks in marks]
+    training_marks = [
+        tetrode_marks.loc[train_position_info.index, mark_variables]
+        for tetrode_marks in marks]
 
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = get_bin_centers(place_bin_edges)
-
-    if place_std_deviation is None:
-        place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
-
-    logger.info('...Fitting encoding model')
-    combined_likelihood_kwargs = estimate_marked_encoding_model(
-        place_bin_centers, place, place_at_spike, training_marks,
-        place_std_deviation=place_std_deviation,
-        mark_std_deviation=mark_std_deviation)
-
-    logger.info('...Fitting state transition model')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    logger.info('...Setting initial conditions')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    logger.info('...Decoding ripples')
-    decoder_kwargs = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_kwargs
+    decoder = ClusterlessDecoder(
+        position=train_position_info.linear_distance.values,
+        trajectory_direction=train_position_info.trajectory_direction.values,
+        marks=training_marks
     )
-
     test_marks = _get_ripple_marks(
         marks, ripple_times, sampling_frequency)
 
     posterior_density = [
-        delayed(predict_state, pure=True)(ripple_marks, **decoder_kwargs)
+        decoder.predict(ripple_marks)
         for ripple_marks in test_marks]
-    posterior_density = compute(
-        *posterior_density, get=scheduler, **scheduler_kwargs)
-    test_spikes = [np.mean(~np.isnan(marks), axis=2)
-                   for marks in test_marks]
 
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times, sampling_frequency,
-        state_names, position_info, place_bin_centers, epoch_key)
-
-
-def _convert_to_states(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        d = function(*args, **kwargs)
-        return [d['Outbound'], d['Outbound'],
-                d['Inbound'], d['Inbound']]
-    return wrapper
-
-
-@_convert_to_states
-def _get_place(train_position_info, place_measure='linear_distance'):
-    return {trajectory_direction: grouped.loc[:, place_measure].values
-            for trajectory_direction, grouped
-            in (train_position_info
-                .groupby('trajectory_direction'))}
-
-
-@_convert_to_states
-def _get_place_at_spike(tetrode_marks, train_position_info,
-                        place_measure='linear_distance'):
-    return {trajectory_direction: (grouped.dropna()
-                                   .loc[:, place_measure].values)
-            for trajectory_direction, grouped
-            in (tetrode_marks
-                .join(train_position_info)
-                .groupby('trajectory_direction'))}
-
-
-@_convert_to_states
-def _get_training_marks(tetrode_marks, train_position_info,
-                        mark_variables):
-    return {trajectory_direction: (grouped.dropna()
-                                   .loc[:, mark_variables].values)
-            for trajectory_direction, grouped
-            in (tetrode_marks
-                .join(train_position_info)
-                .groupby('trajectory_direction'))}
+    return posterior_density
 
 
 def _get_ripple_marks(marks, ripple_times, sampling_frequency):
@@ -622,7 +513,7 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
         _compute_decision_state_probability(density, n_states)
         for density in posterior_density]
     index = pd.MultiIndex.from_tuples(
-        [(*epoch_key, ripple+1) for ripple in range(n_ripples)],
+        [(*epoch_key, ripple + 1) for ripple in range(n_ripples)],
         names=['animal', 'day', 'epoch', 'ripple_number'])
     ripple_info = pd.DataFrame(
         [_compute_max_state(probability, state_names)
@@ -655,9 +546,9 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
             density.reshape((-1, n_states, place_bin_centers.size)),
             dims=['time', 'state', 'linear_distance'],
             coords={
-                 'time': np.arange(density.shape[0]) / sampling_frequency,
-                 'linear_distance': place_bin_centers,
-                 'state': state_names
+                'time': np.arange(density.shape[0]) / sampling_frequency,
+                'linear_distance': place_bin_centers,
+                'state': state_names
             })
          for density in posterior_density],
         dim=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
