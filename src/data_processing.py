@@ -544,7 +544,7 @@ def get_interpolated_position_dataframe(epoch_key, animals):
         (position_continuous.index, time))), name='time')
     interpolated_position = (position_continuous
                              .reindex(index=new_index)
-                             .interpolate(method='spline', order=3)
+                             .interpolate(method='values')
                              .reindex(index=time))
     interpolated_position.loc[
         interpolated_position.linear_distance < 0, 'linear_distance'] = 0
@@ -606,16 +606,16 @@ def get_spike_indicator_dataframe(neuron_key, animals):
     return spikes_df.reindex(index=time, fill_value=0)
 
 
-def get_trial_time(key, animals):
+def get_trial_time(epoch_or_tetrode_key, animals):
     try:
-        animal, day, epoch, tetrode_number = key[:4]
+        animal, day, epoch, tetrode_number = epoch_or_tetrode_key[:4]
         lfp_df = get_LFP_dataframe(
             (animal, day, epoch, tetrode_number), animals)
     except ValueError:
         # no tetrode number provided
         tetrode_info = (
             make_tetrode_dataframe(animals)
-            .loc[key]
+            .loc[epoch_or_tetrode_key]
             .set_index(['animal', 'day', 'epoch', 'tetrode_number']))
         lfp_df = pd.concat(
             [get_LFP_dataframe(tetrode_key, animals)
