@@ -94,7 +94,7 @@ class ClusterlessDecoder(object):
             initial_conditions, dims=['state', 'position'],
             coords=dict(position=self.place_bin_centers,
                         state=self.state_names),
-            name='initial_conditions')
+            name='probability')
 
         trajectory_directions = np.unique(self.trajectory_direction)
 
