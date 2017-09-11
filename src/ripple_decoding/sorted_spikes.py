@@ -1,5 +1,4 @@
 from logging import getLogger
-from warnings import warn
 
 import numpy as np
 from patsy import build_design_matrices, dmatrix
@@ -31,7 +30,7 @@ def glm_fit(spikes, design_matrix, ind):
                   drop='missing').fit(maxiter=30)
         return fit if fit.converged else np.nan
     except np.linalg.linalg.LinAlgError:
-        warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
+        logger.warn('Data is poorly scaled for neuron #{}'.format(ind + 1))
         return np.nan
 
 
