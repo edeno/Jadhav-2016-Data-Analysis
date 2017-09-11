@@ -294,6 +294,29 @@ class SortedSpikeDecoder(object):
 
     def predict(self, spikes):
         '''Predicts the state from the spikes.
+    def plot_initial_conditions(self):
+        return self.initial_conditions.to_series().unstack().T.plot()
+
+    def plot_state_transition_model(self):
+        return (self.state_transition_matrix
+                .plot(x='position_t', y='position_t_1', col='state',
+                      robust=True))
+
+    def plot_observation_model(self):
+        conditional_intensity = self._combined_likelihood_kwargs[
+            'likelihood_kwargs']['conditional_intensity']
+        coords = dict(
+            state=self.state_names,
+            position=self.place_bin_centers)
+        conditional_intensity = xr.DataArray(
+            conditional_intensity,
+            coords=coords,
+            dims=['signal', 'state', 'position'],
+            name='firing_rate').to_dataframe().reset_index()
+        g = sns.FacetGrid(
+            conditional_intensity, row='signal', col='state')
+        return g.map(plt.plot, 'position', 'firing_rate')
+
 
         Parameters
         ----------
