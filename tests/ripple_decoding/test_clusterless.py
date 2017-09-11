@@ -47,7 +47,7 @@ def test_estimate_place_field():
     place_at_spike = np.asarray([25, 100])
     place_std_deviation = 20
     place_field_estimator = estimate_place_field(
-        place_bins, place_at_spike,
+        place_at_spike, place_bins,
         place_std_deviation=place_std_deviation)
 
     expected1 = norm.pdf(
@@ -66,7 +66,7 @@ def test_estimate_place_occupancy():
     place = np.asarray([25, 100])
     place_std_deviation = 20
     place_occupancy = estimate_place_occupancy(
-        place_bins, place, place_std_deviation=place_std_deviation)
+        place, place_bins, place_std_deviation)
     expected1 = norm.pdf(
         place_bins, place[0], place_std_deviation)
     expected2 = norm.pdf(
