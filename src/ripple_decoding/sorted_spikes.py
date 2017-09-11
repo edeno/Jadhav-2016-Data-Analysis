@@ -63,6 +63,14 @@ def get_conditional_intensity(fit, predict_design_matrix):
             for fitted_model in fit]
 
 
+def atleast_kd(array, k):
+    '''
+    https://stackoverflow.com/questions/42516569/numpy-add-variable-number-of-dimensions-to-an-array
+    '''
+    new_shape = array.shape + (1,) * (k - array.ndim)
+    return array.reshape(new_shape)
+
+
 def poisson_likelihood(is_spike, conditional_intensity=None,
                        time_bin_size=1):
     '''Probability of parameters given spiking at a particular time
@@ -79,9 +87,9 @@ def poisson_likelihood(is_spike, conditional_intensity=None,
     Returns
     -------
     poisson_likelihood : array_like, shape (n_signals,
-                                            n_parameters * n_states)
+                                            n_states, n_place_bins)
 
     '''
     probability_no_spike = np.exp(-conditional_intensity * time_bin_size)
-    return ((conditional_intensity ** is_spike[:, np.newaxis, np.newaxis])
-            * probability_no_spike)
+    is_spike = atleast_kd(is_spike, conditional_intensity.ndim)
+    return (conditional_intensity ** is_spike) * probability_no_spike
