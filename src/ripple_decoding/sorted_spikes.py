@@ -25,7 +25,7 @@ def glm_fit(spikes, design_matrix, ind):
     '''
     try:
         logger.debug('\t\t...Neuron #{}'.format(ind + 1))
-        fit = GLM(spikes.reindex(design_matrix.index), design_matrix,
+        fit = GLM(spikes, design_matrix,
                   family=families.Poisson(),
                   drop='missing').fit(maxiter=30)
         return fit if fit.converged else np.nan
