@@ -134,8 +134,7 @@ def joint_mark_intensity(marks, training_marks=None,
             marks, training_marks=training_marks,
             mark_std_deviation=mark_std_deviation)
         place_mark_estimator = np.dot(place_field, mark_space)
-        return place_mark_estimator / place_occupancy / (
-            mark_std_deviation * len(marks))
+        return place_mark_estimator / place_occupancy
     else:
         return np.ones(place_occupancy.shape)
 
