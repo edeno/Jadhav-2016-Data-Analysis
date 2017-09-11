@@ -59,8 +59,8 @@ def glm_val(fitted_model, predict_design_matrix):
 def get_conditional_intensity(fit, predict_design_matrix):
     '''The conditional intensity for each model
     '''
-    return np.vstack([glm_val(fitted_model, predict_design_matrix)
-                      for fitted_model in fit]).T
+    return [glm_val(fitted_model, predict_design_matrix)
+            for fitted_model in fit]
 
 
 def poisson_likelihood(is_spike, conditional_intensity=None,
