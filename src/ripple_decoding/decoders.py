@@ -156,6 +156,43 @@ class ClusterlessDecoder(object):
 
         return self
 
+    def plot_initial_conditions(self):
+        return self.initial_conditions.to_series().unstack().T.plot()
+
+    def plot_state_transition_model(self):
+        return (self.state_transition_matrix
+                .plot(x='position_t', y='position_t_1', col='state',
+                      robust=True))
+
+    def marginalized_intensities(self):
+        joint_mark_intensity_functions = (
+            self._combined_likelihood_kwargs['likelihood_kwargs']
+            ['joint_mark_intensity_functions'])
+        mark_bin_edges = np.linspace(100, 350)
+        marginalized_intensities = np.stack(
+            [[[jmi(np.array(edge)[np.newaxis]) for edge in mark_bin_edges]
+              for jmi in tetrode]
+             for tetrode in joint_mark_intensity_functions])
+        dims = ['signal', 'state', 'marks', 'position']
+        coords = dict(
+            state=self.state_names,
+            marks=mark_bin_edges,
+            position=self.place_bin_centers
+        )
+        return xr.DataArray(marginalized_intensities, dims=dims,
+                            coords=coords)
+
+    def plot_observation_model(self):
+        return self.marginalized_intensities().plot(
+            row='signal', col='state', x='position', y='marks',
+            robust=True)
+
+    def save_model():
+        pass
+
+    def load_model():
+        pass
+
     def predict(self, spike_marks, time=None):
         '''Predicts the state from spike_marks.
 
