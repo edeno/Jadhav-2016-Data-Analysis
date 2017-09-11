@@ -39,24 +39,6 @@ def test_evaluate_mark_space():
     assert np.allclose(mark_space_estimator, expected)
 
 
-def test_get_ground_process_intensity():
-    place_field_estimator = np.zeros((61, 2))
-    place_field_estimator[30, 0] = 1
-    place_field_estimator[31, 0] = 1
-    place_field_estimator[31, 1] = 1
-
-    place_occupancy = np.ones((61,))
-    place_occupancy[31] = 4
-    ground_process_intensity = estimate_ground_process_intensity(
-        place_field_estimator, place_occupancy)
-
-    expected = np.zeros((61,))
-    expected[30] = 1
-    expected[31] = 0.50
-
-    assert np.allclose(ground_process_intensity, expected)
-
-
 def test_estimate_place_field():
     '''Tests that there is a Gaussian centered around each given place
     at spike
@@ -90,60 +72,6 @@ def test_estimate_place_occupancy():
     expected2 = norm.pdf(
         place_bins, place[1], place_std_deviation)
     assert np.allclose(place_occupancy, expected1 + expected2)
-
-
-def test_poisson_mark_likelihood_is_spike():
-    '''Tests that a mark vector with all NaNs are counted as not spiking.
-    '''
-    def identity(marks):
-        return marks
-
-    n_signals, n_marks, n_parameters = 10, 4, 4
-
-    marks = (np.ones((n_signals, n_marks)) *
-             np.arange(0, n_signals)[:, np.newaxis])
-    no_spike_ind = [5, 8]
-    marks[no_spike_ind, :] = np.nan
-
-    ground_process_intensity = np.zeros((n_signals, n_parameters))
-
-    likelihood = poisson_mark_likelihood(
-        marks, joint_mark_intensity=identity,
-        ground_process_intensity=ground_process_intensity)
-
-    expected_likelihood = np.copy(marks)
-    expected_likelihood[no_spike_ind, :] = 1
-
-    assert np.allclose(likelihood, expected_likelihood)
-
-
-def test_poisson_mark_likelihood_ground_process_intensity():
-    '''Tests that the ground process intensity is independent
-    for each parameter and signal'''
-    def identity(marks):
-        return marks
-
-    n_signals, n_marks, n_parameters = 10, 4, 4
-
-    marks = (np.ones((n_signals, n_marks)) *
-             np.arange(0, n_signals)[:, np.newaxis])
-
-    ground_process_intensity = np.zeros((n_signals, n_parameters))
-    altered_signal_ind = 3
-    ground_process_intensity[altered_signal_ind, :2] = -np.log(0.25)
-    ground_process_intensity[altered_signal_ind, 2:] = -np.log(0.75)
-
-    likelihood = poisson_mark_likelihood(
-        marks, joint_mark_intensity=identity,
-        ground_process_intensity=ground_process_intensity)
-
-    expected_likelihood = np.copy(marks)
-    expected_likelihood[altered_signal_ind, :2] = (
-        marks[altered_signal_ind, :2] * 0.25)
-    expected_likelihood[altered_signal_ind, 2:] = (
-        marks[altered_signal_ind, 2:] * 0.75)
-
-    assert np.allclose(likelihood, expected_likelihood)
 
 
 @mark.parametrize('x, mean, std_deviation', [
