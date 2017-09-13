@@ -93,7 +93,7 @@ def evaluate_mark_space(test_marks, training_marks=None,
 
     Returns
     -------
-    mark_space_estimator : array_like, shape (n_training_spikes,)
+    mark_space_estimator : array, shape (n_training_spikes,)
 
     '''
     return np.nanprod(
