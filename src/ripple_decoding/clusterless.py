@@ -125,13 +125,12 @@ def joint_mark_intensity(marks, training_marks=None,
     joint_mark_intensity : array_like, shape (n_place_bins,)
 
     '''
-    is_spike = np.any(~np.isnan(marks))
-    if is_spike:
+    if np.any(~np.isnan(marks)):
+        # If there is a spike, evaluate
         mark_space = evaluate_mark_space(
             marks, training_marks=training_marks,
             mark_std_deviation=mark_std_deviation)
-        place_mark_estimator = np.dot(place_field, mark_space)
-        return place_mark_estimator / place_occupancy
+        return np.dot(place_field, mark_space) / place_occupancy
     else:
         return np.ones(place_occupancy.shape)
 
