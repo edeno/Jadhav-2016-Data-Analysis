@@ -3,11 +3,9 @@ from pytest import mark
 from scipy.stats import multivariate_normal, norm
 
 from src.ripple_decoding.clusterless import (_normal_pdf,
-                                             estimate_ground_process_intensity,
                                              estimate_place_field,
                                              estimate_place_occupancy,
-                                             evaluate_mark_space,
-                                             poisson_mark_likelihood)
+                                             evaluate_mark_space)
 
 
 def test_evaluate_mark_space():
