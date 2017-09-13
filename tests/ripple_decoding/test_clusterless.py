@@ -44,19 +44,20 @@ def test_estimate_place_field():
     at spike
     '''
     place_bins = np.linspace(0, 150, 61)
-    place_at_spike = np.asarray([25, 100])
+    is_spike = np.array([1, 1, 0], dtype=bool)
+    position = np.asarray([25, 100, 30])
     place_std_deviation = 20
     place_field_estimator = estimate_place_field(
-        place_at_spike, place_bins,
+        position, is_spike, place_bins,
         place_std_deviation=place_std_deviation)
 
     expected1 = norm.pdf(
-        place_bins, place_at_spike[0], place_std_deviation)
+        place_bins, position[0], place_std_deviation)
     expected2 = norm.pdf(
-        place_bins, place_at_spike[1], place_std_deviation)
+        place_bins, position[1], place_std_deviation)
 
     assert np.allclose(place_field_estimator,
-                       np.vstack((expected1, expected2)).T)
+                       np.stack((expected1, expected2)).T)
 
 
 def test_estimate_place_occupancy():

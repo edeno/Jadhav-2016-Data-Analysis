@@ -140,7 +140,7 @@ def build_joint_mark_intensity(position, training_marks, place_bin_centers,
     place_occupancy = estimate_place_occupancy(
         position, place_bin_centers, place_std_deviation)
     place_field = estimate_place_field(
-        position[is_spike], place_bin_centers, place_std_deviation)
+        position, is_spike, place_bin_centers, place_std_deviation)
 
     return partial(
         joint_mark_intensity,
@@ -151,7 +151,7 @@ def build_joint_mark_intensity(position, training_marks, place_bin_centers,
     )
 
 
-def estimate_place_field(place_at_spike, place_bin_centers,
+def estimate_place_field(position, is_spike, place_bin_centers,
                          place_std_deviation=1):
     '''Non-parametric estimate of the neuron receptive field with respect
     to place.
@@ -161,10 +161,12 @@ def estimate_place_field(place_at_spike, place_bin_centers,
 
     Parameters
     ----------
-    place_at_spike : array_like, shape=(n_training_spikes,)
-        Position of the animal at spike time
-    place_bin_centers : array_like, shape=(n_parameters,)
-        Evaluate the Gaussian at these bins
+    position : array, shape (n_time,)
+        Position of the animal over time
+    is_spike : array, shape (n_time,)
+        Boolean array with True indicating spike at that time.
+    place_bin_centers : array_like, shape (n_place_bins,)
+        Evaluate the Gaussian at these values
     place_std_deviation : float, optional
         Standard deviation of the Gaussian kernel
 
@@ -186,9 +188,11 @@ def estimate_ground_process_intensity(position, marks, place_bin_centers,
 
     Parameters
     ----------
-    place_field : array_like, shape=(n_states, n_training_spikes,
-                                     n_parameters)
-    place_occupancy : array_like, shape=(n_states, n_place_bins)
+    position : array, shape (n_time,)
+        Position of the animal over time
+    marks : array, shape (n_time, n_marks)
+    place_bin_centers : array, shape (n_place_bins,)
+    place_std_deviation : float
 
     Returns
     -------
@@ -197,13 +201,13 @@ def estimate_ground_process_intensity(position, marks, place_bin_centers,
     '''
     is_spike = np.any(~np.isnan(marks), axis=1)
     place_field = estimate_place_field(
-        position[is_spike], place_bin_centers, place_std_deviation=1)
+        position, is_spike, place_bin_centers, place_std_deviation=1)
     place_occupancy = estimate_place_occupancy(
         position, place_bin_centers, place_std_deviation)
     return place_field.sum(axis=1) / place_occupancy
 
 
-def estimate_place_occupancy(place, place_bin_centers,
+def estimate_place_occupancy(position, place_bin_centers,
                              place_std_deviation=1):
     '''A Gaussian smoothed probability that the animal is in a particular
     position.
@@ -212,8 +216,9 @@ def estimate_place_occupancy(place, place_bin_centers,
 
     Parameters
     ----------
-    place : array_like, shape=(n_places,)
-    place_bin_centers : array_like, shape=(n_parameters,)
+    position : array, shape (n_time,)
+        Position of the animal over time
+    place_bin_centers : array_like, shape (n_place_bins,)
     place_std_deviation : float, optional
 
     Returns
