@@ -39,11 +39,6 @@ def _normal_pdf(x, mean=0, std_deviation=1):
     return np.exp(-0.5 * u ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
 
 
-def _gaussian_kernel(data, means, std_deviation=1):
-    return _normal_pdf(
-        data[:, np.newaxis], mean=means, std_deviation=std_deviation)
-
-
 def poisson_mark_likelihood(marks, joint_mark_intensity_functions=None,
                             ground_process_intensity=None,
                             time_bin_size=1):
@@ -179,8 +174,8 @@ def estimate_place_field(place_at_spike, place_bin_centers,
                                                n_training_spikes)
 
     '''
-    return _gaussian_kernel(
-        place_bin_centers, means=place_at_spike,
+    return _normal_pdf(
+        place_bin_centers[:, np.newaxis], mean=position[is_spike],
         std_deviation=place_std_deviation)
 
 
@@ -226,8 +221,8 @@ def estimate_place_occupancy(place, place_bin_centers,
     place_occupancy : array_like, shape=(n_parameters,)
 
     '''
-    return _gaussian_kernel(
-        place_bin_centers, means=place,
+    return _normal_pdf(
+        place_bin_centers[:, np.newaxis], mean=position,
         std_deviation=place_std_deviation).sum(axis=1)
 
 
