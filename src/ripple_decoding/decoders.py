@@ -39,7 +39,7 @@ class ClusterlessDecoder(object):
     trajectory_direction : array_like, shape (n_time,)
         Task of the animal. Element must be either
          'Inbound' or 'Outbound'.
-    spike_marks : ndarray, shape (n_time, n_marks, n_signals)
+    spike_marks : ndarray, shape (n_signals, n_time, n_marks)
         Marks to train the model on.
         If spike does not occur, the row must be marked with np.nan
     n_position_bins : int, optional
