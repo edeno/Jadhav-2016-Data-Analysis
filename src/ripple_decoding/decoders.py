@@ -188,10 +188,10 @@ class ClusterlessDecoder(object):
             robust=True)
 
     def save_model():
-        pass
+        raise NotImplementedError
 
     def load_model():
-        pass
+        raise NotImplementedError
 
     def predict(self, spike_marks, time=None):
         '''Predicts the state from spike_marks.
@@ -328,6 +328,12 @@ class SortedSpikeDecoder(object):
         )
 
         return self
+
+    def save_model():
+        raise NotImplementedError
+
+    def load_model():
+        raise NotImplementedError
 
     def plot_initial_conditions(self):
         return self.initial_conditions.to_series().unstack().T.plot()
