@@ -79,7 +79,7 @@ class ClusterlessDecoder(object):
         '''
 
         self.place_bin_edges = np.linspace(
-            np.floor(self.position.min()), np.ceil(self.position.max()),
+            self.position.min(), self.position.max(),
             self.n_position_bins + 1)
         self.place_std_deviation = np.diff(self.place_bin_edges)[0]
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
@@ -168,7 +168,7 @@ class ClusterlessDecoder(object):
         joint_mark_intensity_functions = (
             self._combined_likelihood_kwargs['likelihood_kwargs']
             ['joint_mark_intensity_functions'])
-        mark_bin_edges = np.linspace(100, 350)
+        mark_bin_edges = np.linspace(100, 350, 200)
         marginalized_intensities = np.stack(
             [[[jmi(np.array(edge)[np.newaxis]) for edge in mark_bin_edges]
               for jmi in tetrode]
