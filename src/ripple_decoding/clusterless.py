@@ -257,14 +257,27 @@ def estimate_place_occupancy(position, place_bin_centers,
 
 
 def estimate_marginalized_joint_mark_intensity(
-    mark_bin_edges, place_bin_edges, marks, position_at_spike,
-        all_positions, mark_std_deviation, place_std_deviation):
+    mark_bin_centers, training_marks, place_field, place_occupancy,
+        mark_std_deviation):
+    '''
 
-    mark_at_spike = _gaussian_kernel(mark_bin_edges, marks,
-                                     mark_std_deviation)
-    place_at_spike = _gaussian_kernel(place_bin_edges, position_at_spike,
-                                      place_std_deviation)
-    place_occupancy = _gaussian_kernel(place_bin_edges, all_positions,
-                                       place_std_deviation).sum(axis=1)
-    return (np.dot(place_at_spike, mark_at_spike.T) /
-            place_occupancy[:, np.newaxis])
+    Parameters
+    ----------
+    mark_bin_centers : array, shape (n_mark_bins,)
+    training_marks : array, shape (n_spikes, n_marks)
+    place_field : array, shape (n_place_bins, n_spikes)
+    place_occupancy : array, shape (n_place_bins,)
+    mark_std_deviation : float
+
+    Returns
+    -------
+    marginalized_joint_mark_intensity : array, shape (n_place_bins,
+                                                      n_mark_bins, n_marks)
+
+    '''
+
+    mark_at_spike = _normal_pdf(
+        mark_bin_centers[:, np.newaxis, np.newaxis], training_marks,
+        mark_std_deviation)
+    return (np.dot(place_field, mark_at_spike) /
+            place_occupancy[:, np.newaxis, np.newaxis])
