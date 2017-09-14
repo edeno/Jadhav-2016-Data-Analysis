@@ -165,8 +165,12 @@ def get_bin_centers(bin_edges):
     return bin_edges[:-1] + np.diff(bin_edges) / 2
 
 
-def set_initial_conditions(place_bin_edges,
-                           place_bin_centers, n_states=4):
+def uniform_initial_conditions(place_bin_centers):
+    '''
+    '''
+    return normalize_to_probability(np.ones_like(place_bin_centers))
+
+
 def inbound_outbound_initial_conditions(place_bin_centers):
     '''Sets the prior for each state (Outbound-Forward, Outbound-Reverse,
     Inbound-Forward, Inbound-Reverse).
