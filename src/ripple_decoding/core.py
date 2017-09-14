@@ -25,21 +25,18 @@ def predict_state(data, initial_conditions=None, state_transition=None,
 
     Parameters
     ----------
-    data : array_like, shape=(n_time, n_signals, ...)
-    initial_conditions : array_like (n_parameters * n_states,)
-    state_transition : array_like (n_parameters * n_states,
-                                   n_parameters * n_states)
+    data : array_like, shape=(n_signals, n_time, ...)
+    initial_conditions : array_like (n_states, n_parameters)
+    state_transition : array_like (n_states, n_parameters, n_parameters)
     likelihood_function : function
     likelihood_kwargs: dict, optional
         Additional arguments to the likelihood function
         besides the data
-    debug : bool, optional
-        If true, function returns likelihood and prior
 
     Returns
     -------
-    posterior_over_time : array_like, shape=(n_time_points,
-                                             n_states, n_parameters)
+    posterior_over_time : array, shape=(n_time_points, n_states,
+                                        n_parameters)
 
     '''
     posterior = initial_conditions
