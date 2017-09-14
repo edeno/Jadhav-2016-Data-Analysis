@@ -167,6 +167,7 @@ def get_bin_centers(bin_edges):
 
 def set_initial_conditions(place_bin_edges,
                            place_bin_centers, n_states=4):
+def inbound_outbound_initial_conditions(place_bin_centers):
     '''Sets the prior for each state (Outbound-Forward, Outbound-Reverse,
     Inbound-Forward, Inbound-Reverse).
 
@@ -175,18 +176,15 @@ def set_initial_conditions(place_bin_edges,
 
     Parameters
     ----------
-    place_bin_edges : array_like, shape=(n_parameters,)
-        Histogram bin edges of the place measure
     place_bin_centers : array_like, shape=(n_parameters,)
         Histogram bin centers of the place measure
-    n_states : int, optional
 
     Returns
     -------
     initial_conditions : array_like, shape=(n_parameters * n_states,)
         Initial conditions for each state are stacked row-wise.
     '''
-    place_bin_size = place_bin_edges[1] - place_bin_edges[0]
+    place_bin_size = place_bin_centers[1] - place_bin_centers[0]
 
     outbound_initial_conditions = normalize_to_probability(
         norm.pdf(place_bin_centers, loc=0,
