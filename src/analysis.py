@@ -390,9 +390,9 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
 
     test_spikes = _get_ripple_spikes(
         spikes_data, ripple_times, sampling_frequency)
-    posterior_density = [decoder.predict(ripple_spikes)
-                         for ripple_spikes in test_spikes]
-    return posterior_density
+    results = [decoder.predict(ripple_spikes)
+               for ripple_spikes in test_spikes]
+    return results
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -441,11 +441,11 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     test_marks = _get_ripple_marks(
         marks, ripple_times, sampling_frequency)
 
-    posterior_density = [
+    results = [
         decoder.predict(ripple_marks)
         for ripple_marks in test_marks]
 
-    return posterior_density
+    return results
 
 
 def _get_ripple_marks(marks, ripple_times, sampling_frequency):
