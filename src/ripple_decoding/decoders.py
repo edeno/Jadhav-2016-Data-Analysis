@@ -13,7 +13,9 @@ from .clusterless import (build_joint_mark_intensity,
                           poisson_mark_likelihood,
                           estimate_marginalized_joint_mark_intensity)
 from .core import (combined_likelihood, empirical_movement_transition_matrix,
-                   get_bin_centers, predict_state, set_initial_conditions)
+                   get_bin_centers, predict_state,
+                   inbound_outbound_initial_conditions,
+                   uniform_initial_conditions)
 from .sorted_spikes import (get_conditional_intensity, glm_fit,
                             poisson_likelihood,
                             predictors_by_trajectory_direction)
@@ -53,7 +55,8 @@ class ClusterlessDecoder(object):
                  replay_speedup_factor=16,
                  state_names=_DEFAULT_STATE_NAMES,
                  observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
-                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER):
+                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER,
+                 initial_conditions='Inbound-Outbound'):
         self.position = np.array(position)
         self.trajectory_direction = np.array(trajectory_direction)
         self.spike_marks = np.array(spike_marks)
@@ -63,6 +66,7 @@ class ClusterlessDecoder(object):
         self.state_names = state_names
         self.observation_state_order = observation_state_order
         self.state_transition_state_order = state_transition_state_order
+        self.initial_conditions = initial_conditions
 
     def fit(self):
         '''Fits the decoder model for each trajectory_direction.
@@ -85,19 +89,25 @@ class ClusterlessDecoder(object):
         self.place_std_deviation = np.diff(self.place_bin_edges)[0]
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
 
-        initial_conditions = set_initial_conditions(
-            self.place_bin_edges, self.place_bin_centers)
-        initial_conditions = np.stack(
-            [initial_conditions[state]
+        trajectory_directions = np.unique(self.trajectory_direction)
+
+        if self.initial_conditions == 'Inbound-Outbound':
+            self.initial_conditions = inbound_outbound_initial_conditions(
+                self.place_bin_centers)
+        elif self.initial_conditions == 'Uniform':
+            self.initial_conditions = {
+                direction: uniform_initial_conditions(self.place_bin_centers)
+                for direction in trajectory_directions}
+
+        self.initial_conditions = np.stack(
+            [self.initial_conditions[state]
              for state in self.state_transition_state_order]
         ) / len(self.state_names)
         self.initial_conditions = xr.DataArray(
-            initial_conditions, dims=['state', 'position'],
+            self.initial_conditions, dims=['state', 'position'],
             coords=dict(position=self.place_bin_centers,
                         state=self.state_names),
             name='probability')
-
-        trajectory_directions = np.unique(self.trajectory_direction)
 
         logger.info('Fitting state transition model...')
 
@@ -243,7 +253,8 @@ class SortedSpikeDecoder(object):
                  n_position_bins=61, replay_speedup_factor=16,
                  state_names=_DEFAULT_STATE_NAMES,
                  observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
-                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER):
+                 state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER,
+                 initial_conditions='Inbound-Outbound'):
         '''
 
         Attributes
@@ -262,6 +273,7 @@ class SortedSpikeDecoder(object):
         self.state_names = state_names
         self.observation_state_order = observation_state_order
         self.state_transition_state_order = state_transition_state_order
+        self.initial_conditions = initial_conditions
 
     def fit(self):
         '''Fits the decoder model by state
@@ -273,19 +285,25 @@ class SortedSpikeDecoder(object):
             self.n_position_bins + 1)
         self.place_bin_centers = get_bin_centers(self.place_bin_edges)
 
-        initial_conditions = set_initial_conditions(
-            self.place_bin_edges, self.place_bin_centers)
-        initial_conditions = np.stack(
-            [initial_conditions[state]
+        trajectory_directions = np.unique(self.trajectory_direction)
+
+        if self.initial_conditions == 'Inbound-Outbound':
+            self.initial_conditions = inbound_outbound_initial_conditions(
+                self.place_bin_centers)
+        elif self.initial_conditions == 'Uniform':
+            self.initial_conditions = {
+                direction: uniform_initial_conditions(self.place_bin_centers)
+                for direction in trajectory_directions}
+
+        self.initial_conditions = np.stack(
+            [self.initial_conditions[state]
              for state in self.state_transition_state_order]
         ) / len(self.state_names)
         self.initial_conditions = xr.DataArray(
-            initial_conditions, dims=['state', 'position'],
+            self.initial_conditions, dims=['state', 'position'],
             coords=dict(position=self.place_bin_centers,
                         state=self.state_names),
             name='probability')
-
-        trajectory_directions = np.unique(self.trajectory_direction)
 
         logger.info('Fitting state transition model...')
 
