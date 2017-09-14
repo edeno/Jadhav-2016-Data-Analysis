@@ -10,7 +10,8 @@ import xarray as xr
 
 from .clusterless import (build_joint_mark_intensity,
                           estimate_ground_process_intensity,
-                          poisson_mark_likelihood)
+                          poisson_mark_likelihood,
+                          estimate_marginalized_joint_mark_intensity)
 from .core import (combined_likelihood, empirical_movement_transition_matrix,
                    get_bin_centers, predict_state, set_initial_conditions)
 from .sorted_spikes import (get_conditional_intensity, glm_fit,
@@ -168,24 +169,28 @@ class ClusterlessDecoder(object):
         joint_mark_intensity_functions = (
             self._combined_likelihood_kwargs['likelihood_kwargs']
             ['joint_mark_intensity_functions'])
-        mark_bin_edges = np.linspace(100, 350, 200)
+        mark_bin_centers = np.linspace(100, 350, 200)
+
         marginalized_intensities = np.stack(
-            [[[jmi(np.array(edge)[np.newaxis]) for edge in mark_bin_edges]
+            [[estimate_marginalized_joint_mark_intensity(
+                mark_bin_centers, jmi.keywords['training_marks'],
+                jmi.keywords['place_field'],
+                jmi.keywords['place_occupancy'], self.mark_std_deviation)
               for jmi in tetrode]
              for tetrode in joint_mark_intensity_functions])
-        dims = ['signal', 'state', 'marks', 'position']
+        dims = ['signal', 'state', 'position', 'marks', 'mark_dimension']
         coords = dict(
             state=self.state_names,
-            marks=mark_bin_edges,
+            marks=mark_bin_centers,
             position=self.place_bin_centers
         )
         return xr.DataArray(marginalized_intensities, dims=dims,
                             coords=coords)
 
     def plot_observation_model(self):
-        return self.marginalized_intensities().plot(
-            row='signal', col='state', x='position', y='marks',
-            robust=True)
+        return (self.marginalized_intensities().sum('mark_dimension')
+                .plot(row='signal', col='state', x='position', y='marks',
+                      robust=True))
 
     def save_model():
         raise NotImplementedError
