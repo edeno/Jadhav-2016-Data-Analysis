@@ -226,7 +226,7 @@ def estimate_ground_process_intensity(position, marks, place_bin_centers,
     '''
     is_spike = np.any(~np.isnan(marks), axis=1)
     place_field = estimate_place_field(
-        position, is_spike, place_bin_centers, place_std_deviation=1)
+        position, is_spike, place_bin_centers, place_std_deviation)
     place_occupancy = estimate_place_occupancy(
         position, place_bin_centers, place_std_deviation)
     return place_field.sum(axis=1) / place_occupancy
