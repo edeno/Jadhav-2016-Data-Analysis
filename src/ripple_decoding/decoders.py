@@ -47,6 +47,10 @@ class ClusterlessDecoder(object):
         If spike does not occur, the row must be marked with np.nan
     n_position_bins : int, optional
     mark_std_deviation : float, optional
+    replay_speedup_factor : int, optional
+    observation_state_order : list of str
+    state_transition_state_order : list of str
+    initial_conditions : 'Inbound-Outbound' | 'Uniform' | dict of array
 
     '''
 
