@@ -130,13 +130,14 @@ def joint_mark_intensity(marks, training_marks=None,
         mark_space = evaluate_mark_space(
             marks, training_marks=training_marks,
             mark_std_deviation=mark_std_deviation)
-        return np.dot(place_field, mark_space) / place_occupancy
+        return np.mean(place_field * mark_space, axis=1) / place_occupancy
     else:
         return np.ones(place_occupancy.shape)
 
 
 def build_joint_mark_intensity(position, training_marks, place_bin_centers,
-                               place_std_deviation, mark_std_deviation):
+                               place_std_deviation, mark_std_deviation,
+                               sampling_frequency):
     '''Make a joint mark intensity function with precalculated quauntities
     (`training_marks`, `place_field`, 'place_occupancy') preset.
 
@@ -154,6 +155,7 @@ def build_joint_mark_intensity(position, training_marks, place_bin_centers,
         The marks for each spike when the animal is moving
     place_std_deviation : float
     mark_std_deviation : float
+    sampling_frequency : float
 
 
     Returns
@@ -163,7 +165,8 @@ def build_joint_mark_intensity(position, training_marks, place_bin_centers,
     '''
     is_spike = np.any(~np.isnan(training_marks), axis=1)
     place_occupancy = estimate_place_occupancy(
-        position, place_bin_centers, place_std_deviation)
+        position, place_bin_centers, place_std_deviation,
+        sampling_frequency)
     place_field = estimate_place_field(
         position, is_spike, place_bin_centers, place_std_deviation)
 
@@ -229,11 +232,12 @@ def estimate_ground_process_intensity(position, marks, place_bin_centers,
         position, is_spike, place_bin_centers, place_std_deviation)
     place_occupancy = estimate_place_occupancy(
         position, place_bin_centers, place_std_deviation)
-    return place_field.sum(axis=1) / place_occupancy
+    return place_field.mean(axis=1) / place_occupancy
 
 
 def estimate_place_occupancy(position, place_bin_centers,
-                             place_std_deviation=1):
+                             place_std_deviation=1,
+                             sampling_frequency=1500):
     '''How often the animal is at a position
 
     Denominator in equation #12 and #13 of [1]
@@ -253,7 +257,7 @@ def estimate_place_occupancy(position, place_bin_centers,
     '''
     return _normal_pdf(
         place_bin_centers[:, np.newaxis], mean=position,
-        std_deviation=place_std_deviation).sum(axis=1)
+        std_deviation=place_std_deviation).sum(axis=1) / sampling_frequency
 
 
 def estimate_marginalized_joint_mark_intensity(
