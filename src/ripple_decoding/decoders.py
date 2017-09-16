@@ -171,13 +171,19 @@ class ClusterlessDecoder(object):
 
         return self
 
-    def plot_initial_conditions(self):
-        return self.initial_conditions.to_series().unstack().T.plot()
+    def plot_initial_conditions(self, **kwargs):
+        return (
+            self.initial_conditions.to_series().unstack().T.plot(**kwargs))
 
-    def plot_state_transition_model(self):
-        return (self.state_transition_matrix
-                .plot(x='position_t', y='position_t_1', col='state',
-                      robust=True))
+    def plot_state_transition_model(self, **kwargs):
+        try:
+            return (self.state_transition_matrix
+                    .plot(x='position_t', y='position_t_1', col='state',
+                          robust=True, **kwargs))
+        except ValueError:
+            return (self.state_transition_matrix
+                        .plot(x='position_t', y='position_t_1',
+                              robust=True, **kwargs))
 
     def marginalized_intensities(self):
         joint_mark_intensity_functions = (
@@ -202,9 +208,15 @@ class ClusterlessDecoder(object):
                             coords=coords)
 
     def plot_observation_model(self):
-        return (self.marginalized_intensities().sum('mark_dimension')
-                .plot(row='signal', col='state', x='position', y='marks',
-                      robust=True))
+        marginalized_intensities = (
+            self.marginalized_intensities().sum('mark_dimension'))
+        try:
+            return marginalized_intensities.plot(
+                row='signal', col='state', x='position', y='marks',
+                robust=True)
+        except ValueError:
+            return marginalized_intensities.plot(
+                row='signal', x='position', y='marks', robust=True)
 
     def save_model():
         raise NotImplementedError
@@ -362,13 +374,19 @@ class SortedSpikeDecoder(object):
     def load_model():
         raise NotImplementedError
 
-    def plot_initial_conditions(self):
-        return self.initial_conditions.to_series().unstack().T.plot()
+    def plot_initial_conditions(self, **kwargs):
+        return (
+            self.initial_conditions.to_series().unstack().T.plot(**kwargs))
 
-    def plot_state_transition_model(self):
-        return (self.state_transition_matrix
-                .plot(x='position_t', y='position_t_1', col='state',
-                      robust=True))
+    def plot_state_transition_model(self, **kwargs):
+        try:
+            return (self.state_transition_matrix
+                    .plot(x='position_t', y='position_t_1', col='state',
+                          robust=True, **kwargs))
+        except ValueError:
+            return (self.state_transition_matrix
+                        .plot(x='position_t', y='position_t_1',
+                              robust=True, **kwargs))
 
     def plot_observation_model(self):
         conditional_intensity = self._combined_likelihood_kwargs[
@@ -439,9 +457,14 @@ class DecodingResults():
     def predicted_state_probability(self):
         return self.state_probability().iloc[-1].max()
 
-    def plot_posterior_density(self):
-        return self.posterior_density.plot(
-            x='time', y='position', col='state', col_wrap=2, robust=True)
+    def plot_posterior_density(self, **kwargs):
+        try:
+            return self.posterior_density.plot(
+                x='time', y='position', col='state', col_wrap=2,
+                robust=True, **kwargs)
+        except ValueError:
+            return self.posterior_density.plot(
+                x='time', y='position', robust=True, **kwargs)
 
-    def plot_state_probability(self):
-        return self.state_probability().plot()
+    def plot_state_probability(self, **kwargs):
+        return self.state_probability().plot(**kwargs)
