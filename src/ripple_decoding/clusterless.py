@@ -65,8 +65,8 @@ def poisson_mark_likelihood(marks, joint_mark_intensity_functions=None,
     probability_no_spike = np.exp(-ground_process_intensity *
                                   time_bin_size)
     joint_mark_intensity = np.array(
-        [[func(signal_marks) for func in functions_by_state]
-         for signal_marks, functions_by_state
+        [[jmi(signal_marks) for jmi in jmi_by_state]
+         for signal_marks, jmi_by_state
          in zip(marks, joint_mark_intensity_functions)])
     return joint_mark_intensity * probability_no_spike
 
