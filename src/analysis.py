@@ -454,8 +454,10 @@ def _get_ripple_marks(marks, ripple_times, sampling_frequency):
         concat_axis=0, sampling_frequency=sampling_frequency)
         for tetrode_marks in marks]
 
-    return [np.stack([df.loc[ripple_ind + 1, :].values
-                      for df in mark_ripples], axis=0)
+    return [(np.stack([df.loc[ripple_ind + 1, :].values
+                      for df in mark_ripples], axis=0),
+            mark_ripples[0].loc[ripple_ind + 1, :]
+            .index.get_level_values('time'))
             for ripple_ind in np.arange(len(ripple_times))]
 
 
