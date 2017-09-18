@@ -45,7 +45,6 @@ class ClusterlessDecoder(object):
     spike_marks : ndarray, shape (n_signals, n_time, n_marks)
         Marks to train the model on.
         If spike does not occur, the row must be marked with np.nan
-    sampling_frequency : float
     n_position_bins : int, optional
     mark_std_deviation : float, optional
     replay_speedup_factor : int, optional
@@ -56,7 +55,6 @@ class ClusterlessDecoder(object):
     '''
 
     def __init__(self, position, trajectory_direction, spike_marks,
-                 sampling_frequency,
                  n_position_bins=61, mark_std_deviation=20,
                  replay_speedup_factor=16,
                  state_names=_DEFAULT_STATE_NAMES,
@@ -66,7 +64,6 @@ class ClusterlessDecoder(object):
         self.position = np.array(position)
         self.trajectory_direction = np.array(trajectory_direction)
         self.spike_marks = np.array(spike_marks)
-        self.sampling_frequency = sampling_frequency
         self.n_position_bins = n_position_bins
         self.mark_std_deviation = mark_std_deviation
         self.replay_speedup_factor = replay_speedup_factor
@@ -146,7 +143,7 @@ class ClusterlessDecoder(object):
                         np.in1d(self.trajectory_direction, direction)],
                     marks[np.in1d(self.trajectory_direction, direction)],
                     self.place_bin_centers, self.place_std_deviation,
-                    self.mark_std_deviation, self.sampling_frequency)
+                    self.mark_std_deviation)
                 for direction in trajectory_directions}
             joint_mark_intensity_functions.append(
                 [jmi_by_state[state]
