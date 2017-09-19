@@ -48,9 +48,11 @@ class ClusterlessDecoder(object):
     n_position_bins : int, optional
     mark_std_deviation : float, optional
     replay_speedup_factor : int, optional
-    observation_state_order : list of str
-    state_transition_state_order : list of str
-    initial_conditions : 'Inbound-Outbound' | 'Uniform' | dict of array
+    observation_state_order : list of str, optional
+    state_transition_state_order : list of str, optional
+    initial_conditions : 'Inbound-Outbound' | 'Uniform' | dict of array,
+        optional
+    time_bin_size : float, optional
 
     '''
 
@@ -60,7 +62,8 @@ class ClusterlessDecoder(object):
                  state_names=_DEFAULT_STATE_NAMES,
                  observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
                  state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER,
-                 initial_conditions='Inbound-Outbound'):
+                 initial_conditions='Inbound-Outbound',
+                 time_bin_size=1):
         self.position = np.array(position)
         self.trajectory_direction = np.array(trajectory_direction)
         self.spike_marks = np.array(spike_marks)
@@ -270,7 +273,8 @@ class SortedSpikeDecoder(object):
                  state_names=_DEFAULT_STATE_NAMES,
                  observation_state_order=_DEFAULT_OBSERVATION_STATE_ORDER,
                  state_transition_state_order=_DEFAULT_STATE_TRANSITION_STATE_ORDER,
-                 initial_conditions='Inbound-Outbound'):
+                 initial_conditions='Inbound-Outbound',
+                 time_bin_size=1):
         '''
 
         Attributes
@@ -279,6 +283,12 @@ class SortedSpikeDecoder(object):
         spike : ndarray, shape (n_time, n_neurons)
         trajectory_direction : ndarray, shape (n_time,)
         n_position_bins : int, optional
+        replay_speedup_factor : int, optional
+        observation_state_order : list of str, optional
+        state_transition_state_order : list of str, optional
+        initial_conditions : 'Inbound-Outbound' | 'Uniform' | dict of array,
+            optional
+        time_bin_size : float, optional
 
         '''
         self.position = position
@@ -290,6 +300,7 @@ class SortedSpikeDecoder(object):
         self.observation_state_order = observation_state_order
         self.state_transition_state_order = state_transition_state_order
         self.initial_conditions = initial_conditions
+        self.time_bin_size = time_bin_size
 
     def fit(self):
         '''Fits the decoder model by state
