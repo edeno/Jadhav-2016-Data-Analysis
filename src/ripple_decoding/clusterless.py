@@ -22,6 +22,8 @@ def _normal_pdf(x, mean=0, std_deviation=1):
     do any sanity checking of the inputs. As a result it is a much faster
     function, but you should be sure of your inputs before using.
 
+    This function only computes the one-dimensional pdf.
+
     Parameters
     ----------
     x : array_like
@@ -35,8 +37,8 @@ def _normal_pdf(x, mean=0, std_deviation=1):
         The normal probability density function evaluated at `x`
 
     '''
-    u = (x - mean) / std_deviation
-    return np.exp(-0.5 * u ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
+    z = (x - mean) / std_deviation
+    return np.exp(-0.5 * z ** 2) / (np.sqrt(2.0 * np.pi) * std_deviation)
 
 
 def poisson_mark_likelihood(marks, joint_mark_intensity_functions=None,
@@ -132,7 +134,7 @@ def joint_mark_intensity(marks, training_marks=None,
             mark_std_deviation=mark_std_deviation)
         return np.dot(place_field, mark_space) / place_occupancy
     else:
-        return np.ones(place_occupancy.shape)
+        return np.ones_like(place_occupancy)
 
 
 def build_joint_mark_intensity(position, training_marks, place_bin_centers,
