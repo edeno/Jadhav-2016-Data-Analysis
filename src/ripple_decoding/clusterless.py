@@ -70,7 +70,7 @@ def poisson_mark_likelihood(marks, joint_mark_intensity_functions=None,
         [[jmi(signal_marks) for jmi in jmi_by_state]
          for signal_marks, jmi_by_state
          in zip(marks, joint_mark_intensity_functions)])
-    return joint_mark_intensity * time_bin_size * probability_no_spike
+    return joint_mark_intensity * probability_no_spike
 
 
 def evaluate_mark_space(test_marks, training_marks=None,
