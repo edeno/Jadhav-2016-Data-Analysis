@@ -74,6 +74,7 @@ class ClusterlessDecoder(object):
         self.observation_state_order = observation_state_order
         self.state_transition_state_order = state_transition_state_order
         self.initial_conditions = initial_conditions
+        self.time_bin_size = time_bin_size
 
     def fit(self):
         '''Fits the decoder model for each trajectory_direction.
@@ -166,7 +167,8 @@ class ClusterlessDecoder(object):
         ground_process_intensity = np.stack(ground_process_intensity)
         likelihood_kwargs = dict(
             joint_mark_intensity_functions=joint_mark_intensity_functions,
-            ground_process_intensity=ground_process_intensity)
+            ground_process_intensity=ground_process_intensity,
+            time_bin_size=self.time_bin_size)
 
         self._combined_likelihood_kwargs = dict(
             likelihood_function=poisson_mark_likelihood,
