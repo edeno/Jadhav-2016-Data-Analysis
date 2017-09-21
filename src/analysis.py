@@ -474,20 +474,6 @@ def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
             for ripple_ind in np.arange(len(ripple_times))]
 
 
-def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
-                                    speed_threshold):
-    '''Excludes ripples where the head direction speed is greater than the
-    speed threshold. Only looks at the start of the ripple to determine
-    head movement speed for the ripple.
-    '''
-    position_df = get_interpolated_position_dataframe(
-        epoch_key, animals)
-    return [(ripple_start, ripple_end)
-            for ripple_start, ripple_end in ripple_times
-            if position_df.loc[
-                ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
-
-
 def get_ripple_info(posterior_density, test_spikes, ripple_times,
                     sampling_frequency, state_names, position_info,
                     place_bin_centers, epoch_key):
@@ -560,20 +546,8 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
             posterior_density)
 
 
-def _compute_decision_state_probability(posterior_density, n_states):
-    '''The marginal probability of a state given the posterior_density
-    '''
-    n_time = posterior_density.shape[0]
-    new_shape = (n_time, n_states, -1)
-    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
 
 
-def _compute_max_state(probability, state_names):
-    '''The discrete state with the highest probability at the last time
-    '''
-    end_time_probability = probability[-1, :]
-    return (*state_names[np.argmax(end_time_probability)].split('_'),
-            np.max(end_time_probability))
 
 
 def _num_unique_neurons_spiking(spikes):
