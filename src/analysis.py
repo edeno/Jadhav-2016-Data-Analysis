@@ -598,17 +598,19 @@ def _get_ripple_motion_from_rows(ripple_info, posterior_density,
     is_away : array of str
 
     '''
-    max_state_name = '_'.join(
-        (ripple_info.ripple_trajectory, ripple_info.ripple_direction))
-    new_shape = (len(posterior_density), len(state_names), -1)
-    max_state_density = np.take(
-        np.reshape(posterior_density, new_shape),
-        state_names.index(max_state_name), axis=1)
-    replay_position_start_end = place_bin_centers[
-        np.argmax(max_state_density[[0, -1]], axis=1)]
-    replay_distance_from_animal_position = abs(
-        ripple_info.linear_position - replay_position_start_end)
-    is_away = np.diff(replay_distance_from_animal_position) > 0
+    max_state_ind = int(posterior_density
+                        .dropna('time').sum('position')
+                        .isel(time=-1).argmax())
+    posterior_density = posterior_density.isel(
+        state=max_state_ind).dropna('time')
+    replay_position = posterior_density.position.values[
+        posterior_density.argmax('position')]
+    animal_position = ripple_times[distance_measure]
+    replay_distance_from_animal_position = np.abs(
+        replay_position - animal_position)
+    is_away = linregress(
+        posterior_density.time.values,
+        replay_distance_from_animal_position).slope > 0
     return np.where(is_away, 'away', 'towards')
 
 
