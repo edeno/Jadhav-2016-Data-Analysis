@@ -5,6 +5,8 @@ from copy import deepcopy
 from functools import partial, wraps
 from logging import getLogger
 
+from scipy.stats import linregress
+
 import numpy as np
 import pandas as pd
 from dask import compute, delayed, local
