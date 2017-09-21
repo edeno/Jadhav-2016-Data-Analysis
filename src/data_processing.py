@@ -520,8 +520,28 @@ def make_neuron_dataframe(animals):
             }
 
 
-def get_interpolated_position_dataframe(epoch_key, animals):
-    time = get_trial_time(epoch_key, animals)
+def get_trial_time(epoch_or_tetrode_key, animals):
+    try:
+        animal, day, epoch, tetrode_number = epoch_or_tetrode_key[:4]
+        lfp_df = get_LFP_dataframe(
+            (animal, day, epoch, tetrode_number), animals)
+    except ValueError:
+        # no tetrode number provided
+        tetrode_info = (
+            make_tetrode_dataframe(animals)
+            .loc[epoch_or_tetrode_key]
+            .set_index(['animal', 'day', 'epoch', 'tetrode_number']))
+        lfp_df = pd.concat(
+            [get_LFP_dataframe(tetrode_key, animals)
+             for tetrode_key in tetrode_info.index],
+            axis=1)
+
+    return lfp_df.index
+
+
+def get_interpolated_position_dataframe(epoch_key, animals,
+                                        time_function=get_trial_time):
+    time = time_function(epoch_key, animals)
     position = (pd.concat(
         [get_linear_position_structure(epoch_key, animals),
          get_position_dataframe(epoch_key, animals)], axis=1)
@@ -544,7 +564,7 @@ def get_interpolated_position_dataframe(epoch_key, animals):
         (position_continuous.index, time))), name='time')
     interpolated_position = (position_continuous
                              .reindex(index=new_index)
-                             .interpolate(method='spline', order=3)
+                             .interpolate(method='values')
                              .reindex(index=time))
     interpolated_position.loc[
         interpolated_position.linear_distance < 0, 'linear_distance'] = 0
@@ -577,8 +597,7 @@ def _trajectory_direction(df):
     return df.trajectory_category_ind.map(trajectory_direction)
 
 
-def get_linear_position_structure(epoch_key, animals,
-                                  trajectory_category=None):
+def get_linear_position_structure(epoch_key, animals):
     animal, day, epoch = epoch_key
     struct = get_data_structure(
         animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0][
@@ -604,25 +623,6 @@ def get_spike_indicator_dataframe(neuron_key, animals):
     spikes_df = get_spikes_dataframe(neuron_key, animals)
     spikes_df.index = time[find_closest_ind(time, spikes_df.index.values)]
     return spikes_df.reindex(index=time, fill_value=0)
-
-
-def get_trial_time(key, animals):
-    try:
-        animal, day, epoch, tetrode_number = key[:4]
-        lfp_df = get_LFP_dataframe(
-            (animal, day, epoch, tetrode_number), animals)
-    except ValueError:
-        # no tetrode number provided
-        tetrode_info = (
-            make_tetrode_dataframe(animals)
-            .loc[key]
-            .set_index(['animal', 'day', 'epoch', 'tetrode_number']))
-        lfp_df = pd.concat(
-            [get_LFP_dataframe(tetrode_key, animals)
-             for tetrode_key in tetrode_info.index],
-            axis=1)
-
-    return lfp_df.index
 
 
 def get_windowed_dataframe(dataframe, segments, window_offset,
@@ -713,15 +713,14 @@ def get_mark_filename(tetrode_key, animals):
         RAW_DATA_DIR, animals[animal].directory, 'EEG', filename)
 
 
-def get_mark_indicator_dataframe(tetrode_key, animals):
-    # NOTE: Using first tetrode time because of a problem with LFP
-    # extraction in Bond. In general this is not desirable.
-    time = get_trial_time(tetrode_key[:3], animals)
+def get_mark_indicator_dataframe(tetrode_key, animals,
+                                 time_function=get_trial_time):
+    time = time_function(tetrode_key[:3], animals)
     mark_dataframe = (get_mark_dataframe(tetrode_key, animals)
                       .loc[time.min():time.max()])
-    mark_dataframe.index = time[
-        find_closest_ind(time, mark_dataframe.index.values)]
-    return mark_dataframe.reindex(index=time, fill_value=np.nan)
+    time_index = np.digitize(mark_dataframe.index, time)
+    return (mark_dataframe.groupby(time[time_index]).mean()
+            .reindex(index=time))
 
 
 def _get_computed_ripple_times(tetrode_tuple, animals):

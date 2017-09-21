@@ -111,8 +111,10 @@ def Karlsson_ripple_detector(time, LFPs, speed, sampling_frequency,
     ripple_times = exclude_movement(
         candidate_ripple_times, speed, time,
         speed_threshold=speed_threshold)
+    index = pd.Index(np.arange(len(ripple_times)) + 1,
+                     name='ripple_number')
     return pd.DataFrame(ripple_times, columns=['start_time', 'end_time'],
-                        index=np.arange(len(ripple_times)) + 1)
+                        index=index)
 
 
 def Tao_ripple_detector(time, LFPs, speed, spikes=None,
