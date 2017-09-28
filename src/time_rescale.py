@@ -1,0 +1,256 @@
+'''Tools for evaluating the goodness of fit of a point process model.
+
+References
+----------
+.. [1] Brown, E.N., Barbieri, R., Ventura, V., Kass, R.E., and Frank, L.M.
+       (2002). The time-rescaling theorem and its application to neural
+       spike train data analysis. Neural Computation 14, 325-346.
+.. [2] Wiener, M.C. (2003). An adjustment to the time-rescaling method for
+       application to short-trial spike train data. Neural Computation 15,
+       2565-2576.
+
+'''
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import norm, expon
+from scipy.signal import correlate
+
+
+class TimeRescaling(object):
+    '''Evaluates the goodness of fit of a point process model by
+    transforming the fitted model into a unit rate Poisson process [1].
+
+    Attributes
+    ----------
+    conditional_intensity : ndarray, shape (n_time,)
+        The fitted model mean response rate at each time.
+    is_spike : bool ndarray, shape (n_time,)
+        Whether or not the neuron has spiked at that time.
+    trial_id : ndarray, shape (n_time,), optional
+        The label identifying time point with trial. If `trial_id` is set
+        to None, then all time points are treated as part of the same
+        trial. Otherwise, the data will be grouped by trial.
+    adjust_for_short_trials : bool, optional
+        If the trials are short and neuron does not spike often, then
+        the interspike intervals can be longer than the trial. In this
+        situation, the interspike interval is censored. If
+        `adjust_for_short_trials` is True, we take this censoring into
+        account using the adjustment in [2].
+
+    References
+    ----------
+    .. [1] Brown, E.N., Barbieri, R., Ventura, V., Kass, R.E., and Frank,
+           L.M. (2002). The time-rescaling theorem and its application to
+           neural spike train data analysis. Neural Computation 14, 325-346.
+    .. [2] Wiener, M.C. (2003). An adjustment to the time-rescaling method
+           for application to short-trial spike train data. Neural
+           Computation 15, 2565-2576.
+
+    '''
+    def __init__(self, conditional_intensity, is_spike, trial_id=None,
+                 adjust_for_short_trials=False):
+        self.conditional_intensity = conditional_intensity
+        if trial_id is None:
+            trial_id = np.ones_like(conditional_intensity)
+        self.trial_id = trial_id
+        self.is_spike = is_spike
+        self.adjust_for_short_trials = adjust_for_short_trials
+
+    @property
+    def uniform_rescaled_ISIs(self):
+        '''Rescales the interspike intervals (ISIs) to unit rate Poisson,
+        adjusts for short time intervals, and transforms the ISIs to a
+        uniform distribution for easier analysis.'''
+        data_by_trial = pd.DataFrame({
+            'conditional_intensity': self.conditional_intensity,
+            'is_spike': self.is_spike
+        }).groupby(self.trial_id)
+
+        return np.concatenate(
+            [uniform_rescaled_ISIs(
+                trial.conditional_intensity.values, trial.is_spike.values,
+                self.adjust_for_short_trials)
+             for _, trial in data_by_trial])
+
+    @property
+    def uniform_cdf_values(self):
+        '''Model based cumulative distribution function values. Used for
+        plotting the `uniform_rescaled_ISIs`.'''
+        n_spikes = np.nonzero(self.is_spike)[0].size
+        return uniform_cdf_values(n_spikes)
+
+    @property
+    def n_spikes(self):
+        '''Number of total spikes.'''
+        return np.nonzero(self.is_spike)[0].size
+
+    def ks_statistic(self):
+        '''Compares the rescaled ISIs to a unit rate Poisson to assess
+        model goodness of fit.'''
+        return ks_statistic(np.sort(self.uniform_rescaled_ISIs),
+                            self.uniform_cdf_values)
+
+    def rescaled_ISI_autocorrelation(self):
+        '''
+        '''
+        # Avoid -inf and inf when transforming to normal distribution.
+        u = self.uniform_rescaled_ISIs
+        u[u == 0] = np.finfo(float).eps
+        u[u == 1] = 1 - np.finfo(float).eps
+
+        normal_rescaled_ISIs = norm.ppf(u)
+
+        c = correlate(normal_rescaled_ISIs, normal_rescaled_ISIs)
+        return c / c.max()
+
+    def plot_ks(self, ax=None):
+        uniform_rescaled_ISIs = np.sort(self.uniform_rescaled_ISIs)
+        ci = 1.36 / np.sqrt(self.n_spikes)
+
+        if ax is None:
+            ax = plt.gca()
+        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values - ci,
+                linestyle='--', color='red')
+        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values + ci,
+                linestyle='--', color='red')
+        ax.scatter(uniform_rescaled_ISIs, self.uniform_cdf_values)
+
+        ax.set_xlabel('Empirical CDF')
+        ax.set_ylabel('Model CDF')
+
+        return ax
+
+    def plot_rescaled_ISI_autocorrelation(self, ax=None):
+        lag = np.arange(-self.n_spikes + 1, self.n_spikes)
+        if ax is None:
+            ax = plt.gca()
+        ci = 1.96 / np.sqrt(self.n_spikes)
+        ax.scatter(lag, self.rescaled_ISI_autocorrelation())
+        ax.axhline(ci, linestyle='--', color='red')
+        ax.axhline(-ci, linestyle='--', color='red')
+        ax.set_xlabel('Lags')
+        ax.set_ylabel('autocorrelation')
+
+        return ax
+
+
+def uniform_cdf_values(n_spikes):
+    '''Model based cumulative distribution function values. Used for
+    plotting the `uniform_rescaled_ISIs`.
+
+    Parameters
+    ----------
+    n_spikes : int
+        Total number of spikes.
+
+    Returns
+    -------
+        uniform_cdf_values : ndarray, shape (n_spikes,)
+
+
+    '''
+    return (np.arange(n_spikes) + 0.5) / n_spikes
+
+
+def ks_statistic(empirical_cdf, model_cdf):
+    '''Compares the empirical and model-based distribution using the
+    Kolmogorov-Smirnov statistic.
+
+    Parameters
+    ----------
+    empirical_cdf : ndarray
+    model_cdf : ndarray
+
+    Returns
+    -------
+    ks_statistic : float
+
+    '''
+    return np.max(np.abs(empirical_cdf - model_cdf))
+
+
+def _rescaled_ISIs(integrated_conditional_intensity, is_spike):
+    '''Rescales the interspike intervals (ISIs) to unit rate Poisson.
+
+    Parameters
+    ----------
+    integrated_conditional_intensity : ndarray, shape (n_time,)
+        The cumulative conditional_intensity integrated over time.
+    is_spike : bool ndarray, shape (n_time,)
+        Whether or not the neuron has spiked at that time.
+
+    Returns
+    -------
+    rescaled_ISIs : ndarray, shape (n_spikes,)
+
+    '''
+    ici_at_spike = integrated_conditional_intensity[is_spike.nonzero()]
+    ici_at_spike = np.concatenate((np.array([0]), ici_at_spike))
+    return np.diff(ici_at_spike)
+
+
+def _max_transformed_interval(integrated_conditional_intensity,
+                              is_spike, rescaled_ISIs):
+    '''Weights for each time in censored trials.
+
+    Parameters
+    ----------
+    integrated_conditional_intensity : ndarray, shape (n_time,)
+        The cumulative conditional_intensity integrated over time.
+    is_spike : bool ndarray, shape (n_time,)
+        Whether or not the neuron has spiked at that time.
+    rescaled_ISIs : ndarray, shape (n_spikes,)
+
+    Returns
+    -------
+    max_transformed_interval : ndarray, shape (n_spikes,)
+
+    '''
+    ici_at_spike = integrated_conditional_intensity[is_spike.nonzero()]
+    return (integrated_conditional_intensity[-1] - ici_at_spike +
+            rescaled_ISIs)
+
+
+def uniform_rescaled_ISIs(conditional_intensity, is_spike,
+                          adjust_for_short_trials=True):
+    '''Rescales the interspike intervals (ISIs) to unit rate Poisson,
+    adjusts for short time intervals, and transforms the ISIs to a
+    uniform distribution for easier analysis.
+
+    Parameters
+    ----------
+    conditional_intensity : ndarray, shape (n_time,)
+        The fitted model mean response rate at each time.
+    is_spike : bool ndarray, shape (n_time,)
+        Whether or not the neuron has spiked at that time.
+    adjust_for_short_trials : bool, optional
+        If the trials are short and neuron does not spike often, then
+        the interspike intervals can be longer than the trial. In this
+        situation, the interspike interval is censored. If
+        `adjust_for_short_trials` is True, we take this censoring into
+        account using the adjustment in [1].
+
+    Returns
+    -------
+    uniform_rescaled_ISIs : ndarray, shape (n_spikes,)
+
+    References
+    ----------
+    .. [1] Wiener, M.C. (2003). An adjustment to the time-rescaling method
+           for application to short-trial spike train data. Neural
+           Computation 15, 2565-2576.
+
+    '''
+    integrated_conditional_intensity = np.cumsum(conditional_intensity)
+    rescaled_ISIs = _rescaled_ISIs(
+        integrated_conditional_intensity, is_spike)
+
+    if adjust_for_short_trials:
+        max_transformed_interval = expon.cdf(_max_transformed_interval(
+            integrated_conditional_intensity, is_spike, rescaled_ISIs))
+    else:
+        max_transformed_interval = 1
+
+    return expon.cdf(rescaled_ISIs) / max_transformed_interval
