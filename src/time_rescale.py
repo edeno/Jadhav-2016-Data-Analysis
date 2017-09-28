@@ -87,13 +87,21 @@ class TimeRescaling(object):
         return np.nonzero(self.is_spike)[0].size
 
     def ks_statistic(self):
-        '''Compares the rescaled ISIs to a unit rate Poisson to assess
-        model goodness of fit.'''
+        '''Measures the maximum distance of the rescaled ISIs from the unit
+        rate Poisson.
+
+        Smaller maximum distance means better fitting model.
+
+        '''
         return ks_statistic(np.sort(self.uniform_rescaled_ISIs),
                             self.uniform_cdf_values)
 
     def rescaled_ISI_autocorrelation(self):
-        '''
+        '''Examine rescaled ISI dependence.
+
+        Should be independent if the transformation to unit rate Poisson
+        process fits well.
+
         '''
         # Avoid -inf and inf when transforming to normal distribution.
         u = self.uniform_rescaled_ISIs
@@ -106,6 +114,19 @@ class TimeRescaling(object):
         return c / c.max()
 
     def plot_ks(self, ax=None):
+        '''Plots the rescaled ISIs versus a uniform distribution to
+        examine how close the rescaled ISIs are to the unit rate Poisson.
+
+        Parameters
+        ----------
+        ax : matplotlib axis handle, optional
+            If None, plots on the current axis handle.
+
+        Returns
+        -------
+        ax : axis_handle
+
+        '''
         uniform_rescaled_ISIs = np.sort(self.uniform_rescaled_ISIs)
         ci = 1.36 / np.sqrt(self.n_spikes)
 
@@ -123,6 +144,21 @@ class TimeRescaling(object):
         return ax
 
     def plot_rescaled_ISI_autocorrelation(self, ax=None):
+        '''Plot the rescaled ISI dependence.
+
+        Should be independent if the transformation to unit rate Poisson
+        process fits well.
+
+        Parameters
+        ----------
+        ax : matplotlib axis handle, optional
+            If None, plots on the current axis handle.
+
+        Returns
+        -------
+        ax : axis_handle
+
+        '''
         lag = np.arange(-self.n_spikes + 1, self.n_spikes)
         if ax is None:
             ax = plt.gca()
