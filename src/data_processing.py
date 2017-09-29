@@ -661,6 +661,39 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
 
 def reshape_to_segments(dataframe, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
+    '''Take multiple windows of a time series and set time relative to
+    window.
+
+    Useful for examining an event of interest.
+
+    Parameters
+    ----------
+    time_series : pandas DataFrame, shape (n_time,)
+        Time series to be segmented. Index of time series must be the time
+        of the time series and be named `time`.
+    segments : array_like, shape (n_segments, 2)
+        Start and end time for each time segment.
+    window_offset : None or 2-element tuple, optional
+        Offset the
+    sampling_frequency : float, optional
+    concat_axis : int, optional
+
+    Returns
+    -------
+    segmented_time_series : pandas DataFrame
+
+    Examples
+    --------
+    >>> n_time = 10
+    >>> time = pd.Index(np.arange(0, n_time) / 1000, name='time')
+    >>> time_series = pd.DataFrame({'data': np.arange(n_time)}, index=time)
+    >>> reshape_to_segments(time_series, [(0.001, 0.004), (0.006, 0.008)])
+    >>> reshape_to_segments(time_series, [(0.001, 0.004), (0.006, 0.008)],
+                            window_offset=(-0.001, None))
+    >>> reshape_to_segments(time_series, [(0.001, 0.004), (0.006, 0.008)],
+                            window_offset=(-0.001, 0.001))
+
+    '''
     return (pd.concat(get_windowed_dataframe(
             time_series, segments, window_offset, sampling_frequency),
         keys=np.arange(len(segments)) + 1,
