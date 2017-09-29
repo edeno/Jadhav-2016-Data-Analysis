@@ -637,10 +637,14 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
             window_start_ind = np.max(
                 [0, int(segment_start_ind + np.fix(
                     window_offset[0] * sampling_frequency))])
-            window_end_ind = np.min(
-                [len(dataframe),
-                 int(segment_start_ind +
-                     np.fix(window_offset[1] * sampling_frequency)) + 1])
+            try:
+                window_end_ind = np.min(
+                    [len(dataframe),
+                     int(segment_start_ind + np.fix(
+                        window_offset[1] * sampling_frequency)) + 1])
+            except TypeError:
+                window_end_ind = dataframe.index.get_loc(
+                    segment_end, method='nearest')
             yield (dataframe
                    .iloc[window_start_ind:window_end_ind, :]
                    .reset_index()
