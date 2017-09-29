@@ -381,11 +381,11 @@ def get_neuron_info_path(animal):
 
 
 def _get_neuron_id(dataframe):
-    return dataframe.animal + \
-        dataframe.day.astype(str) + \
-        dataframe.epoch.astype(str) + \
-        dataframe.tetrode_number.astype(str) + \
-        dataframe.neuron_number.astype(str)
+    return (dataframe.animal + '_' +
+            dataframe.day.map('{:02d}'.format) + '_' +
+            dataframe.epoch.map('{:02}'.format) + '_' +
+            dataframe.tetrode_number.map('{:03}'.format) + '_' +
+            dataframe.neuron_number.map('{:03}'.format))
 
 
 def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day,
