@@ -633,33 +633,33 @@ def _get_windowed_dataframe(time_series, segments, window_offset,
     segments = iter(segments)
     for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index
-        segment_start_ind = dataframe.index.get_loc(
+        segment_start_ind = time_series.index.get_loc(
             segment_start, method='nearest')
-        segment_start = dataframe.iloc[segment_start_ind].name
+        segment_start = time_series.index[segment_start_ind]
         if window_offset is not None:
             window_start_ind = np.max(
                 [0, int(segment_start_ind + np.fix(
                     window_offset[0] * sampling_frequency))])
             try:
                 window_end_ind = np.min(
-                    [len(dataframe),
+                    [len(time_series),
                      int(segment_start_ind + np.fix(
                         window_offset[1] * sampling_frequency)) + 1])
             except TypeError:
-                window_end_ind = dataframe.index.get_loc(
+                window_end_ind = time_series.index.get_loc(
                     segment_end, method='nearest')
-            yield (dataframe
+            yield (time_series
                    .iloc[window_start_ind:window_end_ind, :]
                    .reset_index()
                    .assign(time=lambda x: np.round(
                        x.time - segment_start, decimals=4))
                    .set_index('time'))
         else:
-            yield (dataframe.loc[segment_start:segment_end, :]
-                            .reset_index()
-                            .assign(time=lambda x: np.round(
+            yield (time_series.loc[segment_start:segment_end, :]
+                              .reset_index()
+                              .assign(time=lambda x: np.round(
                                 x.time - segment_start, decimals=4))
-                            .set_index('time'))
+                              .set_index('time'))
 
 
 def reshape_to_segments(time_series, segments, window_offset=None,
