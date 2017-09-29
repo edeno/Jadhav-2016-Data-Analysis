@@ -166,7 +166,7 @@ class TimeRescaling(object):
         ax.scatter(lag, self.rescaled_ISI_autocorrelation())
         ax.axhline(ci, linestyle='--', color='red')
         ax.axhline(-ci, linestyle='--', color='red')
-        ax.set_xlabel('Lags')
+        ax.set_xlabel('Lag')
         ax.set_ylabel('autocorrelation')
 
         return ax
