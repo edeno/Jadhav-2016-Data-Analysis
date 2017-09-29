@@ -665,7 +665,7 @@ def _get_windowed_dataframe(time_series, segments, window_offset,
 def reshape_to_segments(time_series, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
     '''Take multiple windows of a time series and set time relative to
-    window.
+    the start of the window.
 
     Useful for examining an event of interest.
 
