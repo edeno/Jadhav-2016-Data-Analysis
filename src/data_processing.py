@@ -625,8 +625,11 @@ def get_spike_indicator_dataframe(neuron_key, animals):
     return spikes_df.reindex(index=time, fill_value=0)
 
 
-def get_windowed_dataframe(dataframe, segments, window_offset,
-                           sampling_frequency):
+def _get_windowed_dataframe(time_series, segments, window_offset,
+                            sampling_frequency):
+    '''For each segment, return a dataframe with the time relative to
+    the start of the segment + window_offset.
+    '''
     segments = iter(segments)
     for segment_start, segment_end in segments:
         # Handle floating point inconsistencies in the index
@@ -694,7 +697,7 @@ def reshape_to_segments(time_series, segments, window_offset=None,
                             window_offset=(-0.001, 0.001))
 
     '''
-    return (pd.concat(get_windowed_dataframe(
+    return (pd.concat(_get_windowed_dataframe(
             time_series, segments, window_offset, sampling_frequency),
         keys=np.arange(len(segments)) + 1,
         names=['segment_number'],
