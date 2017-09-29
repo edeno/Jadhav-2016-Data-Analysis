@@ -613,16 +613,18 @@ def get_linear_position_structure(epoch_key, animals):
     )
 
 
-def get_spike_indicator_dataframe(neuron_key, animals):
+def get_spike_indicator_dataframe(neuron_key, animals,
+                                  time_function=get_trial_time):
     ''' Returns a dataframe with a spike time indicator column
     where 1 indicates a spike at that time and 0 indicates no
     spike at that time. The number of datapoints corresponds
     is the same as the LFP.
     '''
-    time = get_trial_time(neuron_key, animals)
+    time = time_function(neuron_key, animals)
     spikes_df = get_spikes_dataframe(neuron_key, animals)
-    spikes_df.index = time[find_closest_ind(time, spikes_df.index.values)]
-    return spikes_df.reindex(index=time, fill_value=0)
+    time_index = np.digitize(spikes_df.index, time)
+    return (spikes_df.groupby(time[time_index]).sum()
+            .reindex(index=time, fill_value=0))
 
 
 def _get_windowed_dataframe(time_series, segments, window_offset,
