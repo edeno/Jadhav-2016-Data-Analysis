@@ -662,7 +662,7 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
 def reshape_to_segments(dataframe, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
     return (pd.concat(get_windowed_dataframe(
-            dataframe, segments, window_offset, sampling_frequency),
+            time_series, segments, window_offset, sampling_frequency),
         keys=np.arange(len(segments)) + 1,
         names=['segment_number'],
         axis=concat_axis).sort_index())
