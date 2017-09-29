@@ -659,7 +659,7 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
                             .set_index('time'))
 
 
-def reshape_to_segments(dataframe, segments, window_offset=None,
+def reshape_to_segments(time_series, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
     '''Take multiple windows of a time series and set time relative to
     window.
