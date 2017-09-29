@@ -413,16 +413,19 @@ def convert_neuron_epoch_to_dataframe(tetrodes_in_epoch, animal, day,
         for neuron_ind, neuron in enumerate(tetrode[0])
         if neuron.size > 0
     ]
-    return (pd.DataFrame(neuron_dict_list)
-              .drop(DROP_COLUMNS, axis=1, errors='ignore')
-              .assign(animal=animal)
-              .assign(day=day)
-              .assign(epoch=epoch)
-              .assign(neuron_id=_get_neuron_id)
-            # set index to identify rows
-              .set_index(NEURON_INDEX, drop=False)
-              .sort_index()
-            )
+    try:
+        return (pd.DataFrame(neuron_dict_list)
+                  .drop(DROP_COLUMNS, axis=1, errors='ignore')
+                  .assign(animal=animal)
+                  .assign(day=day)
+                  .assign(epoch=epoch)
+                  .assign(neuron_id=_get_neuron_id)
+                # set index to identify rows
+                  .set_index(NEURON_INDEX, drop=False)
+                  .sort_index()
+                )
+    except AttributeError:
+        logger.warn('{0}, {1}, {2} not processed'.format(animal, day, epoch))
 
 
 def _add_to_dict(dictionary, tetrode_ind, neuron_ind):
