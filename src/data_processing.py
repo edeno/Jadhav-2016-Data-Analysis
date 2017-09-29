@@ -657,14 +657,10 @@ def get_windowed_dataframe(dataframe, segments, window_offset,
 
 def reshape_to_segments(dataframe, segments, window_offset=None,
                         sampling_frequency=1500, concat_axis=0):
-    segment_label = [(segment_ind + 1, segment_start, segment_end)
-                     for segment_ind, (segment_start, segment_end)
-                     in enumerate(segments)]
-    return (pd.concat(
-        list(get_windowed_dataframe(
-            dataframe, segments, window_offset, sampling_frequency)),
-        keys=segment_label,
-        names=['segment_number', 'segment_start', 'segment_end'],
+    return (pd.concat(get_windowed_dataframe(
+            dataframe, segments, window_offset, sampling_frequency),
+        keys=np.arange(len(segments)) + 1,
+        names=['segment_number'],
         axis=concat_axis).sort_index())
 
 
