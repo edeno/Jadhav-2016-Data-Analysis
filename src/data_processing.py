@@ -494,10 +494,10 @@ def get_spikes_dataframe(neuron_key, animals):
     neuron_file = loadmat(
         get_data_filename(animals[animal], day, 'spikes'))
     try:
-        neuron_data = neuron_file['spikes'][0, -1][0, epoch - 1][
+        spike_time = neuron_file['spikes'][0, -1][0, epoch - 1][
             0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][
             :, 0]
-        data_dict = {'time': neuron_data,
+        data_dict = {'time': spike_time,
                      'is_spike': 1
                      }
     except IndexError:
