@@ -511,13 +511,13 @@ def make_neuron_dataframe(animals):
                          for animal in animals]
     neuron_data = [(loadmat(file_name[0]), file_name[1])
                    for file_name in neuron_file_names]
-    return {(animal, day_ind + 1, epoch_ind + 1):
+    return pd.concat([
             convert_neuron_epoch_to_dataframe(
                 epoch, animal, day_ind + 1, epoch_ind + 1)
             for cellfile, animal in neuron_data
             for day_ind, day in enumerate(cellfile['cellinfo'].T)
             for epoch_ind, epoch in enumerate(day[0].T)
-            }
+            ]).sort_index()
 
 
 def get_trial_time(epoch_or_tetrode_key, animals):
