@@ -138,7 +138,7 @@ def cross_correlate(spike_train1, spike_train2=None, sampling_frequency=1):
     n_time = spike_train1.shape[0]
     dt = 1 / sampling_frequency
     delay = pd.Index(dt * np.arange(-n_time + 1, n_time), name='delay')
-    return pd.Series(correlation, index=delay)
+    return pd.Series(correlation, index=delay, name='correlation')
 
 
 def simulate_poisson_process(rate, sampling_frequency):
