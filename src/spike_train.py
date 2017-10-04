@@ -30,7 +30,7 @@ def perievent_time_kernel_density_estimate(
 
 
 def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
-                                   formula='1 + bs(time, df=8, degree=3)',
+                                   formula='bs(time, df=5)',
                                    n_boot_samples=1000):
     design_matrix = dmatrix(formula, dict(time=time),
                             return_type='dataframe')
