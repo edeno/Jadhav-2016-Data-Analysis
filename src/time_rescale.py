@@ -127,21 +127,9 @@ class TimeRescaling(object):
         ax : axis_handle
 
         '''
-        uniform_rescaled_ISIs = np.sort(self.uniform_rescaled_ISIs)
-        ci = 1.36 / np.sqrt(self.n_spikes)
-
-        if ax is None:
-            ax = plt.gca()
-        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values - ci,
-                linestyle='--', color='red')
-        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values + ci,
-                linestyle='--', color='red')
-        ax.scatter(uniform_rescaled_ISIs, self.uniform_cdf_values)
-
-        ax.set_xlabel('Empirical CDF')
-        ax.set_ylabel('Model CDF')
-
-        return ax
+        return plot_ks(
+            self.uniform_rescaled_ISIs, self.uniform_cdf_values,
+            self.n_spikes, ax=ax)
 
     def plot_rescaled_ISI_autocorrelation(self, ax=None):
         '''Plot the rescaled ISI dependence.
@@ -159,17 +147,8 @@ class TimeRescaling(object):
         ax : axis_handle
 
         '''
-        lag = np.arange(-self.n_spikes + 1, self.n_spikes)
-        if ax is None:
-            ax = plt.gca()
-        ci = 1.96 / np.sqrt(self.n_spikes)
-        ax.scatter(lag, self.rescaled_ISI_autocorrelation())
-        ax.axhline(ci, linestyle='--', color='red')
-        ax.axhline(-ci, linestyle='--', color='red')
-        ax.set_xlabel('Lag')
-        ax.set_ylabel('autocorrelation')
-
-        return ax
+        return plot_rescaled_ISI_autocorrelation(
+            self.rescaled_ISI_autocorrelation(), self.n_spikes, ax=ax)
 
 
 def uniform_cdf_values(n_spikes):
@@ -290,3 +269,36 @@ def uniform_rescaled_ISIs(conditional_intensity, is_spike,
         max_transformed_interval = 1
 
     return expon.cdf(rescaled_ISIs) / max_transformed_interval
+
+
+def plot_ks(uniform_rescaled_ISIs, uniform_cdf_values, n_spikes, ax=None):
+    uniform_rescaled_ISIs = np.sort(uniform_rescaled_ISIs)
+    ci = 1.36 / np.sqrt(n_spikes)
+
+    if ax is None:
+        ax = plt.gca()
+    ax.plot(uniform_cdf_values, uniform_cdf_values - ci,
+            linestyle='--', color='red')
+    ax.plot(uniform_cdf_values, uniform_cdf_values + ci,
+            linestyle='--', color='red')
+    ax.scatter(uniform_rescaled_ISIs, uniform_cdf_values)
+
+    ax.set_xlabel('Empirical CDF')
+    ax.set_ylabel('Model CDF')
+
+    return ax
+
+
+def plot_rescaled_ISI_autocorrelation(rescaled_ISI_autocorrelation,
+                                      n_spikes, ax=None):
+    lag = np.arange(-n_spikes + 1, n_spikes)
+    if ax is None:
+        ax = plt.gca()
+    ci = 1.96 / np.sqrt(n_spikes)
+    ax.scatter(lag, rescaled_ISI_autocorrelation)
+    ax.axhline(ci, linestyle='--', color='red')
+    ax.axhline(-ci, linestyle='--', color='red')
+    ax.set_xlabel('Lag')
+    ax.set_ylabel('autocorrelation')
+
+    return ax
