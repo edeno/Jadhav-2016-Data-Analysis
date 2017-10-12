@@ -4,11 +4,11 @@
 from copy import deepcopy
 from functools import partial
 from logging import getLogger
-
-from scipy.stats import linregress
+from itertools import product
 
 import numpy as np
 import pandas as pd
+from scipy.stats import linregress
 
 import xarray as xr
 
@@ -21,6 +21,7 @@ from .ripple_decoding import ClusterlessDecoder, SortedSpikeDecoder
 from .ripple_detection.detectors import Kay_ripple_detector
 from .spectral.connectivity import Connectivity
 from .spectral.transforms import Multitaper
+from .spike_train import perievent_time_spline_estimate, cross_correlate
 
 logger = getLogger(__name__)
 
@@ -52,6 +53,61 @@ def entire_session_connectivity(
     save_canonical_coherence(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
+
+
+def ripple_locked_firing_rate_change(ripple_times, neuron_info, animals,
+                                     sampling_frequency,
+                                     window_offset=None,
+                                     n_boot_samples=None,
+                                     formula='bs(time, df=5)'):
+
+    estimate = []
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes = reshape_to_segments(
+            spikes, ripple_times, sampling_frequency=sampling_frequency,
+            window_offset=window_offset)
+        time = ripple_locked_spikes.index.get_level_values('time').values
+        trial_id = (ripple_locked_spikes.index
+                    .get_level_values('segment_number').values)
+        estimate.append(
+            perievent_time_spline_estimate(
+                ripple_locked_spikes.values.squeeze(),
+                time, sampling_frequency, formula=formula,
+                n_boot_samples=n_boot_samples, trial_id=trial_id))
+
+    return xr.concat(estimate, dim=neuron_info.neuron_id)
+
+
+def ripple_cross_correlation(ripple_times, neuron_info, animals,
+                             sampling_frequency, window_offset=None):
+
+    before_ripple, after_ripple = [], []
+
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes = reshape_to_segments(
+            spikes, ripple_times, sampling_frequency=sampling_frequency,
+            window_offset=window_offset).unstack(level=0)
+        before_ripple.append(ripple_locked_spikes.loc[:0].values)
+        after_ripple.append(ripple_locked_spikes.loc[0:].values)
+
+    correlation_before_ripple = correlate_neurons(
+        before_ripple, neuron_info.neuron_id, sampling_frequency)
+    correlation_after_ripple = correlate_neurons(
+        after_ripple, neuron_info.neuron_id, sampling_frequency)
+    time = pd.Index([min(window_offset), 0.0], name='time')
+    return xr.concat(
+        (correlation_before_ripple, correlation_after_ripple), dim=time)
+
+
+def correlate_neurons(neurons, neuron_id, sampling_frequency):
+    index = pd.MultiIndex.from_product((neuron_id, neuron_id),
+                                       names=['neuron1', 'neuron2'])
+    return xr.concat(
+        [cross_correlate(neuron1, neuron2, sampling_frequency).to_xarray()
+         for neuron1, neuron2 in product(neurons, neurons)],
+        dim=index).unstack('concat_dim')
 
 
 def connectivity_by_ripple_type(
@@ -309,8 +365,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1', 'CA3']) &
                       (tetrode_info.descrip.isin(['riptet']) |
-                       tetrode_info.validripple)
-                      )
+                       tetrode_info.validripple))
     logger.debug(tetrode_info[is_hippocampal]
                  .loc[:, ['area', 'depth', 'descrip']])
     tetrode_keys = tetrode_info[is_hippocampal].index.tolist()
@@ -456,9 +511,9 @@ def _get_ripple_marks(marks, ripple_times, sampling_frequency):
         for tetrode_marks in marks]
 
     return [(np.stack([df.loc[ripple_ind + 1, :].values
-                      for df in mark_ripples], axis=0),
-            mark_ripples[0].loc[ripple_ind + 1, :]
-            .index.get_level_values('time'))
+                       for df in mark_ripples], axis=0),
+             mark_ripples[0].loc[ripple_ind + 1, :]
+             .index.get_level_values('time'))
             for ripple_ind in np.arange(len(ripple_times))]
 
 
