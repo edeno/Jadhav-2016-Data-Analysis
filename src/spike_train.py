@@ -3,7 +3,6 @@ import pandas as pd
 import xarray as xr
 from patsy import build_design_matrices, dmatrix
 from scipy.signal import convolve, gaussian, correlate
-from scipy.stats import poisson
 from statsmodels.api import GLM, families
 from src.time_rescale import TimeRescaling
 
