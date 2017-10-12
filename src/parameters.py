@@ -59,8 +59,8 @@ MULTITAPER_PARAMETERS = {
 }
 
 
-RIPPLE_COVARIATES = ['session_time', 'ripple_trajectory',
-                     'ripple_direction', 'ripple_motion']
+REPLAY_COVARIATES = ['session_time', 'replay_task',
+                     'replay_order', 'replay_motion']
 
 FREQUENCY_BANDS = {
     'theta': (4, 12),

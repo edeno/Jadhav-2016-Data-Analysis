@@ -12,7 +12,6 @@ References
 '''
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm, expon
 from scipy.signal import correlate
@@ -59,32 +58,26 @@ class TimeRescaling(object):
         self.adjust_for_short_trials = adjust_for_short_trials
 
     @property
+    def n_spikes(self):
+        '''Number of total spikes.'''
+        return np.nonzero(self.is_spike)[0].size
+
     def uniform_rescaled_ISIs(self):
         '''Rescales the interspike intervals (ISIs) to unit rate Poisson,
         adjusts for short time intervals, and transforms the ISIs to a
         uniform distribution for easier analysis.'''
-        data_by_trial = pd.DataFrame({
-            'conditional_intensity': self.conditional_intensity,
-            'is_spike': self.is_spike
-        }).groupby(self.trial_id)
 
-        return np.concatenate(
-            [uniform_rescaled_ISIs(
-                trial.conditional_intensity.values, trial.is_spike.values,
-                self.adjust_for_short_trials)
-             for _, trial in data_by_trial])
+        trial_IDs = np.unique(self.trial_id)
+        uniform_rescaled_ISIs_by_trial = []
+        for trial in trial_IDs:
+            is_trial = np.in1d(self.trial_id, trial)
+            uniform_rescaled_ISIs_by_trial.append(
+                uniform_rescaled_ISIs(
+                    self.conditional_intensity[is_trial],
+                    self.is_spike[is_trial], self.adjust_for_short_trials)
+            )
 
-    @property
-    def uniform_cdf_values(self):
-        '''Model based cumulative distribution function values. Used for
-        plotting the `uniform_rescaled_ISIs`.'''
-        n_spikes = np.nonzero(self.is_spike)[0].size
-        return uniform_cdf_values(n_spikes)
-
-    @property
-    def n_spikes(self):
-        '''Number of total spikes.'''
-        return np.nonzero(self.is_spike)[0].size
+        return np.concatenate(uniform_rescaled_ISIs_by_trial)
 
     def ks_statistic(self):
         '''Measures the maximum distance of the rescaled ISIs from the unit
@@ -93,8 +86,9 @@ class TimeRescaling(object):
         Smaller maximum distance means better fitting model.
 
         '''
-        return ks_statistic(np.sort(self.uniform_rescaled_ISIs),
-                            self.uniform_cdf_values)
+        uniform_cdf_values = _uniform_cdf_values(self.n_spikes)
+        return ks_statistic(np.sort(self.uniform_rescaled_ISIs()),
+                            uniform_cdf_values)
 
     def rescaled_ISI_autocorrelation(self):
         '''Examine rescaled ISI dependence.
@@ -104,7 +98,7 @@ class TimeRescaling(object):
 
         '''
         # Avoid -inf and inf when transforming to normal distribution.
-        u = self.uniform_rescaled_ISIs
+        u = self.uniform_rescaled_ISIs()
         u[u == 0] = np.finfo(float).eps
         u[u == 1] = 1 - np.finfo(float).eps
 
@@ -127,21 +121,7 @@ class TimeRescaling(object):
         ax : axis_handle
 
         '''
-        uniform_rescaled_ISIs = np.sort(self.uniform_rescaled_ISIs)
-        ci = 1.36 / np.sqrt(self.n_spikes)
-
-        if ax is None:
-            ax = plt.gca()
-        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values - ci,
-                linestyle='--', color='red')
-        ax.plot(self.uniform_cdf_values, self.uniform_cdf_values + ci,
-                linestyle='--', color='red')
-        ax.scatter(uniform_rescaled_ISIs, self.uniform_cdf_values)
-
-        ax.set_xlabel('Empirical CDF')
-        ax.set_ylabel('Model CDF')
-
-        return ax
+        return plot_ks(self.uniform_rescaled_ISIs(), ax=ax)
 
     def plot_rescaled_ISI_autocorrelation(self, ax=None):
         '''Plot the rescaled ISI dependence.
@@ -159,20 +139,11 @@ class TimeRescaling(object):
         ax : axis_handle
 
         '''
-        lag = np.arange(-self.n_spikes + 1, self.n_spikes)
-        if ax is None:
-            ax = plt.gca()
-        ci = 1.96 / np.sqrt(self.n_spikes)
-        ax.scatter(lag, self.rescaled_ISI_autocorrelation())
-        ax.axhline(ci, linestyle='--', color='red')
-        ax.axhline(-ci, linestyle='--', color='red')
-        ax.set_xlabel('Lag')
-        ax.set_ylabel('autocorrelation')
-
-        return ax
+        return plot_rescaled_ISI_autocorrelation(
+            self.rescaled_ISI_autocorrelation(), ax=ax)
 
 
-def uniform_cdf_values(n_spikes):
+def _uniform_cdf_values(n_spikes):
     '''Model based cumulative distribution function values. Used for
     plotting the `uniform_rescaled_ISIs`.
 
@@ -204,7 +175,10 @@ def ks_statistic(empirical_cdf, model_cdf):
     ks_statistic : float
 
     '''
-    return np.max(np.abs(empirical_cdf - model_cdf))
+    try:
+        return np.max(np.abs(empirical_cdf - model_cdf))
+    except ValueError:
+        return np.nan
 
 
 def _rescaled_ISIs(integrated_conditional_intensity, is_spike):
@@ -290,3 +264,40 @@ def uniform_rescaled_ISIs(conditional_intensity, is_spike,
         max_transformed_interval = 1
 
     return expon.cdf(rescaled_ISIs) / max_transformed_interval
+
+
+def plot_ks(uniform_rescaled_ISIs, ax=None):
+    n_spikes = uniform_rescaled_ISIs.size
+    uniform_cdf_values = _uniform_cdf_values(n_spikes)
+    uniform_rescaled_ISIs = np.sort(uniform_rescaled_ISIs)
+
+    ci = 1.36 / np.sqrt(n_spikes)
+
+    if ax is None:
+        ax = plt.gca()
+    ax.plot(uniform_cdf_values, uniform_cdf_values - ci,
+            linestyle='--', color='red')
+    ax.plot(uniform_cdf_values, uniform_cdf_values + ci,
+            linestyle='--', color='red')
+    ax.scatter(uniform_rescaled_ISIs, uniform_cdf_values)
+
+    ax.set_xlabel('Empirical CDF')
+    ax.set_ylabel('Expected CDF')
+
+    return ax
+
+
+def plot_rescaled_ISI_autocorrelation(rescaled_ISI_autocorrelation,
+                                      ax=None):
+    n_spikes = rescaled_ISI_autocorrelation.size // 2 + 1
+    lag = np.arange(-n_spikes + 1, n_spikes)
+    if ax is None:
+        ax = plt.gca()
+    ci = 1.96 / np.sqrt(n_spikes)
+    ax.scatter(lag, rescaled_ISI_autocorrelation)
+    ax.axhline(ci, linestyle='--', color='red')
+    ax.axhline(-ci, linestyle='--', color='red')
+    ax.set_xlabel('Lag')
+    ax.set_ylabel('Autocorrelation')
+
+    return ax
