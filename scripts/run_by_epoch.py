@@ -15,7 +15,7 @@ from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
                                  get_interpolated_position_dataframe)
 from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
                             MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
-                            RIPPLE_COVARIATES)
+                            REPLAY_COVARIATES)
 
 
 def estimate_ripple_coherence(epoch_key):
@@ -40,7 +40,7 @@ def estimate_ripple_coherence(epoch_key):
     ripple_info = decode_ripple_clusterless(
         epoch_key, ANIMALS, ripple_times)[0]
 
-    for covariate in RIPPLE_COVARIATES:
+    for covariate in REPLAY_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             connectivity_by_ripple_type(
                 lfps, epoch_key, tetrode_info,
