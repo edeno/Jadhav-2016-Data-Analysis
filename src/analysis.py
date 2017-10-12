@@ -489,64 +489,68 @@ def summarize_replay_results(results, ripple_times, position_info,
 
     Returns
     -------
-    ripple_info : pandas dataframe
+    replay_info : pandas dataframe
     decision_state_probability : array_like
     posterior_density : xarray DataArray
 
     '''
+    replay_info = ripple_times.copy()
+
     # Includes information about the animal, day, epoch in index
-    (ripple_times['animal'], ripple_times['day'],
-     ripple_times['epoch']) = epoch_key
-    ripple_times.reset_index().set_index(
+    (replay_info['animal'], replay_info['day'],
+     replay_info['epoch']) = epoch_key
+    replay_info.reset_index().set_index(
         ['animal', 'day', 'epoch', 'ripple_number'], inplace=True)
 
-    ripple_times['ripple_duration'] = (
-        ripple_times['end_time'] - ripple_times['start_time'])
+    replay_info['ripple_duration'] = (
+        replay_info['end_time'] - replay_info['start_time'])
 
     # Add decoded states and probability of state
-    ripple_times['predicted_state'] = [
+    replay_info['predicted_state'] = [
         result.predicted_state() for result in results]
-    ripple_times['predicted_state_probability'] = [
+    replay_info['predicted_state_probability'] = [
         result.predicted_state_probability() for result in results]
 
-    ripple_times = pd.concat(
-        (ripple_times,
-         ripple_times.predicted_state.str.split('-', expand=True)
-         .rename(columns={0: 'replay_context', 1: 'replay_direction'})
+    replay_info = pd.concat(
+        (replay_info,
+         replay_info.predicted_state.str.split('-', expand=True)
+         .rename(columns={0: 'replay_task',
+                          1: 'replay_order'})
          ), axis=1)
 
     # When in the session does the ripple occur (early, middle, late)
-    ripple_times['session_time'] = _ripple_session_time(
-        ripple_times, position_info.index)
+    replay_info['session_time'] = _ripple_session_time(
+        replay_info, position_info.index)
 
     # Add stats about spikes
-    ripple_times['number_of_unique_spiking'] = [
+    replay_info['number_of_unique_spiking'] = [
         _num_unique_spiking(result.spikes) for result in results]
-    ripple_times['number_of_spikes'] = [_num_total_spikes(result.spikes)
-                                        for result in results]
+    replay_info['number_of_spikes'] = [_num_total_spikes(result.spikes)
+                                       for result in results]
 
     # Include animal position information
-    ripple_times = pd.concat(
-        [ripple_times,
-         position_info.loc[ripple_times.start_time]
+    replay_info = pd.concat(
+        [replay_info,
+         position_info.loc[replay_info.start_time]
          .drop('trajectory_category_ind', axis=1)
-         .set_index(ripple_times.index)
+         .set_index(replay_info.index)
          ], axis=1)
 
     # Determine whether ripple is heading towards or away from animal's
     # position
     posterior_density = xr.concat(
         [result.posterior_density for result in results],
-        dim=ripple_times.index)
+        dim=replay_info.index)
 
-    ripple_times['ripple_motion'] = _get_ripple_motion(
-        ripple_times, posterior_density)
+    replay_info['replay_motion'] = _get_replay_motion(
+        replay_info, posterior_density)
 
     decision_state_probability = xr.concat(
-        [result.state_probability().unstack().to_xarray()
-         for result in results], dim=ripple_times.index)
+        [result.state_probability().unstack().to_xarray().rename(
+            'decision_state_probability')
+         for result in results], dim=replay_info.index)
 
-    return (ripple_times, decision_state_probability,
+    return (replay_info, decision_state_probability,
             posterior_density)
 
 
@@ -590,7 +594,7 @@ def _ripple_session_time(ripple_times, session_time):
         dtype=session_time_categories.dtype)
 
 
-def _get_ripple_motion_from_rows(ripple_times, posterior_density,
+def _get_replay_motion_from_rows(ripple_times, posterior_density,
                                  distance_measure='linear_distance'):
     '''
 
@@ -622,12 +626,12 @@ def _get_ripple_motion_from_rows(ripple_times, posterior_density,
     return np.where(is_away, 'away', 'towards')
 
 
-def _get_ripple_motion(ripple_times, posterior_density,
+def _get_replay_motion(ripple_times, posterior_density,
                        distance_measure='linear_distance'):
-    '''Motion of the ripple relative to the current position of the animal.
+    '''Motion of the replay relative to the current position of the animal.
     '''
     return np.array(
-        [_get_ripple_motion_from_rows(row, density, distance_measure)
+        [_get_replay_motion_from_rows(row, density, distance_measure)
          for (_, row), density
          in zip(ripple_times.iterrows(), posterior_density)]).squeeze()
 
