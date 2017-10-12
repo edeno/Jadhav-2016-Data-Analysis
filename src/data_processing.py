@@ -668,7 +668,8 @@ def _get_windowed_dataframe(time_series, segments, window_offset,
 
 
 def reshape_to_segments(time_series, segments, window_offset=None,
-                        sampling_frequency=1500, concat_axis=0):
+                        sampling_frequency=1500, concat_axis=0,
+                        segment_name='segment_number'):
     '''Take multiple windows of a time series and set time relative to
     the start of the window.
 
@@ -685,6 +686,7 @@ def reshape_to_segments(time_series, segments, window_offset=None,
         Offset the
     sampling_frequency : float, optional
     concat_axis : int, optional
+    segment_name : str, optional
 
     Returns
     -------
@@ -705,7 +707,7 @@ def reshape_to_segments(time_series, segments, window_offset=None,
     return (pd.concat(_get_windowed_dataframe(
             time_series, segments, window_offset, sampling_frequency),
         keys=np.arange(len(segments)) + 1,
-        names=['segment_number'],
+        names=[segment_name],
         axis=concat_axis).sort_index())
 
 
