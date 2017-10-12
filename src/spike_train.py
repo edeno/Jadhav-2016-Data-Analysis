@@ -35,15 +35,19 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
                                    n_boot_samples=None, trial_id=None):
     design_matrix = dmatrix(formula, dict(time=time),
                             return_type='dataframe')
-    fit = GLM(is_spike, design_matrix, family=families.Poisson()).fit()
 
-    if n_boot_samples is not None:
-        model_coefficients = glm_parametric_bootstrap(
-            fit.params, fit.cov_params(),
-            n_samples=n_boot_samples)
-    else:
-        model_coefficients = fit.params[:, np.newaxis]
-        n_boot_samples = 1
+    try:
+        fit = GLM(is_spike, design_matrix, family=families.Poisson()).fit()
+
+        if n_boot_samples is not None:
+            model_coefficients = glm_parametric_bootstrap(
+                fit.params, fit.cov_params(),
+                n_samples=n_boot_samples)
+        else:
+            model_coefficients = fit.params[:, np.newaxis]
+            n_boot_samples = 1
+    except (ValueError, np.linalg.LinAlgError):
+        model_coefficients = np.full((design_matrix.shape[1], 1), np.nan)
 
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=np.unique(time)))[0]
