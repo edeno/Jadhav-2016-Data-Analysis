@@ -31,7 +31,7 @@ def perievent_time_kernel_density_estimate(
 
 def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
                                    formula='bs(time, df=5)',
-                                   n_boot_samples=1000):
+                                   n_boot_samples=None, trial_id=None):
     design_matrix = dmatrix(formula, dict(time=time),
                             return_type='dataframe')
     fit = GLM(is_spike, design_matrix, family=families.Poisson()).fit()
@@ -47,28 +47,35 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=np.unique(time)))[0]
 
-    firing_rate_change_over_time = (
-        np.exp(np.dot(predict_design_matrix, model_coefficients)) *
-        sampling_frequency)
-    change_over_time = np.exp(
-        np.dot(predict_design_matrix[:, 1:], model_coefficients[1:]))
-    baseline_firing_rate = np.exp(
-        model_coefficients[0]) * sampling_frequency
+    coords = {'time': np.unique(time)}
 
-    data_vars = {
-        'change_over_time': (
-            ['time', 'n_boot_samples'], change_over_time),
-        'firing_rate_change_over_time': (
-            ['time', 'n_boot_samples'], firing_rate_change_over_time),
-        'baseline_firing_rate': (['n_boot_samples'], baseline_firing_rate),
-    }
-    coords = {'time': np.unique(time),
-              'n_boot_samples': np.arange(n_boot_samples) + 1}
-    return xr.Dataset(data_vars, coords)
+    firing_rate = xr.DataArray(
+        np.exp(np.dot(predict_design_matrix, model_coefficients)) *
+        sampling_frequency, dims=['time', 'n_boot_samples'],
+        coords=coords, name='firing_rate')
+    multiplicative_gain = xr.DataArray(np.exp(
+        np.dot(predict_design_matrix[:, 1:], model_coefficients[1:])),
+        dims=['time', 'n_boot_samples'],
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(np.exp(
+        model_coefficients[0]) * sampling_frequency,
+        dims='n_boot_samples', name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(
+        np.dot(design_matrix, model_coefficients))
+    ks_statistic = xr.DataArray(
+        [TimeRescaling(ci, is_spike, trial_id,
+                       adjust_for_short_trials=True).ks_statistic()
+         for ci in conditional_intensity.T],
+        dims='n_boot_samples', name='ks_statistic')
+
+    return xr.merge((firing_rate, multiplicative_gain,
+                     baseline_firing_rate, ks_statistic))
 
 
 def perievent_time_indicator_estimate(is_spike, time, sampling_frequency,
-                                      formula='time', n_boot_samples=1000):
+                                      formula='time', n_boot_samples=1000,
+                                      trial_id=None):
     time_indicator = np.where(time > 0, 'after0', 'before0')
     time_indicator = pd.Categorical(
         time_indicator, categories=['before0', 'after0'], ordered=True)
