@@ -169,7 +169,7 @@ def simulate_poisson_process(rate, sampling_frequency):
 
 
 def coherence_rate_adjustment(firing_rate_condition1,
-                              firing_rate_condition2, spike_autospectrum,
+                              firing_rate_condition2, spike_power_spectrum,
                               homogeneous_poisson_noise=0, dt=1):
     '''Correction for the spike-field or spike-spike coherence when the
     conditions have different firing rates.
@@ -189,8 +189,8 @@ def coherence_rate_adjustment(firing_rate_condition1,
     ----------
     firing_rate_condition1, firing_rate_condition2 : float
         Average firing rates for each condition.
-    spike_autospectrum : ndarray, shape (n_frequencies,)
-        Autospectrum of the spike train. Complex.
+    spike_power_spectrum : ndarray, shape (n_frequencies,)
+        Power spectrum of the spike train in condition 1.
     homogeneous_poisson_noise : float, optional
         Beta in [1].
     dt : float, optional
@@ -212,4 +212,4 @@ def coherence_rate_adjustment(firing_rate_condition1,
     adjusted_firing_rate = (
         (1 / firing_rate_ratio - 1) * firing_rate_condition1 +
         homogeneous_poisson_noise / firing_rate_ratio ** 2) * dt ** 2
-    return 1 / np.sqrt(1 + (adjusted_firing_rate / spike_autospectrum))
+    return 1 / np.sqrt(1 + (adjusted_firing_rate / spike_power_spectrum))
