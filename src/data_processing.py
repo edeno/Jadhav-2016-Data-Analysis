@@ -839,7 +839,19 @@ def get_analysis_file_path(animal, day, epoch):
     return join(PROCESSED_DATA_DIR, filename)
 
 
-def save_xarray(epoch_key, dataset, group):
+def save_xarray(epoch_key, dataset, group=''):
+    '''Saves xarray data to file corresponding to epoch key
+
+    Parameters
+    ----------
+    epoch_key : tuple
+        (Animal, day, epoch)
+    dataset : xarray Dataset or DataArray
+        Data to be saved
+    group : str, optional
+        HDF5 group name
+
+    '''
     path = get_analysis_file_path(*epoch_key)
     write_mode = 'a' if isfile(path) else 'w'
     dataset.to_netcdf(path=path, group=group, mode=write_mode)
