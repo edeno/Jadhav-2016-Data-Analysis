@@ -101,25 +101,24 @@ def estimate_ripple_coherence(epoch_key):
 
 
 def decode_ripples(epoch_key):
+
     ripple_times = detect_epoch_ripples(
         epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
     # Compare different types of ripples
-    (ripple_info, decision_state_probability,
-     posterior_density) = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)
+    replay_info, state_probability, posterior_density = (
+        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times))
 
-    save_xarray(
-        epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
-    save_xarray(
-        epoch_key, decision_state_probability,
-        '/decision_state_probability')
-    save_xarray(
-        epoch_key, posterior_density, '/posterior_density')
+    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
 
-    position_df = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-    save_xarray(
-        epoch_key, position_df.to_xarray(), '/position_df')
+    results = dict()
+    results['replay_info'] = replay_info.reset_index().to_xarray()
+    results['position_info'] = position_info.to_xarray()
+    results['state_probability'] = state_probability
+    results['posterior_density'] = posterior_density
+
+    for group_name, data in results.items():
+        save_xarray(epoch_key, data, group_name)
 
 
 def get_command_line_arguments():
