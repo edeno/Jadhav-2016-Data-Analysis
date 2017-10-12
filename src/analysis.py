@@ -437,8 +437,8 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         train_position_info.linear_distance.values,
         train_position_info.trajectory_direction.values,
         training_marks
-    )
-    decoder.fit()
+    ).fit()
+
     test_marks = _get_ripple_marks(
         marks, ripple_times.values, sampling_frequency)
     logger.info('Predicting replay types')
