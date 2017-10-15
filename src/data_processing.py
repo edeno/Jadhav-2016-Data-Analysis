@@ -704,6 +704,7 @@ def reshape_to_segments(time_series, segments, window_offset=None,
                             window_offset=(-0.001, 0.001))
 
     '''
+    segments = np.array(segments)
     return (pd.concat(_get_windowed_dataframe(
             time_series, segments, window_offset, sampling_frequency),
         keys=np.arange(len(segments)) + 1,
