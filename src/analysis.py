@@ -158,22 +158,22 @@ def ripple_spike_coherence(ripple_times, neuron_info, animals,
     return xr.Dataset(data_vars, coords, attrs)
 
 
-def compare_spike_coherence(firing_rate1, firing_rate2, power1, coherency1,
-                            coherency2, sampling_frequency, n_trials1,
-                            n_trials2, n_tapers=1):
+def compare_spike_coherence(condition1, condition2, sampling_frequency):
     dt = 1.0 / sampling_frequency
     adjustment = coherence_rate_adjustment(
-        firing_rate1, firing_rate2, power1, dt=dt)
+        condition1.average_firing_rate, condition2.average_firing_rate,
+        condition1.power, dt=dt)
 
     adjusted_coherency1 = (adjustment.rename({'neuron1': 'neuron2'}) *
-                           adjustment * coherency1).transpose(
+                           adjustment * condition1.coherency).transpose(
                            'frequency', 'neuron1', 'neuron2')
 
-    coherence_difference = np.abs(coherency2) - np.abs(adjusted_coherency1)
-    bias1 = coherence_bias(n_trials1 * n_tapers)
-    bias2 = coherence_bias(n_trials2 * n_tapers)
+    coherence_difference = (np.abs(condition2.coherency) -
+                            np.abs(adjusted_coherency1))
+    bias1 = coherence_bias(condition1.n_trials * condition1.n_tapers)
+    bias2 = coherence_bias(condition2.n_trials * condition2.n_tapers)
     coherence_z_difference = fisher_z_transform(
-        coherency2.values, bias2, adjusted_coherency1.values, bias1)
+        condition2.coherency.values, bias2, adjusted_coherency1.values, bias1)
     p_values = get_normal_distribution_p_values(coherence_z_difference)
 
     DIMS = ['frequency', 'neuron1', 'neuron2']
@@ -189,12 +189,12 @@ def compare_spike_coherence(firing_rate1, firing_rate2, power1, coherency1,
         'neuron2': adjusted_coherency1.neuron2
     }
     attrs = {
-        'n_trials1': n_trials1,
-        'n_trials2': n_trials2,
-        'n_tapers': n_tapers,
+        'n_trials1': condition1.n_trials,
+        'n_trials2': condition1.n_trials,
+        'n_tapers': condition1.n_tapers,
     }
 
-    return xr.Dataset(data_vars, coords, attrs).drop('time')
+    return xr.Dataset(data_vars, coords, attrs)
 
 
 def connectivity_by_ripple_type(
