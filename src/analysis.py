@@ -20,7 +20,10 @@ from .data_processing import (get_interpolated_position_dataframe,
 from .ripple_decoding import ClusterlessDecoder, SortedSpikeDecoder
 from .ripple_detection.detectors import Kay_ripple_detector
 from .spectral.connectivity import Connectivity
-from .spectral.transforms import Multitaper
+from .spectral.transforms import Multitaper, _sliding_window
+from .spectral.statistics import (fisher_z_transform,
+                                  get_normal_distribution_p_values,
+                                  coherence_bias, coherence_rate_adjustment)
 from .spike_train import perievent_time_spline_estimate, cross_correlate
 
 logger = getLogger(__name__)
@@ -108,6 +111,90 @@ def correlate_neurons(neurons, neuron_id, sampling_frequency):
         [cross_correlate(neuron1, neuron2, sampling_frequency).to_xarray()
          for neuron1, neuron2 in product(neurons, neurons)],
         dim=index).unstack('concat_dim')
+
+
+def ripple_spike_coherence(ripple_times, neuron_info, animals,
+                           sampling_frequency, multitaper_parameters,
+                           window_offset=(-0.100, 0.100)):
+    ripple_locked_spikes = []
+
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes.append(
+            reshape_to_segments(
+                spikes, ripple_times, sampling_frequency=sampling_frequency,
+                window_offset=window_offset).unstack(level=0))
+    m = Multitaper(np.stack(ripple_locked_spikes, axis=-1),
+                   **multitaper_parameters,
+                   start_time=ripple_locked_spikes[0].index.values[0])
+    c = Connectivity.from_multitaper(m)
+    n_trials = len(ripple_times)
+
+    average_firing_rate = np.stack([np.mean(_sliding_window(
+        neuron.values, m.n_time_samples_per_window, m.n_time_samples_per_step,
+        axis=0), axis=(1, 2)) * sampling_frequency
+        for neuron in ripple_locked_spikes], axis=1)
+
+    coords = {
+        'time': c.time,
+        'frequency': c.frequencies,
+        'neuron1': neuron_info.neuron_id.values,
+        'neuron2': neuron_info.neuron_id.values
+    }
+    attrs = {
+        'n_trials': n_trials,
+        'n_tapers': m.n_tapers,
+        'frequency_resolution': m.frequency_resolution
+    }
+    data_vars = {
+        'average_firing_rate': (['time', 'neuron1'], average_firing_rate),
+        'power': (['time', 'frequency', 'neuron1'], c.power()),
+        'coherency': (['time', 'frequency', 'neuron1', 'neuron2'],
+                      c.coherency()),
+        'coherence_magnitude': (['time', 'frequency', 'neuron1', 'neuron2'],
+                                c.coherence_magnitude()),
+    }
+
+    return xr.Dataset(data_vars, coords, attrs)
+
+
+def compare_spike_coherence(firing_rate1, firing_rate2, power1, coherency1,
+                            coherency2, sampling_frequency, n_trials1,
+                            n_trials2, n_tapers=1):
+    dt = 1.0 / sampling_frequency
+    adjustment = coherence_rate_adjustment(
+        firing_rate1, firing_rate2, power1, dt=dt)
+
+    adjusted_coherency1 = (adjustment.rename({'neuron1': 'neuron2'}) *
+                           adjustment * coherency1).transpose(
+                           'frequency', 'neuron1', 'neuron2')
+
+    coherence_difference = np.abs(coherency2) - np.abs(adjusted_coherency1)
+    bias1 = coherence_bias(n_trials1 * n_tapers)
+    bias2 = coherence_bias(n_trials2 * n_tapers)
+    coherence_z_difference = fisher_z_transform(
+        coherency2.values, bias2, adjusted_coherency1.values, bias1)
+    p_values = get_normal_distribution_p_values(coherence_z_difference)
+
+    DIMS = ['frequency', 'neuron1', 'neuron2']
+
+    data_vars = {
+        'coherence_difference': (DIMS, coherence_difference),
+        'coherence_z_difference': (DIMS, coherence_z_difference),
+        'p_values': (DIMS, p_values),
+    }
+    coords = {
+        'frequency': adjusted_coherency1.frequency,
+        'neuron1': adjusted_coherency1.neuron1,
+        'neuron2': adjusted_coherency1.neuron2
+    }
+    attrs = {
+        'n_trials1': n_trials1,
+        'n_trials2': n_trials2,
+        'n_tapers': n_tapers,
+    }
+
+    return xr.Dataset(data_vars, coords, attrs).drop('time')
 
 
 def connectivity_by_ripple_type(
