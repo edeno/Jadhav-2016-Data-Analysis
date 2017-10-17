@@ -19,35 +19,30 @@ _50Hz_Res = dict(
     time_window_duration=0.020,
     time_window_step=0.020,
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.420, 0.400)
 )
 _20Hz_Res = dict(
     sampling_frequency=SAMPLING_FREQUENCY,
     time_window_duration=0.050,
     time_window_step=0.050,
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.450, 0.500)
 )
 _10Hz_Res = dict(
     sampling_frequency=SAMPLING_FREQUENCY,
     time_window_duration=0.100,
     time_window_step=0.100,
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.500, 0.500)
 )
 _4Hz_Res = dict(
     sampling_frequency=SAMPLING_FREQUENCY,
     time_window_duration=0.250,
     time_window_step=0.250,
     time_halfbandwidth_product=1,
-    window_of_interest=(-0.750, 0.500)
 )
 _2Hz_Res = dict(
     sampling_frequency=SAMPLING_FREQUENCY,
     time_window_duration=0.500,
     time_window_step=0.500,
     time_halfbandwidth_product=1,
-    window_of_interest=(-1.00, 0.500)
 )
 
 MULTITAPER_PARAMETERS = {
