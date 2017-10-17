@@ -1,6 +1,8 @@
 '''Exectue set of functions for each epoch
 '''
 from argparse import ArgumentParser
+from collections import OrderedDict
+from itertools import combinations
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
@@ -11,7 +13,8 @@ from src.analysis import (decode_ripple_clusterless,
                           ripple_triggered_connectivity,
                           connectivity_by_ripple_type,
                           ripple_locked_firing_rate_change,
-                          ripple_cross_correlation)
+                          ripple_cross_correlation, ripple_spike_coherence,
+                          compare_spike_coherence)
 from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
                                  make_neuron_dataframe, save_xarray,
                                  get_interpolated_position_dataframe)
@@ -20,9 +23,7 @@ from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
                             REPLAY_COVARIATES)
 
 
-def estimate_ripple_spike_connectivity(epoch_key,
-                                       window_offset=(-0.100, 0.100),
-                                       n_boot_samples=1000):
+def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
     ripple_times = detect_epoch_ripples(
         epoch_key, ANIMALS, SAMPLING_FREQUENCY)
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
@@ -32,30 +33,50 @@ def estimate_ripple_spike_connectivity(epoch_key,
 
     results['firing_rate/all_ripples'] = ripple_locked_firing_rate_change(
         ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
-        window_offset=window_offset, formula='bs(time, df=5)',
+        window_offset=(-0.100, 0.100), formula='bs(time, df=5)',
         n_boot_samples=n_boot_samples)
     results['cross_correlation/all_ripples'] = ripple_cross_correlation(
         ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
-        window_offset=window_offset)
+        window_offset=(-0.100, 0.100))
+    coherence_all_ripples = ripple_spike_coherence(
+        ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+        MULTITAPER_PARAMETERS['10Hz_Resolution'], (-0.100, 0.100))
+    results['coherence/all_ripples'] = compare_spike_coherence(
+        coherence_all_ripples.isel(time=0),
+        coherence_all_ripples.isel(time=1), SAMPLING_FREQUENCY,
+        'After Ripple - Before Ripple')
 
     # Compare different types of replay
     replay_info, state_probability, posterior_density = (
         decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times))
 
     for covariate in REPLAY_COVARIATES:
+
+        coherence = OrderedDict()
+
         for level_name, df in replay_info.groupby(covariate):
             level_ripple_times = df.loc[:, ['start_time', 'end_time']].values
             subgroup_name = '/'.join((covariate, level_name))
             results['firing_rate/' + subgroup_name] = (
                 ripple_locked_firing_rate_change(
                     level_ripple_times, neuron_info, ANIMALS,
-                    SAMPLING_FREQUENCY, window_offset=window_offset,
+                    SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100),
                     formula='bs(time, df=5)',
                     n_boot_samples=n_boot_samples))
             results['cross_correlation/' + subgroup_name] = (
                 ripple_cross_correlation(
                     level_ripple_times, neuron_info, ANIMALS,
-                    SAMPLING_FREQUENCY, window_offset=window_offset))
+                    SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100)))
+            coherence[level_name] = ripple_spike_coherence(
+                ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+                MULTITAPER_PARAMETERS['10Hz_Resolution'], (0.00, 0.100))
+
+        for level1, level2 in combinations(coherence.keys(), 2):
+            comparison_name = '-'.join((level2, level1))
+            subgroup_name = '/'.join(('coherence', covariate, comparison_name))
+            results[subgroup_name] = compare_spike_coherence(
+                coherence[level2], coherence[level1], SAMPLING_FREQUENCY,
+                comparison_name)
 
     results['replay_info'] = replay_info.reset_index().to_xarray()
     results['state_probability'] = state_probability
