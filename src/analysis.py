@@ -158,7 +158,8 @@ def ripple_spike_coherence(ripple_times, neuron_info, animals,
     return xr.Dataset(data_vars, coords, attrs)
 
 
-def compare_spike_coherence(condition1, condition2, sampling_frequency):
+def compare_spike_coherence(condition1, condition2, sampling_frequency,
+                            comparison_name='spike_coherence'):
     dt = 1.0 / sampling_frequency
     adjustment = coherence_rate_adjustment(
         condition1.average_firing_rate, condition2.average_firing_rate,
@@ -192,6 +193,7 @@ def compare_spike_coherence(condition1, condition2, sampling_frequency):
         'n_trials1': condition1.n_trials,
         'n_trials2': condition1.n_trials,
         'n_tapers': condition1.n_tapers,
+        'comparison': comparison_name,
     }
 
     return xr.Dataset(data_vars, coords, attrs)
