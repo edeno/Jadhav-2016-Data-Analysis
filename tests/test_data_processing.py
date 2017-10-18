@@ -5,8 +5,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from src.data_processing import (find_closest_ind,
-                                 get_data_filename, get_epochs)
+from src.data_processing.core import (find_closest_ind,
+                                      get_data_filename, get_epochs)
 
 
 @pytest.mark.parametrize('day, expected_name', [
