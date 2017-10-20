@@ -1,3 +1,7 @@
+'''Loads general information about each spike-sorted neuron, spike times, or
+spike indicators.
+'''
+
 from os.path import join
 
 import numpy as np
@@ -9,6 +13,22 @@ from .tetrodes import get_trial_time
 
 
 def make_neuron_dataframe(animals):
+    '''Information about all recorded neurons such as brain area.
+
+    The index of the dataframe corresponds to the unique key for that neuron
+    and can be used to load spiking information.
+
+    Parameters
+    ----------
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    neuron_dataframe : pandas.DataFrame
+
+    '''
     neuron_file_names = [(get_neuron_info_path(animals[animal]), animal)
                          for animal in animals]
     neuron_data = [(loadmat(file_name[0]), file_name[1])
@@ -23,6 +43,22 @@ def make_neuron_dataframe(animals):
 
 
 def get_spikes_dataframe(neuron_key, animals):
+    '''Spike times for a particular neuron.
+
+    Parameters
+    ----------
+    neuron_key : tuple
+        Unique key identifying that neuron. Elements of the tuple are
+        (animal_short_name, day, epoch, tetrode_number, neuron_number).
+        Key can be retrieved from `make_neuron_dataframe` function.
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    spikes_dataframe : pandas.DataFrame
+    '''
     animal, day, epoch, tetrode_number, neuron_number = neuron_key
     neuron_file = loadmat(
         get_data_filename(animals[animal], day, 'spikes'))
@@ -41,10 +77,26 @@ def get_spikes_dataframe(neuron_key, animals):
 
 def get_spike_indicator_dataframe(neuron_key, animals,
                                   time_function=get_trial_time):
-    ''' Returns a dataframe with a spike time indicator column
-    where 1 indicates a spike at that time and 0 indicates no
-    spike at that time. The number of datapoints corresponds
-    is the same as the LFP.
+    '''A time series where 1 indicates a spike at that time and 0 indicates no
+    spike at that time.
+
+    Parameters
+    ----------
+    neuron_key : tuple
+        Unique key identifying that neuron. Elements of the tuple are
+        (animal_short_name, day, epoch, tetrode_number, neuron_number).
+        Key can be retrieved from `make_neuron_dataframe` function.
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+    time_function : function, optional
+        Function that take an epoch key (animal_short_name, day, epoch) that
+        defines the time the multiunits are relative to. Defaults to using
+        the time the LFPs are sampled at.
+
+    Returns
+    ---
+
     '''
     time = time_function(neuron_key, animals)
     spikes_df = get_spikes_dataframe(neuron_key, animals)
@@ -112,6 +164,7 @@ def get_neuron_info_path(animal):
 
 
 def _get_neuron_id(dataframe):
+    '''Unique identifier string for a neuron'''
     return (dataframe.animal + '_' +
             dataframe.day.map('{:02d}'.format) + '_' +
             dataframe.epoch.map('{:02}'.format) + '_' +
