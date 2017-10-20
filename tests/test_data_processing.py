@@ -34,21 +34,21 @@ def test_find_closest_ind(search_array, target, expected_index):
     assert np.all(find_closest_ind(
         search_array, target) == expected_index)
 
-# Create a fake 'tasks' data set to test
-mock_data_struct = np.zeros(5, dtype={'names': ['type', 'environment'],
-                                      'formats': ['O', 'O']})
-mock_data_struct[0] = ('typeTest1', 'environTest1')
-mock_data_struct[1] = ('typeTest1', 'environTest2')
-mock_data_struct[2] = ('typeTest2', 'environTest2')
-mock_data_struct[3] = ('typeTest1', 'environTest2')
-mock_data_struct[4] = ('typeTest1', 'environTest1')
+    # Create a fake 'tasks' data set to test
+    mock_data_struct = np.zeros(5, dtype={'names': ['type', 'environment'],
+                                          'formats': ['O', 'O']})
+    mock_data_struct[0] = ('typeTest1', 'environTest1')
+    mock_data_struct[1] = ('typeTest1', 'environTest2')
+    mock_data_struct[2] = ('typeTest2', 'environTest2')
+    mock_data_struct[3] = ('typeTest1', 'environTest2')
+    mock_data_struct[4] = ('typeTest1', 'environTest1')
 
-mock_cell_array = {'task': np.array([[
-    [],
-    [mock_data_struct],
-    [mock_data_struct]
-]])
-}
+    mock_cell_array = {'task': np.array([[
+        [],
+        [mock_data_struct],
+        [mock_data_struct]
+    ]])
+    }
 
 
 @patch('src.data_processing.loadmat', return_value=mock_cell_array)
