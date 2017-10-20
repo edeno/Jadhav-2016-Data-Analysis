@@ -26,7 +26,7 @@ def make_neuron_dataframe(animals):
 
     Returns
     -------
-    neuron_dataframe : pandas.DataFrame
+    neuron_information : pandas.DataFrame
 
     '''
     neuron_file_names = [(get_neuron_info_path(animals[animal]), animal)

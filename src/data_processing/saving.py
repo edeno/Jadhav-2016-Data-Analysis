@@ -11,6 +11,8 @@ from .core import PROCESSED_DATA_DIR
 
 
 def get_analysis_file_path(animal, day, epoch):
+    '''File path for analysis file.
+    '''
     filename = '{animal}_{day:02d}_{epoch:02d}.nc'.format(
         animal=animal, day=day, epoch=epoch)
     return join(PROCESSED_DATA_DIR, filename)
@@ -148,6 +150,8 @@ def open_mfdataset(paths, chunks=None, concat_dim=_CONCAT_DIM_DEFAULT,
 
 
 def read_analysis_files(epoch_keys, **kwargs):
+    '''Reads in analysis files and concatenate them.
+    '''
     epoch_keys.name = 'recording_session'
     file_names = [get_analysis_file_path(*epoch_key)
                   for epoch_key in epoch_keys]

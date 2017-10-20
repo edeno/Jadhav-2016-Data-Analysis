@@ -9,6 +9,21 @@ from .core import RAW_DATA_DIR
 
 
 def load_task(file_name, animal):
+    '''Loads task information for a specific day and converts it to a pandas
+    DataFrame.
+
+    Parameters
+    ----------
+    file_name : str
+        Task file name for an animal and recording session day.
+    animal : namedtuple
+        Information about data directory for the animal.
+
+    Returns
+    -------
+    task_information : pandas.DataFrame
+
+    '''
     data = loadmat(file_name, variable_names=('task'))['task']
     day = data.shape[-1]
     epochs = data[0, -1][0]
@@ -25,12 +40,40 @@ def load_task(file_name, animal):
 
 
 def get_task(animal):
+    '''Loads all experimental information for all days for a given animal.
+
+    Parameters
+    ----------
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    task_information : pandas.DataFrame
+
+    '''
     task_files = glob(join(RAW_DATA_DIR, animal.directory, '*task*.mat'))
     return pd.concat(load_task(task_file, animal)
                      for task_file in task_files)
 
 
 def make_epochs_dataframe(animals):
+    '''Experimental conditions for all recording epochs.
+
+    Index is a unique identifying key for that recording epoch.
+
+    Parameters
+    ----------
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    epoch_information : pandas.DataFrame
+
+    '''
     return (
         pd.concat([get_task(animal) for animal in animals.values()])
         .sort_index())

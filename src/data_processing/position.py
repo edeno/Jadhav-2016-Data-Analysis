@@ -13,9 +13,11 @@ def get_position_dataframe(epoch_key, animals):
     Parameters
     ----------
     epoch_key : tuple
-        Defines a single epoch (animal, day, epoch)
-    animals : dictionary of namedtuples
-        Maps animal name to namedtuple with animal file directory
+        Unique key identifying a recording epoch. Elements are
+        (animal, day, epoch)
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
 
     Returns
     -------
@@ -43,6 +45,23 @@ def get_position_dataframe(epoch_key, animals):
 
 
 def get_linear_position_structure(epoch_key, animals):
+    '''The time series of linearized (1D) positions of the animal for a given
+    epoch.
+
+    Parameters
+    ----------
+    epoch_key : tuple
+        Unique key identifying a recording epoch. Elements are
+        (animal, day, epoch)
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    linear_position : pandas.DataFrame
+
+    '''
     animal, day, epoch = epoch_key
     struct = get_data_structure(
         animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0][
@@ -60,6 +79,27 @@ def get_linear_position_structure(epoch_key, animals):
 
 def get_interpolated_position_dataframe(epoch_key, animals,
                                         time_function=get_trial_time):
+    '''Gives the interpolated position of animal for a given epoch.
+
+    Defaults to interpolating the position to the LFP time. Can use the
+    `time_function` to specify different time to interpolate to.
+
+    Parameters
+    ----------
+    epoch_key : tuple
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+    time_function : function, optional
+        Function that take an epoch key (animal_short_name, day, epoch) that
+        defines the time the multiunits are relative to. Defaults to using
+        the time the LFPs are sampled at.
+
+    Returns
+    -------
+    interpolated_position : pandas.DataFrame
+
+    '''
     time = time_function(epoch_key, animals)
     position = (pd.concat(
         [get_linear_position_structure(epoch_key, animals),

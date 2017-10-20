@@ -10,7 +10,7 @@ import pandas as pd
 
 
 def copy_animal(animal, src_directory, target_directory):
-    '''
+    '''Copies essential data files and renames multiunit files.
 
     Parameters
     ----------

@@ -32,9 +32,12 @@ def get_LFP_dataframe(tetrode_key, animals):
 
     Parameters
     ----------
-    tetrode_key : tuple, (animal, day, epoch, tetrode_number)
-    animals : dictionary of namedtuples
-        Maps animal name to namedtuple with animal file directory
+    tetrode_key : tuple
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
 
     Returns
     -------
@@ -56,6 +59,19 @@ def get_LFP_dataframe(tetrode_key, animals):
 
 
 def make_tetrode_dataframe(animals):
+    '''Information about all tetrodes such as recording location.
+
+    Parameters
+    ----------
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    tetrode_infomation : pandas.DataFrame
+
+    '''
     tetrode_file_names = [
         (get_tetrode_info_path(animal), animal.short_name)
         for animal in animals.values()]
@@ -78,9 +94,11 @@ def get_LFP_filename(tetrode_key, animals):
     Parameters
     ----------
     tetrode_key : tuple
-        Four element tuple with format (animal, day, epoch, tetrode_number)
-    animals : dictionary of namedtuples
-        Maps animal name to namedtuple with animal file directory
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
 
     Returns
     -------
@@ -98,6 +116,7 @@ def get_LFP_filename(tetrode_key, animals):
 
 
 def _get_tetrode_id(dataframe):
+    '''Unique string identifier for a tetrode'''
     return (dataframe.animal + '_' +
             dataframe.day.map('{:02d}'.format) + '_' +
             dataframe.epoch.map('{:02}'.format) + '_' +
@@ -109,13 +128,15 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, epoch_key):
 
     Parameters
     ----------
-    tetrodes_in_epoch : ?
+    tetrodes_in_epoch : matlab data structure
     epoch_key : tuple
+        Unique key identifying a recording epoch. Elements are
+        (animal, day, epoch)
 
     Returns
     -------
     tetrode_info : dataframe
-        Tetrode information
+
     '''
     animal, day, epoch = epoch_key
     tetrode_dict_list = [_convert_to_dict(
@@ -140,6 +161,27 @@ def convert_tetrode_epoch_to_dataframe(tetrodes_in_epoch, epoch_key):
 
 
 def get_trial_time(epoch_or_tetrode_key, animals):
+    '''Time in the recording session in terms of the LFP.
+
+    If an `epoch_key` is given, this will handle the case where different
+    DSP systems will have slightly different timing. Otherwise if a
+    `tetrode_key` is given, then it will return the time for that tetrode.
+
+    Parameters
+    ----------
+    epoch_or_tetrode_key : tuple
+        Unique key identifying a recording epoch with elements
+        (animal, day, epoch) OR a unique identifying key for a tetrode with
+        elements (animal, day, epoch, tetrode_number).
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    time : pandas.Index
+
+    '''
     try:
         animal, day, epoch, tetrode_number = epoch_or_tetrode_key[:4]
         lfp_df = get_LFP_dataframe(
@@ -158,7 +200,7 @@ def get_trial_time(epoch_or_tetrode_key, animals):
 
 
 def _get_LFP_time(start_time, n_samples, sampling_frequency):
-    '''The recording time for a tetrode
+    '''Reconstructs the recording time for a tetrode
 
     Parameters
     ----------

@@ -47,10 +47,22 @@ def _convert_ripple_times_to_dataframe(ripple_times, dataframe):
 
 
 def get_computed_ripples_dataframe(tetrode_key, animals):
-    '''Given a tetrode key (animal, day, epoch, tetrode #), returns a
-    pandas dataframe with the pre-computed ripples from the Frank lab
-     labeled according to the ripple number. Non-ripple times are marked as
-     NaN.
+    '''Pre-computed ripples from the Frank lab labeled according to the
+    ripple number with non-ripple times are marked as NaN.
+
+     Parameters
+     ----------
+     tetrode_key : tuple
+         Unique key identifying the tetrode. Elements are
+         (animal_short_name, day, epoch, tetrode_number).
+     animals : dict of named-tuples
+         Dictionary containing information about the directory for each
+         animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    ripple_indicator : pandas.DataFrame
+
     '''
     ripple_times = _get_computed_ripple_times(tetrode_key, animals)
     [(ripple_ind + 1, start_time, end_time)
@@ -64,6 +76,20 @@ def get_computed_ripples_dataframe(tetrode_key, animals):
 def get_computed_consensus_ripple_times(epoch_key, animals):
     '''Returns a list of tuples for a given epoch in the format
     (start_time, end_time).
+
+    Parameters
+    ----------
+    tetrode_key : tuple
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
+    animals : dict of named-tuples
+        Dictionary containing information about the directory for each
+        animal. The key is the animal_short_name.
+
+    Returns
+    -------
+    ripple_times : list of tuples
+        Each list element corresponds to a ripple with (start_time, end_time).
     '''
     animal, day, epoch = epoch_key
     ripples_data = get_data_structure(

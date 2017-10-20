@@ -14,7 +14,8 @@ def get_multiunit_dataframe(tetrode_key, animals):
     Parameters
     ----------
     tetrode_key : tuple
-        Elements are (animal_short_name, day, epoch, tetrode_number)
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
     animals : dict of named-tuples
         Dictionary containing information about the directory for each
         animal. The key is the animal_short_name.
@@ -44,7 +45,8 @@ def get_multiunit_filename(tetrode_key, animals):
     Parameters
     ----------
     tetrode_key : tuple
-        Elements are (animal_short_name, day, epoch, tetrode_number)
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
     animals : dict of named-tuples
         Dictionary containing information about the directory for each
         animal. The key is the animal_short_name.
@@ -74,7 +76,8 @@ def get_multiunit_indicator_dataframe(tetrode_key, animals,
     Parameters
     ----------
     tetrode_key : tuple
-        Elements are (animal_short_name, day, epoch, tetrode_number)
+        Unique key identifying the tetrode. Elements are
+        (animal_short_name, day, epoch, tetrode_number).
     animals : dict of named-tuples
         Dictionary containing information about the directory for each
         animal. The key is the animal_short_name.
