@@ -1,7 +1,9 @@
+from os.path import join
+
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
-from os.path import join
+
 from .core import RAW_DATA_DIR
 from .tetrodes import get_trial_time
 
@@ -22,7 +24,7 @@ def get_multiunit_dataframe(tetrode_key, animals):
     multiunit_dataframe : pandas dataframe
         The dataframe index is the time at which the multiunit occurred
         (in seconds). THe other values are values that can be used as the
-        marks.
+        multiunits.
     '''
     TO_SECONDS = 1E4
     multiunit_file = loadmat(get_multiunit_filename(tetrode_key, animals))
@@ -37,7 +39,7 @@ def get_multiunit_dataframe(tetrode_key, animals):
 
 def get_multiunit_filename(tetrode_key, animals):
     '''Given a tetrode key (animal, day, epoch, tetrode_number) and the
-    animals dictionary return a file name for the tetrode file marks
+    animals dictionary return a file name for the tetrode file multiunits
     '''
     animal, day, _, tetrode_number = tetrode_key
     filename = ('{animal.short_name}marks{day:02d}-'
