@@ -6,8 +6,8 @@ from .core import RAW_DATA_DIR
 from .tetrodes import get_trial_time
 
 
-def get_mark_dataframe(tetrode_key, animals):
-    '''Retrieve the marks for each tetrode given a tetrode key
+def get_multiunit_dataframe(tetrode_key, animals):
+    '''Retrieve the multiunits for each tetrode given a tetrode key
 
     Parameters
     ----------
@@ -19,23 +19,23 @@ def get_mark_dataframe(tetrode_key, animals):
 
     Returns
     -------
-    mark_dataframe : pandas dataframe
-        The dataframe index is the time at which the mark occurred
+    multiunit_dataframe : pandas dataframe
+        The dataframe index is the time at which the multiunit occurred
         (in seconds). THe other values are values that can be used as the
         marks.
     '''
     TO_SECONDS = 1E4
-    mark_file = loadmat(get_mark_filename(tetrode_key, animals))
-    mark_names = [name[0][0].lower().replace(' ', '_')
-                  for name in mark_file['filedata'][0, 0]['paramnames']]
-    mark_data = mark_file['filedata'][0, 0]['params']
-    mark_data[:, mark_names.index('time')] = mark_data[
-        :, mark_names.index('time')] / TO_SECONDS
+    multiunit_file = loadmat(get_multiunit_filename(tetrode_key, animals))
+    multiunit_names = [name[0][0].lower().replace(' ', '_')
+                       for name in multiunit_file['filedata'][0, 0]['paramnames']]
+    multiunit_data = multiunit_file['filedata'][0, 0]['params']
+    multiunit_data[:, multiunit_names.index('time')] = multiunit_data[
+        :, multiunit_names.index('time')] / TO_SECONDS
 
-    return pd.DataFrame(mark_data, columns=mark_names).set_index('time')
+    return pd.DataFrame(multiunit_data, columns=multiunit_names).set_index('time')
 
 
-def get_mark_filename(tetrode_key, animals):
+def get_multiunit_filename(tetrode_key, animals):
     '''Given a tetrode key (animal, day, epoch, tetrode_number) and the
     animals dictionary return a file name for the tetrode file marks
     '''
@@ -51,11 +51,11 @@ def get_mark_filename(tetrode_key, animals):
         RAW_DATA_DIR, animals[animal].directory, 'EEG', filename)
 
 
-def get_mark_indicator_dataframe(tetrode_key, animals,
-                                 time_function=get_trial_time):
+def get_multiunit_indicator_dataframe(tetrode_key, animals,
+                                      time_function=get_trial_time):
     time = time_function(tetrode_key[:3], animals)
-    mark_dataframe = (get_mark_dataframe(tetrode_key, animals)
-                      .loc[time.min():time.max()])
-    time_index = np.digitize(mark_dataframe.index, time)
-    return (mark_dataframe.groupby(time[time_index]).mean()
+    multiunit_dataframe = (get_multiunit_dataframe(tetrode_key, animals)
+                           .loc[time.min():time.max()])
+    time_index = np.digitize(multiunit_dataframe.index, time)
+    return (multiunit_dataframe.groupby(time[time_index]).mean()
             .reindex(index=time))
