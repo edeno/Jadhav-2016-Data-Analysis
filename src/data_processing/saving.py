@@ -1,11 +1,13 @@
-from os.path import join, isfile
 from glob import glob
-from .core import PROCESSED_DATA_DIR
-from xarray.backends.api import (
-    basestring, _CONCAT_DIM_DEFAULT, _default_lock, open_dataset,
-    auto_combine, _MultiFileCloser)
+from os.path import isfile, join
 from warnings import filterwarnings
+
 import pandas as pd
+from xarray.backends.api import (_CONCAT_DIM_DEFAULT, _default_lock,
+                                 _MultiFileCloser, auto_combine, basestring,
+                                 open_dataset)
+
+from .core import PROCESSED_DATA_DIR
 
 
 def get_analysis_file_path(animal, day, epoch):

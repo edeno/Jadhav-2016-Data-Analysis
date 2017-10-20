@@ -1,11 +1,12 @@
-import numpy as np
-import pandas as pd
-from os.path import join
+import re
 from glob import glob
 from itertools import chain
 from os import listdir, makedirs, walk
+from os.path import join
 from shutil import copyfile
-import re
+
+import numpy as np
+import pandas as pd
 
 
 def copy_animal(animal, src_directory, target_directory):
@@ -30,9 +31,9 @@ def copy_animal(animal, src_directory, target_directory):
     FILE_TYPES = ['cellinfo', 'linpos', 'pos', 'rawpos', 'task', 'tetinfo',
                   'spikes']
     data_files = [glob(join(processed_data_dir,
-                       '{animal.short_name}{file_type}*.mat').format(
-                        animal=animal, file_type=file_type))
-                  for file_type in FILE_TYPES]
+                            '{animal.short_name}{file_type}*.mat').format(
+        animal=animal, file_type=file_type))
+        for file_type in FILE_TYPES]
     for old_path in chain.from_iterable(data_files):
         new_path = join(target_data_dir, old_path.split('/')[-1])
 
@@ -144,7 +145,7 @@ def _get_windowed_dataframe(time_series, segments, window_offset,
                 window_end_ind = np.min(
                     [len(time_series),
                      int(segment_start_ind + np.fix(
-                        window_offset[1] * sampling_frequency)) + 1])
+                         window_offset[1] * sampling_frequency)) + 1])
             except TypeError:
                 window_end_ind = time_series.index.get_loc(
                     segment_end, method='nearest')
@@ -158,7 +159,7 @@ def _get_windowed_dataframe(time_series, segments, window_offset,
             yield (time_series.loc[segment_start:segment_end, :]
                               .reset_index()
                               .assign(time=lambda x: np.round(
-                                x.time - segment_start, decimals=4))
+                                  x.time - segment_start, decimals=4))
                               .set_index('time'))
 
 

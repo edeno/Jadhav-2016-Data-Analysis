@@ -1,9 +1,10 @@
+from os.path import join
+
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
-from os.path import join
-from .core import (get_data_filename, _convert_to_dict,
-                   RAW_DATA_DIR, logger)
+
+from .core import RAW_DATA_DIR, _convert_to_dict, get_data_filename, logger
 from .tetrodes import get_trial_time
 
 
@@ -13,12 +14,12 @@ def make_neuron_dataframe(animals):
     neuron_data = [(loadmat(file_name[0]), file_name[1])
                    for file_name in neuron_file_names]
     return pd.concat([
-            convert_neuron_epoch_to_dataframe(
-                epoch, animal, day_ind + 1, epoch_ind + 1)
-            for cellfile, animal in neuron_data
-            for day_ind, day in enumerate(cellfile['cellinfo'].T)
-            for epoch_ind, epoch in enumerate(day[0].T)
-            ]).sort_index()
+        convert_neuron_epoch_to_dataframe(
+            epoch, animal, day_ind + 1, epoch_ind + 1)
+        for cellfile, animal in neuron_data
+        for day_ind, day in enumerate(cellfile['cellinfo'].T)
+        for epoch_ind, epoch in enumerate(day[0].T)
+    ]).sort_index()
 
 
 def get_spikes_dataframe(neuron_key, animals):

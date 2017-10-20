@@ -1,4 +1,4 @@
-from .core import get_data_structure, find_closest_ind
+from .core import find_closest_ind, get_data_structure
 
 
 def get_DIO_variable(animal, days, dio_var, epoch_type='', environment=''):

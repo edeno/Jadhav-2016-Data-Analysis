@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 from .core import get_data_structure
 from .tetrodes import get_trial_time
 
@@ -35,10 +36,10 @@ def get_position_dataframe(epoch_key, animals):
     time_index = pd.Index(
         position_data[:, field_names.index('time')], name='time')
     return (pd.DataFrame(
-                position_data, columns=field_names, index=time_index)
-            .rename(columns=NEW_NAMES)
-            .drop([name for name in field_names
-                   if name not in NEW_NAMES], axis=1))
+        position_data, columns=field_names, index=time_index)
+        .rename(columns=NEW_NAMES)
+        .drop([name for name in field_names
+               if name not in NEW_NAMES], axis=1))
 
 
 def get_linear_position_structure(epoch_key, animals):

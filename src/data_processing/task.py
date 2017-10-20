@@ -1,8 +1,9 @@
-import pandas as pd
-import numpy as np
-from scipy.io import loadmat
 from glob import glob
 from os.path import join
+
+import numpy as np
+import pandas as pd
+from scipy.io import loadmat
 
 from .core import RAW_DATA_DIR
 
@@ -18,8 +19,8 @@ def load_task(file_name, animal):
 
     return pd.DataFrame(
         [{name: epoch[name].item().squeeze()
-         for name in epoch.dtype.names
-         if name in ['environment', 'exposure', 'type']}
+          for name in epoch.dtype.names
+          if name in ['environment', 'exposure', 'type']}
          for epoch in epochs]).set_index(index)
 
 

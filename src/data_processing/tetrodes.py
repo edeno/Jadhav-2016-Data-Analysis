@@ -1,8 +1,10 @@
 from os.path import join
-from .core import RAW_DATA_DIR, _convert_to_dict
-from scipy.io import loadmat
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+from scipy.io import loadmat
+
+from .core import RAW_DATA_DIR, _convert_to_dict
 
 
 def get_tetrode_info_path(animal):
@@ -63,7 +65,7 @@ def make_tetrode_dataframe(animals):
     # Make a dictionary with (animal, day, epoch) as the keys
     return pd.concat(
         [convert_tetrode_epoch_to_dataframe(
-                epoch, (animal, day_ind + 1, epoch_ind + 1))
+            epoch, (animal, day_ind + 1, epoch_ind + 1))
          for info, animal in tetrode_data
          for day_ind, day in enumerate(info['tetinfo'].T)
          for epoch_ind, epoch in enumerate(day[0].T)

@@ -3,7 +3,7 @@
 '''
 
 from logging import getLogger
-from os.path import abspath, join, pardir, dirname
+from os.path import abspath, dirname, join, pardir
 from sys import exit
 
 import numpy as np
