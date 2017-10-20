@@ -13,7 +13,8 @@ from scipy.stats import linregress
 import xarray as xr
 
 from .data_processing import (get_interpolated_position_dataframe,
-                              get_LFP_dataframe, get_mark_indicator_dataframe,
+                              get_LFP_dataframe,
+                              get_multiunit_indicator_dataframe,
                               get_spike_indicator_dataframe,
                               make_neuron_dataframe, make_tetrode_dataframe,
                               reshape_to_segments, save_xarray)
@@ -564,7 +565,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
 
-    marks = [(get_mark_indicator_dataframe(tetrode_key, animals)
+    marks = [(get_multiunit_indicator_dataframe(tetrode_key, animals)
               .loc[:, mark_variables])
              for tetrode_key in hippocampal_tetrodes.index]
     marks = [tetrode_marks for tetrode_marks in marks
