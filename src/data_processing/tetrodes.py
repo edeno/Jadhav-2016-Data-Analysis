@@ -148,8 +148,7 @@ def get_trial_time(epoch_or_tetrode_key, animals):
         # no tetrode number provided
         tetrode_info = (
             make_tetrode_dataframe(animals)
-            .loc[epoch_or_tetrode_key]
-            .set_index(['animal', 'day', 'epoch', 'tetrode_number']))
+            .xs(epoch_or_tetrode_key, drop_level=False))
         lfp_df = pd.concat(
             [get_LFP_dataframe(tetrode_key, animals)
              for tetrode_key in tetrode_info.index],
