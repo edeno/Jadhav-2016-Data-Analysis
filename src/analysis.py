@@ -3,14 +3,13 @@
 '''
 from copy import deepcopy
 from functools import partial
-from logging import getLogger
 from itertools import product
+from logging import getLogger
 
 import numpy as np
 import pandas as pd
-from scipy.stats import linregress
-
 import xarray as xr
+from scipy.stats import linregress
 
 from .data_processing import (get_interpolated_position_dataframe,
                               get_LFP_dataframe,
@@ -21,11 +20,11 @@ from .data_processing import (get_interpolated_position_dataframe,
 from .ripple_decoding import ClusterlessDecoder, SortedSpikeDecoder
 from .ripple_detection.detectors import Kay_ripple_detector
 from .spectral.connectivity import Connectivity
+from .spectral.statistics import (coherence_bias, coherence_rate_adjustment,
+                                  fisher_z_transform,
+                                  get_normal_distribution_p_values)
 from .spectral.transforms import Multitaper, _sliding_window
-from .spectral.statistics import (fisher_z_transform,
-                                  get_normal_distribution_p_values,
-                                  coherence_bias, coherence_rate_adjustment)
-from .spike_train import perievent_time_spline_estimate, cross_correlate
+from .spike_train import cross_correlate, perievent_time_spline_estimate
 
 logger = getLogger(__name__)
 
@@ -168,7 +167,7 @@ def compare_spike_coherence(condition1, condition2, sampling_frequency,
 
     adjusted_coherency1 = (adjustment.rename({'neuron1': 'neuron2'}) *
                            adjustment * condition1.coherency).transpose(
-                           'frequency', 'neuron1', 'neuron2')
+        'frequency', 'neuron1', 'neuron2')
 
     coherence_difference = (np.abs(condition2.coherency) -
                             np.abs(adjusted_coherency1))
