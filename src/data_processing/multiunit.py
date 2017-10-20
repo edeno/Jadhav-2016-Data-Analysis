@@ -68,10 +68,8 @@ def get_multiunit_filename(tetrode_key, animals):
 
 def get_multiunit_indicator_dataframe(tetrode_key, animals,
                                       time_function=get_trial_time):
-    '''Time series corresponding to the multiunit activity.
-
-    If there is no multiunit activity at that time (didn't cross the threshold),
-    the value will be NaN.
+    '''A time series where a value indicates multiunit activity at that time and
+    NaN indicates no multiunit activity at that time.
 
     Parameters
     ----------
