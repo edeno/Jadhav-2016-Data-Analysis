@@ -79,9 +79,9 @@ def get_computed_consensus_ripple_times(epoch_key, animals):
 
     Parameters
     ----------
-    tetrode_key : tuple
-        Unique key identifying the tetrode. Elements are
-        (animal_short_name, day, epoch, tetrode_number).
+    epoch_key : tuple
+        Unique key identifying the recording epoch. Elements are
+        (animal_short_name, day, epoch).
     animals : dict of named-tuples
         Dictionary containing information about the directory for each
         animal. The key is the animal_short_name.
