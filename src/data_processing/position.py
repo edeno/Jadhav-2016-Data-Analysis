@@ -27,10 +27,9 @@ def get_position_dataframe(epoch_key, animals):
 
     '''
     animal, day, epoch = epoch_key
-    position_data = get_data_structure(animals[animal], day, 'pos', 'pos')[
-        epoch - 1]['data'][0, 0]
-    field_names = get_data_structure(animals[animal], day, 'pos', 'pos')[
-        epoch - 1]['fields'][0, 0].item().split()
+    struct = get_data_structure(animals[animal], day, 'pos', 'pos')[epoch - 1]
+    position_data = struct['data'][0, 0]
+    field_names = struct['fields'][0, 0].item().split()
     NEW_NAMES = {'x': 'x_position',
                  'y': 'y_position',
                  'dir': 'head_direction',
