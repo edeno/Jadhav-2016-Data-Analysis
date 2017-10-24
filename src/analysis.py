@@ -666,7 +666,7 @@ def summarize_replay_results(results, ripple_times, position_info,
 
     # When in the session does the ripple occur (early, middle, late)
     replay_info['session_time'] = _ripple_session_time(
-        replay_info, position_info.index)
+        ripple_times, position_info.index)
 
     # Add stats about spikes
     replay_info['number_of_unique_spiking'] = [
@@ -735,7 +735,7 @@ def _ripple_session_time(ripple_times, session_time):
         [(session_time_categories.loc[ripple_start:ripple_end]
           .value_counts().argmax())
          for ripple_start, ripple_end
-         in ripple_times.loc[:, ['start_time', 'end_time']].values],
+         in ripple_times.itertuples(index=False)],
         index=ripple_times.index, name='session_time',
         dtype=session_time_categories.dtype)
 
@@ -767,7 +767,7 @@ def _get_replay_motion_from_rows(ripple_times, posterior_density,
     replay_distance_from_animal_position = np.abs(
         replay_position - animal_position)
     is_away = linregress(
-        posterior_density.time.values,
+        posterior_density.indexes['time'].total_seconds(),
         replay_distance_from_animal_position).slope > 0
     return np.where(is_away, 'away', 'towards')
 
