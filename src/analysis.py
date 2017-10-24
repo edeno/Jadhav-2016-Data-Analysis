@@ -583,8 +583,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         training_marks
     ).fit()
 
-    test_marks = _get_ripple_marks(
-        marks, ripple_times.values, sampling_frequency)
+    test_marks = _get_ripple_marks(marks, ripple_times)
     logger.info('Predicting replay types')
     results = [decoder.predict(ripple_marks, time)
                for ripple_marks, time in test_marks]
@@ -593,10 +592,10 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         results, ripple_times, position_info, epoch_key)
 
 
-def _get_ripple_marks(marks, ripple_times, sampling_frequency):
+def _get_ripple_marks(marks, ripple_times):
     mark_ripples = [reshape_to_segments(
         tetrode_marks, ripple_times,
-        concat_axis=0, sampling_frequency=sampling_frequency)
+        axis=0)
         for tetrode_marks in marks]
 
     return [(np.stack([df.loc[ripple_ind + 1, :].values
@@ -606,12 +605,11 @@ def _get_ripple_marks(marks, ripple_times, sampling_frequency):
             for ripple_ind in np.arange(len(ripple_times))]
 
 
-def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
+def _get_ripple_spikes(spikes_data, ripple_times):
     '''Given the ripple times, extract the spikes within the ripple
     '''
     spike_ripples_df = [reshape_to_segments(
-        spikes_datum, ripple_times,
-        concat_axis=1, sampling_frequency=sampling_frequency)
+        spikes_datum, ripple_times, axis=1)
         for spikes_datum in spikes_data]
 
     return [np.vstack([df.iloc[:, ripple_ind].dropna().values
