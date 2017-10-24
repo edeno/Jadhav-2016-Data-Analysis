@@ -28,15 +28,19 @@ def get_multiunit_dataframe(tetrode_key, animals):
         multiunits.
 
     '''
-    TO_SECONDS = 1E4
+    TO_NANOSECONDS = 1E5
     multiunit_file = loadmat(get_multiunit_filename(tetrode_key, animals))
-    multiunit_names = [name[0][0].lower().replace(' ', '_')
-                       for name in multiunit_file['filedata'][0, 0]['paramnames']]
+    multiunit_names = [
+        name[0][0].lower().replace(' ', '_')
+        for name in multiunit_file['filedata'][0, 0]['paramnames']]
     multiunit_data = multiunit_file['filedata'][0, 0]['params']
-    multiunit_data[:, multiunit_names.index('time')] = multiunit_data[
-        :, multiunit_names.index('time')] / TO_SECONDS
+    time = pd.TimedeltaIndex(
+        multiunit_data[:, multiunit_names.index('time')].astype(int) *
+        TO_NANOSECONDS, unit='ns', name='time')
 
-    return pd.DataFrame(multiunit_data, columns=multiunit_names).set_index('time')
+    return pd.DataFrame(
+        multiunit_data, columns=multiunit_names,
+        index=time).drop('time', axis=1)
 
 
 def get_multiunit_filename(tetrode_key, animals):
@@ -94,6 +98,7 @@ def get_multiunit_indicator_dataframe(tetrode_key, animals,
     time = time_function(tetrode_key[:3], animals)
     multiunit_dataframe = (get_multiunit_dataframe(tetrode_key, animals)
                            .loc[time.min():time.max()])
-    time_index = np.digitize(multiunit_dataframe.index, time)
+    time_index = np.digitize(multiunit_dataframe.index.total_seconds(),
+                             time.total_seconds())
     return (multiunit_dataframe.groupby(time[time_index]).mean()
             .reindex(index=time))
