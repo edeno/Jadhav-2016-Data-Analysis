@@ -556,7 +556,6 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         .loc[epoch_key]
         .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
                    drop=False))
-    # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = tetrode_info.area.isin(['CA1', 'iCA1', 'CA3'])
     hippocampal_tetrodes = tetrode_info[
         is_hippocampal &
