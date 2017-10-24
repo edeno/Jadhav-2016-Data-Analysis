@@ -66,13 +66,10 @@ def get_spikes_dataframe(neuron_key, animals):
         spike_time = neuron_file['spikes'][0, -1][0, epoch - 1][
             0, tetrode_number - 1][0, neuron_number - 1][0]['data'][0][
             :, 0]
-        data_dict = {'time': spike_time,
-                     'is_spike': 1
-                     }
+        spike_time = pd.TimedeltaIndex(spike_time, unit='s', name='time')
     except IndexError:
-        data_dict = {'time': [],
-                     'is_spike': []}
-    return pd.DataFrame(data_dict).set_index('time').sort_index()
+        spike_time = []
+    return pd.Series(np.ones_like(spike_time, dtype=int), index=spike_time)
 
 
 def get_spike_indicator_dataframe(neuron_key, animals,
