@@ -35,10 +35,10 @@ def get_position_dataframe(epoch_key, animals):
                  'y': 'y_position',
                  'dir': 'head_direction',
                  'vel': 'speed'}
-    time_index = pd.Index(
-        position_data[:, field_names.index('time')], name='time')
+    time = pd.TimedeltaIndex(
+        position_data[:, field_names.index('time')], unit='s', name='time')
     return (pd.DataFrame(
-        position_data, columns=field_names, index=time_index)
+        position_data, columns=field_names, index=time)
         .rename(columns=NEW_NAMES)
         .drop([name for name in field_names
                if name not in NEW_NAMES], axis=1))
@@ -67,6 +67,8 @@ def get_linear_position_structure(epoch_key, animals):
         animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0][
             'statematrix']
     include_fields = ['time', 'traj', 'lindist']
+    time = pd.TimedeltaIndex(struct['time'][0][0].flatten(), unit='s',
+                             name='time')
     new_names = {'time': 'time', 'traj': 'trajectory_category_ind',
                  'lindist': 'linear_distance'}
     return (pd.DataFrame(
