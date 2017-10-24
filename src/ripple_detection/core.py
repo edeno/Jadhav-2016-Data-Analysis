@@ -161,8 +161,9 @@ def _find_containing_interval(interval_candidates, target_interval):
     segments above the threshold)
     '''
     candidate_start_times = np.asarray(interval_candidates)[:, 0]
+    zero = np.array(0).astype(candidate_start_times.dtype)
     closest_start_ind = np.max(
-        (candidate_start_times - target_interval[0] <= 0).nonzero())
+        (candidate_start_times - target_interval[0] <= zero).nonzero())
     return interval_candidates[closest_start_ind]
 
 
