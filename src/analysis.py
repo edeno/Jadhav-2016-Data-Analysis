@@ -598,23 +598,25 @@ def _get_ripple_marks(marks, ripple_times):
         axis=0)
         for tetrode_marks in marks]
 
-    return [(np.stack([df.loc[ripple_ind + 1, :].values
+    return [(np.stack([df.loc[ripple_number, :].values
                        for df in mark_ripples], axis=0),
-             mark_ripples[0].loc[ripple_ind + 1, :]
+             mark_ripples[0].loc[ripple_number, :]
              .index.get_level_values('time'))
-            for ripple_ind in np.arange(len(ripple_times))]
+            for ripple_number in ripple_times.index]
 
 
 def _get_ripple_spikes(spikes_data, ripple_times):
     '''Given the ripple times, extract the spikes within the ripple
     '''
-    spike_ripples_df = [reshape_to_segments(
+    spike_ripples = [reshape_to_segments(
         spikes_datum, ripple_times, axis=1)
         for spikes_datum in spikes_data]
 
-    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
-                       for df in spike_ripples_df]).T
-            for ripple_ind in np.arange(len(ripple_times))]
+    return [
+        (np.stack([df.loc[ripple_number, :].values
+         for df in spike_ripples], axis=0).squeeze(),
+         spike_ripples[0].loc[ripple_number, :].index.get_level_values('time'))
+        for ripple_number in ripple_times.index]
 
 
 def summarize_replay_results(results, ripple_times, position_info,
