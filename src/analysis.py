@@ -767,7 +767,7 @@ def _get_replay_motion_from_rows(ripple_times, posterior_density,
     replay_distance_from_animal_position = np.abs(
         replay_position - animal_position)
     is_away = linregress(
-        posterior_density.indexes['time'].total_seconds(),
+        posterior_density.get_index('time').total_seconds(),
         replay_distance_from_animal_position).slope > 0
     return np.where(is_away, 'away', 'towards')
 
