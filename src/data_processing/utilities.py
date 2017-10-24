@@ -126,8 +126,7 @@ def find_closest_ind(search_array, target):
     return ind - adjust
 
 
-def _get_windowed_dataframe(time_series, segments, window_start, window_end,
-                            sampling_frequency):
+def _get_windowed_dataframe(time_series, segments, window_start, window_end):
     '''For each segment, return a dataframe with the time relative to
     the start of the segment + window_offset.
     '''
@@ -140,8 +139,7 @@ def _get_windowed_dataframe(time_series, segments, window_start, window_end,
         yield time_series_segment.set_index(new_time)
 
 
-def reshape_to_segments(time_series, segments, window_offset=None,
-                        sampling_frequency=1500, axis=0):
+def reshape_to_segments(time_series, segments, window_offset=None, axis=0):
     '''Take multiple windows of a time series and set time relative to
     the start of the window.
 
@@ -153,10 +151,15 @@ def reshape_to_segments(time_series, segments, window_offset=None,
         Time series to be segmented. Index of time series must be the time
         of the time series and be named `time`.
     segments : pandas.DataFrame, shape (n_segments, 2)
-        Start and end time for each time segment.
-    window_offset : None or 2-element tuple, optional
-        Offset the
-    sampling_frequency : float, optional
+        Start and end time for each time segment. Each column corresponds to
+        segment_start and segment_end.
+    window_offset : None or tuple (window_start, window_end), optional
+        Offset the window relative to the start time of the segment. If
+        `window_offset` is None, the returned segment will be the time series
+        slice (window_start, window_end). If `window_offset` is given, then the
+        returned window will be (window_start + segment_start, window_end). If
+        window_start or window_end is None, then it will be replaced with
+        segment_start and segment_end, respectivity
     axis : int, optional
         Concat axis
 
@@ -190,7 +193,6 @@ def reshape_to_segments(time_series, segments, window_offset=None,
         window_start = window_end = pd.Timedelta(seconds=0)
 
     return (pd.concat(_get_windowed_dataframe(
-            time_series, segments, window_start, window_end,
-            sampling_frequency),
-        keys=segments_index,
-        axis=axis).sort_index())
+                time_series, segments, window_start, window_end),
+            keys=segments_index,
+            axis=axis).sort_index())
