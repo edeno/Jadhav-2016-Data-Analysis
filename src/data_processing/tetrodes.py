@@ -1,10 +1,9 @@
 from os.path import join
 
-import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-from .core import RAW_DATA_DIR, _convert_to_dict
+from .core import RAW_DATA_DIR, _convert_to_dict, reconstruct_time
 
 
 def get_tetrode_info_path(animal):
@@ -47,9 +46,9 @@ def get_LFP_dataframe(tetrode_key, animals):
     try:
         lfp_file = loadmat(get_LFP_filename(tetrode_key, animals))
         lfp_data = lfp_file['eeg'][0, -1][0, -1][0, -1]
-        lfp_time = _get_LFP_time(lfp_data['starttime'][0, 0].item(),
-                                 lfp_data['data'][0, 0].size,
-                                 lfp_data['samprate'][0, 0])
+        lfp_time = reconstruct_time(lfp_data['starttime'][0, 0].item(),
+                                    lfp_data['data'][0, 0].size,
+                                    lfp_data['samprate'][0, 0])
         return pd.Series(
             data=lfp_data['data'][0, 0].squeeze(),
             index=lfp_time,
@@ -197,27 +196,3 @@ def get_trial_time(epoch_or_tetrode_key, animals):
             axis=1)
 
     return lfp_df.index
-
-
-def _get_LFP_time(start_time, n_samples, sampling_frequency):
-    '''Reconstructs the recording time for a tetrode
-
-    Parameters
-    ----------
-    start_time : float
-        Start time of recording.
-    n_samples : int
-        Number of samples in recording.
-    sampling_frequency : float
-        Number of samples per time
-
-    Returns
-    -------
-    time : pandas Index
-
-    '''
-    sampling_frequency = int(np.round(sampling_frequency))
-
-    return pd.Index(
-        start_time + np.arange(0, n_samples) / sampling_frequency,
-        name='time')

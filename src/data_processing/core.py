@@ -7,6 +7,7 @@ from os.path import abspath, dirname, join, pardir
 from sys import exit
 
 import numpy as np
+import pandas as pd
 from scipy.io import loadmat
 
 logger = getLogger(__name__)
@@ -113,6 +114,29 @@ def get_data_structure(animal, day, file_type, variable):
     n_epochs = file[variable][0, -1].size
     return [file[variable][0, -1][0, ind]
             for ind in np.arange(n_epochs)]
+
+
+def reconstruct_time(start_time, n_samples, sampling_frequency):
+    '''Reconstructs the recording time
+
+    Parameters
+    ----------
+    start_time : float
+        Start time of recording.
+    n_samples : int
+        Number of samples in recording.
+    sampling_frequency : float
+        Number of samples per time
+
+    Returns
+    -------
+    time : pandas Index
+
+    '''
+    start_time = pd.Timedelta(seconds=start_time)
+    dt = pd.Timedelta(seconds=float(1 / sampling_frequency))
+    return pd.TimedeltaIndex(start=start_time, freq=dt, periods=n_samples,
+                             name='time')
 
 
 def _convert_to_dict(struct_array):
