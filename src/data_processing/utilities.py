@@ -187,10 +187,12 @@ def reshape_to_segments(time_series, segments, window_offset=None, axis=0):
         window_start, window_end = window_offset
         if window_start is not None:
             window_start = pd.Timedelta(seconds=window_start)
+        else:
+            window_start = pd.Timedelta(seconds=0)
         if window_end is not None:
             window_end = pd.Timedelta(seconds=window_end)
     else:
-        window_start = window_end = pd.Timedelta(seconds=0)
+        window_start, window_end = pd.Timedelta(seconds=0), None
 
     return (pd.concat(_get_windowed_dataframe(
                 time_series, segments, window_start, window_end),
