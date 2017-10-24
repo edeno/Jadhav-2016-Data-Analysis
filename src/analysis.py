@@ -28,6 +28,9 @@ from .spike_train import cross_correlate, perievent_time_spline_estimate
 
 logger = getLogger(__name__)
 
+_MARKS = ['channel_1_max', 'channel_2_max', 'channel_3_max',
+          'channel_4_max']
+
 
 def entire_session_connectivity(
     lfps, epoch_key, tetrode_info, multitaper_params,
@@ -545,10 +548,9 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               sampling_frequency=1500,
                               n_place_bins=61,
                               place_std_deviation=None,
-                              mark_std_deviation=20):
+                              mark_std_deviation=20,
+                              mark_names=_MARKS):
     logger.info('Decoding ripples')
-    mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
-                      'channel_4_max']
     tetrode_info = (
         make_tetrode_dataframe(animals)
         .loc[epoch_key]
@@ -565,7 +567,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
 
     marks = [(get_multiunit_indicator_dataframe(tetrode_key, animals)
-              .loc[:, mark_variables])
+              .loc[:, mark_names])
              for tetrode_key in hippocampal_tetrodes.index]
     marks = [tetrode_marks for tetrode_marks in marks
              if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
@@ -574,7 +576,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
 
     training_marks = np.stack([
-        tetrode_marks.loc[train_position_info.index, mark_variables]
+        tetrode_marks.loc[train_position_info.index, mark_names]
         for tetrode_marks in marks], axis=0)
 
     decoder = ClusterlessDecoder(
