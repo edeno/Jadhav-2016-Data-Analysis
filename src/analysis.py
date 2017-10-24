@@ -537,9 +537,9 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     )
 
     test_spikes = _get_ripple_spikes(
-        spikes_data, ripple_times.values, sampling_frequency)
-    results = [decoder.predict(ripple_spikes)
-               for ripple_spikes in test_spikes]
+        spikes_data, ripple_times)
+    results = [decoder.predict(ripple_spikes, time)
+               for ripple_spikes, time in test_spikes]
     return summarize_replay_results(
         results, ripple_times, position_info, epoch_key)
 
