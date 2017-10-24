@@ -66,17 +66,15 @@ def get_linear_position_structure(epoch_key, animals):
     struct = get_data_structure(
         animals[animal], day, 'linpos', 'linpos')[epoch - 1][0][0][
             'statematrix']
-    include_fields = ['time', 'traj', 'lindist']
+    INCLUDE_FIELDS = ['traj', 'lindist']
     time = pd.TimedeltaIndex(struct['time'][0][0].flatten(), unit='s',
                              name='time')
     new_names = {'time': 'time', 'traj': 'trajectory_category_ind',
                  'lindist': 'linear_distance'}
-    return (pd.DataFrame(
-        {new_names[name]: struct[name][0][0].flatten()
-         for name in struct.dtype.names
-         if name in include_fields})
-        .set_index('time')
-    )
+    data = {new_names[name]: struct[name][0][0].flatten()
+            for name in struct.dtype.names
+            if name in INCLUDE_FIELDS}
+    return pd.DataFrame(data, index=time)
 
 
 def get_interpolated_position_dataframe(epoch_key, animals,
