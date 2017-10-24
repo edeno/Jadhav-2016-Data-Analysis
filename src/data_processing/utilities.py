@@ -126,46 +126,22 @@ def find_closest_ind(search_array, target):
     return ind - adjust
 
 
-def _get_windowed_dataframe(time_series, segments, window_offset,
+def _get_windowed_dataframe(time_series, segments, window_start, window_end,
                             sampling_frequency):
     '''For each segment, return a dataframe with the time relative to
     the start of the segment + window_offset.
     '''
-    segments = iter(segments)
     for segment_start, segment_end in segments:
-        # Handle floating point inconsistencies in the index
-        segment_start_ind = time_series.index.get_loc(
-            segment_start, method='nearest')
-        segment_start = time_series.index[segment_start_ind]
-        if window_offset is not None:
-            window_start_ind = np.max(
-                [0, int(segment_start_ind + np.fix(
-                    window_offset[0] * sampling_frequency))])
-            try:
-                window_end_ind = np.min(
-                    [len(time_series),
-                     int(segment_start_ind + np.fix(
-                         window_offset[1] * sampling_frequency)) + 1])
-            except TypeError:
-                window_end_ind = time_series.index.get_loc(
-                    segment_end, method='nearest')
-            yield (time_series
-                   .iloc[window_start_ind:window_end_ind, :]
-                   .reset_index()
-                   .assign(time=lambda x: np.round(
-                       x.time - segment_start, decimals=4))
-                   .set_index('time'))
-        else:
-            yield (time_series.loc[segment_start:segment_end, :]
-                              .reset_index()
-                              .assign(time=lambda x: np.round(
-                                  x.time - segment_start, decimals=4))
-                              .set_index('time'))
+        if window_end is not None:
+            segment_end = segment_start + window_end
+        time_series_segment = time_series.loc[
+            (segment_start + window_start):segment_end, :]
+        new_time = time_series_segment.index - segment_start
+        yield time_series_segment.set_index(new_time)
 
 
 def reshape_to_segments(time_series, segments, window_offset=None,
-                        sampling_frequency=1500, concat_axis=0,
-                        segment_name='segment_number'):
+                        sampling_frequency=1500, axis=0):
     '''Take multiple windows of a time series and set time relative to
     the start of the window.
 
@@ -173,16 +149,16 @@ def reshape_to_segments(time_series, segments, window_offset=None,
 
     Parameters
     ----------
-    time_series : pandas DataFrame, shape (n_time,)
+    time_series : pandas.DataFrame, shape (n_time, ...)
         Time series to be segmented. Index of time series must be the time
         of the time series and be named `time`.
-    segments : array_like, shape (n_segments, 2)
+    segments : pandas.DataFrame, shape (n_segments, 2)
         Start and end time for each time segment.
     window_offset : None or 2-element tuple, optional
         Offset the
     sampling_frequency : float, optional
-    concat_axis : int, optional
-    segment_name : str, optional
+    axis : int, optional
+        Concat axis
 
     Returns
     -------
@@ -200,9 +176,21 @@ def reshape_to_segments(time_series, segments, window_offset=None,
                             window_offset=(-0.001, 0.001))
 
     '''
-    segments = np.array(segments)
+    segments_index = segments.index
+    segments = segments.itertuples(index=False)
+    time_series = pd.DataFrame(time_series)
+
+    if window_offset is not None:
+        window_start, window_end = window_offset
+        if window_start is not None:
+            window_start = pd.Timedelta(seconds=window_start)
+        if window_end is not None:
+            window_end = pd.Timedelta(seconds=window_end)
+    else:
+        window_start = window_end = pd.Timedelta(seconds=0)
+
     return (pd.concat(_get_windowed_dataframe(
-            time_series, segments, window_offset, sampling_frequency),
-        keys=np.arange(len(segments)) + 1,
-        names=[segment_name],
-        axis=concat_axis).sort_index())
+            time_series, segments, window_start, window_end,
+            sampling_frequency),
+        keys=segments_index,
+        axis=axis).sort_index())
