@@ -8,19 +8,17 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
-from src.analysis import (decode_ripple_clusterless,
-                          detect_epoch_ripples,
-                          ripple_triggered_connectivity,
-                          connectivity_by_ripple_type,
+from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
+                          decode_ripple_clusterless, detect_epoch_ripples,
+                          ripple_cross_correlation,
                           ripple_locked_firing_rate_change,
-                          ripple_cross_correlation, ripple_spike_coherence,
-                          compare_spike_coherence)
-from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
-                                 make_neuron_dataframe, save_xarray,
-                                 get_interpolated_position_dataframe)
-from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
-                            MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
-                            REPLAY_COVARIATES)
+                          ripple_spike_coherence,
+                          ripple_triggered_connectivity)
+from src.data_processing import (get_interpolated_position_dataframe,
+                                 get_LFP_dataframe, make_neuron_dataframe,
+                                 make_tetrode_dataframe, save_xarray)
+from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
+                            REPLAY_COVARIATES, SAMPLING_FREQUENCY)
 
 
 def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
