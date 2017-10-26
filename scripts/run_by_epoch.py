@@ -48,7 +48,8 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
 
     # Compare different types of replay
     replay_info, state_probability, posterior_density = (
-        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times))
+        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times,
+                                  mark_names=None))
 
     for covariate in REPLAY_COVARIATES:
 
