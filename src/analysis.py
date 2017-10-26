@@ -450,10 +450,6 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     '''
     logger.info('Detecting ripples')
 
-    speed = get_interpolated_position_dataframe(
-        epoch_key, animals).speed
-    time = speed.index
-
     tetrode_info = make_tetrode_dataframe(animals).xs(
             epoch_key, drop_level=False)
     # Get cell-layer CA1, iCA1 LFPs
@@ -465,11 +461,18 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     tetrode_keys = tetrode_info[is_hippocampal].index.tolist()
     hippocampus_lfps = pd.concat(
         [get_LFP_dataframe(tetrode_key, animals)
-         for tetrode_key in tetrode_keys], axis=1).reindex(time)
+         for tetrode_key in tetrode_keys], axis=1)
+    time = hippocampus_lfps.index
+
+    def _time_function(epoch_key, animals):
+        return time
+
+    speed = get_interpolated_position_dataframe(
+        epoch_key, animals, _time_function).speed
 
     return Kay_ripple_detector(
-        time.values, hippocampus_lfps.values, speed.values, sampling_frequency,
-        minimum_duration=pd.Timedelta(seconds=0.015))
+        time, hippocampus_lfps.values, speed.values, sampling_frequency,
+        minimum_duration=pd.Timedelta(milliseconds=15))
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
