@@ -566,6 +566,13 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
 
+    if mark_names is None:
+        # Use all available mark dimensions
+        mark_names = get_multiunit_indicator_dataframe(
+            hippocampal_tetrodes.index[0], animals).columns.tolist()
+        mark_names = [mark_name for mark_name in mark_names
+                      if mark_name not in ['x_position', 'y_position']]
+
     marks = [(get_multiunit_indicator_dataframe(tetrode_key, animals)
               .loc[:, mark_names])
              for tetrode_key in hippocampal_tetrodes.index]
