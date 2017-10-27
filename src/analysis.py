@@ -772,7 +772,7 @@ def _get_replay_motion_from_rows(ripple_times, posterior_density,
     posterior_density = posterior_density.isel(
         state=max_state_ind).dropna('time')
     replay_position = posterior_density.position.values[
-        posterior_density.argmax('position')]
+        posterior_density.argmax('position').values]
     animal_position = ripple_times[distance_measure]
     replay_distance_from_animal_position = np.abs(
         replay_position - animal_position)
