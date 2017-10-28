@@ -4,7 +4,7 @@ import xarray as xr
 from patsy import build_design_matrices, dmatrix
 from scipy.signal import convolve, gaussian, correlate
 from statsmodels.api import GLM, families
-from src.time_rescale import TimeRescaling
+from time_rescale import TimeRescaling
 
 
 def perievent_time_kernel_density_estimate(

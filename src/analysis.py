@@ -11,19 +11,22 @@ import pandas as pd
 import xarray as xr
 from scipy.stats import linregress
 
-from .data_processing import (get_interpolated_position_dataframe,
-                              get_LFP_dataframe,
-                              get_multiunit_indicator_dataframe,
-                              get_spike_indicator_dataframe,
-                              make_neuron_dataframe, make_tetrode_dataframe,
-                              reshape_to_segments, save_xarray)
-from .ripple_decoding import ClusterlessDecoder, SortedSpikeDecoder
-from .ripple_detection.detectors import Kay_ripple_detector
-from .spectral.connectivity import Connectivity
-from .spectral.statistics import (coherence_bias, coherence_rate_adjustment,
-                                  fisher_z_transform,
-                                  get_normal_distribution_p_values)
-from .spectral.transforms import Multitaper, _sliding_window
+from loren_frank_data_processing import (get_interpolated_position_dataframe,
+                                         get_LFP_dataframe,
+                                         get_multiunit_indicator_dataframe,
+                                         get_spike_indicator_dataframe,
+                                         make_neuron_dataframe,
+                                         make_tetrode_dataframe,
+                                         reshape_to_segments, save_xarray)
+from replay_classification import ClusterlessDecoder, SortedSpikeDecoder
+from ripple_detection import Kay_ripple_detector
+from spectral_connectivity import Connectivity, Multitaper
+from spectral_connectivity.statistics import (coherence_bias,
+                                              coherence_rate_adjustment,
+                                              fisher_z_transform,
+                                              get_normal_distribution_p_values)
+from spectral_connectivity.transforms import _sliding_window
+
 from .spike_train import cross_correlate, perievent_time_spline_estimate
 
 logger = getLogger(__name__)
@@ -451,7 +454,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     logger.info('Detecting ripples')
 
     tetrode_info = make_tetrode_dataframe(animals).xs(
-            epoch_key, drop_level=False)
+        epoch_key, drop_level=False)
     # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1', 'CA3']) &
                       (tetrode_info.descrip.isin(['riptet']) |
@@ -626,7 +629,7 @@ def _get_ripple_spikes(spikes_data, ripple_times):
 
     return [
         (np.stack([df.loc[ripple_number, :].values
-         for df in spike_ripples], axis=0).squeeze(),
+                   for df in spike_ripples], axis=0).squeeze(),
          spike_ripples[0].loc[ripple_number, :].index.get_level_values('time'))
         for ripple_number in ripple_times.index]
 

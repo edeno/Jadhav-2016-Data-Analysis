@@ -8,15 +8,16 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
+from loren_frank_data_processing import (get_interpolated_position_dataframe,
+                                         get_LFP_dataframe,
+                                         make_neuron_dataframe,
+                                         make_tetrode_dataframe, save_xarray)
 from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
                           decode_ripple_clusterless, detect_epoch_ripples,
                           ripple_cross_correlation,
                           ripple_locked_firing_rate_change,
                           ripple_spike_coherence,
                           ripple_triggered_connectivity)
-from src.data_processing import (get_interpolated_position_dataframe,
-                                 get_LFP_dataframe, make_neuron_dataframe,
-                                 make_tetrode_dataframe, save_xarray)
 from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
                             REPLAY_COVARIATES, SAMPLING_FREQUENCY)
 

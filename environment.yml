@@ -2,6 +2,7 @@ name: Jadhav-2016-Data-Analysis
 channels:
 - conda-forge
 - defaults
+- edeno
 dependencies:
 - anaconda
 - pandas
@@ -12,7 +13,7 @@ dependencies:
 - jupyter
 - nb_conda
 - pytables
-- python=3.5.2=0
+- "python>=3.5"
 - scikit-image
 - seaborn
 - setuptools
@@ -25,3 +26,8 @@ dependencies:
 - numba
 - snakeviz
 - openblas
+- replay_classification
+- time_rescale
+- ripple_detection
+- loren_frank_data_processing
+- spectral_connectivity
