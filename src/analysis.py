@@ -2,31 +2,37 @@
 
 '''
 from copy import deepcopy
-from functools import partial, wraps
+from functools import partial
+from itertools import product
 from logging import getLogger
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from dask import local, compute, delayed
+from scipy.stats import linregress
 
-from .data_processing import (get_interpolated_position_dataframe,
-                              get_LFP_dataframe,
-                              get_mark_indicator_dataframe,
-                              get_spike_indicator_dataframe,
-                              make_neuron_dataframe,
-                              make_tetrode_dataframe, reshape_to_segments,
-                              save_xarray)
-from .ripple_decoding import (combined_likelihood,
-                              estimate_marked_encoding_model,
-                              estimate_sorted_spike_encoding_model,
-                              estimate_state_transition, get_bin_centers,
-                              predict_state, set_initial_conditions)
-from .ripple_detection.detectors import Kay_ripple_detector
-from .spectral.connectivity import Connectivity
-from .spectral.transforms import Multitaper
+from loren_frank_data_processing import (get_interpolated_position_dataframe,
+                                         get_LFP_dataframe,
+                                         get_multiunit_indicator_dataframe,
+                                         get_spike_indicator_dataframe,
+                                         make_neuron_dataframe,
+                                         make_tetrode_dataframe,
+                                         reshape_to_segments, save_xarray)
+from replay_classification import ClusterlessDecoder, SortedSpikeDecoder
+from ripple_detection import Kay_ripple_detector
+from spectral_connectivity import Connectivity, Multitaper
+from spectral_connectivity.statistics import (coherence_bias,
+                                              coherence_rate_adjustment,
+                                              fisher_z_transform,
+                                              get_normal_distribution_p_values)
+from spectral_connectivity.transforms import _sliding_window
+
+from .spike_train import cross_correlate, perievent_time_spline_estimate
 
 logger = getLogger(__name__)
+
+_MARKS = ['channel_1_max', 'channel_2_max', 'channel_3_max',
+          'channel_4_max']
 
 
 def entire_session_connectivity(
@@ -56,6 +62,147 @@ def entire_session_connectivity(
     save_canonical_coherence(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
+
+
+def ripple_locked_firing_rate_change(ripple_times, neuron_info, animals,
+                                     sampling_frequency,
+                                     window_offset=None,
+                                     n_boot_samples=None,
+                                     formula='bs(time, df=5)'):
+
+    estimate = []
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes = reshape_to_segments(
+            spikes, ripple_times, sampling_frequency=sampling_frequency,
+            window_offset=window_offset)
+        time = ripple_locked_spikes.index.get_level_values('time').values
+        trial_id = (ripple_locked_spikes.index
+                    .get_level_values('segment_number').values)
+        estimate.append(
+            perievent_time_spline_estimate(
+                ripple_locked_spikes.values.squeeze(),
+                time, sampling_frequency, formula=formula,
+                n_boot_samples=n_boot_samples, trial_id=trial_id))
+
+    return xr.concat(estimate, dim=neuron_info.neuron_id)
+
+
+def ripple_cross_correlation(ripple_times, neuron_info, animals,
+                             sampling_frequency, window_offset=None):
+
+    before_ripple, after_ripple = [], []
+
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes = reshape_to_segments(
+            spikes, ripple_times, sampling_frequency=sampling_frequency,
+            window_offset=window_offset).unstack(level=0)
+        before_ripple.append(ripple_locked_spikes.loc[:0].values)
+        after_ripple.append(ripple_locked_spikes.loc[0:].values)
+
+    correlation_before_ripple = correlate_neurons(
+        before_ripple, neuron_info.neuron_id, sampling_frequency)
+    correlation_after_ripple = correlate_neurons(
+        after_ripple, neuron_info.neuron_id, sampling_frequency)
+    time = pd.Index([min(window_offset), 0.0], name='time')
+    return xr.concat(
+        (correlation_before_ripple, correlation_after_ripple), dim=time)
+
+
+def correlate_neurons(neurons, neuron_id, sampling_frequency):
+    index = pd.MultiIndex.from_product((neuron_id, neuron_id),
+                                       names=['neuron1', 'neuron2'])
+    return xr.concat(
+        [cross_correlate(neuron1, neuron2, sampling_frequency).to_xarray()
+         for neuron1, neuron2 in product(neurons, neurons)],
+        dim=index).unstack('concat_dim')
+
+
+def ripple_spike_coherence(ripple_times, neuron_info, animals,
+                           sampling_frequency, multitaper_parameters,
+                           window_offset=(-0.100, 0.100)):
+    ripple_locked_spikes = []
+
+    for neuron_key in neuron_info.index:
+        spikes = get_spike_indicator_dataframe(neuron_key, animals)
+        ripple_locked_spikes.append(
+            reshape_to_segments(
+                spikes, ripple_times, sampling_frequency=sampling_frequency,
+                window_offset=window_offset).unstack(level=0))
+    m = Multitaper(np.stack(ripple_locked_spikes, axis=-1),
+                   **multitaper_parameters,
+                   start_time=ripple_locked_spikes[0].index.values[0])
+    c = Connectivity.from_multitaper(m)
+    n_trials = len(ripple_times)
+
+    average_firing_rate = np.stack([np.mean(_sliding_window(
+        neuron.values, m.n_time_samples_per_window, m.n_time_samples_per_step,
+        axis=0), axis=(1, 2)) * sampling_frequency
+        for neuron in ripple_locked_spikes], axis=1)
+
+    coords = {
+        'time': c.time,
+        'frequency': c.frequencies,
+        'neuron1': neuron_info.neuron_id.values,
+        'neuron2': neuron_info.neuron_id.values
+    }
+    attrs = {
+        'n_trials': n_trials,
+        'n_tapers': m.n_tapers,
+        'frequency_resolution': m.frequency_resolution
+    }
+    data_vars = {
+        'average_firing_rate': (['time', 'neuron1'], average_firing_rate),
+        'power': (['time', 'frequency', 'neuron1'], c.power()),
+        'coherency': (['time', 'frequency', 'neuron1', 'neuron2'],
+                      c.coherency()),
+        'coherence_magnitude': (['time', 'frequency', 'neuron1', 'neuron2'],
+                                c.coherence_magnitude()),
+    }
+
+    return xr.Dataset(data_vars, coords, attrs)
+
+
+def compare_spike_coherence(condition1, condition2, sampling_frequency,
+                            comparison_name='spike_coherence'):
+    dt = 1.0 / sampling_frequency
+    adjustment = coherence_rate_adjustment(
+        condition1.average_firing_rate, condition2.average_firing_rate,
+        condition1.power, dt=dt)
+
+    adjusted_coherency1 = (adjustment.rename({'neuron1': 'neuron2'}) *
+                           adjustment * condition1.coherency).transpose(
+        'frequency', 'neuron1', 'neuron2')
+
+    coherence_difference = (np.abs(condition2.coherency) -
+                            np.abs(adjusted_coherency1))
+    bias1 = coherence_bias(condition1.n_trials * condition1.n_tapers)
+    bias2 = coherence_bias(condition2.n_trials * condition2.n_tapers)
+    coherence_z_difference = fisher_z_transform(
+        condition2.coherency.values, bias2, adjusted_coherency1.values, bias1)
+    p_values = get_normal_distribution_p_values(coherence_z_difference)
+
+    DIMS = ['frequency', 'neuron1', 'neuron2']
+
+    data_vars = {
+        'coherence_difference': (DIMS, coherence_difference),
+        'coherence_z_difference': (DIMS, coherence_z_difference),
+        'p_values': (DIMS, p_values),
+    }
+    coords = {
+        'frequency': adjusted_coherency1.frequency,
+        'neuron1': adjusted_coherency1.neuron1,
+        'neuron2': adjusted_coherency1.neuron2
+    }
+    attrs = {
+        'n_trials1': condition1.n_trials,
+        'n_trials2': condition1.n_trials,
+        'n_tapers': condition1.n_tapers,
+        'comparison': comparison_name,
+    }
+
+    return xr.Dataset(data_vars, coords, attrs)
 
 
 def connectivity_by_ripple_type(
@@ -156,7 +303,7 @@ def save_power(
     logger.info('...saving power')
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
-     'power': (dimension_names, c.power())}
+        'power': (dimension_names, c.power())}
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
@@ -175,7 +322,7 @@ def save_coherence(
     logger.info('...saving coherence')
     dimension_names = ['time', 'frequency', 'tetrode1', 'tetrode2']
     data_vars = {
-     'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
+        'coherence_magnitude': (dimension_names, c.coherence_magnitude())}
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
@@ -274,7 +421,7 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
         'tetrode2': tetrode_info.tetrode_id.values,
         'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
         'brain_area2': ('tetrode2', tetrode_info.area.tolist()),
-        }
+    }
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
     save_xarray(
@@ -298,35 +445,37 @@ def _get_ripple_times(df):
             .values.tolist())
 
 
-def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
-                         speed_threshold=4):
+def detect_epoch_ripples(epoch_key, animals, sampling_frequency):
     '''Returns a list of tuples containing the start and end times of
     ripples. Candidate ripples are computed via the ripple detection
     function and then filtered to exclude ripples where the animal was
     still moving.
     '''
     logger.info('Detecting ripples')
-    tetrode_info = (
-        make_tetrode_dataframe(animals)
-        .loc[epoch_key]
-        .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
-                   drop=False))
+
+    tetrode_info = make_tetrode_dataframe(animals).xs(
+        epoch_key, drop_level=False)
     # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = (tetrode_info.area.isin(['CA1', 'iCA1', 'CA3']) &
                       (tetrode_info.descrip.isin(['riptet']) |
-                       tetrode_info.validripple)
-                      )
+                       tetrode_info.validripple))
     logger.debug(tetrode_info[is_hippocampal]
                  .loc[:, ['area', 'depth', 'descrip']])
     tetrode_keys = tetrode_info[is_hippocampal].index.tolist()
     hippocampus_lfps = pd.concat(
         [get_LFP_dataframe(tetrode_key, animals)
          for tetrode_key in tetrode_keys], axis=1)
+    time = hippocampus_lfps.index
+
+    def _time_function(epoch_key, animals):
+        return time
+
     speed = get_interpolated_position_dataframe(
-        epoch_key, animals).speed.values
-    time = hippocampus_lfps.index.values
+        epoch_key, animals, _time_function).speed
+
     return Kay_ripple_detector(
-        time, hippocampus_lfps.values, speed, sampling_frequency)
+        time, hippocampus_lfps.values, speed.values, sampling_frequency,
+        minimum_duration=pd.Timedelta(milliseconds=15))
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
@@ -388,42 +537,18 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
                          for spikes_datum in spikes_data]
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = get_bin_centers(
-        place_bin_edges)
-
-    logger.info('...Fitting encoding model')
-    combined_likelihood_kwargs = estimate_sorted_spike_encoding_model(
-        train_position_info, train_spikes_data, place_bin_centers)
-
-    logger.info('...Fitting state transition model')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    logger.info('...Setting initial conditions')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    logger.info('...Decoding ripples')
-    decoder_params = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_kwargs
+    decoder = SortedSpikeDecoder(
+        position=train_position_info.linear_distance.values,
+        spikes=np.stack(train_spikes_data, axis=0),
+        trajectory_direction=train_position_info.trajectory_direction.values
     )
+
     test_spikes = _get_ripple_spikes(
-        spikes_data, ripple_times, sampling_frequency)
-    posterior_density = [predict_state(ripple_spikes, **decoder_params)
-                         for ripple_spikes in test_spikes]
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times,
-        state_names, position_info, place_bin_centers, epoch_key)
+        spikes_data, ripple_times)
+    results = [decoder.predict(ripple_spikes, time)
+               for ripple_spikes, time in test_spikes]
+    return summarize_replay_results(
+        results, ripple_times, position_info, epoch_key)
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
@@ -431,17 +556,13 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               n_place_bins=61,
                               place_std_deviation=None,
                               mark_std_deviation=20,
-                              scheduler=local.get_sync,
-                              scheduler_kwargs={}):
+                              mark_names=_MARKS):
     logger.info('Decoding ripples')
-    mark_variables = ['channel_1_max', 'channel_2_max', 'channel_3_max',
-                      'channel_4_max']
     tetrode_info = (
         make_tetrode_dataframe(animals)
         .loc[epoch_key]
         .set_index(['animal', 'day', 'epoch', 'tetrode_number'],
                    drop=False))
-    # Get cell-layer CA1, iCA1 LFPs
     is_hippocampal = tetrode_info.area.isin(['CA1', 'iCA1', 'CA3'])
     hippocampal_tetrodes = tetrode_info[
         is_hippocampal &
@@ -451,8 +572,15 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     position_info = get_interpolated_position_dataframe(epoch_key, animals)
 
-    marks = [(get_mark_indicator_dataframe(tetrode_key, animals)
-              .loc[:, mark_variables])
+    if mark_names is None:
+        # Use all available mark dimensions
+        mark_names = get_multiunit_indicator_dataframe(
+            hippocampal_tetrodes.index[0], animals).columns.tolist()
+        mark_names = [mark_name for mark_name in mark_names
+                      if mark_name not in ['x_position', 'y_position']]
+
+    marks = [(get_multiunit_indicator_dataframe(tetrode_key, animals)
+              .loc[:, mark_names])
              for tetrode_key in hippocampal_tetrodes.index]
     marks = [tetrode_marks for tetrode_marks in marks
              if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
@@ -460,146 +588,55 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     train_position_info = position_info.query('speed > 4')
 
-    place = _get_place(train_position_info)
-    place_at_spike = [_get_place_at_spike(tetrode_marks,
-                                          train_position_info)
-                      for tetrode_marks in marks]
-    training_marks = [_get_training_marks(tetrode_marks,
-                                          train_position_info,
-                                          mark_variables)
-                      for tetrode_marks in marks]
+    training_marks = np.stack([
+        tetrode_marks.loc[train_position_info.index, mark_names]
+        for tetrode_marks in marks], axis=0)
 
-    place_bin_edges = np.linspace(
-        np.floor(position_info.linear_distance.min()),
-        np.ceil(position_info.linear_distance.max()),
-        n_place_bins + 1)
-    place_bin_centers = get_bin_centers(place_bin_edges)
+    decoder = ClusterlessDecoder(
+        train_position_info.linear_distance.values,
+        train_position_info.trajectory_direction.values,
+        training_marks
+    ).fit()
 
-    if place_std_deviation is None:
-        place_std_deviation = place_bin_edges[1] - place_bin_edges[0]
+    test_marks = _get_ripple_marks(marks, ripple_times)
+    logger.info('Predicting replay types')
+    results = [decoder.predict(ripple_marks, time)
+               for ripple_marks, time in test_marks]
 
-    logger.info('...Fitting encoding model')
-    combined_likelihood_kwargs = estimate_marked_encoding_model(
-        place_bin_centers, place, place_at_spike, training_marks,
-        place_std_deviation=place_std_deviation,
-        mark_std_deviation=mark_std_deviation)
-
-    logger.info('...Fitting state transition model')
-    state_transition = estimate_state_transition(
-        train_position_info, place_bin_edges)
-
-    logger.info('...Setting initial conditions')
-    state_names = ['outbound_forward', 'outbound_reverse',
-                   'inbound_forward', 'inbound_reverse']
-    n_states = len(state_names)
-    initial_conditions = set_initial_conditions(
-        place_bin_edges, place_bin_centers, n_states)
-
-    logger.info('...Decoding ripples')
-    decoder_kwargs = dict(
-        initial_conditions=initial_conditions,
-        state_transition=state_transition,
-        likelihood_function=combined_likelihood,
-        likelihood_kwargs=combined_likelihood_kwargs
-    )
-
-    test_marks = _get_ripple_marks(
-        marks, ripple_times, sampling_frequency)
-
-    posterior_density = [
-        delayed(predict_state, pure=True)(ripple_marks, **decoder_kwargs)
-        for ripple_marks in test_marks]
-    posterior_density = compute(
-        *posterior_density, get=scheduler, **scheduler_kwargs)
-    test_spikes = [np.mean(~np.isnan(marks), axis=2)
-                   for marks in test_marks]
-
-    return get_ripple_info(
-        posterior_density, test_spikes, ripple_times, sampling_frequency,
-        state_names, position_info, place_bin_centers, epoch_key)
+    return summarize_replay_results(
+        results, ripple_times, position_info, epoch_key)
 
 
-def _convert_to_states(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        d = function(*args, **kwargs)
-        return [d['Outbound'], d['Outbound'],
-                d['Inbound'], d['Inbound']]
-    return wrapper
-
-
-@_convert_to_states
-def _get_place(train_position_info, place_measure='linear_distance'):
-    return {trajectory_direction: grouped.loc[:, place_measure].values
-            for trajectory_direction, grouped
-            in (train_position_info
-                .groupby('trajectory_direction'))}
-
-
-@_convert_to_states
-def _get_place_at_spike(tetrode_marks, train_position_info,
-                        place_measure='linear_distance'):
-    return {trajectory_direction: (grouped.dropna()
-                                   .loc[:, place_measure].values)
-            for trajectory_direction, grouped
-            in (tetrode_marks
-                .join(train_position_info)
-                .groupby('trajectory_direction'))}
-
-
-@_convert_to_states
-def _get_training_marks(tetrode_marks, train_position_info,
-                        mark_variables):
-    return {trajectory_direction: (grouped.dropna()
-                                   .loc[:, mark_variables].values)
-            for trajectory_direction, grouped
-            in (tetrode_marks
-                .join(train_position_info)
-                .groupby('trajectory_direction'))}
-
-
-def _get_ripple_marks(marks, ripple_times, sampling_frequency):
+def _get_ripple_marks(marks, ripple_times):
     mark_ripples = [reshape_to_segments(
         tetrode_marks, ripple_times,
-        concat_axis=0, sampling_frequency=sampling_frequency)
+        axis=0)
         for tetrode_marks in marks]
 
-    return [np.stack([df.loc[ripple_ind + 1, :].values
-                      for df in mark_ripples], axis=1)
-            for ripple_ind in np.arange(len(ripple_times))]
+    return [(np.stack([df.loc[ripple_number, :].values
+                       for df in mark_ripples], axis=0),
+             mark_ripples[0].loc[ripple_number, :]
+             .index.get_level_values('time'))
+            for ripple_number in ripple_times.index]
 
 
-def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
+def _get_ripple_spikes(spikes_data, ripple_times):
     '''Given the ripple times, extract the spikes within the ripple
     '''
-    spike_ripples_df = [reshape_to_segments(
-        spikes_datum, ripple_times,
-        concat_axis=1, sampling_frequency=sampling_frequency)
+    spike_ripples = [reshape_to_segments(
+        spikes_datum, ripple_times, axis=1)
         for spikes_datum in spikes_data]
 
-    return [np.vstack([df.iloc[:, ripple_ind].dropna().values
-                       for df in spike_ripples_df]).T
-            for ripple_ind in np.arange(len(ripple_times))]
+    return [
+        (np.stack([df.loc[ripple_number, :].values
+                   for df in spike_ripples], axis=0).squeeze(),
+         spike_ripples[0].loc[ripple_number, :].index.get_level_values('time'))
+        for ripple_number in ripple_times.index]
 
 
-def exclude_movement_during_ripples(ripple_times, epoch_key, animals,
-                                    speed_threshold):
-    '''Excludes ripples where the head direction speed is greater than the
-    speed threshold. Only looks at the start of the ripple to determine
-    head movement speed for the ripple.
-    '''
-    position_df = get_interpolated_position_dataframe(
-        epoch_key, animals)
-    return [(ripple_start, ripple_end)
-            for ripple_start, ripple_end in ripple_times
-            if position_df.loc[
-                ripple_start:ripple_end].speed.iloc[0] < speed_threshold]
-
-
-def get_ripple_info(posterior_density, test_spikes, ripple_times,
-                    sampling_frequency, state_names, position_info,
-                    place_bin_centers, epoch_key):
-    '''Summary statistics for ripple categories
+def summarize_replay_results(results, ripple_times, position_info,
+                             epoch_key):
+    '''Summary statistics for decoded replays.
 
     Parameters
     ----------
@@ -611,89 +648,87 @@ def get_ripple_info(posterior_density, test_spikes, ripple_times,
 
     Returns
     -------
-    ripple_info : pandas dataframe
+    replay_info : pandas dataframe
     decision_state_probability : array_like
     posterior_density : xarray DataArray
 
     '''
-    session_time = position_info.index
-    n_states = len(state_names)
-    n_ripples = len(ripple_times)
-    decision_state_probability = [
-        _compute_decision_state_probability(density, n_states)
-        for density in posterior_density]
-    index = pd.MultiIndex.from_tuples(
-        [(*epoch_key, ripple+1) for ripple in range(n_ripples)],
-        names=['animal', 'day', 'epoch', 'ripple_number'])
-    ripple_info = pd.DataFrame(
-        [_compute_max_state(probability, state_names)
-         for probability in decision_state_probability],
-        columns=['ripple_trajectory', 'ripple_direction',
-                 'ripple_state_probability'],
-        index=index)
-    ripple_info['ripple_start_time'] = np.asarray(ripple_times)[:, 0]
-    ripple_info['ripple_end_time'] = np.asarray(ripple_times)[:, 1]
-    ripple_info['number_of_unique_neurons_spiking'] = [
-        _num_unique_neurons_spiking(spikes) for spikes in test_spikes]
-    ripple_info['number_of_spikes'] = [_num_total_spikes(spikes)
-                                       for spikes in test_spikes]
-    ripple_info['session_time'] = _ripple_session_time(
-        ripple_times, session_time)
-    ripple_info['is_spike'] = ((ripple_info.number_of_spikes > 0)
-                               .map({True: 'isSpike', False: 'noSpike'}))
+    replay_info = ripple_times.copy()
 
-    ripple_info = pd.concat(
-        [ripple_info,
-         position_info.loc[ripple_info.ripple_start_time]
-         .set_index(ripple_info.index)
+    # Includes information about the animal, day, epoch in index
+    (replay_info['animal'], replay_info['day'],
+     replay_info['epoch']) = epoch_key
+    replay_info.reset_index().set_index(
+        ['animal', 'day', 'epoch', 'ripple_number'], inplace=True)
+
+    replay_info['ripple_duration'] = (
+        replay_info['end_time'] - replay_info['start_time'])
+
+    # Add decoded states and probability of state
+    replay_info['predicted_state'] = [
+        result.predicted_state() for result in results]
+    replay_info['predicted_state_probability'] = [
+        result.predicted_state_probability() for result in results]
+
+    replay_info = pd.concat(
+        (replay_info,
+         replay_info.predicted_state.str.split('-', expand=True)
+         .rename(columns={0: 'replay_task',
+                          1: 'replay_order'})
+         ), axis=1)
+
+    # When in the session does the ripple occur (early, middle, late)
+    replay_info['session_time'] = _ripple_session_time(
+        ripple_times, position_info.index)
+
+    # Add stats about spikes
+    replay_info['number_of_unique_spiking'] = [
+        _num_unique_spiking(result.spikes) for result in results]
+    replay_info['number_of_spikes'] = [_num_total_spikes(result.spikes)
+                                       for result in results]
+
+    # Include animal position information
+    replay_info = pd.concat(
+        [replay_info,
+         position_info.loc[replay_info.start_time]
          .drop('trajectory_category_ind', axis=1)
+         .set_index(replay_info.index)
          ], axis=1)
-    ripple_info['ripple_motion'] = _get_ripple_motion(
-        ripple_info, posterior_density, state_names, place_bin_centers)
 
+    # Determine whether ripple is heading towards or away from animal's
+    # position
     posterior_density = xr.concat(
-        [xr.DataArray(
-            density.reshape((-1, n_states, place_bin_centers.size)),
-            dims=['time', 'state', 'linear_distance'],
-            coords={
-                 'time': np.arange(density.shape[0]) / sampling_frequency,
-                 'linear_distance': place_bin_centers,
-                 'state': state_names
-            })
-         for density in posterior_density],
-        dim=pd.Index(np.arange(n_ripples) + 1, name='ripple_number'))
-    decision_state_probability = posterior_density.sum('linear_distance')
+        [result.posterior_density for result in results],
+        dim=replay_info.index)
 
-    return (ripple_info, decision_state_probability,
+    replay_info['replay_motion'] = _get_replay_motion(
+        replay_info, posterior_density)
+
+    decision_state_probability = xr.concat(
+        [result.state_probability().unstack().to_xarray().rename(
+            'decision_state_probability')
+         for result in results], dim=replay_info.index)
+
+    return (replay_info, decision_state_probability,
             posterior_density)
 
 
-def _compute_decision_state_probability(posterior_density, n_states):
-    '''The marginal probability of a state given the posterior_density
-    '''
-    n_time = posterior_density.shape[0]
-    new_shape = (n_time, n_states, -1)
-    return np.sum(np.reshape(posterior_density, new_shape), axis=2)
-
-
-def _compute_max_state(probability, state_names):
-    '''The discrete state with the highest probability at the last time
-    '''
-    end_time_probability = probability[-1, :]
-    return (*state_names[np.argmax(end_time_probability)].split('_'),
-            np.max(end_time_probability))
-
-
-def _num_unique_neurons_spiking(spikes):
+def _num_unique_spiking(spikes):
     '''Number of units that spike per ripple
     '''
-    return spikes.sum(axis=0).nonzero()[0].shape[0]
+    if spikes.ndim > 2:
+        return np.sum(~np.isnan(spikes), axis=(1, 2)).nonzero()[0].size
+    else:
+        return spikes.sum(axis=0).nonzero()[0].size
 
 
 def _num_total_spikes(spikes):
     '''Total number of spikes per ripple
     '''
-    return int(spikes.sum(axis=(0, 1)))
+    if spikes.ndim > 2:
+        return np.any(~np.isnan(spikes), axis=2).sum()
+    else:
+        return int(spikes.sum())
 
 
 def _ripple_session_time(ripple_times, session_time):
@@ -709,15 +744,17 @@ def _ripple_session_time(ripple_times, session_time):
             session_time, 3,
             labels=['early', 'middle', 'late'], precision=4),
         index=session_time)
-    return [(session_time_categories
-             .loc[ripple_start:ripple_end]
-             .value_counts()
-             .argmax())
-            for ripple_start, ripple_end in ripple_times]
+    return pd.Series(
+        [(session_time_categories.loc[ripple_start:ripple_end]
+          .value_counts().argmax())
+         for ripple_start, ripple_end
+         in ripple_times.itertuples(index=False)],
+        index=ripple_times.index, name='session_time',
+        dtype=session_time_categories.dtype)
 
 
-def _get_ripple_motion_from_rows(ripple_info, posterior_density,
-                                 state_names, place_bin_centers):
+def _get_replay_motion_from_rows(ripple_times, posterior_density,
+                                 distance_measure='linear_distance'):
     '''
 
     Parameters
@@ -732,29 +769,30 @@ def _get_ripple_motion_from_rows(ripple_info, posterior_density,
     is_away : array of str
 
     '''
-    max_state_name = '_'.join(
-        (ripple_info.ripple_trajectory, ripple_info.ripple_direction))
-    new_shape = (len(posterior_density), len(state_names), -1)
-    max_state_density = np.take(
-        np.reshape(posterior_density, new_shape),
-        state_names.index(max_state_name), axis=1)
-    replay_position_start_end = place_bin_centers[
-        np.argmax(max_state_density[[0, -1]], axis=1)]
-    replay_distance_from_animal_position = abs(
-        ripple_info.linear_position - replay_position_start_end)
-    is_away = np.diff(replay_distance_from_animal_position) > 0
+    max_state_ind = int(posterior_density
+                        .dropna('time').sum('position')
+                        .isel(time=-1).argmax())
+    posterior_density = posterior_density.isel(
+        state=max_state_ind).dropna('time')
+    replay_position = posterior_density.position.values[
+        posterior_density.argmax('position').values]
+    animal_position = ripple_times[distance_measure]
+    replay_distance_from_animal_position = np.abs(
+        replay_position - animal_position)
+    is_away = linregress(
+        posterior_density.get_index('time').total_seconds(),
+        replay_distance_from_animal_position).slope > 0
     return np.where(is_away, 'away', 'towards')
 
 
-def _get_ripple_motion(ripple_info, posterior_density, state_names,
-                       place_bin_centers):
-    '''Motion of the ripple relative to the current position of the animal.
+def _get_replay_motion(ripple_times, posterior_density,
+                       distance_measure='linear_distance'):
+    '''Motion of the replay relative to the current position of the animal.
     '''
     return np.array(
-        [_get_ripple_motion_from_rows(
-            row, density, state_names, place_bin_centers)
+        [_get_replay_motion_from_rows(row, density, distance_measure)
          for (_, row), density
-         in zip(ripple_info.iterrows(), posterior_density)]).squeeze()
+         in zip(ripple_times.iterrows(), posterior_density)]).squeeze()
 
 
 def _subtract_event_related_potential(df):

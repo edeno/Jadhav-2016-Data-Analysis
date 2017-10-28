@@ -1,28 +1,97 @@
 '''Exectue set of functions for each epoch
 '''
 from argparse import ArgumentParser
+from collections import OrderedDict
+from itertools import combinations
 from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
-from src.analysis import (decode_ripple_clusterless,
-                          detect_epoch_ripples,
-                          ripple_triggered_connectivity,
-                          connectivity_by_ripple_type)
-from src.data_processing import (get_LFP_dataframe, make_tetrode_dataframe,
-                                 save_xarray,
-                                 get_interpolated_position_dataframe)
-from src.parameters import (ANIMALS, SAMPLING_FREQUENCY,
-                            MULTITAPER_PARAMETERS, FREQUENCY_BANDS,
-                            RIPPLE_COVARIATES)
+from loren_frank_data_processing import (get_interpolated_position_dataframe,
+                                         get_LFP_dataframe,
+                                         make_neuron_dataframe,
+                                         make_tetrode_dataframe, save_xarray)
+from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
+                          decode_ripple_clusterless, detect_epoch_ripples,
+                          ripple_cross_correlation,
+                          ripple_locked_firing_rate_change,
+                          ripple_spike_coherence,
+                          ripple_triggered_connectivity)
+from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
+                            REPLAY_COVARIATES, SAMPLING_FREQUENCY)
+
+
+def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
+    ripple_times = detect_epoch_ripples(
+        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
+    neuron_info = make_neuron_dataframe(ANIMALS).xs(
+        epoch_key, drop_level=False).query('numspikes > 0')
+
+    results = dict()
+
+    results['firing_rate/all_ripples'] = ripple_locked_firing_rate_change(
+        ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+        window_offset=(-0.100, 0.100), formula='bs(time, df=5)',
+        n_boot_samples=n_boot_samples)
+    results['cross_correlation/all_ripples'] = ripple_cross_correlation(
+        ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+        window_offset=(-0.100, 0.100))
+    coherence_all_ripples = ripple_spike_coherence(
+        ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+        MULTITAPER_PARAMETERS['10Hz_Resolution'], (-0.100, 0.100))
+    results['coherence/all_ripples'] = compare_spike_coherence(
+        coherence_all_ripples.isel(time=0),
+        coherence_all_ripples.isel(time=1), SAMPLING_FREQUENCY,
+        'After Ripple - Before Ripple')
+
+    # Compare different types of replay
+    replay_info, state_probability, posterior_density = (
+        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times,
+                                  mark_names=None))
+
+    for covariate in REPLAY_COVARIATES:
+
+        coherence = OrderedDict()
+
+        for level_name, df in replay_info.groupby(covariate):
+            level_ripple_times = df.loc[:, ['start_time', 'end_time']].values
+            subgroup_name = '/'.join((covariate, level_name))
+            results['firing_rate/' + subgroup_name] = (
+                ripple_locked_firing_rate_change(
+                    level_ripple_times, neuron_info, ANIMALS,
+                    SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100),
+                    formula='bs(time, df=5)',
+                    n_boot_samples=n_boot_samples))
+            results['cross_correlation/' + subgroup_name] = (
+                ripple_cross_correlation(
+                    level_ripple_times, neuron_info, ANIMALS,
+                    SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100)))
+            coherence[level_name] = ripple_spike_coherence(
+                ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+                MULTITAPER_PARAMETERS['10Hz_Resolution'], (0.00, 0.100))
+
+        for level1, level2 in combinations(coherence.keys(), 2):
+            comparison_name = '-'.join((level2, level1))
+            subgroup_name = '/'.join(('coherence', covariate, comparison_name))
+            results[subgroup_name] = compare_spike_coherence(
+                coherence[level2], coherence[level1], SAMPLING_FREQUENCY,
+                comparison_name)
+
+    results['replay_info'] = replay_info.reset_index().to_xarray()
+    results['state_probability'] = state_probability
+    results['posterior_density'] = posterior_density
+
+    for group_name, data in results.items():
+        save_xarray(epoch_key, data, group_name)
 
 
 def estimate_ripple_coherence(epoch_key):
     ripple_times = detect_epoch_ripples(
         epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
-    tetrode_info = make_tetrode_dataframe(ANIMALS).loc[epoch_key]
+    tetrode_info = make_tetrode_dataframe(ANIMALS).xs(
+        epoch_key, drop_level=False)
     tetrode_info = tetrode_info[
         ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
 
@@ -39,7 +108,7 @@ def estimate_ripple_coherence(epoch_key):
     ripple_info = decode_ripple_clusterless(
         epoch_key, ANIMALS, ripple_times)[0]
 
-    for covariate in RIPPLE_COVARIATES:
+    for covariate in REPLAY_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             connectivity_by_ripple_type(
                 lfps, epoch_key, tetrode_info,
@@ -53,25 +122,24 @@ def estimate_ripple_coherence(epoch_key):
 
 
 def decode_ripples(epoch_key):
+
     ripple_times = detect_epoch_ripples(
         epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
 
     # Compare different types of ripples
-    (ripple_info, decision_state_probability,
-     posterior_density) = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)
+    replay_info, state_probability, posterior_density = (
+        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times))
 
-    save_xarray(
-        epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
-    save_xarray(
-        epoch_key, decision_state_probability,
-        '/decision_state_probability')
-    save_xarray(
-        epoch_key, posterior_density, '/posterior_density')
+    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
 
-    position_df = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-    save_xarray(
-        epoch_key, position_df.to_xarray(), '/position_df')
+    results = dict()
+    results['replay_info'] = replay_info.reset_index().to_xarray()
+    results['position_info'] = position_info.to_xarray()
+    results['state_probability'] = state_probability
+    results['posterior_density'] = posterior_density
+
+    for group_name, data in results.items():
+        save_xarray(epoch_key, data, group_name)
 
 
 def get_command_line_arguments():
@@ -122,9 +190,11 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    decode_ripples(epoch_key)
+    estimate_ripple_spike_connectivity(epoch_key,
+                                       window_offset=(-0.100, 0.100))
 
     logger.info('Finished Processing')
+
 
 if __name__ == '__main__':
     exit(main())

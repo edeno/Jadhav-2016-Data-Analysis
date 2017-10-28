@@ -6,7 +6,7 @@ from os.path import join
 from subprocess import run
 from sys import exit
 
-from src.data_processing import make_epochs_dataframe
+from loren_frank_data_processing import make_epochs_dataframe
 from src.parameters import ANIMALS
 
 
