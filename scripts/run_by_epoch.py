@@ -8,8 +8,7 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
 
-from loren_frank_data_processing import (get_interpolated_position_dataframe,
-                                         get_LFP_dataframe,
+from loren_frank_data_processing import (get_LFP_dataframe,
                                          make_neuron_dataframe,
                                          make_tetrode_dataframe, save_xarray)
 from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
@@ -119,27 +118,6 @@ def estimate_ripple_coherence(epoch_key):
 
     save_xarray(
         epoch_key, ripple_info.reset_index().to_xarray(), '/ripple_info')
-
-
-def decode_ripples(epoch_key):
-
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
-
-    # Compare different types of ripples
-    replay_info, state_probability, posterior_density = (
-        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times))
-
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-
-    results = dict()
-    results['replay_info'] = replay_info.reset_index().to_xarray()
-    results['position_info'] = position_info.to_xarray()
-    results['state_probability'] = state_probability
-    results['posterior_density'] = posterior_density
-
-    for group_name, data in results.items():
-        save_xarray(epoch_key, data, group_name)
 
 
 def get_command_line_arguments():
