@@ -13,7 +13,6 @@ from loren_frank_data_processing import (get_LFP_dataframe,
                                          make_tetrode_dataframe, save_xarray)
 from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
                           decode_ripple_clusterless, detect_epoch_ripples,
-                          ripple_cross_correlation,
                           ripple_locked_firing_rate_change,
                           ripple_spike_coherence,
                           ripple_triggered_connectivity)
@@ -33,9 +32,6 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
         ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
         window_offset=(-0.100, 0.100), formula='bs(time, df=5)',
         n_boot_samples=n_boot_samples)
-    results['cross_correlation/all_ripples'] = ripple_cross_correlation(
-        ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
-        window_offset=(-0.100, 0.100))
     coherence_all_ripples = ripple_spike_coherence(
         ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
         MULTITAPER_PARAMETERS['10Hz_Resolution'], (-0.100, 0.100))
@@ -62,10 +58,6 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
                     SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100),
                     formula='bs(time, df=5)',
                     n_boot_samples=n_boot_samples))
-            results['cross_correlation/' + subgroup_name] = (
-                ripple_cross_correlation(
-                    level_ripple_times, neuron_info, ANIMALS,
-                    SAMPLING_FREQUENCY, window_offset=(-0.100, 0.100)))
             coherence[level_name] = ripple_spike_coherence(
                 ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
                 MULTITAPER_PARAMETERS['10Hz_Resolution'], (0.00, 0.100))
