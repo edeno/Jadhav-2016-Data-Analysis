@@ -41,9 +41,8 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
         'After Ripple - Before Ripple')
 
     # Compare different types of replay
-    replay_info, state_probability, posterior_density = (
-        decode_ripple_clusterless(epoch_key, ANIMALS, ripple_times,
-                                  mark_names=None))
+    replay_info, _, _ = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times, mark_names=None)
 
     for covariate in REPLAY_COVARIATES:
 
@@ -70,8 +69,6 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
                 comparison_name)
 
     results['replay_info'] = replay_info.reset_index().to_xarray()
-    results['state_probability'] = state_probability
-    results['posterior_density'] = posterior_density
 
     for group_name, data in results.items():
         save_xarray(epoch_key, data, group_name)
