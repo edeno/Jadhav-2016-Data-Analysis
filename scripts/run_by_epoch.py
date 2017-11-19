@@ -28,17 +28,10 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
 
     results = dict()
 
-    results['firing_rate/all_ripples'] = ripple_locked_firing_rate_change(
-        ripple_times.values, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
+    results['firing_rate/all_ripples/bs_time'] = ripple_locked_firing_rate_change(
+        ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
         window_offset=(-0.100, 0.100), formula='bs(time, df=5)',
         n_boot_samples=n_boot_samples)
-    coherence_all_ripples = ripple_spike_coherence(
-        ripple_times, neuron_info, ANIMALS, SAMPLING_FREQUENCY,
-        MULTITAPER_PARAMETERS['10Hz_Resolution'], (-0.100, 0.100))
-    results['coherence/all_ripples'] = compare_spike_coherence(
-        coherence_all_ripples.isel(time=0),
-        coherence_all_ripples.isel(time=1), SAMPLING_FREQUENCY,
-        'After Ripple - Before Ripple')
 
     for group_name, data in results.items():
         save_xarray(epoch_key, data, group_name)
@@ -127,8 +120,7 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_spike_connectivity(epoch_key,
-                                       window_offset=(-0.100, 0.100))
+    estimate_ripple_spike_connectivity(epoch_key)
 
     logger.info('Finished Processing')
 
