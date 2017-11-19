@@ -72,9 +72,10 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
                        adjust_for_short_trials=True).ks_statistic()
          for ci in conditional_intensity.T],
         dims='n_boot_samples', name='ks_statistic')
+    AIC = xr.DataArra(fit.AIC, name='AIC')
 
     return xr.merge((firing_rate, multiplicative_gain,
-                     baseline_firing_rate, ks_statistic))
+                     baseline_firing_rate, ks_statistic, AIC))
 
 
 def perievent_time_indicator_estimate(is_spike, time, sampling_frequency,
