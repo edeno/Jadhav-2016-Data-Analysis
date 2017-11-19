@@ -75,11 +75,11 @@ def ripple_locked_firing_rate_change(ripple_times, neuron_info, animals,
     for neuron_key in neuron_info.index:
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes = reshape_to_segments(
-            spikes, ripple_times, sampling_frequency=sampling_frequency,
-            window_offset=window_offset)
-        time = ripple_locked_spikes.index.get_level_values('time').values
+            spikes, ripple_times, window_offset=window_offset)
+        time = (ripple_locked_spikes.index.get_level_values('time')
+                .total_seconds().values)
         trial_id = (ripple_locked_spikes.index
-                    .get_level_values('segment_number').values)
+                    .get_level_values('ripple_number').values)
         estimate.append(
             perievent_time_spline_estimate(
                 ripple_locked_spikes.values.squeeze(),
@@ -129,11 +129,12 @@ def ripple_spike_coherence(ripple_times, neuron_info, animals,
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes.append(
             reshape_to_segments(
-                spikes, ripple_times, sampling_frequency=sampling_frequency,
+                spikes, ripple_times,
                 window_offset=window_offset).unstack(level=0))
-    m = Multitaper(np.stack(ripple_locked_spikes, axis=-1),
-                   **multitaper_parameters,
-                   start_time=ripple_locked_spikes[0].index.values[0])
+    m = Multitaper(
+        np.stack(ripple_locked_spikes, axis=-1),
+        **multitaper_parameters,
+        start_time=ripple_locked_spikes[0].index.total_seconds().values[0])
     c = Connectivity.from_multitaper(m)
     n_trials = len(ripple_times)
 
@@ -598,8 +599,9 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     decoder = ClusterlessDecoder(
         train_position_info.linear_distance.values,
-        train_position_info.trajectory_direction.values,
-        training_marks
+        train_position_info.task.values,
+        training_marks,
+        replay_speedup_factor=16,
     ).fit()
 
     test_marks = _get_ripple_marks(marks, ripple_times)
@@ -662,8 +664,7 @@ def summarize_replay_results(results, ripple_times, position_info,
     # Includes information about the animal, day, epoch in index
     (replay_info['animal'], replay_info['day'],
      replay_info['epoch']) = epoch_key
-    replay_info.reset_index().set_index(
-        ['animal', 'day', 'epoch', 'ripple_number'], inplace=True)
+    replay_info = replay_info.reset_index()
 
     replay_info['ripple_duration'] = (
         replay_info['end_time'] - replay_info['start_time'])
@@ -682,8 +683,9 @@ def summarize_replay_results(results, ripple_times, position_info,
          ), axis=1)
 
     # When in the session does the ripple occur (early, middle, late)
-    replay_info['session_time'] = _ripple_session_time(
-        ripple_times, position_info.index)
+    replay_info['session_time'] = pd.Categorical(
+        _ripple_session_time(ripple_times, position_info.index), ordered=True,
+        categories=['early', 'middle', 'late'])
 
     # Add stats about spikes
     replay_info['number_of_unique_spiking'] = [
@@ -695,16 +697,16 @@ def summarize_replay_results(results, ripple_times, position_info,
     replay_info = pd.concat(
         [replay_info,
          position_info.loc[replay_info.start_time]
-         .drop('trajectory_category_ind', axis=1)
          .set_index(replay_info.index)
          ], axis=1)
 
     # Determine whether ripple is heading towards or away from animal's
     # position
     posterior_density = xr.concat(
-        [result.posterior_density for result in results],
+        [result.results.posterior_density for result in results],
         dim=replay_info.index)
-
+    posterior_density['time'] = (
+        posterior_density.time.to_index().total_seconds())
     replay_info['replay_motion'] = _get_replay_motion(
         replay_info, posterior_density)
 
@@ -773,20 +775,16 @@ def _get_replay_motion_from_rows(ripple_times, posterior_density,
     is_away : array of str
 
     '''
-    max_state_ind = int(posterior_density
-                        .dropna('time').sum('position')
-                        .isel(time=-1).argmax())
-    posterior_density = posterior_density.isel(
-        state=max_state_ind).dropna('time')
+    posterior_density = posterior_density.sum('state').dropna('time')
     replay_position = posterior_density.position.values[
         posterior_density.argmax('position').values]
     animal_position = ripple_times[distance_measure]
     replay_distance_from_animal_position = np.abs(
         replay_position - animal_position)
     is_away = linregress(
-        posterior_density.get_index('time').total_seconds(),
+        posterior_density.get_index('time').values,
         replay_distance_from_animal_position).slope > 0
-    return np.where(is_away, 'away', 'towards')
+    return np.where(is_away, 'Away', 'Towards')
 
 
 def _get_replay_motion(ripple_times, posterior_density,
