@@ -121,7 +121,7 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_spike_connectivity(epoch_key)
+    estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=None)
 
     logger.info('Finished Processing')
 
