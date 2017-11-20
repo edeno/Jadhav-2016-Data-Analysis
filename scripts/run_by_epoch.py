@@ -17,7 +17,8 @@ from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
                           ripple_spike_coherence,
                           ripple_triggered_connectivity)
 from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
-                            REPLAY_COVARIATES, SAMPLING_FREQUENCY)
+                            REPLAY_COVARIATES, SAMPLING_FREQUENCY,
+                            PROCESSED_DATA_DIR)
 
 
 def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
@@ -34,7 +35,7 @@ def estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=1000):
         n_boot_samples=n_boot_samples)
 
     for group_name, data in results.items():
-        save_xarray(epoch_key, data, group_name)
+        save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
 
 def estimate_ripple_coherence(epoch_key):
