@@ -37,6 +37,7 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
 
     try:
         fit = GLM(is_spike, design_matrix, family=families.Poisson()).fit()
+        AIC = xr.DataArray(fit.aic, name='AIC')
 
         if n_boot_samples is not None:
             model_coefficients = glm_parametric_bootstrap(
@@ -47,6 +48,7 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
             n_boot_samples = 1
     except (ValueError, np.linalg.LinAlgError):
         model_coefficients = np.full((design_matrix.shape[1], 1), np.nan)
+        AIC = xr.DataArray(np.nan, name='AIC')
 
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=np.unique(time)))[0]
@@ -72,7 +74,6 @@ def perievent_time_spline_estimate(is_spike, time, sampling_frequency,
                        adjust_for_short_trials=True).ks_statistic()
          for ci in conditional_intensity.T],
         dims='n_boot_samples', name='ks_statistic')
-    AIC = xr.DataArray(fit.aic, name='AIC')
 
     return xr.merge((firing_rate, multiplicative_gain,
                      baseline_firing_rate, ks_statistic, AIC))
