@@ -7,6 +7,7 @@ from logging import DEBUG, INFO, Formatter, StreamHandler, getLogger
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit, stdout
+import xarray as xr
 
 from loren_frank_data_processing import (get_LFP_dataframe,
                                          make_neuron_dataframe,
@@ -16,6 +17,7 @@ from src.analysis import (compare_spike_coherence, connectivity_by_ripple_type,
                           ripple_locked_firing_rate_change,
                           ripple_spike_coherence,
                           ripple_triggered_connectivity)
+from src.spike_models import (fit_ripple_constant, fit_ripple_over_time, fit_replay)
 from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
                             REPLAY_COVARIATES, SAMPLING_FREQUENCY,
                             PROCESSED_DATA_DIR)
@@ -73,6 +75,46 @@ def estimate_ripple_coherence(epoch_key):
         epoch_key, replay_info.to_xarray(), '/replay_info')
 
 
+def ripple_locked_spiking(epoch_key):
+    ripple_times = detect_epoch_ripples(
+        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
+
+    replay_info, _, _ = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times)
+
+    neuron_info = make_neuron_dataframe(ANIMALS).xs(
+        epoch_key, drop_level=False).query('numspikes > 0')
+    results = {}
+
+    results['ripple/constant'] = xr.concat(
+        [fit_ripple_constant(
+            neuron_key, ANIMALS, SAMPLING_FREQUENCY, ripple_times)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['ripple/over_time'] = xr.concat(
+        [fit_ripple_over_time(
+            neuron_key, ANIMALS, SAMPLING_FREQUENCY, ripple_times,
+            penalty=1E-4)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['ripple/replay_state'] = xr.concat(
+        [fit_replay(
+            neuron_key, ANIMALS, SAMPLING_FREQUENCY,  replay_info,
+            'predicted_state', penalty=1E-4)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['ripple/session_time'] = xr.concat(
+        [fit_replay(
+            neuron_key, ANIMALS, SAMPLING_FREQUENCY,  replay_info,
+            'session_time', penalty=1E-4)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['ripple/replay_motion'] = xr.concat(
+        [fit_replay(
+            neuron_key, ANIMALS, SAMPLING_FREQUENCY,  replay_info,
+            'replay_motion', penalty=1E-4)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+
+    for group_name, data in results.items():
+        save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
+
+
 def get_command_line_arguments():
     parser = ArgumentParser()
     parser.add_argument('Animal', type=str, help='Short name of animal')
@@ -121,7 +163,7 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_spike_connectivity(epoch_key, n_boot_samples=None)
+    ripple_locked_spiking(epoch_key)
 
     logger.info('Finished Processing')
 
