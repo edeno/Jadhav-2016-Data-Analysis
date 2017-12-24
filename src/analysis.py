@@ -608,7 +608,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
 
     test_marks = _get_ripple_marks(marks, ripple_times)
     logger.info('Predicting replay types')
-    results = [decoder.predict(ripple_marks, time)
+    results = [decoder.predict(ripple_marks, time.total_seconds())
                for ripple_marks, time in test_marks]
 
     return summarize_replay_results(
@@ -707,8 +707,6 @@ def summarize_replay_results(results, ripple_times, position_info,
     posterior_density = xr.concat(
         [result.results.posterior_density for result in results],
         dim=replay_info.index)
-    posterior_density['time'] = (
-        posterior_density.time.to_index().total_seconds())
     replay_info['replay_motion'] = _get_replay_motion(
         replay_info, posterior_density)
 
