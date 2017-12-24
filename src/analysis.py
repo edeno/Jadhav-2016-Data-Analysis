@@ -536,8 +536,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     # Make sure there are spikes in the training data times. Otherwise
     # exclude that neuron
     spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[
-                       position_info.speed > 4].sum().values > 0]
+                   if spikes_datum[position_info.speed > 4].sum() > 0]
 
     train_position_info = position_info.query('speed > 4')
     train_spikes_data = [spikes_datum[position_info.speed > 4]
