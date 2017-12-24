@@ -545,7 +545,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     decoder = SortedSpikeDecoder(
         position=train_position_info.linear_distance.values,
         spikes=np.stack(train_spikes_data, axis=0),
-        trajectory_direction=train_position_info.trajectory_direction.values
+        trajectory_direction=train_position_info.task.values
     )
 
     test_spikes = _get_ripple_spikes(
