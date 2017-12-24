@@ -7,8 +7,8 @@ from statsmodels.api import GLM, families
 from time_rescale import TimeRescaling
 
 
-def perievent_time_kernel_density_estimate(
-        is_spike, sampling_frequency, bandwidth=30):
+def kernel_density_estimate(
+        is_spike, sampling_frequency, sigma=0.025):
     '''The gaussian-smoothed kernel density estimate of firing rate over
     trials.
 
@@ -16,14 +16,16 @@ def perievent_time_kernel_density_estimate(
     ----------
     is_spike : ndarray, shape (n_time, n_trials)
     sampling_frequency : float
-    bandwidth : float
+    sigma : float
 
     Returns
     -------
     firing_rate : ndarray, shape (n_time,)
 
     '''
-    kernel = gaussian(bandwidth * 5, bandwidth)[:, np.newaxis]
+    bandwidth = sigma * sampling_frequency
+    n_window_samples = int(bandwidth * 8)
+    kernel = gaussian(n_window_samples, bandwidth)[:, np.newaxis]
     density_estimate = convolve(
         is_spike, kernel, mode='same') / kernel.sum()
     return np.nanmean(density_estimate, axis=1) * sampling_frequency
