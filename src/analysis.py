@@ -558,7 +558,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               sampling_frequency=1500,
-                              n_place_bins=61,
+                              n_position_bins=61,
                               place_std_deviation=None,
                               mark_std_deviation=20,
                               mark_names=_MARKS,
@@ -600,6 +600,9 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         train_position_info.linear_distance.values,
         train_position_info.task.values,
         training_marks,
+        n_position_bins=n_position_bins,
+        place_std_deviation=place_std_deviation,
+        mark_std_deviation=mark_std_deviation,
         replay_speedup_factor=16,
     ).fit()
 
