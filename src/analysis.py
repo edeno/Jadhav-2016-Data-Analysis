@@ -513,10 +513,10 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     '''
     logger.info('Decoding ripples')
     # Include only CA1 neurons with spikes
-    neuron_info = make_neuron_dataframe(animals)[
-        epoch_key].dropna()
-    tetrode_info = make_tetrode_dataframe(animals)[
-        epoch_key]
+    neuron_info = make_neuron_dataframe(animals).xs(
+        epoch_key, drop_level=False)
+    tetrode_info = make_tetrode_dataframe(animals).xs(
+        epoch_key, drop_level=False)
     neuron_info = pd.merge(tetrode_info, neuron_info,
                            on=['animal', 'day', 'epoch',
                                'tetrode_number', 'area'],
