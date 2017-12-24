@@ -631,7 +631,7 @@ def _get_ripple_spikes(spikes_data, ripple_times):
     '''Given the ripple times, extract the spikes within the ripple
     '''
     spike_ripples = [reshape_to_segments(
-        spikes_datum, ripple_times, axis=1)
+        spikes_datum, ripple_times, axis=0)
         for spikes_datum in spikes_data]
 
     return [
