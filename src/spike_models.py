@@ -263,10 +263,11 @@ def fit_glm(response, design_matrix, penalty=None):
     if penalty is not None:
         regularization_weights = np.ones((design_matrix.shape[1],)) * penalty
         regularization_weights[0] = 0.0
-        fit = model.fit_regularized(alpha=regularization_weights, L1_wt=0)
+        fit = model.fit_regularized(alpha=regularization_weights, L1_wt=0,
+                                    maxiter=30)
     else:
         try:
-            fit = model.fit()
+            fit = model.fit(maxiter=30)
         except (ValueError, np.linalg.LinAlgError):
             fit = None
 
