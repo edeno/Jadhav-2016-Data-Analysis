@@ -166,7 +166,7 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
 
 
 def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
-                         penalty=1E-4):
+                         penalty=1E-4, knot_spacing=0.025):
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     ripple_locked_spikes = reshape_to_segments(
@@ -174,7 +174,8 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
     time = ripple_locked_spikes.index.get_level_values('time')
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
-    time_knots = -0.050 + 0.050 * np.arange(5)
+    n_steps = np.diff(window_offset) // knot_spacing
+    time_knots = window_offset[0] + np.arange(1, n_steps) * knot_spacing
     formula = '1 + cr(time, knots=time_knots, constraints="center")'
     design_matrix = dmatrix(
         formula, dict(time=time.total_seconds().values),
@@ -196,7 +197,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
 
 
 def fit_replay(neuron_key, animals, sampling_frequency,
-               replay_info, covariate, penalty=1E-4):
+               replay_info, covariate, penalty=1E-4, knot_spacing=0.025):
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
@@ -206,7 +207,9 @@ def fit_replay(neuron_key, animals, sampling_frequency,
         spikes, ripple_times, window_offset, sampling_frequency)
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
-    time_knots = -0.050 + 0.050 * np.arange(5)
+    n_steps = np.diff(window_offset) // knot_spacing
+    time_knots = window_offset[0] + np.arange(1, n_steps) * knot_spacing
+
     data = (pd.merge(ripple_locked_spikes.reset_index(), replay_info,
                      on='ripple_number')
             .assign(time=lambda df: df.time.dt.total_seconds()))
