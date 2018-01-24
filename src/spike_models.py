@@ -28,7 +28,7 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(neuron_key, animals).rename('is_spike')
     ripple_locked_spikes = reshape_to_segments(
-        spikes, ripple_times, window_offset=window_offset)
+        spikes, ripple_times, window_offset, sampling_frequency)
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
     formula = 'is_spike ~ 1'
@@ -170,7 +170,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     ripple_locked_spikes = reshape_to_segments(
-        spikes, ripple_times, window_offset=window_offset)
+        spikes, ripple_times, window_offset, sampling_frequency)
     time = ripple_locked_spikes.index.get_level_values('time')
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
@@ -203,7 +203,7 @@ def fit_replay(neuron_key, animals, sampling_frequency,
     ripple_times = (replay_info.set_index('ripple_number')
                     .loc[:, ['start_time', 'end_time']])
     ripple_locked_spikes = reshape_to_segments(
-        spikes, ripple_times, window_offset=window_offset)
+        spikes, ripple_times, window_offset, sampling_frequency)
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
     time_knots = -0.050 + 0.050 * np.arange(5)
