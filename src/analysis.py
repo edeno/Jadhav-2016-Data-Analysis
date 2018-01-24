@@ -75,7 +75,7 @@ def ripple_locked_firing_rate_change(ripple_times, neuron_info, animals,
     for neuron_key in neuron_info.index:
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes = reshape_to_segments(
-            spikes, ripple_times, window_offset=window_offset)
+            spikes, ripple_times, window_offset, sampling_frequency)
         time = (ripple_locked_spikes.index.get_level_values('time')
                 .total_seconds().values)
         trial_id = (ripple_locked_spikes.index
@@ -97,8 +97,8 @@ def ripple_cross_correlation(ripple_times, neuron_info, animals,
     for neuron_key in neuron_info.index:
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes = reshape_to_segments(
-            spikes, ripple_times, sampling_frequency=sampling_frequency,
-            window_offset=window_offset).unstack(level=0)
+            spikes, ripple_times, window_offset, sampling_frequency
+            ).unstack(level=0)
         before_ripple.append(ripple_locked_spikes.loc[:0].values)
         after_ripple.append(ripple_locked_spikes.loc[0:].values)
 
@@ -129,8 +129,8 @@ def ripple_spike_coherence(ripple_times, neuron_info, animals,
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes.append(
             reshape_to_segments(
-                spikes, ripple_times,
-                window_offset=window_offset).unstack(level=0))
+                spikes, ripple_times, window_offset, sampling_frequency
+                ).unstack(level=0))
     m = Multitaper(
         np.stack(ripple_locked_spikes, axis=-1),
         **multitaper_parameters,
@@ -243,9 +243,8 @@ def ripple_triggered_connectivity(
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
     reshape_to_trials = partial(
-        reshape_to_segments,
-        sampling_frequency=params['sampling_frequency'],
-        window_offset=window_of_interest, concat_axis=1)
+        reshape_to_segments, window_of_interest, params['sampling_frequency'],
+        concat_axis=1)
 
     logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
@@ -605,7 +604,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         replay_speedup_factor=16,
     ).fit()
 
-    test_marks = _get_ripple_marks(marks, ripple_times)
+    test_marks = _get_ripple_marks(marks, ripple_times, sampling_frequency)
     logger.info('Predicting replay types')
     results = [decoder.predict(ripple_marks, time.total_seconds())
                for ripple_marks, time in test_marks]
@@ -614,9 +613,9 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         results, ripple_times, position_info, epoch_key)
 
 
-def _get_ripple_marks(marks, ripple_times):
+def _get_ripple_marks(marks, ripple_times, sampling_frequency):
     mark_ripples = [reshape_to_segments(
-        tetrode_marks, ripple_times,
+        tetrode_marks, ripple_times, sampling_frequency=sampling_frequency,
         axis=0)
         for tetrode_marks in marks]
 
@@ -631,7 +630,8 @@ def _get_ripple_spikes(spikes_data, ripple_times, sampling_frequency):
     '''Given the ripple times, extract the spikes within the ripple
     '''
     spike_ripples = [reshape_to_segments(
-        spikes_datum, ripple_times, axis=0, sampling_frequency=sampling_frequency)
+        spikes_datum, ripple_times, axis=0,
+        sampling_frequency=sampling_frequency)
         for spikes_datum in spikes_data]
 
     return [
