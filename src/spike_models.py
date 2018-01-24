@@ -26,17 +26,20 @@ def fit_constant():
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
                         penalty=None):
     window_offset = (-0.100, 0.200)
-    spikes = get_spike_indicator_dataframe(neuron_key, animals).rename('is_spike')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
     ripple_locked_spikes = reshape_to_segments(
         spikes, ripple_times, window_offset, sampling_frequency)
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
     formula = 'is_spike ~ 1'
-    response, design_matrix = dmatrices(formula, ripple_locked_spikes, return_type='dataframe')
+    response, design_matrix = dmatrices(
+        formula, ripple_locked_spikes, return_type='dataframe')
     is_spike = ripple_locked_spikes.values.squeeze()
 
     model_coefficients, AIC, _ = fit_glm(response, design_matrix, penalty)
-    unique_time = (ripple_locked_spikes.unstack(level=0).index.total_seconds().values)
+    time = ripple_locked_spikes.index.get_level_values('time')
+    unique_time = time.total_seconds().values
     predict_design_matrix = np.ones((unique_time.size, 1))
 
     coords = {'time': unique_time}
@@ -183,7 +186,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
     is_spike = ripple_locked_spikes.values.squeeze()
 
     model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
-    unique_time = ripple_locked_spikes.unstack(level=0).index.total_seconds().values
+    unique_time = time.total_seconds().values
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=unique_time))[0]
 
