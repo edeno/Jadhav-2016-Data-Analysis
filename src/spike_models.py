@@ -19,11 +19,12 @@ SPEED_KNOTS = [1, 3, 10, 30]
 logger = getLogger(__name__)
 
 
-def fit_constant():
+def fit_constant(neuron_key, animals, penalty=None):
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
-    formula = ('is_spike ~ 1')
-    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    formula = 'is_spike ~ 1'
+    is_spike, design_matrix = dmatrices(
+        formula, spikes, return_type='dataframe')
     model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
 
 
