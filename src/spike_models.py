@@ -1,3 +1,5 @@
+from logging import getLogger
+
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -14,6 +16,8 @@ DROP_COLUMNS = ['from_well', 'to_well', 'labeled_segments', 'is_correct',
                 'task']
 SPEED_KNOTS = [1, 3, 10, 30]
 
+logger = getLogger(__name__)
+
 
 def fit_constant():
     spikes = get_spike_indicator_dataframe(
@@ -25,6 +29,7 @@ def fit_constant():
 
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
                         penalty=None):
+    logger.info(f'Fitting ripple constant model for {neuron_key}')
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
@@ -53,6 +58,7 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
 
 def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
                     penalty=1E-4):
+    logger.info(f'Fitting 2D position model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
     data = (position_info.join(spikes)
@@ -105,6 +111,7 @@ def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
 
 def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
                               position_info, speeds=_SPEEDS, penalty=1E-4):
+    logger.info(f'Fitting 2D position and speed model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
     data = (position_info.join(spikes)
@@ -170,6 +177,7 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
 
 def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
                          penalty=1E-4, knot_spacing=0.025):
+    logger.info(f'Fitting ripple spline model for {neuron_key}')
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     ripple_locked_spikes = reshape_to_segments(
@@ -201,6 +209,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
 
 def fit_replay(neuron_key, animals, sampling_frequency,
                replay_info, covariate, penalty=1E-4, knot_spacing=0.025):
+    logger.info(f'Fitting replay model for {neuron_key}')
     window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
