@@ -45,7 +45,7 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
 
     model_coefficients, AIC, _ = fit_glm(response, design_matrix, penalty)
     time = ripple_locked_spikes.index.get_level_values('time')
-    unique_time = time.total_seconds().values
+    unique_time = time.unique().total_seconds().values
     predict_design_matrix = np.ones((unique_time.size, 1))
 
     coords = {'time': unique_time}
@@ -195,7 +195,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
     is_spike = ripple_locked_spikes.values.squeeze()
 
     model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
-    unique_time = time.total_seconds().values
+    unique_time = time.unique().total_seconds().values
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=unique_time))[0]
 
