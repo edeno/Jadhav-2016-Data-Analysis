@@ -29,9 +29,8 @@ def fit_constant(neuron_key, animals, penalty=None):
 
 
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
-                        penalty=None):
+                        window_offset=(-0.500, 0.500), penalty=None):
     logger.info(f'Fitting ripple constant model for {neuron_key}')
-    window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
     ripple_locked_spikes = reshape_to_segments(
@@ -55,6 +54,37 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
         model_coefficients, predict_design_matrix,
         sampling_frequency, coords, dims, design_matrix, is_spike,
         trial_id, AIC)
+
+
+def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
+                    penalty=1E-4, knot_spacing=30):
+    logger.info(f'Fitting 1D position model for {neuron_key}')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
+    data = (position_info.join(spikes)
+            .drop(DROP_COLUMNS, axis=1)
+            .dropna())
+    min_distance, max_distance = (data.linear_distance.min(),
+                                  data.linear_distance.max())
+    n_steps = (max_distance - min_distance) // knot_spacing
+    position_knots = min_distance + np.arange(1, n_steps) * knot_spacing
+    formula = ('is_spike ~ 1 + cr(linear_distance, knots=position_knots,'
+               ' constraints="center")')
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+
+    predict_data = {
+        'linear_distance': np.arange(min_distance, np.floor(max_distance) + 1)}
+    predict_design_matrix = build_design_matrices(
+        [design_matrix.design_info], predict_data)[0]
+
+    coords = {'position': predict_data['linear_distance']}
+    dims = ['position']
+
+    return summarize_fit(
+        model_coefficients, predict_design_matrix,
+        sampling_frequency, coords, dims, design_matrix,
+        is_spike.values.squeeze(), trial_id=None, AIC=AIC)
 
 
 def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
@@ -177,9 +207,9 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
 
 
 def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
-                         penalty=1E-4, knot_spacing=0.025):
+                         window_offset=(-0.500, 0.500),
+                         penalty=1E-4, knot_spacing=0.050):
     logger.info(f'Fitting ripple spline model for {neuron_key}')
-    window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     ripple_locked_spikes = reshape_to_segments(
         spikes, ripple_times, window_offset, sampling_frequency)
@@ -209,9 +239,9 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
 
 
 def fit_replay(neuron_key, animals, sampling_frequency,
-               replay_info, covariate, penalty=1E-4, knot_spacing=0.025):
+               replay_info, covariate, window_offset=(-0.500, 0.500),
+               penalty=1E-4, knot_spacing=0.050):
     logger.info(f'Fitting replay model for {neuron_key} - {covariate}')
-    window_offset = (-0.100, 0.200)
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
     ripple_times = (replay_info.set_index('ripple_number')
