@@ -355,8 +355,7 @@ def summarize_fit(model_coefficients, predict_design_matrix,
     conditional_intensity = np.exp(
         np.dot(design_matrix, model_coefficients))
     ks_statistic = xr.DataArray(
-        TimeRescaling(conditional_intensity, is_spike, trial_id,
-                      adjust_for_short_trials=True).ks_statistic(),
+        TimeRescaling(conditional_intensity, is_spike).ks_statistic(),
         name='ks_statistic')
     AIC = xr.DataArray(AIC, name='AIC')
 
