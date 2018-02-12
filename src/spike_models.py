@@ -296,8 +296,8 @@ def fit_replay(neuron_key, animals, sampling_frequency,
 
     conditional_intensity = np.exp(np.dot(design_matrix, model_coefficients))
     ks_statistic = xr.DataArray(
-        TimeRescaling(conditional_intensity, is_spike.squeeze(),
-                      trial_id).ks_statistic(), name='ks_statistic')
+        TimeRescaling(conditional_intensity, is_spike.squeeze()
+                      ).ks_statistic(), name='ks_statistic')
     AIC = xr.DataArray(AIC, name='AIC')
 
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
