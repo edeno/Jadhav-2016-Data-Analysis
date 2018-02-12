@@ -559,6 +559,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
                               n_position_bins=61,
                               place_std_deviation=None,
                               mark_std_deviation=20,
+                              confidence_threshold=0.8,
                               mark_names=_MARKS,
                               brain_areas=_BRAIN_AREAS):
     logger.info('Decoding ripples')
@@ -602,6 +603,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         place_std_deviation=place_std_deviation,
         mark_std_deviation=mark_std_deviation,
         replay_speedup_factor=16,
+        confidence_threshold=confidence_threshold,
     ).fit()
 
     test_marks = _get_ripple_marks(marks, ripple_times, sampling_frequency)
