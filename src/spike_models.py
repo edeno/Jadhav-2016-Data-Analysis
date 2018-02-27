@@ -571,7 +571,7 @@ def insert_points(data, min_diff=30):
     return np.sort(np.concatenate((data, *new_points)))
 
 
-def get_position_knots(epoch_key, animals):
+def get_position_knots(epoch_key, animals, knot_spacing=30):
     animal, day, epoch = epoch_key
     task_file = get_data_structure(animals[animal], day, 'task', 'task')
     linearcoord = task_file[epoch - 1]['linearcoord'][0, 0].squeeze()
@@ -579,7 +579,8 @@ def get_position_knots(epoch_key, animals):
     coordinates = np.concatenate([arm[:, :, 0] for arm in linearcoord])
     coordinates = np.unique(coordinates, axis=0)
 
-    knots = [insert_points(np.mean(cluster(dim), axis=1), min_diff=30)
+    knots = [insert_points(np.mean(cluster(dim), axis=1),
+                           min_diff=knot_spacing)
              for dim in coordinates.T]
     return tuple(knots)
 
