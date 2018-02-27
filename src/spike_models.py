@@ -58,7 +58,7 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
 
 
 def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
-                    penalty=1E-4, knot_spacing=30):
+                    penalty=1E1, knot_spacing=30):
     logger.info(f'Fitting 1D position model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
@@ -151,7 +151,7 @@ def fit_1D_position_by_task(
 
 
 def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
-                    penalty=1E-4):
+                    penalty=1E1):
     logger.info(f'Fitting 2D position model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
@@ -334,7 +334,7 @@ def fit_2D_position_by_speed(neuron_key, animals, sampling_frequency,
 
 def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
                          window_offset=(-0.500, 0.500),
-                         penalty=1E-4, knot_spacing=0.050):
+                         penalty=1E1, knot_spacing=0.050):
     logger.info(f'Fitting ripple spline model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     ripple_locked_spikes = reshape_to_segments(
@@ -366,7 +366,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
 
 def fit_replay(neuron_key, animals, sampling_frequency,
                replay_info, covariate, window_offset=(-0.500, 0.500),
-               penalty=1E-4, knot_spacing=0.050):
+               penalty=1E1, knot_spacing=0.050):
     logger.info(f'Fitting replay model for {neuron_key} - {covariate}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
