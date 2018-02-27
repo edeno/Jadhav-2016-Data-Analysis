@@ -20,7 +20,9 @@ SPEED_KNOTS = [1, 3, 10, 30]
 logger = getLogger(__name__)
 
 
-def fit_constant(neuron_key, animals, penalty=None):
+def fit_position_constant(neuron_key, animals, sampling_frequency,
+                          position_info, penalty=0):
+    logger.info(f'Fitting position constant model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
     formula = 'is_spike ~ 1'
@@ -30,7 +32,7 @@ def fit_constant(neuron_key, animals, penalty=None):
 
 
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
-                        window_offset=(-0.500, 0.500), penalty=None):
+                        window_offset=(-0.500, 0.500), penalty=0):
     logger.info(f'Fitting ripple constant model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
