@@ -429,6 +429,70 @@ def fit_replay(neuron_key, animals, sampling_frequency,
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
 
+
+def fit_replay_no_interaction(neuron_key, animals, sampling_frequency,
+                              replay_info, covariate, window_offset=(
+                                  -0.500, 0.500),
+                              penalty=1E1, knot_spacing=0.050):
+    logger.info(f'Fitting replay model for {neuron_key} - {covariate}')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
+    ripple_times = (replay_info.set_index('ripple_number')
+                    .loc[:, ['start_time', 'end_time']])
+    ripple_locked_spikes = reshape_to_segments(
+        spikes, ripple_times, window_offset, sampling_frequency)
+    trial_id = (ripple_locked_spikes.index
+                .get_level_values('ripple_number').values)
+    n_steps = np.diff(window_offset) // knot_spacing
+    time_knots = window_offset[0] + np.arange(1, n_steps) * knot_spacing
+
+    data = (pd.merge(ripple_locked_spikes.reset_index(), replay_info,
+                     on='ripple_number')
+            .assign(time=lambda df: df.time.dt.total_seconds()))
+    formula = ('is_spike ~ {covariate} + '
+               'cr(time, knots=time_knots, constraints="center")').format(
+        covariate=covariate)
+
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+    time = ripple_locked_spikes.unstack(level=0).index.total_seconds().values
+    levels = data[covariate].unique()
+    firing_rate = []
+    multiplicative_gain = []
+
+    for level in levels:
+        predict_data = {
+            'time': time,
+            covariate: np.full_like(time, level, dtype=object)
+        }
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+        firing_rate.append(np.squeeze(
+            np.exp(predict_design_matrix.dot(results.coefficients)) *
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:].dot(results.coefficients[1:])))
+        )
+
+    dims = [covariate, 'time']
+    coords = {'time': time, covariate: levels}
+
+    firing_rate = xr.DataArray(
+        np.stack(firing_rate), dims=dims, coords=coords,
+        name='firing_rate')
+    multiplicative_gain = xr.DataArray(
+        np.stack(multiplicative_gain), dims=dims, coords=coords,
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
+        name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity, is_spike.squeeze()
+                      ).ks_statistic(), name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
 
