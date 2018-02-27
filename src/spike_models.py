@@ -88,6 +88,68 @@ def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
         is_spike.values.squeeze(), trial_id=None, AIC=results.AIC)
 
 
+def fit_1D_position_by_task(
+        neuron_key, animals, sampling_frequency, position_info,
+        penalty=1E1, knot_spacing=30):
+    logger.info(f'Fitting 1D position by task model for {neuron_key}')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
+    data = (position_info.join(spikes)
+            .drop(DROP_COLUMNS, axis=1)
+            .dropna().query('speed > 4'))
+    min_distance, max_distance = (data.linear_distance.min(),
+                                  data.linear_distance.max())
+    n_steps = (max_distance - min_distance) // knot_spacing
+    position_knots = min_distance + np.arange(1, n_steps) * knot_spacing
+    formula = (
+        'is_spike ~ 1 + task * cr(linear_distance,'
+        'knots=position_knots, constraints="center")')
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    firing_rate = []
+    multiplicative_gain = []
+
+    linear_distance = np.linspace(min_distance, max_distance, 100)
+    levels = ['Inbound', 'Outbound']
+
+    for level in levels:
+        predict_data = {
+            'linear_distance': linear_distance,
+            'task': np.full_like(linear_distance, level, dtype=object)
+        }
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+        firing_rate.append(np.squeeze(
+            np.exp(predict_design_matrix.dot(results.coefficients)) *
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:].dot(results.coefficients[1:])))
+        )
+
+    dims = ['task', 'position']
+    coords = {'position': linear_distance, 'task': levels}
+
+    firing_rate = xr.DataArray(
+        np.stack(firing_rate), dims=dims, coords=coords,
+        name='firing_rate')
+    multiplicative_gain = xr.DataArray(
+        np.stack(multiplicative_gain), dims=dims, coords=coords,
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
+        name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity, is_spike.squeeze()
+                      ).ks_statistic(), name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
+    return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
+                     ks_statistic, AIC))
+
+
 def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
                     penalty=1E-4):
     logger.info(f'Fitting 2D position model for {neuron_key}')
