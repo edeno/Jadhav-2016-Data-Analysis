@@ -173,8 +173,8 @@ def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], predict_data)[0]
 
-    firing_rate = (np.exp(np.dot(predict_design_matrix, model_coefficients))
-                   * sampling_frequency).reshape(x.shape)
+    firing_rate = (np.exp(predict_design_matrix @ results.coefficients)
+                   * sampling_frequency).reshape(x.shape).T
     multiplicative_gain = np.exp(
         predict_design_matrix[:, 1:] @ results.coefficients[1:]
     ).reshape(x.shape).T
