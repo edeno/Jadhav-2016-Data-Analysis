@@ -25,10 +25,26 @@ def fit_position_constant(neuron_key, animals, sampling_frequency,
     logger.info(f'Fitting position constant model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
+    data = (position_info.join(spikes)
+            .drop(DROP_COLUMNS, axis=1)
+            .dropna().query('speed > 4'))
+    min_distance, max_distance = (data.linear_distance.min(),
+                                  data.linear_distance.max())
     formula = 'is_spike ~ 1'
-    is_spike, design_matrix = dmatrices(
-        formula, spikes, return_type='dataframe')
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    linear_distance = np.arange(min_distance, np.floor(max_distance) + 1)
+    predict_design_matrix = np.ones((linear_distance.size, 1))
+
+    coords = {'position': linear_distance}
+    dims = ['position']
+
+    return summarize_fit(
+        results.coefficients, predict_design_matrix,
+        sampling_frequency, coords, dims, design_matrix,
+        is_spike.values.squeeze(), trial_id=None, AIC=results.AIC)
+
 
 
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
