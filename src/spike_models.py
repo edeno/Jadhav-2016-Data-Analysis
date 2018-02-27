@@ -544,10 +544,10 @@ def cluster(data, maxgap=5):
     '''Arrange data into groups where successive elements
        differ by no more than *maxgap*
 
-        >>> cluster([1, 6, 9, 100, 102, 105, 109, 134, 139], maxgap=10)
+    >>> cluster([1, 6, 9, 100, 102, 105, 109, 134, 139], maxgap=10)
         [[1, 6, 9], [100, 102, 105, 109], [134, 139]]
 
-        >>> cluster([1, 6, 9, 99, 100, 102, 105, 134, 139, 141], maxgap=10)
+    >>> cluster([1, 6, 9, 99, 100, 102, 105, 134, 139, 141], maxgap=10)
         [[1, 6, 9], [99, 100, 102, 105], [134, 139, 141]]
         https://stackoverflow.com/questions/14783947/grouping-clustering-numbers-in-python
     '''
