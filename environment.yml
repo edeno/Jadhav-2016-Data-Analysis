@@ -31,4 +31,5 @@ dependencies:
 - ripple_detection
 - loren_frank_data_processing
 - spectral_connectivity
+- regularized_glm
 - netcdf4

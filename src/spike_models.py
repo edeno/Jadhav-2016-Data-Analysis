@@ -4,11 +4,12 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from patsy import build_design_matrices, dmatrices, dmatrix
-from statsmodels.api import GLM, families
+from statsmodels.api import families
 
 from loren_frank_data_processing import (get_spike_indicator_dataframe,
                                          reshape_to_segments)
 from loren_frank_data_processing.core import get_data_structure
+from regularized_glm import penalized_IRLS
 from time_rescale import TimeRescaling
 
 _SPEEDS = [1, 2, 3, 4, 10, 20, 30, 40]
@@ -42,7 +43,7 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
         formula, ripple_locked_spikes, return_type='dataframe')
     is_spike = ripple_locked_spikes.values.squeeze()
 
-    model_coefficients, AIC, _ = fit_glm(response, design_matrix, penalty)
+    results = fit_glm(response, design_matrix, penalty)
     time = ripple_locked_spikes.index.get_level_values('time')
     unique_time = time.unique().total_seconds().values
     predict_design_matrix = np.ones((unique_time.size, 1))
@@ -51,9 +52,9 @@ def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
     dims = ['time']
 
     return summarize_fit(
-        model_coefficients, predict_design_matrix,
+        results.coefficients, predict_design_matrix,
         sampling_frequency, coords, dims, design_matrix, is_spike,
-        trial_id, AIC)
+        trial_id, results.AIC)
 
 
 def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
@@ -71,7 +72,7 @@ def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
     formula = ('is_spike ~ 1 + cr(linear_distance, knots=position_knots,'
                ' constraints="center")')
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    results = fit_glm(is_spike, design_matrix, penalty)
 
     predict_data = {
         'linear_distance': np.arange(min_distance, np.floor(max_distance) + 1)}
@@ -82,9 +83,9 @@ def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
     dims = ['position']
 
     return summarize_fit(
-        model_coefficients, predict_design_matrix,
+        results.coefficients, predict_design_matrix,
         sampling_frequency, coords, dims, design_matrix,
-        is_spike.values.squeeze(), trial_id=None, AIC=AIC)
+        is_spike.values.squeeze(), trial_id=None, AIC=results.AIC)
 
 
 def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
@@ -100,7 +101,7 @@ def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
                'cr(y_position, knots=y_knots), constraints="center")')
 
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    results = fit_glm(is_spike, design_matrix, penalty)
 
     x = np.linspace(data.x_position.min(), data.x_position.max(), 50)
     y = np.linspace(data.y_position.min(), data.y_position.max(), 50)
@@ -113,8 +114,8 @@ def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
     firing_rate = (np.exp(np.dot(predict_design_matrix, model_coefficients))
                    * sampling_frequency).reshape(x.shape)
     multiplicative_gain = np.exp(
-        np.dot(predict_design_matrix[:, 1:], model_coefficients[1:])
-    ).reshape(x.shape)
+        predict_design_matrix[:, 1:] @ results.coefficients[1:]
+    ).reshape(x.shape).T
     coords = {
         'x_position': np.unique(x),
         'y_position': np.unique(y),
@@ -126,22 +127,86 @@ def fit_2D_position(neuron_key, animals, sampling_frequency, position_info,
                                        coords=coords,
                                        name='multiplicative_gain')
     baseline_firing_rate = xr.DataArray(
-        np.exp(model_coefficients[0]) * sampling_frequency,
+        np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(np.dot(design_matrix, model_coefficients))
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
         name='ks_statistic')
-    AIC = xr.DataArray(AIC, name='AIC')
+    AIC = xr.DataArray(results.AIC, name='AIC')
 
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
 
 
-def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
-                              position_info, speeds=_SPEEDS, penalty=1E-4):
+def fit_2D_position_by_task(neuron_key, animals, sampling_frequency,
+                            position_info, penalty=1E1):
+    logger.info(f'Fitting 2D position model by task for {neuron_key}')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
+    data = (position_info.join(spikes)
+            .drop(DROP_COLUMNS, axis=1)
+            .dropna())
+    x_knots, y_knots = get_position_knots(neuron_key[:-2], animals)
+    formula = ('is_spike ~ 1 + task * te(cr(x_position, knots=x_knots), '
+               'cr(y_position, knots=y_knots), constraints="center")')
+
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    x = np.linspace(data.x_position.min(), data.x_position.max(), 50)
+    y = np.linspace(data.y_position.min(), data.y_position.max(), 50)
+    x, y = np.meshgrid(x, y)
+
+    tasks = ['Inbound', 'Outbound']
+    firing_rate = []
+    multiplicative_gain = []
+
+    for task in tasks:
+        predict_data = {'x_position': x.ravel(), 'y_position': y.ravel(),
+                        'task': np.full_like(x.ravel(), task, dtype=object)}
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+
+        rate = (np.exp(predict_design_matrix @ results.coefficients)
+                * sampling_frequency)
+        firing_rate.append(rate.reshape(x.shape).T)
+
+        gain = np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        multiplicative_gain.append(gain.reshape(x.shape).T)
+
+    coords = {
+        'task': tasks,
+        'x_position': np.unique(x),
+        'y_position': np.unique(y),
+    }
+    dims = ['task', 'x_position', 'y_position']
+    firing_rate = xr.DataArray(np.stack(firing_rate),
+                               dims=dims,
+                               coords=coords,
+                               name='firing_rate')
+    multiplicative_gain = xr.DataArray(np.stack(multiplicative_gain),
+                                       dims=dims,
+                                       coords=coords,
+                                       name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
+        name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity,
+                      is_spike.squeeze()).ks_statistic(),
+        name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
+    return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
+                     ks_statistic, AIC))
+
+def fit_2D_position_by_speed(neuron_key, animals, sampling_frequency,
+                              position_info, speeds=_SPEEDS, penalty=1E1):
     logger.info(f'Fitting 2D position and speed model for {neuron_key}')
     spikes = get_spike_indicator_dataframe(
         neuron_key, animals).rename('is_spike')
@@ -154,7 +219,7 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
                'constraints="center")')
 
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    results = fit_glm(is_spike, design_matrix, penalty)
 
     x = np.linspace(data.x_position.min(), data.x_position.max(), 50)
     y = np.linspace(data.y_position.min(), data.y_position.max(), 50)
@@ -169,20 +234,19 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        rate = (np.exp(np.dot(predict_design_matrix, model_coefficients))
+        rate = (np.exp(predict_design_matrix @ results.coefficients)
                 * sampling_frequency)
-        firing_rate.append(rate.reshape(x.shape))
+        firing_rate.append(rate.reshape(x.shape).T)
 
-        gain = np.exp(np.dot(predict_design_matrix[:, 1:],
-                             model_coefficients[1:]))
-        multiplicative_gain.append(gain.reshape(x.shape))
+        gain = np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        multiplicative_gain.append(gain.reshape(x.shape).T)
 
     coords = {
         'speed': speeds,
         'x_position': np.unique(x),
         'y_position': np.unique(y),
     }
-    dims = ['speeds', 'x_position', 'y_position']
+    dims = ['speed', 'x_position', 'y_position']
     firing_rate = xr.DataArray(np.stack(firing_rate),
                                dims=dims,
                                coords=coords,
@@ -192,15 +256,15 @@ def fit_2D_position_and_speed(neuron_key, animals, sampling_frequency,
                                        coords=coords,
                                        name='multiplicative_gain')
     baseline_firing_rate = xr.DataArray(
-        np.exp(model_coefficients[0]) * sampling_frequency,
+        np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(np.dot(design_matrix, model_coefficients))
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
         name='ks_statistic')
-    AIC = xr.DataArray(AIC, name='AIC')
+    AIC = xr.DataArray(results.AIC, name='AIC')
 
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
@@ -224,7 +288,7 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
         return_type='dataframe')
     is_spike = ripple_locked_spikes.values.squeeze()
 
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    results = fit_glm(is_spike, design_matrix, penalty)
     unique_time = time.unique().total_seconds().values
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], dict(time=unique_time))[0]
@@ -233,9 +297,9 @@ def fit_ripple_over_time(neuron_key, animals, sampling_frequency, ripple_times,
     dims = ['time']
 
     return summarize_fit(
-        model_coefficients, predict_design_matrix,
+        results.coefficients, predict_design_matrix,
         sampling_frequency, coords, dims, design_matrix, is_spike,
-        trial_id, AIC)
+        trial_id, results.AIC)
 
 
 def fit_replay(neuron_key, animals, sampling_frequency,
@@ -261,7 +325,7 @@ def fit_replay(neuron_key, animals, sampling_frequency,
         covariate=covariate)
 
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
-    model_coefficients, AIC, _ = fit_glm(is_spike, design_matrix, penalty)
+    results = fit_glm(is_spike, design_matrix, penalty)
     time = ripple_locked_spikes.unstack(level=0).index.total_seconds().values
     levels = data[covariate].unique()
     firing_rate = []
@@ -274,11 +338,11 @@ def fit_replay(neuron_key, animals, sampling_frequency,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
-            np.exp(predict_design_matrix.dot(model_coefficients)) *
+        firing_rate.append(np.squeeze(
+            np.exp(predict_design_matrix.dot(results.coefficients))) *
             sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:].dot(model_coefficients[1:]))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:].dot(results.coefficients[1:])))
         )
 
     dims = [covariate, 'time']
@@ -291,58 +355,45 @@ def fit_replay(neuron_key, animals, sampling_frequency,
         np.stack(multiplicative_gain), dims=dims, coords=coords,
         name='multiplicative_gain')
     baseline_firing_rate = xr.DataArray(
-        np.exp(model_coefficients[0]) * sampling_frequency,
+        np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(np.dot(design_matrix, model_coefficients))
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
-    AIC = xr.DataArray(AIC, name='AIC')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
+    return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
+                     ks_statistic, AIC))
 
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
 
 
 def fit_glm(response, design_matrix, penalty=None):
-    model = GLM(response, design_matrix, family=families.Poisson())
     if penalty is not None:
-        regularization_weights = np.ones((design_matrix.shape[1],)) * penalty
-        regularization_weights[0] = 0.0
-        fit = model.fit_regularized(alpha=regularization_weights, L1_wt=0,
-                                    maxiter=30)
+        penalty = np.ones((design_matrix.shape[1],)) * penalty
+        penalty[0] = 0.0  # don't penalize the intercept
     else:
-        try:
-            fit = model.fit(maxiter=30)
-        except (ValueError, np.linalg.LinAlgError):
-            fit = None
-
-    try:
-        model_coefficients = fit.params
-    except AttributeError:
-        model_coefficients = np.full((design_matrix.shape[1],), np.nan)
-    try:
-        model_covariance_matrix = fit.cov_params()
-    except AttributeError:
-        model_covariance_matrix = None
-    try:
-        AIC = fit.aic
-    except AttributeError:
-        AIC = np.nan
-
-    return model_coefficients, AIC, model_covariance_matrix
+        penalty = np.finfo(np.float).eps
+    return penalized_IRLS(
+        np.array(design_matrix), np.array(response).squeeze(),
+        family=families.Poisson(), penalty=penalty)
 
 
 def summarize_fit(model_coefficients, predict_design_matrix,
                   sampling_frequency, coords, dims, design_matrix, is_spike,
                   trial_id=None, AIC=np.nan):
+    if np.allclose(model_coefficients, 0):
+        model_coefficients *= np.nan
     firing_rate = xr.DataArray(
-        np.exp(np.dot(predict_design_matrix, model_coefficients)) *
-        sampling_frequency, dims=dims,
+        np.squeeze(np.exp(predict_design_matrix @ model_coefficients) *
+                   sampling_frequency), dims=dims,
         coords=coords, name='firing_rate')
     try:
-        multiplicative_gain = xr.DataArray(np.exp(
-            np.dot(predict_design_matrix[:, 1:], model_coefficients[1:])),
+        multiplicative_gain = xr.DataArray(np.squeeze(np.exp(
+            predict_design_matrix[:, 1:] @ model_coefficients[1:])),
             dims=dims, coords=coords,
             name='multiplicative_gain')
     except ValueError:
@@ -352,8 +403,7 @@ def summarize_fit(model_coefficients, predict_design_matrix,
     baseline_firing_rate = xr.DataArray(np.exp(
         model_coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
-    conditional_intensity = np.exp(
-        np.dot(design_matrix, model_coefficients))
+    conditional_intensity = np.exp(design_matrix @ model_coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike).ks_statistic(),
         name='ks_statistic')
