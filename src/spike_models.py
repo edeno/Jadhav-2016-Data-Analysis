@@ -13,8 +13,7 @@ from regularized_glm import penalized_IRLS
 from time_rescale import TimeRescaling
 
 _SPEEDS = [1, 2, 3, 4, 10, 20, 30, 40]
-DROP_COLUMNS = ['from_well', 'to_well', 'labeled_segments', 'is_correct',
-                'task']
+DROP_COLUMNS = ['from_well', 'to_well', 'labeled_segments']
 SPEED_KNOTS = [1, 3, 10, 30]
 
 logger = getLogger(__name__)
