@@ -64,7 +64,7 @@ def fit_1D_position(neuron_key, animals, sampling_frequency, position_info,
         neuron_key, animals).rename('is_spike')
     data = (position_info.join(spikes)
             .drop(DROP_COLUMNS, axis=1)
-            .dropna())
+            .dropna().query('speed > 4'))
     min_distance, max_distance = (data.linear_distance.min(),
                                   data.linear_distance.max())
     n_steps = (max_distance - min_distance) // knot_spacing
