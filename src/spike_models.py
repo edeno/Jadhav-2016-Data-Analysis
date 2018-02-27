@@ -290,7 +290,7 @@ def fit_2D_position_by_speed(neuron_key, animals, sampling_frequency,
     firing_rate = []
     multiplicative_gain = []
 
-    for speed in speeds:
+    for speed in _SPEEDS:
         predict_data = {'x_position': x.ravel(), 'y_position': y.ravel(),
                         'speed': np.ones_like(x.ravel()) * speed}
         predict_design_matrix = build_design_matrices(
@@ -304,7 +304,7 @@ def fit_2D_position_by_speed(neuron_key, animals, sampling_frequency,
         multiplicative_gain.append(gain.reshape(x.shape).T)
 
     coords = {
-        'speed': speeds,
+        'speed': _SPEEDS,
         'x_position': np.unique(x),
         'y_position': np.unique(y),
     }
