@@ -27,7 +27,7 @@ from spectral_connectivity.statistics import (coherence_bias,
                                               get_normal_distribution_p_values)
 from spectral_connectivity.transforms import _sliding_window
 
-from .spike_train import cross_correlate, perievent_time_spline_estimate
+from .spike_train import cross_correlate
 
 logger = getLogger(__name__)
 
@@ -63,30 +63,6 @@ def entire_session_connectivity(
     save_canonical_coherence(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
-
-
-def ripple_locked_firing_rate_change(ripple_times, neuron_info, animals,
-                                     sampling_frequency,
-                                     window_offset=None,
-                                     n_boot_samples=None,
-                                     formula='bs(time, df=5)'):
-
-    estimate = []
-    for neuron_key in neuron_info.index:
-        spikes = get_spike_indicator_dataframe(neuron_key, animals)
-        ripple_locked_spikes = reshape_to_segments(
-            spikes, ripple_times, window_offset, sampling_frequency)
-        time = (ripple_locked_spikes.index.get_level_values('time')
-                .total_seconds().values)
-        trial_id = (ripple_locked_spikes.index
-                    .get_level_values('ripple_number').values)
-        estimate.append(
-            perievent_time_spline_estimate(
-                ripple_locked_spikes.values.squeeze(),
-                time, sampling_frequency, formula=formula,
-                n_boot_samples=n_boot_samples, trial_id=trial_id))
-
-    return xr.concat(estimate, dim=neuron_info.neuron_id)
 
 
 def ripple_cross_correlation(ripple_times, neuron_info, animals,
