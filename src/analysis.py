@@ -479,7 +479,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
 
     return Kay_ripple_detector(
         time, hippocampus_lfps.values, speed.values, sampling_frequency,
-        minimum_duration=pd.Timedelta(milliseconds=15), zscore_threshold=3)
+        minimum_duration=pd.Timedelta(milliseconds=15), zscore_threshold=2)
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
