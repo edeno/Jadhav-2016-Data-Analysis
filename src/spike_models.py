@@ -45,6 +45,57 @@ def fit_position_constant(neuron_key, animals, sampling_frequency,
         is_spike.values.squeeze(), trial_id=None, AIC=results.AIC)
 
 
+def fit_task(neuron_key, animals, sampling_frequency,
+             position_info, penalty=0):
+    logger.info(f'Fitting task model for {neuron_key}')
+    spikes = get_spike_indicator_dataframe(
+        neuron_key, animals).rename('is_spike')
+    data = (position_info.join(spikes)
+            .drop(DROP_COLUMNS, axis=1)
+            .dropna().query('speed > 4'))
+    formula = 'is_spike ~ 1 + task'
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    tasks = position_info.task.unique()
+    firing_rate = []
+    multiplicative_gain = []
+
+    for task in tasks:
+        predict_data = {
+            'task': task
+        }
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+        firing_rate.append(np.squeeze(
+            np.exp(predict_design_matrix.dot(results.coefficients)) *
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:].dot(results.coefficients[1:])))
+        )
+    coords = {'task': tasks}
+    dims = ['task']
+
+    firing_rate = xr.DataArray(
+        np.stack(firing_rate), dims=dims, coords=coords,
+        name='firing_rate')
+    multiplicative_gain = xr.DataArray(
+        np.stack(multiplicative_gain), dims=dims, coords=coords,
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
+        name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity, is_spike.squeeze()
+                      ).ks_statistic(), name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
+    return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
+                     ks_statistic, AIC))
+
+
 
 def fit_ripple_constant(neuron_key, animals, sampling_frequency, ripple_times,
                         window_offset=(-0.500, 0.500), penalty=0):
