@@ -654,6 +654,7 @@ def get_position_knots(epoch_key, animals, knot_spacing=30):
 
 
 def lag(df, trial=None, n_lags=1, fillna_value=0.0):
+    df = pd.Series(df) if not isinstance(df, pd.Series) else df
     df = df.groupby(trial) if trial is not None else df
     return pd.concat([df.shift(lag).fillna(fillna_value)
                       for lag in np.arange(1, n_lags + 1)], axis=1)
