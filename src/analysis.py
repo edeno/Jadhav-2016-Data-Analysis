@@ -9,13 +9,14 @@ from logging import getLogger
 import numpy as np
 import pandas as pd
 import xarray as xr
+from scipy.signal import filtfilt, hilbert, remez
 from scipy.stats import linregress
 
 from loren_frank_data_processing import (get_interpolated_position_dataframe,
-                                         get_LFP_dataframe,
+                                         get_LFP_dataframe, get_LFPs,
                                          get_multiunit_indicator_dataframe,
                                          get_spike_indicator_dataframe,
-                                         make_neuron_dataframe,
+                                         get_trial_time, make_neuron_dataframe,
                                          make_tetrode_dataframe,
                                          reshape_to_segments, save_xarray)
 from replay_classification import ClusterlessDecoder, SortedSpikeDecoder
@@ -74,7 +75,7 @@ def ripple_cross_correlation(ripple_times, neuron_info, animals,
         spikes = get_spike_indicator_dataframe(neuron_key, animals)
         ripple_locked_spikes = reshape_to_segments(
             spikes, ripple_times, window_offset, sampling_frequency
-            ).unstack(level=0)
+        ).unstack(level=0)
         before_ripple.append(ripple_locked_spikes.loc[:0].values)
         after_ripple.append(ripple_locked_spikes.loc[0:].values)
 
@@ -106,7 +107,7 @@ def ripple_spike_coherence(ripple_times, neuron_info, animals,
         ripple_locked_spikes.append(
             reshape_to_segments(
                 spikes, ripple_times, window_offset, sampling_frequency
-                ).unstack(level=0))
+            ).unstack(level=0))
     m = Multitaper(
         np.stack(ripple_locked_spikes, axis=-1),
         **multitaper_parameters,
@@ -432,10 +433,11 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     logger.info('Detecting ripples')
 
     tetrode_info = make_tetrode_dataframe(animals).xs(
-            epoch_key, drop_level=False)
+        epoch_key, drop_level=False)
     # Get cell-layer CA1, iCA1 LFPs
 
-    brain_areas = [brain_areas] if isinstance(brain_areas, str) else brain_areas
+    brain_areas = [brain_areas] if isinstance(
+        brain_areas, str) else brain_areas
     is_brain_areas = tetrode_info.area.isin(brain_areas)
     if 'CA1' in brain_areas:
         is_brain_areas = is_brain_areas & tetrode_info.descrip.isin(['riptet'])
@@ -541,7 +543,8 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     logger.info('Decoding ripples')
     tetrode_info = make_tetrode_dataframe(animals).xs(
         epoch_key, drop_level=False)
-    brain_areas = [brain_areas] if isinstance(brain_areas, str) else brain_areas
+    brain_areas = [brain_areas] if isinstance(
+        brain_areas, str) else brain_areas
     is_brain_areas = tetrode_info.area.isin(brain_areas)
     brain_areas_tetrodes = tetrode_info[
         is_brain_areas &
