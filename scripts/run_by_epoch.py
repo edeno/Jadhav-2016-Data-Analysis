@@ -339,7 +339,7 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_locked_spiking(epoch_key)
+    estimate_ripple_locked_spiking(epoch_key, logger)
     estimate_theta_spike_field_coherence(epoch_key, logger)
     estimate_ripple_locked_spike_spike_coherence(epoch_key)
     estimate_spike_task_1D_information(epoch_key, logger)
