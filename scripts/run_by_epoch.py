@@ -72,16 +72,9 @@ def estimate_ripple_coherence(epoch_key):
         epoch_key, replay_info.to_xarray(), '/replay_info')
 
 
-def estimate_ripple_locked_spiking(epoch_key, logger,
-                                   window_offset=(-0.500, 0.500)):
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
+def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
+                                   neuron_info, window_offset=(-0.500, 0.500)):
 
-    replay_info, _, _ = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)
-
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
     ripple_locked_spikes = [reshape_to_segments(
         get_spike_indicator_dataframe(neuron_key, ANIMALS).rename('is_spike'),
         ripple_times, window_offset, SAMPLING_FREQUENCY)
@@ -106,14 +99,8 @@ def estimate_ripple_locked_spiking(epoch_key, logger,
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
 
-def estimate_spike_task_1D_information(epoch_key, logger):
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
-    ripple_indicator = get_ripple_indicator(
-        epoch_key, ANIMALS, ripple_times)
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+def estimate_spike_task_1D_information(
+        epoch_key, ripple_indicator, neuron_info, position_info):
 
     constant_model = []
     task_model = []
@@ -124,7 +111,6 @@ def estimate_spike_task_1D_information(epoch_key, logger):
     position_by_speed_by_task_model = []
 
     for neuron_key in neuron_info.index:
-        logger.info(neuron_key)
         spikes = get_spike_indicator_dataframe(
             neuron_key, ANIMALS).rename('is_spike')
         non_ripple_data = (
@@ -172,17 +158,14 @@ def estimate_spike_task_1D_information(epoch_key, logger):
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
 
-def estimate_theta_spike_field_coherence(epoch_key, logger):
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+def estimate_theta_spike_field_coherence(epoch_key, neuron_info,
+                                         position_info):
     theta = get_hippocampal_theta(epoch_key, ANIMALS, SAMPLING_FREQUENCY)
 
     theta_phase_model = []
     theta_phase_by_position_model = []
 
     for neuron_key in neuron_info.index:
-        logger.info(neuron_key)
         spikes = get_spike_indicator_dataframe(
             neuron_key, ANIMALS).rename('is_spike')
         data = (theta.join(spikes)
@@ -205,14 +188,8 @@ def estimate_theta_spike_field_coherence(epoch_key, logger):
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
 
-def estimate_2D_spike_task_information(epoch_key, logger):
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
-    ripple_indicator = get_ripple_indicator(
-        epoch_key, ANIMALS, ripple_times)
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+def estimate_2D_spike_task_information(
+        epoch_key, ripple_indicator, neuron_info, position_info):
 
     position_2D_model = []
     position_2D_by_task_model = []
@@ -220,7 +197,6 @@ def estimate_2D_spike_task_information(epoch_key, logger):
     position_2D_by_speed_and_task_model = []
 
     for neuron_key in neuron_info.index:
-        logger.info(neuron_key)
         spikes = get_spike_indicator_dataframe(
             neuron_key, ANIMALS).rename('is_spike')
         non_ripple_data = (
@@ -254,12 +230,9 @@ def estimate_2D_spike_task_information(epoch_key, logger):
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
 
-def estimate_ripple_locked_spike_spike_coherence(epoch_key):
-    window_offset = (-0.250, 0.250)
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
+def estimate_ripple_locked_spike_spike_coherence(
+        epoch_key, ripple_times, neuron_info, window_offset=(-0.250, 0.250)):
+
     spikes = np.stack(
         [get_ripple_locked_spikes(
             key, ripple_times, ANIMALS, SAMPLING_FREQUENCY, window_offset
@@ -339,11 +312,31 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logger.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    estimate_ripple_locked_spiking(epoch_key, logger)
-    estimate_theta_spike_field_coherence(epoch_key, logger)
-    estimate_ripple_locked_spike_spike_coherence(epoch_key)
-    estimate_spike_task_1D_information(epoch_key, logger)
-    estimate_2D_spike_task_information(epoch_key, logger)
+    ripple_times = detect_epoch_ripples(
+        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
+    ripple_indicator = get_ripple_indicator(
+        epoch_key, ANIMALS, ripple_times)
+    neuron_info = make_neuron_dataframe(ANIMALS).xs(
+        epoch_key, drop_level=False).query('numspikes > 0')
+    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+    replay_info, _, _ = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times)
+
+    logger.info('Estimating ripple-locked spiking models...')
+    estimate_ripple_locked_spiking(
+        epoch_key, ripple_times, replay_info, neuron_info)
+    logger.info('Estimating theta spike-field coherence...')
+    estimate_theta_spike_field_coherence(
+        epoch_key, neuron_info, position_info)
+    logger.info('Estimating ripple-locked spike-spike coherence...')
+    estimate_ripple_locked_spike_spike_coherence(
+        epoch_key, ripple_times, neuron_info)
+    logger.info('Estimating non-ripple 1D spike models...')
+    estimate_spike_task_1D_information(
+        epoch_key, ripple_indicator, neuron_info, position_info)
+    logger.info('Estimating non-ripple 2D spike models...')
+    estimate_2D_spike_task_information(
+        epoch_key, ripple_indicator, neuron_info, position_info)
 
     logger.info('Finished Processing')
 
