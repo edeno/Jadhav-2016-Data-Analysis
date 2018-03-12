@@ -780,3 +780,130 @@ def _subtract_event_related_potential(df):
 
 def is_overlap(band1, band2):
     return (band1[0] < band2[1]) & (band2[0] < band1[1])
+
+
+def get_ripple_indicator(epoch_key, animals, ripple_times):
+    time = get_trial_time(epoch_key, animals)
+    ripple_indicator = pd.Series(np.zeros_like(time, dtype=bool), index=time)
+    for _, start_time, end_time in ripple_times.itertuples():
+        ripple_indicator[start_time:end_time] = True
+
+    return ripple_indicator
+
+
+def theta_filter(sampling_frequency):
+    ORDER = 1500
+    nyquist = 0.5 * sampling_frequency
+    TRANSITION_BAND = 2
+    THETA_BAND = [6, 10]
+    desired = [0, THETA_BAND[0] - TRANSITION_BAND, THETA_BAND[0],
+               THETA_BAND[1], THETA_BAND[1] + TRANSITION_BAND, nyquist]
+    return remez(ORDER, desired, [0, 1, 0], Hz=sampling_frequency), 1.0
+
+
+def get_hippocampal_theta(epoch_key, animals, sampling_frequency):
+    tetrode_info = make_tetrode_dataframe(animals).xs(
+        epoch_key, drop_level=False)
+
+    tetrode_key = tetrode_info.loc[tetrode_info.descrip == 'CA1Ref'].index
+    lfp = get_LFPs(tetrode_key, animals)
+    filter_numerator, filter_denominator = theta_filter(sampling_frequency)
+    theta_filtered = filtfilt(
+        filter_numerator, filter_denominator, lfp.values, axis=0)
+    analytic_signal = hilbert(theta_filtered, axis=0)
+    instantaneous_phase = np.angle(analytic_signal)
+    instantaneous_amplitude = np.abs(analytic_signal)
+
+    return pd.DataFrame(
+        np.concatenate((instantaneous_phase, instantaneous_amplitude), axis=1),
+        index=lfp.index,
+        columns=['instantaneous_phase', 'instantaneous_amplitude'])
+
+
+def coherence_rate_adjustment(firing_rate_condition1,
+                              firing_rate_condition2, spike_power_spectrum,
+                              homogeneous_poisson_noise=0, dt=1):
+    '''Correction for the spike-field or spike-spike coherence when the
+    conditions have different firing rates.
+
+    When comparing the coherence of two conditions, a change in firing rate
+    results in a change in coherence without an increase in coupling.
+    This adjustment modifies the coherence of one of the conditions, so
+    that a difference in coherence between conditions indicates a change
+    in coupling, not firing rate. See [1] for details.
+
+    If using to compare spike-spike coherence, not that the coherence
+    adjustment must be applied twice, once for each spike train.
+    Adjusts `firing_rate_condition1` to `firing_rate_condition2`.
+
+    Parameters
+    ----------
+    firing_rate_condition1, firing_rate_condition2 : float
+        Average firing rates for each condition.
+    spike_power_spectrum : ndarray, shape (n_frequencies,)
+        Power spectrum of the spike train in condition 1.
+    homogeneous_poisson_noise : float, optional
+        Beta in [1].
+    dt : float, optional
+        Size of time step.
+
+    Returns
+    -------
+    rate_adjustment_factor : ndarray, shape (n_frequencies,)
+
+    References
+    ----------
+    .. [1] Aoi, M.C., Lepage, K.Q., Kramer, M.A., and Eden, U.T. (2015).
+           Rate-adjusted spike-LFP coherence comparisons from spike-train
+           statistics. Journal of Neuroscience Methods 240, 141-153.
+
+    '''
+    # alpha in [1]
+    firing_rate_ratio = firing_rate_condition2 / firing_rate_condition1
+    adjusted_firing_rate = (
+        (1 / firing_rate_ratio - 1) * firing_rate_condition1 +
+        homogeneous_poisson_noise / firing_rate_ratio ** 2) * dt ** 2
+    return 1 / np.sqrt(1 + (adjusted_firing_rate / spike_power_spectrum))
+
+
+def adjusted_coherence_magnitude(spikes, sampling_frequency, m, c):
+    '''
+
+    Parameters
+    ----------
+    spikes : ndarray, shape (n_time, n_trials, n_signals)
+    sampling_frequency : float
+    **multitaper_params : kwargs
+
+    Returns
+    -------
+    adjusted_coherence_magnitude : ndarray, shape (n_time, n_frequencies, n_signals, n_signals)
+
+    '''
+
+    dt = 1.0 / sampling_frequency
+
+    # Multiply by sampling_frequency?
+    average_rate = _sliding_window(
+        spikes, m.n_time_samples_per_window,
+        m.n_time_samples_per_step, axis=0).mean(axis=(1, 3))
+
+    power = c.power()
+    n_time_windows = average_rate.shape[0]
+
+    adjustment_factor = np.stack([
+        coherence_rate_adjustment(average_rate[0], average_rate[time_ind],
+                                  power[0, ...], dt=dt)
+        for time_ind in range(n_time_windows)
+    ], axis=0)[..., np.newaxis]
+
+    return np.abs(c.coherency()
+                  * adjustment_factor *
+                  adjustment_factor.swapaxes(-1, -2))
+
+
+def get_ripple_locked_spikes(neuron_key, ripple_times, animals,
+                             sampling_frequency=1, window_offset=(-0.5, 0.5)):
+    spikes = get_spike_indicator_dataframe(neuron_key, animals)
+    return reshape_to_segments(
+        spikes, ripple_times, window_offset, sampling_frequency)
