@@ -834,7 +834,8 @@ def adjusted_coherence_magnitude(spikes, sampling_frequency, m, c):
 
     Returns
     -------
-    adjusted_coherence_magnitude : ndarray, shape (n_time, n_frequencies, n_signals, n_signals)
+    adjusted_coherence_magnitude : ndarray, shape (n_time, n_frequencies,
+                                                   n_signals, n_signals)
 
     '''
 
