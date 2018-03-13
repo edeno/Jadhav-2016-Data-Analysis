@@ -941,7 +941,7 @@ def get_position_knots(epoch_key, animals, knot_spacing=30):
     coordinates = np.concatenate([arm[:, :, 0] for arm in linearcoord])
     coordinates = np.unique(coordinates, axis=0)
 
-    knots = [insert_points(np.mean(cluster(dim), axis=1),
+    knots = [insert_points([np.mean(x) for x in cluster(dim)],
                            min_diff=knot_spacing)
              for dim in coordinates.T]
     return tuple(knots)
