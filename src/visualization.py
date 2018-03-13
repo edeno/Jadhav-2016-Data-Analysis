@@ -40,9 +40,9 @@ def plot_perievent_raster(neuron_or_tetrode_key, animals, events, tetrode_info,
         spikes, events, window_offset=window_offset,
         sampling_frequency=sampling_frequency).unstack(level=0).fillna(0)
     time = event_locked_spikes.index.total_seconds()
-    spike_index, event_number = np.nonzero(event_locked_spikes.values)
+    spike_index, event_index = np.nonzero(event_locked_spikes.values)
 
-    ax.scatter(time[spike_index], event_number, **scatter_kwargs)
+    ax.scatter(time[spike_index], event_index, **scatter_kwargs)
     ax.axvline(0.0, color='black')
     ax.set_title(
         tetrode_info.loc[neuron_or_tetrode_key[:4]].area.upper() + ' - ' +
