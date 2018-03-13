@@ -92,7 +92,7 @@ def fit_ripple_constant(ripple_locked_spikes, sampling_frequency,
 
     results = fit_glm(response, design_matrix, penalty)
     time = ripple_locked_spikes.index.get_level_values('time')
-    unique_time = time.unique().total_seconds().values
+    unique_time = np.unique(time.total_seconds().values)
     predict_design_matrix = np.ones((unique_time.size, 1))
 
     coords = {'time': unique_time}
@@ -620,7 +620,7 @@ def fit_2D_position_by_speed_and_task(data, neuron_key, animals,
 def fit_ripple_over_time(ripple_locked_spikes, sampling_frequency,
                          penalty=1E1, knot_spacing=0.050):
     time = ripple_locked_spikes.index.get_level_values('time')
-    unique_time = time.unique().total_seconds().values
+    unique_time = np.unique(time.total_seconds().values)
     trial_id = (ripple_locked_spikes.index
                 .get_level_values('ripple_number').values)
 
