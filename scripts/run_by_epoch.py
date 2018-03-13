@@ -14,7 +14,7 @@ from loren_frank_data_processing import (get_interpolated_position_dataframe,
                                          get_spike_indicator_dataframe,
                                          make_neuron_dataframe,
                                          make_tetrode_dataframe,
-                                         reshape_to_segments, save_xarray)
+                                         save_xarray)
 from spectral_connectivity import Connectivity, Multitaper
 from src.analysis import (_center_time, adjusted_coherence_magnitude,
                           connectivity_by_ripple_type,
@@ -75,9 +75,9 @@ def estimate_ripple_coherence(epoch_key):
 def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
                                    neuron_info, window_offset=(-0.500, 0.500)):
 
-    ripple_locked_spikes = [reshape_to_segments(
-        get_spike_indicator_dataframe(neuron_key, ANIMALS).rename('is_spike'),
-        ripple_times, window_offset, SAMPLING_FREQUENCY)
+    ripple_locked_spikes = [get_ripple_locked_spikes(
+            neuron_key, ripple_times, ANIMALS, SAMPLING_FREQUENCY,
+            window_offset)
         for neuron_key in neuron_info.index]
 
     results = {}
