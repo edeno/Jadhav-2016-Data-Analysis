@@ -864,4 +864,4 @@ def get_ripple_locked_spikes(neuron_key, ripple_times, animals,
                              sampling_frequency=1, window_offset=(-0.5, 0.5)):
     spikes = get_spike_indicator_dataframe(neuron_key, animals)
     return reshape_to_segments(
-        spikes, ripple_times, window_offset, sampling_frequency)
+        spikes, ripple_times, window_offset, sampling_frequency).fillna(0)
