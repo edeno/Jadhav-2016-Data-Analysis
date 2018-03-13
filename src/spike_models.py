@@ -913,7 +913,7 @@ def cluster(data, maxgap=5):
         [[1, 6, 9], [99, 100, 102, 105], [134, 139, 141]]
         https://stackoverflow.com/questions/14783947/grouping-clustering-numbers-in-python
     '''
-    data.sort()
+    data = np.sort(data.copy())
     groups = [[data[0]]]
     for x in data[1:]:
         if abs(x - groups[-1][-1]) <= maxgap:
