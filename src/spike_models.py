@@ -902,7 +902,7 @@ def summarize_fit(model_coefficients, predict_design_matrix,
                      AIC))
 
 
-def cluster(data, maxgap=5):
+def cluster(data, maxgap=15):
     '''Arrange data into groups where successive elements
        differ by no more than *maxgap*
 
