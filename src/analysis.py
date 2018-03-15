@@ -866,3 +866,22 @@ def get_ripple_locked_spikes(neuron_key, ripple_times, animals,
               .rename('is_spike'))
     return reshape_to_segments(
         spikes, ripple_times, window_offset, sampling_frequency).fillna(0)
+
+
+def blah(position_info):
+    is_left_turn = (((position_info.from_well == 'left')
+                     & (position_info.to_well == 'center')) |
+                    ((position_info.from_well == 'center') &
+                     (position_info.to_well == 'right')))
+
+    is_right_turn = (((position_info.from_well == 'right')
+                      & (position_info.to_well == 'center')) |
+                     ((position_info.from_well == 'center') &
+                      (position_info.to_well == 'left')))
+    turn = np.full((position_info.shape[0],), np.nan, dtype=object)
+    turn[is_left_turn] = 'Left'
+    turn[is_right_turn] = 'Right'
+
+    position_info['turn'] = turn
+
+    return position_info
