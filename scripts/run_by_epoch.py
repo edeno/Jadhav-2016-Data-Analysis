@@ -310,7 +310,7 @@ def main():
         epoch_key, drop_level=False).query('numspikes > 0')
     position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
     replay_info, _, _ = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)
+        epoch_key, ANIMALS, ripple_times, position_info.copy())
 
     logging.info('Estimating ripple-locked spiking models...')
     estimate_ripple_locked_spiking(

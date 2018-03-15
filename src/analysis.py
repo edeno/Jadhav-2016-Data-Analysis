@@ -16,7 +16,7 @@ from loren_frank_data_processing import (get_interpolated_position_dataframe,
                                          get_LFP_dataframe, get_LFPs,
                                          get_multiunit_indicator_dataframe,
                                          get_spike_indicator_dataframe,
-                                         get_trial_time, make_neuron_dataframe,
+                                         get_trial_time,
                                          make_tetrode_dataframe,
                                          reshape_to_segments, save_xarray)
 from replay_classification import ClusterlessDecoder, SortedSpikeDecoder
@@ -461,6 +461,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
+                                position_info, neuron_info,
                                 sampling_frequency=1500,
                                 n_position_bins=61):
     '''Labels the ripple by category
@@ -490,11 +491,9 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
     '''
     logger.info('Decoding ripples')
     # Include only CA1 neurons with spikes
-    neuron_info = make_neuron_dataframe(animals).xs(
-        epoch_key, drop_level=False)
     tetrode_info = make_tetrode_dataframe(animals).xs(
         epoch_key, drop_level=False)
-    neuron_info = pd.merge(tetrode_info, neuron_info,
+    neuron_info = pd.merge(tetrode_info, neuron_info.copy(),
                            on=['animal', 'day', 'epoch',
                                'tetrode_number', 'area'],
                            how='right', right_index=True).set_index(
@@ -504,23 +503,22 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
         (neuron_info.numspikes > 0) &
         ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
     logger.debug(neuron_info.loc[:, ['area', 'numspikes']])
+    position_info['lagged_linear_distance'] = (
+        position_info.linear_distance.shift(1))
 
     # Train on when the rat is moving
-    position_info = get_interpolated_position_dataframe(epoch_key, animals)
     spikes_data = [get_spike_indicator_dataframe(neuron_key, animals)
                    for neuron_key in neuron_info.index]
 
-    # Make sure there are spikes in the training data times. Otherwise
-    # exclude that neuron
-    spikes_data = [spikes_datum for spikes_datum in spikes_data
-                   if spikes_datum[position_info.speed > 4].sum() > 0]
-
-    train_position_info = position_info.query('speed > 4')
-    train_spikes_data = [spikes_datum[position_info.speed > 4]
-                         for spikes_datum in spikes_data]
+    ripple_indicator = get_ripple_indicator(epoch_key, animals, ripple_times)
+    train_position_info = position_info.loc[
+        ~ripple_indicator & position_info.is_correct]
+    train_spikes_data = np.stack([spikes_datum.loc[train_position_info.index]
+                                  for spikes_datum in spikes_data], axis=0)
     decoder = SortedSpikeDecoder(
         position=train_position_info.linear_distance.values,
-        spikes=np.stack(train_spikes_data, axis=0),
+        lagged_position=train_position_info.lagged_linear_distance.values,
+        spikes=train_spikes_data,
         trajectory_direction=train_position_info.task.values
     )
 
@@ -533,6 +531,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
+                              position_info,
                               sampling_frequency=1500,
                               n_position_bins=61,
                               place_std_deviation=None,
@@ -552,8 +551,6 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
         ~tetrode_info.descrip.str.startswith('Ref').fillna(False)]
     logger.debug(brain_areas_tetrodes.loc[:, ['area', 'depth', 'descrip']])
 
-    position_info = get_interpolated_position_dataframe(epoch_key, animals)
-
     if mark_names is None:
         # Use all available mark dimensions
         mark_names = get_multiunit_indicator_dataframe(
@@ -568,16 +565,25 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
              if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
                  .shape[0]) != 0]
 
-    train_position_info = position_info.query('speed > 4')
+    position_info['lagged_linear_distance'] = (
+        position_info.linear_distance.shift(1))
+    KEEP_COLUMNS = ['linear_distance', 'lagged_linear_distance', 'task',
+                    'is_correct', 'turn']
+    position_info = position_info.loc[:, KEEP_COLUMNS].dropna()
+
+    ripple_indicator = get_ripple_indicator(epoch_key, animals, ripple_times)
+    train_position_info = position_info.loc[
+        ~ripple_indicator & position_info.is_correct]
 
     training_marks = np.stack([
         tetrode_marks.loc[train_position_info.index, mark_names]
         for tetrode_marks in marks], axis=0)
 
     decoder = ClusterlessDecoder(
-        train_position_info.linear_distance.values,
-        train_position_info.task.values,
-        training_marks,
+        position=train_position_info.linear_distance.values,
+        lagged_position=train_position_info.lagged_linear_distance.values,
+        trajectory_direction=train_position_info.task.values,
+        spike_marks=training_marks,
         n_position_bins=n_position_bins,
         place_std_deviation=place_std_deviation,
         mark_std_deviation=mark_std_deviation,
