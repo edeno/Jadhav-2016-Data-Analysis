@@ -307,6 +307,8 @@ def main():
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False).query('numspikes > 0')
     position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+    position_info['task_by_turn'] = (
+        position_info.task + '_' + position_info.turn)
     replay_info, _, _ = decode_ripple_clusterless(
         epoch_key, ANIMALS, ripple_times, position_info.copy())
 
