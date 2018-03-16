@@ -38,7 +38,7 @@ def fit_position_constant(data, sampling_frequency, penalty=0):
         is_spike.values.squeeze(), trial_id=None, AIC=results.AIC)
 
 
-def fit_task(data, sampling_frequency, penalty=0):
+def fit_task(data, sampling_frequency, penalty=1E1):
     formula = 'is_spike ~ 1 + task'
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
     results = fit_glm(is_spike, design_matrix, penalty)
