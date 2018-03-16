@@ -115,8 +115,7 @@ def estimate_spike_task_1D_information(
             neuron_key, ANIMALS).rename('is_spike')
         non_ripple_data = (
             position_info.join(spikes)
-            .loc[~ripple_indicator
-                 & position_info.is_correct.fillna(True)]
+            .loc[~ripple_indicator & position_info.is_correct]
             .drop(DROP_COLUMNS, axis=1)
             .dropna())
 
@@ -170,8 +169,7 @@ def estimate_theta_spike_field_coherence(epoch_key, neuron_info,
             neuron_key, ANIMALS).rename('is_spike')
         data = (theta.join(spikes)
                      .join(position_info)
-                     .loc[position_info.speed >= 4
-                          & position_info.is_correct.fillna(True)]
+                     .loc[position_info.speed >= 4 & position_info.is_correct]
                 .dropna())
         theta_phase_model.append(
             fit_hippocampal_theta(data, SAMPLING_FREQUENCY))
