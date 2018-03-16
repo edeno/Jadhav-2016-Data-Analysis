@@ -1,4 +1,3 @@
-from itertools import product
 from logging import getLogger
 
 import numpy as np
@@ -131,16 +130,13 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
     results = fit_glm(is_spike, design_matrix, penalty)
 
-    turns = data.turn.unique()
-    tasks = data.tasks.unique()
+    task_by_turns = data.task_by_turn.unique()
     firing_rate = []
     multiplicative_gain = []
-    task_by_turn = []
 
-    for task, turn in product(tasks, turns):
+    for task_by_turn in task_by_turns:
         predict_data = {
-            'turn': turn,
-            'task': task
+            'task_by_turn': task_by_turn
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
@@ -149,9 +145,8 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
             sampling_frequency))
         multiplicative_gain.append(np.squeeze(
             np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
-        task_by_turn.append(task + '_' + turn)
     coords = {
-        'task_by_turn': task_by_turn,
+        'task_by_turn': task_by_turns,
     }
     dims = ['task_by_turn']
 
