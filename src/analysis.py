@@ -500,8 +500,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
         neuron_info.index)
     neuron_info = neuron_info[
         neuron_info.area.isin(['CA1', 'iCA1', 'CA3']) &
-        (neuron_info.numspikes > 0) &
-        ~neuron_info.descrip.str.endswith('Ref').fillna(False)]
+        (neuron_info.numspikes > 0)]
     logger.debug(neuron_info.loc[:, ['area', 'numspikes']])
     position_info['lagged_linear_distance'] = (
         position_info.linear_distance.shift(1))
@@ -520,11 +519,11 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
         lagged_position=train_position_info.lagged_linear_distance.values,
         spikes=train_spikes_data,
         trajectory_direction=train_position_info.task.values
-    )
+    ).fit()
 
     test_spikes = _get_ripple_spikes(
-        spikes_data, ripple_times)
-    results = [decoder.predict(ripple_spikes, time)
+        spikes_data, ripple_times, sampling_frequency)
+    results = [decoder.predict(ripple_spikes, time.total_seconds())
                for ripple_spikes, time in test_spikes]
     return summarize_replay_results(
         results, ripple_times, position_info, epoch_key)
@@ -568,7 +567,7 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     position_info['lagged_linear_distance'] = (
         position_info.linear_distance.shift(1))
     KEEP_COLUMNS = ['linear_distance', 'lagged_linear_distance', 'task',
-                    'is_correct', 'turn']
+                    'is_correct', 'turn', 'speed']
     position_info = position_info.loc[:, KEEP_COLUMNS].dropna()
 
     ripple_indicator = get_ripple_indicator(epoch_key, animals, ripple_times)
