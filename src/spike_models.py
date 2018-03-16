@@ -1,3 +1,4 @@
+from itertools import product
 from logging import getLogger
 
 import numpy as np
@@ -79,6 +80,90 @@ def fit_task(data, sampling_frequency, penalty=0):
 
     return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
                      ks_statistic, AIC))
+
+
+def fit_turn(data, sampling_frequency, penalty=1E1):
+    formula = 'is_spike ~ 1 + turn'
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    turns = data.turn.unique()
+    firing_rate = []
+    multiplicative_gain = []
+
+    for turn in turns:
+        predict_data = {
+            'turn': turn
+        }
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+        firing_rate.append(
+            np.exp(predict_design_matrix @ results.coefficients) *
+            sampling_frequency)
+        multiplicative_gain.append(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        )
+    coords = {'turn': turn}
+    dims = ['turn']
+
+    firing_rate = xr.DataArray(
+        np.stack(firing_rate), dims=dims, coords=coords,
+        name='firing_rate')
+    multiplicative_gain = xr.DataArray(
+        np.stack(multiplicative_gain), dims=dims, coords=coords,
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
+        name='baseline_firing_rate')
+
+    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity, is_spike.squeeze()
+                      ).ks_statistic(), name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+
+    return xr.merge((firing_rate, multiplicative_gain, baseline_firing_rate,
+                     ks_statistic, AIC))
+
+
+def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
+    formula = 'is_spike ~ 1 + task_by_turn'
+    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    results = fit_glm(is_spike, design_matrix, penalty)
+
+    turns = data.turn.unique()
+    tasks = data.tasks.unique()
+    firing_rate = []
+    multiplicative_gain = []
+    task_by_turn = []
+
+    for task, turn in product(tasks, turns):
+        predict_data = {
+            'turn': turn,
+            'task': task
+        }
+        predict_design_matrix = build_design_matrices(
+            [design_matrix.design_info], predict_data)[0]
+        firing_rate.append(
+            np.exp(predict_design_matrix @ results.coefficients) *
+            sampling_frequency)
+        multiplicative_gain.append(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        )
+        task_by_turn.append(task + '_' + turn)
+    coords = {
+        'task_by_turn': task_by_turn,
+    }
+    dims = ['task_by_turn']
+
+    firing_rate = xr.DataArray(
+        np.stack(firing_rate), dims=dims, coords=coords,
+        name='firing_rate')
+    multiplicative_gain = xr.DataArray(
+        np.stack(multiplicative_gain), dims=dims, coords=coords,
+        name='multiplicative_gain')
+    baseline_firing_rate = xr.DataArray(
+        np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
     conditional_intensity = np.exp(design_matrix @ results.coefficients)
@@ -145,7 +230,7 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
     n_steps = (max_distance - min_distance) // knot_spacing
     position_knots = min_distance + np.arange(1, n_steps) * knot_spacing
     formula = (
-        'is_spike ~ 1 + task * cr(linear_distance,'
+        'is_spike ~ 1 + task_by_turn * cr(linear_distance,'
         'knots=position_knots, constraints="center")')
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
     results = fit_glm(is_spike, design_matrix, penalty)
@@ -154,7 +239,7 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
     multiplicative_gain = []
 
     linear_distance = np.linspace(min_distance, max_distance, 100)
-    levels = ['Inbound', 'Outbound']
+    levels = data.task_by_turn.unique()
 
     for level in levels:
         predict_data = {
@@ -260,14 +345,14 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
          np.arange(10, np.round(data.speed.max(), -1), 10)))
     formula = ('is_spike ~ 1 + te(cr(linear_distance, knots=position_knots), '
                'cr(speed, knots=speed_knots), constraints="center") + '
-               'task * cr(linear_distance, knots=position_knots)')
+               'task_by_turn * cr(linear_distance, knots=position_knots)')
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
     results = fit_glm(is_spike, design_matrix, penalty)
     linear_distance = np.linspace(min_distance, max_distance, 100)
     speed = np.linspace(0.0, data.speed.max(), 100)
 
     linear_distance, speed = np.meshgrid(linear_distance, speed)
-    tasks = data.task.unique()
+    tasks = data.task_by_turn.unique()
     firing_rate = []
     multiplicative_gain = []
 
@@ -325,7 +410,7 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
         (np.arange(1, 5, 2),
          np.arange(10, np.round(data.speed.max(), -1), 10)))
 
-    formula = ('is_spike ~ 1 + task * '
+    formula = ('is_spike ~ 1 + task_by_turn * '
                'te(cr(linear_distance, knots=position_knots), '
                'cr(speed, knots=speed_knots), constraints="center")')
     is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
@@ -334,7 +419,7 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
     speed = np.linspace(0.0, data.speed.max(), 100)
 
     linear_distance, speed = np.meshgrid(linear_distance, speed)
-    tasks = data.task.unique()
+    tasks = data.task_by_turn.unique()
     firing_rate = []
     multiplicative_gain = []
 
