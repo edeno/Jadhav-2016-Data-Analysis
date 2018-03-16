@@ -103,7 +103,7 @@ def fit_turn(data, sampling_frequency, penalty=1E1):
         multiplicative_gain.append(np.squeeze(
             np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
         )
-    coords = {'turn': turn}
+    coords = {'turn': turns}
     dims = ['turn']
 
     firing_rate = xr.DataArray(
