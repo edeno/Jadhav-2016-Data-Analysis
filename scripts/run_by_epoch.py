@@ -1,7 +1,7 @@
 '''Exectue set of functions for each epoch
 '''
-from argparse import ArgumentParser
 import logging
+from argparse import ArgumentParser
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit
@@ -13,8 +13,7 @@ from loren_frank_data_processing import (get_interpolated_position_dataframe,
                                          get_LFP_dataframe,
                                          get_spike_indicator_dataframe,
                                          make_neuron_dataframe,
-                                         make_tetrode_dataframe,
-                                         save_xarray)
+                                         make_tetrode_dataframe, save_xarray)
 from spectral_connectivity import Connectivity, Multitaper
 from src.analysis import (_center_time, adjusted_coherence_magnitude,
                           connectivity_by_ripple_type,
@@ -36,7 +35,7 @@ from src.spike_models import (DROP_COLUMNS, fit_1D_position,
                               fit_hippocampal_theta_by_1D_position,
                               fit_position_constant, fit_replay,
                               fit_ripple_constant, fit_ripple_over_time,
-                              fit_task)
+                              fit_task, fit_task_by_turn, fit_turn)
 
 
 def estimate_ripple_coherence(epoch_key):
@@ -76,8 +75,8 @@ def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
                                    neuron_info, window_offset=(-0.500, 0.500)):
 
     ripple_locked_spikes = [get_ripple_locked_spikes(
-            neuron_key, ripple_times, ANIMALS, SAMPLING_FREQUENCY,
-            window_offset)
+        neuron_key, ripple_times, ANIMALS, SAMPLING_FREQUENCY,
+        window_offset)
         for neuron_key in neuron_info.index]
 
     results = {}
@@ -104,6 +103,8 @@ def estimate_spike_task_1D_information(
 
     constant_model = []
     task_model = []
+    turn_model = []
+    task_by_turn_model = []
     position_model = []
     position_by_task_model = []
     position_by_speed_model = []
@@ -123,6 +124,10 @@ def estimate_spike_task_1D_information(
             fit_position_constant(non_ripple_data, SAMPLING_FREQUENCY))
         task_model.append(
             fit_task(non_ripple_data, SAMPLING_FREQUENCY))
+        turn_model.append(
+            fit_turn(non_ripple_data, SAMPLING_FREQUENCY))
+        task_by_turn_model.append(
+            fit_task_by_turn(non_ripple_data, SAMPLING_FREQUENCY))
         position_model.append(
             fit_1D_position(non_ripple_data, SAMPLING_FREQUENCY))
         position_by_task_model.append(
@@ -142,6 +147,10 @@ def estimate_spike_task_1D_information(
         constant_model, dim=neuron_info.neuron_id)
     results['non_ripple/task_model'] = xr.concat(
         task_model, dim=neuron_info.neuron_id)
+    results['non_ripple/turn_model'] = xr.concat(
+        turn_model, dim=neuron_info.neuron_id)
+    results['non_ripple/task_by_turn_model'] = xr.concat(
+        task_by_turn_model, dim=neuron_info.neuron_id)
     results['non_ripple/1D_position_model'] = xr.concat(
         position_model, dim=neuron_info.neuron_id)
     results['non_ripple/1D_position_by_task_model'] = xr.concat(
