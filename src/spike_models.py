@@ -238,7 +238,7 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
     for level in levels:
         predict_data = {
             'linear_distance': linear_distance,
-            'task': np.full_like(linear_distance, level, dtype=object)
+            'task_by_turn': np.full_like(linear_distance, level, dtype=object)
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
@@ -248,8 +248,8 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
         multiplicative_gain.append(np.squeeze(
             np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
 
-    dims = ['task', 'position']
-    coords = {'position': linear_distance, 'task': levels}
+    dims = ['task_by_turn', 'position']
+    coords = {'position': linear_distance, 'task_by_turn': levels}
 
     firing_rate = xr.DataArray(
         np.stack(firing_rate), dims=dims, coords=coords,
@@ -345,15 +345,15 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
     speed = np.linspace(0.0, data.speed.max(), 100)
 
     linear_distance, speed = np.meshgrid(linear_distance, speed)
-    tasks = data.task_by_turn.unique()
+    task_by_turns = data.task_by_turn.unique()
     firing_rate = []
     multiplicative_gain = []
 
-    for task in tasks:
+    for task_by_turn in task_by_turns:
         predict_data = {
             'linear_distance': linear_distance.ravel(),
             'speed': speed.ravel(),
-            'task': np.full_like(speed.ravel(), task, dtype=object)
+            'task_by_turn': np.full_like(speed.ravel(), task_by_turn, dtype=object)
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
@@ -367,9 +367,9 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed),
-        'task': tasks,
+        'task_by_turn': task_by_turns,
     }
-    dims = ['task', 'position', 'speed']
+    dims = ['task_by_turn', 'position', 'speed']
     firing_rate = xr.DataArray(np.stack(firing_rate),
                                dims=dims,
                                coords=coords,
@@ -412,15 +412,16 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
     speed = np.linspace(0.0, data.speed.max(), 100)
 
     linear_distance, speed = np.meshgrid(linear_distance, speed)
-    tasks = data.task_by_turn.unique()
+    task_by_turns = data.task_by_turn.unique()
     firing_rate = []
     multiplicative_gain = []
 
-    for task in tasks:
+    for task_by_turn in task_by_turns:
         predict_data = {
             'linear_distance': linear_distance.ravel(),
             'speed': speed.ravel(),
-            'task': np.full_like(speed.ravel(), task, dtype=object)
+            'task_by_turn': np.full_like(speed.ravel(), task_by_turn,
+                                         dtype=object)
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
@@ -434,9 +435,9 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed),
-        'task': tasks,
+        'task_by_turn': task_by_turns,
     }
-    dims = ['task', 'position', 'speed']
+    dims = ['task_by_turn', 'position', 'speed']
     firing_rate = xr.DataArray(np.stack(firing_rate),
                                dims=dims,
                                coords=coords,
