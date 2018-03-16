@@ -53,11 +53,11 @@ def fit_task(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
         )
     coords = {'task': tasks}
     dims = ['task']
@@ -97,11 +97,11 @@ def fit_turn(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
         )
     coords = {'turn': turn}
     dims = ['turn']
@@ -144,12 +144,11 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        )
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
         task_by_turn.append(task + '_' + turn)
     coords = {
         'task_by_turn': task_by_turn,
@@ -248,12 +247,11 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        )
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
 
     dims = ['task', 'position']
     coords = {'position': linear_distance, 'task': levels}
@@ -365,11 +363,11 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             (np.exp(predict_design_matrix @ results.coefficients)
-             * sampling_frequency).reshape(linear_distance.shape).T)
-        multiplicative_gain.append(np.exp(
-            predict_design_matrix[:, 1:] @ results.coefficients[1:]
+             * sampling_frequency).reshape(linear_distance.shape).T))
+        multiplicative_gain.append(np.squeeze(np.exp(
+            predict_design_matrix[:, 1:] @ results.coefficients[1:])
         ).reshape(linear_distance.shape).T)
     coords = {
         'position': np.unique(linear_distance),
@@ -432,11 +430,11 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             (np.exp(predict_design_matrix @ results.coefficients)
-             * sampling_frequency).reshape(linear_distance.shape).T)
-        multiplicative_gain.append(np.exp(
-            predict_design_matrix[:, 1:] @ results.coefficients[1:]
+             * sampling_frequency).reshape(linear_distance.shape).T))
+        multiplicative_gain.append(np.squeeze(np.exp(
+            predict_design_matrix[:, 1:] @ results.coefficients[1:])
         ).reshape(linear_distance.shape).T)
     coords = {
         'position': np.unique(linear_distance),
@@ -771,12 +769,12 @@ def fit_replay(ripple_locked_spikes, sampling_frequency,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
             np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        )
+        ))
 
     dims = [covariate, 'time']
     coords = {'time': time, covariate: levels}
@@ -838,11 +836,11 @@ def fit_replay_no_interaction(neuron_key, animals, sampling_frequency,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(
+        firing_rate.append(np.squeeze(
             np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency)
-        multiplicative_gain.append(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+            sampling_frequency))
+        multiplicative_gain.append(np.squeeze(
+            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
         )
 
     dims = [covariate, 'time']
