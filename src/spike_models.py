@@ -964,20 +964,20 @@ def summarize_fit(model_coefficients, predict_design_matrix,
     if np.allclose(model_coefficients, 0):
         model_coefficients *= np.nan
     firing_rate = xr.DataArray(
-        np.exp(predict_design_matrix @ model_coefficients) *
-        sampling_frequency, dims=dims,
+        np.squeeze(np.exp(predict_design_matrix @ model_coefficients) *
+                   sampling_frequency), dims=dims,
         coords=coords, name='firing_rate')
     try:
-        multiplicative_gain = xr.DataArray(np.exp(
-            predict_design_matrix[:, 1:] @ model_coefficients[1:]),
+        multiplicative_gain = xr.DataArray(np.squeeze(np.exp(
+            predict_design_matrix[:, 1:] @ model_coefficients[1:])),
             dims=dims, coords=coords,
             name='multiplicative_gain')
     except ValueError:
         multiplicative_gain = xr.DataArray([],
                                            dims=dims, coords=coords,
                                            name='multiplicative_gain')
-    baseline_firing_rate = xr.DataArray(np.exp(
-        model_coefficients[0]) * sampling_frequency,
+    baseline_firing_rate = xr.DataArray(np.squeeze(np.exp(
+        model_coefficients[0]) * sampling_frequency),
         name='baseline_firing_rate')
     conditional_intensity = np.exp(design_matrix @ model_coefficients)
     ks_statistic = xr.DataArray(
