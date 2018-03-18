@@ -52,12 +52,11 @@ def fit_task(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
-        )
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
     coords = {'task': tasks}
     dims = ['task']
 
@@ -71,7 +70,7 @@ def fit_task(data, sampling_frequency, penalty=1E1):
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -96,12 +95,11 @@ def fit_turn(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
-        )
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
     coords = {'turn': turns}
     dims = ['turn']
 
@@ -115,7 +113,7 @@ def fit_turn(data, sampling_frequency, penalty=1E1):
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -140,11 +138,11 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
     coords = {
         'task_by_turn': task_by_turns,
     }
@@ -160,7 +158,7 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -242,11 +240,11 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])))
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
 
     dims = ['task_by_turn', 'position']
     coords = {'position': linear_distance, 'task_by_turn': levels}
@@ -261,7 +259,7 @@ def fit_1D_position_by_task(data, sampling_frequency, penalty=1E1,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -297,11 +295,11 @@ def fit_1D_position_by_speed(data, sampling_frequency, penalty=1E1,
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], predict_data)[0]
 
-    firing_rate = (np.exp(predict_design_matrix @ results.coefficients)
-                   * sampling_frequency).reshape(linear_distance.shape).T
-    multiplicative_gain = np.exp(
-        predict_design_matrix[:, 1:] @ results.coefficients[1:]
-    ).reshape(linear_distance.shape).T
+    firing_rate = get_rate(predict_design_matrix, results.coefficients,
+                           sampling_frequency).reshape(linear_distance.shape).T
+    multiplicative_gain = get_gain(
+        predict_design_matrix, results.coefficients
+        ).reshape(linear_distance.shape).T
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed)
@@ -316,7 +314,7 @@ def fit_1D_position_by_speed(data, sampling_frequency, penalty=1E1,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -357,13 +355,12 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-
-        firing_rate.append(np.squeeze(
-            (np.exp(predict_design_matrix @ results.coefficients)
-             * sampling_frequency).reshape(linear_distance.shape).T))
-        multiplicative_gain.append(np.squeeze(np.exp(
-            predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        ).reshape(linear_distance.shape).T)
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients
+                     ).reshape(linear_distance.shape).T)
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed),
@@ -382,7 +379,7 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -426,12 +423,12 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        firing_rate.append(np.squeeze(
-            (np.exp(predict_design_matrix @ results.coefficients)
-             * sampling_frequency).reshape(linear_distance.shape).T))
-        multiplicative_gain.append(np.squeeze(np.exp(
-            predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        ).reshape(linear_distance.shape).T)
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency).reshape(linear_distance.shape).T)
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients
+                     ).reshape(linear_distance.shape).T)
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed),
@@ -450,7 +447,7 @@ def fit_1D_position_by_speed_by_task(data, sampling_frequency, penalty=1E1,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -479,11 +476,10 @@ def fit_2D_position(data, neuron_key, animals, sampling_frequency,
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], predict_data)[0]
 
-    firing_rate = (np.exp(predict_design_matrix @ results.coefficients)
-                   * sampling_frequency).reshape(x.shape).T
-    multiplicative_gain = np.exp(
-        predict_design_matrix[:, 1:] @ results.coefficients[1:]
-    ).reshape(x.shape).T
+    firing_rate = get_rate(predict_design_matrix, results.coefficients,
+                           sampling_frequency).reshape(x.shape).T
+    multiplicative_gain = get_gain(
+        predict_design_matrix, results.coefficients).reshape(x.shape).T
     coords = {
         'x_position': np.unique(x),
         'y_position': np.unique(y),
@@ -498,7 +494,7 @@ def fit_2D_position(data, neuron_key, animals, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -532,11 +528,11 @@ def fit_2D_position_by_task(data, neuron_key, animals, sampling_frequency,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        rate = (np.exp(predict_design_matrix @ results.coefficients)
-                * sampling_frequency)
+        rate = get_rate(predict_design_matrix, results.coefficients,
+                        sampling_frequency)
         firing_rate.append(rate.reshape(x.shape).T)
 
-        gain = np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        gain = get_gain(predict_design_matrix, results.coefficients)
         multiplicative_gain.append(gain.reshape(x.shape).T)
 
     coords = {
@@ -557,7 +553,7 @@ def fit_2D_position_by_task(data, neuron_key, animals, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -596,11 +592,11 @@ def fit_2D_position_by_speed(data, neuron_key, animals, sampling_frequency,
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
 
-        rate = (np.exp(predict_design_matrix @ results.coefficients)
-                * sampling_frequency)
+        rate = get_rate(predict_design_matrix, results.coefficients,
+                        sampling_frequency)
         firing_rate.append(rate.reshape(x.shape).T)
 
-        gain = np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
+        gain = get_gain(predict_design_matrix, results.coefficients)
         multiplicative_gain.append(gain.reshape(x.shape).T)
 
     coords = {
@@ -621,7 +617,7 @@ def fit_2D_position_by_speed(data, neuron_key, animals, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -667,12 +663,11 @@ def fit_2D_position_by_speed_and_task(data, neuron_key, animals,
             predict_design_matrix = build_design_matrices(
                 [design_matrix.design_info], predict_data)[0]
 
-            rate = (np.exp(predict_design_matrix @ results.coefficients)
-                    * sampling_frequency)
+            rate = get_rate(predict_design_matrix, results.coefficients,
+                            sampling_frequency)
             temp_firing_rate.append(rate.reshape(x.shape).T)
 
-            gain = np.exp(predict_design_matrix[:, 1:]
-                          @ results.coefficients[1:])
+            gain = get_gain(predict_design_matrix, results.coefficients)
             temp_multiplicative_gain.append(gain.reshape(x.shape).T)
         firing_rate.append(temp_firing_rate)
         multiplicative_gain.append(temp_multiplicative_gain)
@@ -696,7 +691,7 @@ def fit_2D_position_by_speed_and_task(data, neuron_key, animals,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -765,12 +760,11 @@ def fit_replay(ripple_locked_spikes, sampling_frequency,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:])
-        ))
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
 
     dims = [covariate, 'time']
     coords = {'time': time, covariate: levels}
@@ -785,7 +779,7 @@ def fit_replay(ripple_locked_spikes, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -832,12 +826,11 @@ def fit_replay_no_interaction(neuron_key, animals, sampling_frequency,
         }
         predict_design_matrix = build_design_matrices(
             [design_matrix.design_info], predict_data)[0]
-        firing_rate.append(np.squeeze(
-            np.exp(predict_design_matrix @ results.coefficients) *
-            sampling_frequency))
-        multiplicative_gain.append(np.squeeze(
-            np.exp(predict_design_matrix[:, 1:] @ results.coefficients[1:]))
-        )
+        firing_rate.append(
+            get_rate(predict_design_matrix, results.coefficients,
+                     sampling_frequency))
+        multiplicative_gain.append(
+            get_gain(predict_design_matrix, results.coefficients))
 
     dims = [covariate, 'time']
     coords = {'time': time, covariate: levels}
@@ -852,7 +845,7 @@ def fit_replay_no_interaction(neuron_key, animals, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike.squeeze()
                       ).ks_statistic(), name='ks_statistic')
@@ -872,8 +865,8 @@ def fit_hippocampal_theta(data, sampling_frequency, penalty=1E1):
         [design_matrix.design_info], predict_data)[0]
 
     firing_rate = xr.DataArray(
-        np.exp(predict_design_matrix @ results.coefficients) *
-        sampling_frequency, dims=['instantaneous_phase'],
+        get_rate(predict_design_matrix, results.coefficients,
+                 sampling_frequency), dims=['instantaneous_phase'],
         coords=predict_data, name='firing_rate')
     phase_vector = results.coefficients[1] + 1j * results.coefficients[2]
     preferred_phase = xr.DataArray(np.angle(phase_vector),
@@ -883,7 +876,7 @@ def fit_hippocampal_theta(data, sampling_frequency, penalty=1E1):
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
     aic = xr.DataArray(results.AIC, name='AIC')
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -917,11 +910,12 @@ def fit_hippocampal_theta_by_1D_position(data, sampling_frequency,
     }
     predict_design_matrix = build_design_matrices(
         [design_matrix.design_info], predict_data)[0]
-    firing_rate = (np.exp(predict_design_matrix @ results.coefficients)
-                   * sampling_frequency).reshape(instantaneous_phase.shape).T
-    multiplicative_gain = np.exp(
-        predict_design_matrix[:, 1:] @ results.coefficients[1:]
-    ).reshape(instantaneous_phase.shape).T
+    firing_rate = get_rate(
+        predict_design_matrix, results.coefficients,
+        sampling_frequency).reshape(instantaneous_phase.shape).T
+    multiplicative_gain = get_gain(
+        predict_design_matrix, results.coefficients
+        ).reshape(instantaneous_phase.shape).T
     coords = {
         'phase': np.unique(instantaneous_phase),
         'position': np.unique(linear_distance),
@@ -936,7 +930,7 @@ def fit_hippocampal_theta_by_1D_position(data, sampling_frequency,
         np.exp(results.coefficients[0]) * sampling_frequency,
         name='baseline_firing_rate')
 
-    conditional_intensity = np.exp(design_matrix @ results.coefficients)
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity,
                       is_spike.squeeze()).ks_statistic(),
@@ -958,18 +952,17 @@ def fit_glm(response, design_matrix, penalty=None):
         family=families.Poisson(), penalty=penalty)
 
 
-def summarize_fit(model_coefficients, predict_design_matrix,
+def summarize_fit(coefficients, predict_design_matrix,
                   sampling_frequency, coords, dims, design_matrix, is_spike,
                   trial_id=None, AIC=np.nan):
-    if np.allclose(model_coefficients, 0):
-        model_coefficients *= np.nan
+
     firing_rate = xr.DataArray(
-        np.squeeze(np.exp(predict_design_matrix @ model_coefficients) *
-                   sampling_frequency), dims=dims,
+        get_rate(predict_design_matrix, coefficients,
+                 sampling_frequency), dims=dims,
         coords=coords, name='firing_rate')
     try:
-        multiplicative_gain = xr.DataArray(np.squeeze(np.exp(
-            predict_design_matrix[:, 1:] @ model_coefficients[1:])),
+        multiplicative_gain = xr.DataArray(
+            get_gain(predict_design_matrix, coefficients),
             dims=dims, coords=coords,
             name='multiplicative_gain')
     except ValueError:
@@ -977,9 +970,9 @@ def summarize_fit(model_coefficients, predict_design_matrix,
                                            dims=dims, coords=coords,
                                            name='multiplicative_gain')
     baseline_firing_rate = xr.DataArray(np.squeeze(np.exp(
-        model_coefficients[0]) * sampling_frequency),
+        np.atleast_1d(coefficients)[0]) * sampling_frequency),
         name='baseline_firing_rate')
-    conditional_intensity = np.exp(design_matrix @ model_coefficients)
+    conditional_intensity = get_rate(design_matrix, coefficients)
     ks_statistic = xr.DataArray(
         TimeRescaling(conditional_intensity, is_spike).ks_statistic(),
         name='ks_statistic')
@@ -1040,3 +1033,16 @@ def lag(df, trial=None, n_lags=1, fillna_value=0.0):
     df = df.groupby(trial) if trial is not None else df
     return pd.concat([df.shift(lag).fillna(fillna_value)
                       for lag in np.arange(1, n_lags + 1)], axis=1)
+
+
+def get_rate(design_matrix, coefficients, sampling_frequency=1):
+    return np.squeeze(
+        np.exp(np.dot(design_matrix, coefficients)) * sampling_frequency)
+
+
+def get_gain(design_matrix, coefficients):
+    try:
+        return np.squeeze(
+            np.exp(np.dot(design_matrix[:, 1:], coefficients[1:])))
+    except IndexError:
+        return np.ones((design_matrix.shape[0],))
