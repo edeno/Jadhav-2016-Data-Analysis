@@ -357,7 +357,7 @@ def fit_1D_position_by_speed_and_task(data, sampling_frequency, penalty=1E1,
             [design_matrix.design_info], predict_data)[0]
         firing_rate.append(
             get_rate(predict_design_matrix, results.coefficients,
-                     sampling_frequency))
+                     sampling_frequency).reshape(linear_distance.shape).T)
         multiplicative_gain.append(
             get_gain(predict_design_matrix, results.coefficients
                      ).reshape(linear_distance.shape).T)
