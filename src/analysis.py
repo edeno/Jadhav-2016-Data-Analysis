@@ -436,8 +436,6 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
 
     tetrode_info = make_tetrode_dataframe(animals).xs(
         epoch_key, drop_level=False)
-    # Get cell-layer CA1, iCA1 LFPs
-
     brain_areas = [brain_areas] if isinstance(
         brain_areas, str) else brain_areas
     is_brain_areas = tetrode_info.area.isin(brain_areas)
