@@ -449,7 +449,7 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     lfps = get_LFPs(tetrode_keys, animals)
     time = lfps.index
     speed = get_interpolated_position_dataframe(
-        epoch_key, animals, _time_function).speed
+        epoch_key, animals).speed
 
     return Kay_ripple_detector(
         time, lfps.values, speed.values, sampling_frequency,
