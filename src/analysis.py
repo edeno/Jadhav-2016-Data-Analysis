@@ -13,7 +13,7 @@ from scipy.signal import filtfilt, hilbert, remez
 from scipy.stats import linregress
 
 from loren_frank_data_processing import (get_interpolated_position_dataframe,
-                                         get_LFP_dataframe, get_LFPs,
+                                         get_LFPs,
                                          get_multiunit_indicator_dataframe,
                                          get_spike_indicator_dataframe,
                                          get_trial_time,
@@ -443,15 +443,9 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
         is_brain_areas = is_brain_areas & tetrode_info.descrip.isin(['riptet'])
     logger.debug(tetrode_info[is_brain_areas]
                  .loc[:, ['area', 'depth', 'descrip']])
-    tetrode_keys = tetrode_info[is_brain_areas].index.tolist()
-    hippocampus_lfps = pd.concat(
-        [get_LFP_dataframe(tetrode_key, animals)
-         for tetrode_key in tetrode_keys], axis=1)
-    time = hippocampus_lfps.index
-
-    def _time_function(epoch_key, animals):
-        return time
-
+    tetrode_keys = tetrode_info[is_brain_areas].index
+    lfps = get_LFPs(tetrode_keys, animals)
+    time = lfps.index
     speed = get_interpolated_position_dataframe(
         epoch_key, animals, _time_function).speed
 
