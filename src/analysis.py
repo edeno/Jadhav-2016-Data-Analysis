@@ -424,7 +424,9 @@ def _get_ripple_times(df):
 
 
 def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
-                         brain_areas=_BRAIN_AREAS):
+                         brain_areas=_BRAIN_AREAS,
+                         minimum_duration=pd.Timedelta(milliseconds=15),
+                         zscore_threshold=2):
     '''Returns a list of tuples containing the start and end times of
     ripples. Candidate ripples are computed via the ripple detection
     function and then filtered to exclude ripples where the animal was
@@ -450,8 +452,8 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
         epoch_key, animals, _time_function).speed
 
     return Kay_ripple_detector(
-        time, hippocampus_lfps.values, speed.values, sampling_frequency,
-        minimum_duration=pd.Timedelta(milliseconds=15), zscore_threshold=2)
+        time, lfps.values, speed.values, sampling_frequency,
+        minimum_duration=minimum_duration, zscore_threshold=zscore_threshold)
 
 
 def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
