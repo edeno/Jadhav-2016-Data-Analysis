@@ -36,6 +36,7 @@ from src.spike_models import (DROP_COLUMNS, fit_1D_position,
                               fit_position_constant, fit_replay,
                               fit_ripple_constant, fit_ripple_over_time,
                               fit_task, fit_task_by_turn, fit_turn)
+from src.to_rasterVis import export_session_and_neuron_info
 
 
 def estimate_ripple_coherence(epoch_key):
@@ -96,6 +97,15 @@ def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
 
     for group_name, data in results.items():
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
+
+
+def get_replay(epoch_key):
+    ripple_times, replay_info = export_session_and_neuron_info(
+        epoch_key, PROCESSED_DATA_DIR)
+    save_xarray(PROCESSED_DATA_DIR, epoch_key,
+                replay_info.to_xarray(), '/replay_info')
+    save_xarray(PROCESSED_DATA_DIR, epoch_key,
+                ripple_times.to_xarray(), '/ripple_times')
 
 
 def estimate_spike_task_1D_information(
@@ -309,34 +319,35 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logging.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY)
-    ripple_indicator = get_ripple_indicator(
-        epoch_key, ANIMALS, ripple_times)
-    neuron_info = make_neuron_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False).query('numspikes > 0')
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-    position_info['task_by_turn'] = (
-        position_info.task + '_' + position_info.turn)
-    replay_info, _, _ = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times, position_info.copy())
-
-    logging.info('Estimating ripple-locked spiking models...')
-    estimate_ripple_locked_spiking(
-        epoch_key, ripple_times, replay_info, neuron_info)
-    logging.info('Estimating theta spike-field coherence...')
-    estimate_theta_spike_field_coherence(
-        epoch_key, neuron_info, position_info)
-    logging.info('Estimating ripple-locked spike-spike coherence...')
-    estimate_ripple_locked_spike_spike_coherence(
-        epoch_key, ripple_times, neuron_info)
-    logging.info('Estimating non-ripple 1D spike models...')
-    estimate_spike_task_1D_information(
-        epoch_key, ripple_indicator, neuron_info, position_info)
-    logging.info('Estimating non-ripple 2D spike models...')
-    estimate_2D_spike_task_information(
-        epoch_key, ripple_indicator, neuron_info, position_info)
-
+    # position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+    # ripple_times = detect_epoch_ripples(
+    #     epoch_key, ANIMALS, SAMPLING_FREQUENCY, position_info)
+    # ripple_indicator = get_ripple_indicator(
+    #     epoch_key, ANIMALS, ripple_times)
+    # neuron_info = make_neuron_dataframe(ANIMALS).xs(
+    #     epoch_key, drop_level=False).query('numspikes > 0')
+    #
+    # position_info['task_by_turn'] = (
+    #     position_info.task + '_' + position_info.turn)
+    # replay_info, _, _ = decode_ripple_clusterless(
+    #     epoch_key, ANIMALS, ripple_times, position_info
+    #
+    # logging.info('Estimating ripple-locked spiking models...')
+    # estimate_ripple_locked_spiking(
+    #     epoch_key, ripple_times, replay_info, neuron_info)
+    # logging.info('Estimating theta spike-field coherence...')
+    # estimate_theta_spike_field_coherence(
+    #     epoch_key, neuron_info, position_info)
+    # logging.info('Estimating ripple-locked spike-spike coherence...')
+    # estimate_ripple_locked_spike_spike_coherence(
+    #     epoch_key, ripple_times, neuron_info)
+    # logging.info('Estimating non-ripple 1D spike models...')
+    # estimate_spike_task_1D_information(
+    #     epoch_key, ripple_indicator, neuron_info, position_info)
+    # logging.info('Estimating non-ripple 2D spike models...')
+    # estimate_2D_spike_task_information(
+    #     epoch_key, ripple_indicator, neuron_info, position_info)
+    get_replay(epoch_key)
     logging.info('Finished Processing')
 
 
