@@ -424,6 +424,7 @@ def _get_ripple_times(df):
 
 
 def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
+                         position_info=None,
                          brain_areas=_BRAIN_AREAS,
                          minimum_duration=pd.Timedelta(milliseconds=15),
                          zscore_threshold=2):
@@ -446,8 +447,10 @@ def detect_epoch_ripples(epoch_key, animals, sampling_frequency,
     tetrode_keys = tetrode_info[is_brain_areas].index
     lfps = get_LFPs(tetrode_keys, animals)
     time = lfps.index
-    speed = get_interpolated_position_dataframe(
-        epoch_key, animals).speed
+    if position_info is None:
+        position_info = get_interpolated_position_dataframe(
+            epoch_key, animals)
+    speed = position_info.speed
 
     return Kay_ripple_detector(
         time, lfps.values, speed.values, sampling_frequency,
@@ -524,7 +527,7 @@ def decode_ripple_sorted_spikes(epoch_key, animals, ripple_times,
 
 
 def decode_ripple_clusterless(epoch_key, animals, ripple_times,
-                              position_info,
+                              position_info=None,
                               sampling_frequency=1500,
                               n_position_bins=61,
                               place_std_deviation=None,
@@ -557,6 +560,11 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     marks = [tetrode_marks for tetrode_marks in marks
              if (tetrode_marks.loc[position_info.speed > 4, :].dropna()
                  .shape[0]) != 0]
+
+    if position_info is None:
+        position_info = get_interpolated_position_dataframe(epoch_key, animals)
+    else:
+        position_info = position_info.copy()
 
     position_info['lagged_linear_distance'] = (
         position_info.linear_distance.shift(1))
