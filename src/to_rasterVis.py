@@ -41,13 +41,13 @@ def export_trial_info(data_folder):
         'neurons': neurons,
         'timePeriods': [
             dict(name='Ripple Start', label='Ripple Start',
-                 startID='ripple_start', endID='ripple_end', color='#98fb98'),
+                 startID='ripple_start', endID='ripple_end', color='#756bb1'),
             dict(name='Ripple End', label='Ripple End',
-                 startID='ripple_end', endID='end_time', color='#ffc0cb'),
+                 startID='ripple_end', endID='end_time', color='#f1eef6'),
             dict(name='Before Ripple', label='Before Ripple',
-                 startID='start_time', endID='ripple_start', color='#ffc0cb'),
-            dict(name='After Ripple', label='After Ripple',
-                 startID='ripple_end', endID='end_time', color='#ffc0cb')
+                 startID='start_time', endID='ripple_start', color='#f1eef6'),
+            dict(name='After Ripple', label='',
+                 startID='ripple_end', endID='end_time', color='#f1eef6')
         ],
         'experimentalFactor': [dict(name='trial_id',
                                     value='trial_id',
