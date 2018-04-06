@@ -78,7 +78,7 @@ def export_trial_info(data_folder):
                                ],
     }
 
-    with open(data_folder + filename, 'w') as f:
+    with open(join(data_folder, filename), 'w') as f:
         json.dump(data, f)
 
 
