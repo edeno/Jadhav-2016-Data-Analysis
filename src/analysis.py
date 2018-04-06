@@ -569,12 +569,11 @@ def decode_ripple_clusterless(epoch_key, animals, ripple_times,
     position_info['lagged_linear_distance'] = (
         position_info.linear_distance.shift(1))
     KEEP_COLUMNS = ['linear_distance', 'lagged_linear_distance', 'task',
-                    'is_correct', 'turn', 'speed']
-    position_info = position_info.loc[:, KEEP_COLUMNS].dropna()
+                    'is_correct', 'turn', 'speed', 'head_direction']
 
     ripple_indicator = get_ripple_indicator(epoch_key, animals, ripple_times)
-    train_position_info = position_info.loc[
-        ~ripple_indicator & position_info.is_correct]
+    train_position_info = position_info[KEEP_COLUMNS].loc[
+        ~ripple_indicator & position_info.is_correct].dropna()
 
     training_marks = np.stack([
         tetrode_marks.loc[train_position_info.index, mark_names]
@@ -684,10 +683,9 @@ def summarize_replay_results(results, ripple_times, position_info,
 
     # Include animal position information
     replay_info = pd.concat(
-        [replay_info,
+        (replay_info.set_index('ripple_number'),
          position_info.loc[replay_info.start_time]
-         .set_index(replay_info.index)
-         ], axis=1)
+         .set_index(ripple_times.index)), axis=1).reset_index()
 
     # Determine whether ripple is heading towards or away from animal's
     # position
