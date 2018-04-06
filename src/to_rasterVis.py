@@ -1,5 +1,6 @@
 import json
 from logging import getLogger
+from os.path import join
 
 import numpy as np
 
@@ -130,7 +131,7 @@ def _export_session_info(epoch_key, replay_info, data_folder, window_offset):
      .assign(isIncluded='Included', start_time=0.0, end_time=window_end)
      .assign(ripple_duration=lambda df: df.ripple_duration.dt.total_seconds()
              * TO_MILLISECONDS)
-     .to_json(path_or_buf=data_folder + filename, orient='records'))
+     .to_json(path_or_buf=join(data_folder, filename), orient='records'))
 
 
 def _export_neuron_info(epoch_key, replay_info, data_folder, window_offset,
@@ -157,7 +158,7 @@ def _export_neuron_info(epoch_key, replay_info, data_folder, window_offset,
         logger.info(neuron_key)
         data['Spikes'] = _get_spikes(neuron_key, ripple_times, window_offset)
         filename = 'Neuron_{id}.json'.format(id=data['Name'])
-        with open(data_folder + filename, 'w') as f:
+        with open(join(data_folder, filename), 'w') as f:
             json.dump(data, f)
 
 
