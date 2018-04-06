@@ -74,6 +74,8 @@ def export_trial_info(data_folder):
                                     factorType='categorical'),
                                dict(name='predicted_state_probability',
                                     value='predicted_state_probability',
+                               dict(name='Head Direction',
+                                    value='head_direction',
                                     factorType='continuous')
                                ],
     }
@@ -111,7 +113,7 @@ def _export_session_info(epoch_key, replay_info, data_folder, window_offset):
     KEEP_COLUMNS = ['trial_id', 'start_time', 'end_time', 'predicted_state',
                     'replay_task', 'replay_order',
                     'session_time', 'linear_distance', 'speed',
-                    'ripple_duration']
+                    'ripple_duration', 'head_direction']
     window_end = np.diff(window_offset).item() * TO_MILLISECONDS
 
     def convert_time(df):
