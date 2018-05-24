@@ -37,6 +37,7 @@ from src.spike_models import (DROP_COLUMNS, fit_1D_position,
                               fit_ripple_constant, fit_ripple_over_time,
                               fit_task, fit_task_by_turn, fit_turn)
 from src.to_rasterVis import export_session_and_neuron_info
+from src.replicate import swr_stats
 
 
 def estimate_ripple_coherence(epoch_key):
@@ -347,7 +348,9 @@ def main():
     # logging.info('Estimating non-ripple 2D spike models...')
     # estimate_2D_spike_task_information(
     #     epoch_key, ripple_indicator, neuron_info, position_info)
-    get_replay(epoch_key)
+    # get_replay(epoch_key)
+    stats = swr_stats(epoch_key, ANIMALS, SAMPLING_FREQUENCY).to_xarray()
+    save_xarray(PROCESSED_DATA_DIR, epoch_key, stats, '/replicate/swr_stats')
     logging.info('Finished Processing')
 
 

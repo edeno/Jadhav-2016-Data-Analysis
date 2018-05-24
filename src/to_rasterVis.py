@@ -32,8 +32,8 @@ def export_trial_info(data_folder):
 
     neurons = (neuron_info
                .reset_index()
-               .loc[:, ['neuron_id', 'sessionName']]
-               .rename(columns=dict(neuron_id='name'))
+               .loc[:, ['neuron_id', 'sessionName', 'area']]
+               .rename(columns=dict(neuron_id='name', area='brainArea'))
                .to_dict(orient='records'))
     filename = 'trialInfo.json'
 
