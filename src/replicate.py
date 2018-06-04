@@ -48,8 +48,8 @@ def sharp_wave_ripple_modulation(neuron_key, animals, ripple_times,
         rise_fall_time = time[np.nonzero(np.abs(zscore) > 1)[0][0]]
     except IndexError:
         rise_fall_time = np.nan
-    peak_time = time[np.argmax(psth)]
-    trough_time = time[np.argmin(psth)]
+    peak_time = time[np.argmax(zscore)]
+    trough_time = time[np.argmin(zscore)]
 
     if ripple_locked_spikes.values.sum() > 50:
         shuffled_psth = np.stack(
