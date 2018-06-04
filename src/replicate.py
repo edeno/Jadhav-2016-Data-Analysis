@@ -77,9 +77,10 @@ def swr_stats(epoch_key, animals, sampling_frequency):
     is_CA1_FS_interneuron = (
         (neuron_info.meanrate > 7.0) & (neuron_info.spikewidth < 0.3))
     neuron_info = neuron_info.loc[
-        (neuron_info.area.isin(['PFC']) & ~is_PFC_FS_interneuron) |
-        (neuron_info.area.isin(['CA1', 'iCA1']) & ~is_CA1_FS_interneuron) &
-        (neuron_info.numspikes > 0)
+        (neuron_info.area.isin(['PFC']) & ~is_PFC_FS_interneuron
+         & (neuron_info.numspikes > 0)) |
+        (neuron_info.area.isin(['CA1', 'iCA1']) & ~is_CA1_FS_interneuron
+         & (neuron_info.numspikes > 0))
     ]
 
     stats = np.array(
