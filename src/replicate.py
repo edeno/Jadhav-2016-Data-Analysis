@@ -44,7 +44,10 @@ def sharp_wave_ripple_modulation(neuron_key, animals, ripple_times,
     modulation = (np.mean(psth[is_after_swr])
                   - np.mean(psth[is_pre_swr])) * sampling_frequency
     zscore = (psth - np.mean(psth)) / np.std(psth)
-    rise_fall_time = time[np.nonzero(np.abs(zscore) > 1)[0][0]]
+    try:
+        rise_fall_time = time[np.nonzero(np.abs(zscore) > 1)[0][0]]
+    except IndexError:
+        rise_fall_time = np.nan
     peak_time = time[np.argmax(psth)]
     trough_time = time[np.argmin(psth)]
 
