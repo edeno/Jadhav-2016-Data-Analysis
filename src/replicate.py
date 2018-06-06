@@ -9,6 +9,7 @@ from loren_frank_data_processing import (get_spike_indicator_dataframe,
                                          make_neuron_dataframe,
                                          reshape_to_segments)
 from src.analysis import detect_epoch_ripples
+from ripple_detection import Karlsson_ripple_detector
 
 logger = getLogger(__name__)
 
@@ -69,7 +70,11 @@ def sharp_wave_ripple_modulation(neuron_key, animals, ripple_times,
 
 def swr_stats(epoch_key, animals, sampling_frequency):
     ripple_times = detect_epoch_ripples(
-        epoch_key, animals, sampling_frequency)
+        epoch_key, animals, sampling_frequency,
+        detector=Karlsson_ripple_detector,
+        zscore_threshold=3,
+        minimum_duration=np.timedelta64(15, 'ms'),
+        close_ripple_threshold=np.timedelta64(1, 's'))
     neuron_info = make_neuron_dataframe(animals).xs(
         epoch_key, drop_level=False)
     is_PFC_FS_interneuron = (
