@@ -349,7 +349,8 @@ def main():
     # estimate_2D_spike_task_information(
     #     epoch_key, ripple_indicator, neuron_info, position_info)
     # get_replay(epoch_key)
-    stats = swr_stats(epoch_key, ANIMALS, SAMPLING_FREQUENCY).to_xarray()
+    stats = (swr_stats(epoch_key, ANIMALS, SAMPLING_FREQUENCY)
+             .reset_index().to_xarray())
     save_xarray(PROCESSED_DATA_DIR, epoch_key, stats, '/replicate/swr_stats')
     logging.info('Finished Processing')
 
