@@ -379,9 +379,9 @@ def main():
              .reset_index().to_xarray())
     save_xarray(PROCESSED_DATA_DIR, epoch_key, stats, '/replicate/swr_stats')
 
-    logging.info('Exporting data to rasterVis...')
-    export_session_and_neuron_info(
-        epoch_key, PROCESSED_DATA_DIR, ripple_times, replay_info)
+    # logging.info('Exporting data to rasterVis...')
+    # export_session_and_neuron_info(
+    #     epoch_key, PROCESSED_DATA_DIR, ripple_times, replay_info)
 
     logging.info('Finished Processing')
 
