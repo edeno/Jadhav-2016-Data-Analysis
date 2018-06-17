@@ -255,7 +255,7 @@ def ripple_triggered_connectivity(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
         group_name)
     save_group_delay(
-        c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
+        c, m, frequency_bands, tetrode_info, epoch_key,
         multitaper_parameter_name, group_name)
     save_pairwise_spectral_granger(
         c, tetrode_info, epoch_key, multitaper_parameter_name,
@@ -378,13 +378,13 @@ def save_canonical_coherence(
                 epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
-def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
+def save_group_delay(c, m, frequency_bands, tetrode_info, epoch_key,
                      multitaper_parameter_name, group_name):
     logger.info('...saving group delay')
     group_delay = np.array(
-        [c.group_delay(FREQUENCY_BANDS[frequency_band],
+        [c.group_delay(frequency_bands[frequency_band],
                        frequency_resolution=m.frequency_resolution)
-         for frequency_band in FREQUENCY_BANDS])
+         for frequency_band in frequency_bands])
 
     dimension_names = ['frequency_band', 'time', 'tetrode1', 'tetrode2']
     data_vars = {
@@ -394,7 +394,7 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
 
     coordinates = {
         'time': _center_time(c.time),
-        'frequency_band': list(FREQUENCY_BANDS.keys()),
+        'frequency_band': list(frequency_bands.keys()),
         'tetrode1': tetrode_info.tetrode_id.values,
         'tetrode2': tetrode_info.tetrode_id.values,
         'brain_area1': ('tetrode1', tetrode_info.area.tolist()),
