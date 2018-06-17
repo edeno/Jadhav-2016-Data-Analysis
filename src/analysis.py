@@ -199,7 +199,9 @@ def connectivity_by_ripple_type(
         'Computing for each level of the covariate "{covariate}":'.format(
             covariate=ripple_covariate))
     for level_name, ripples_df in ripples_by_covariate:
-        ripple_times = _get_ripple_times(ripples_df)
+        ripple_times = (ripples_df
+                        .loc[:, ('start_time', 'end_time', 'ripple_number')]
+                        .set_index('ripple_number'))
         logger.info(
             '...Level: {level_name} ({num_ripples} ripples)'.format(
                 level_name=level_name,
@@ -410,12 +412,6 @@ def match_frequency_resolution(lfps, parameters, time_window_duration=2.0):
 def _center_time(time):
     time_diff = np.diff(time)[0] if np.diff(time).size > 0 else 0
     return time + time_diff / 2
-
-
-def _get_ripple_times(df):
-    '''Retrieves the ripple times from the ripple_info dataframe'''
-    return (df.loc[:, ('ripple_start_time', 'ripple_end_time')]
-            .values.tolist())
 
 
 def detect_epoch_ripples(
