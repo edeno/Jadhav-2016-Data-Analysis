@@ -93,19 +93,12 @@ def export_all_session_neuron_info(data_folder, window_offset=(-0.5, 0.5)):
         export_session_and_neuron_info(epoch_key, data_folder, window_offset)
 
 
-def export_session_and_neuron_info(epoch_key, data_folder,
-                                   window_offset=(-0.5, 0.5)):
-    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, SAMPLING_FREQUENCY, position_info=position_info)
-    replay_info, _, _ = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times, position_info=position_info)
+def export_session_and_neuron_info(epoch_key, data_folder, ripple_times,
+                                   replay_info, window_offset=(-0.5, 0.5)):
 
     _export_session_info(epoch_key, replay_info, data_folder, window_offset)
     _export_neuron_info(epoch_key, replay_info, data_folder, window_offset,
                         ripple_times)
-
-    return ripple_times, replay_info
 
 
 def _export_session_info(epoch_key, replay_info, data_folder, window_offset):
