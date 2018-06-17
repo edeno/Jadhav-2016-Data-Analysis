@@ -28,6 +28,7 @@ from spectral_connectivity.statistics import (coherence_bias,
                                               fisher_z_transform,
                                               get_normal_distribution_p_values)
 from spectral_connectivity.transforms import _sliding_window
+from src.parameters import PROCESSED_DATA_DIR
 
 from .spike_train import cross_correlate
 
@@ -271,9 +272,7 @@ def save_ERP(epoch_key, ERP, multitaper_parameter_name, group_name):
     logger.info('...saving ERP')
     group = '{0}/{1}/ERP'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(epoch_key,
-                xr.DataArray(ERP).rename({'dim_1': 'tetrode'}),
-                group)
+    save_xarray(PROCESSED_DATA_DIR, epoch_key, ERP, group)
 
 
 def save_power(
@@ -291,8 +290,8 @@ def save_power(
     }
     group = '{0}/{1}/power'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_coherence(
@@ -312,8 +311,8 @@ def save_coherence(
     }
     group = '{0}/{1}/coherence_magnitude'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_pairwise_spectral_granger(
@@ -333,8 +332,8 @@ def save_pairwise_spectral_granger(
     }
     group = '{0}/{1}/pairwise_spectral_granger_prediction'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_partial_directed_coherence(
@@ -354,8 +353,8 @@ def save_partial_directed_coherence(
     }
     group = '{0}/{1}/partial_directed_coherence'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_canonical_coherence(
@@ -375,8 +374,8 @@ def save_canonical_coherence(
     }
     group = '{0}/{1}/canonical_coherence'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
@@ -403,8 +402,8 @@ def save_group_delay(c, m, FREQUENCY_BANDS, tetrode_info, epoch_key,
     }
     group = '{0}/{1}/group_delay'.format(
         multitaper_parameter_name, group_name)
-    save_xarray(
-        epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
+    save_xarray(PROCESSED_DATA_DIR,
+                epoch_key, xr.Dataset(data_vars, coords=coordinates), group)
 
 
 def match_frequency_resolution(lfps, parameters, time_window_duration=2.0):
