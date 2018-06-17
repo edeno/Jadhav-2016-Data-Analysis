@@ -6,11 +6,11 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 from sys import exit
 
-import numpy as np
+import pandas as pd
 import xarray as xr
 
 from loren_frank_data_processing import (get_interpolated_position_dataframe,
-                                         get_LFP_dataframe,
+                                         get_LFPs,
                                          get_spike_indicator_dataframe,
                                          make_neuron_dataframe,
                                          make_tetrode_dataframe, save_xarray)
@@ -18,12 +18,12 @@ from spectral_connectivity import Connectivity, Multitaper
 from src.analysis import (_center_time, adjusted_coherence_magnitude,
                           connectivity_by_ripple_type,
                           decode_ripple_clusterless, detect_epoch_ripples,
-                          get_hippocampal_theta, get_ripple_indicator,
-                          get_ripple_locked_spikes,
+                          get_hippocampal_theta, get_ripple_locked_spikes,
                           ripple_triggered_connectivity)
 from src.parameters import (ANIMALS, FREQUENCY_BANDS, MULTITAPER_PARAMETERS,
                             PROCESSED_DATA_DIR, REPLAY_COVARIATES,
                             SAMPLING_FREQUENCY)
+from src.replicate import swr_stats
 from src.spike_models import (DROP_COLUMNS, fit_1D_position,
                               fit_1D_position_by_speed,
                               fit_1D_position_by_speed_and_task,
@@ -35,22 +35,22 @@ from src.spike_models import (DROP_COLUMNS, fit_1D_position,
                               fit_hippocampal_theta_by_1D_position,
                               fit_position_constant, fit_replay,
                               fit_ripple_constant, fit_ripple_over_time,
+                              fit_ripple_over_time_with_other_neurons,
                               fit_task, fit_task_by_turn, fit_turn)
 from src.to_rasterVis import export_session_and_neuron_info
-from src.replicate import swr_stats
 
 
-def estimate_ripple_coherence(epoch_key):
-    ripple_times = detect_epoch_ripples(
-        epoch_key, ANIMALS, sampling_frequency=SAMPLING_FREQUENCY)
+def estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info):
 
     tetrode_info = make_tetrode_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
     tetrode_info = tetrode_info[
-        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)]
+        ~tetrode_info.descrip.str.endswith('Ref').fillna(False)
+        & (tetrode_info.numcells > 0)
+        & tetrode_info.area.isin(['PFC', 'CA1', 'iCA1'])
+    ]
 
-    lfps = {tetrode_key: get_LFP_dataframe(tetrode_key, ANIMALS)
-            for tetrode_key in tetrode_info.index}
+    lfps = get_LFPs(tetrode_info.index, ANIMALS)
 
     for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
         # Compare all ripples
@@ -59,9 +59,6 @@ def estimate_ripple_coherence(epoch_key):
             FREQUENCY_BANDS, multitaper_parameter_name=parameters_name)
 
     # Compare different types of ripples
-    replay_info = decode_ripple_clusterless(
-        epoch_key, ANIMALS, ripple_times)[0]
-
     for covariate in REPLAY_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             connectivity_by_ripple_type(
@@ -69,44 +66,55 @@ def estimate_ripple_coherence(epoch_key):
                 replay_info, covariate, parameters, FREQUENCY_BANDS,
                 multitaper_parameter_name=parameters_name)
 
-    save_xarray(
-        epoch_key, replay_info.to_xarray(), '/replay_info')
-
 
 def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
                                    neuron_info, window_offset=(-0.500, 0.500)):
 
-    ripple_locked_spikes = [get_ripple_locked_spikes(
-        neuron_key, ripple_times, ANIMALS, SAMPLING_FREQUENCY,
-        window_offset)
-        for neuron_key in neuron_info.index]
-
+    ripple_locked_spikes = get_ripple_locked_spikes(
+        neuron_info.index, ripple_times, ANIMALS, SAMPLING_FREQUENCY)
+    ripple_locked_spikes['time'] = (
+        ripple_locked_spikes.index.get_level_values('time').total_seconds())
+    ripple_locked_spikes['ripple_number'] = (
+        ripple_locked_spikes.index.get_level_values('ripple_number'))
+    ripple_locked_spikes = pd.merge(
+        ripple_locked_spikes, replay_info, on='ripple_number')
     results = {}
 
-    results['ripple/constant'] = xr.concat(
-        [fit_ripple_constant(data, SAMPLING_FREQUENCY)
-         for data in ripple_locked_spikes], dim=neuron_info.neuron_id)
-    results['ripple/over_time'] = xr.concat(
-        [fit_ripple_over_time(data, SAMPLING_FREQUENCY)
-         for data in ripple_locked_spikes], dim=neuron_info.neuron_id)
-    results['ripple/replay_state'] = xr.concat(
-        [fit_replay(data, SAMPLING_FREQUENCY, replay_info, 'predicted_state')
-         for data in ripple_locked_spikes], dim=neuron_info.neuron_id)
-    results['ripple/session_time'] = xr.concat(
-        [fit_replay(data, SAMPLING_FREQUENCY, replay_info, 'session_time')
-         for data in ripple_locked_spikes], dim=neuron_info.neuron_id)
-
+    results['all_ripples/constant'] = xr.concat(
+        [fit_ripple_constant(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY, neuron_info)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/over_time'] = xr.concat(
+        [fit_ripple_over_time(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY, neuron_info)
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/replay_state'] = xr.concat(
+        [fit_replay(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
+            neuron_info, 'predicted_state')
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/over_time_and_auto'] = xr.concat(
+        [fit_ripple_over_time_with_other_neurons(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
+            neuron_info, [])
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/over_time_CA1'] = xr.concat(
+        [fit_ripple_over_time_with_other_neurons(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
+            neuron_info, ['iCA1'])
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/over_time_PFC'] = xr.concat(
+        [fit_ripple_over_time_with_other_neurons(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
+            neuron_info, ['PFC'])
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    results['all_ripples/over_time_iCA1'] = xr.concat(
+        [fit_ripple_over_time_with_other_neurons(
+            neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
+            neuron_info, ['iCA1'])
+         for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
     for group_name, data in results.items():
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
-
-
-def get_replay(epoch_key):
-    ripple_times, replay_info = export_session_and_neuron_info(
-        epoch_key, PROCESSED_DATA_DIR)
-    save_xarray(PROCESSED_DATA_DIR, epoch_key,
-                replay_info.to_xarray(), '/replay_info')
-    save_xarray(PROCESSED_DATA_DIR, epoch_key,
-                ripple_times.to_xarray(), '/ripple_times')
 
 
 def estimate_spike_task_1D_information(
@@ -249,26 +257,31 @@ def estimate_2D_spike_task_information(
 
 
 def estimate_ripple_locked_spike_spike_coherence(
-        epoch_key, ripple_times, neuron_info, window_offset=(-0.250, 0.250)):
+        epoch_key, ripple_times, neuron_info):
 
-    spikes = np.stack(
-        [get_ripple_locked_spikes(
-            key, ripple_times, ANIMALS, SAMPLING_FREQUENCY, window_offset
-        ).unstack(0).values for key in neuron_info.index], axis=-1)
+    ripple_locked_spikes = get_ripple_locked_spikes(
+        neuron_info.index, ripple_times, ANIMALS, SAMPLING_FREQUENCY)
+    ripple_locked_spikes = (ripple_locked_spikes.to_xarray().to_array()
+                            .rename({'variable': 'neurons'})
+                            .transpose('time', 'ripple_number', 'neurons')
+                            .dropna('ripple_number'))
 
-    m = Multitaper(spikes, SAMPLING_FREQUENCY,
-                   time_window_duration=window_offset[1],
-                   time_halfbandwidth_product=1)
+    m = Multitaper(ripple_locked_spikes.values,
+                   sampling_frequency=SAMPLING_FREQUENCY,
+                   time_window_duration=0.250,
+                   time_window_step=0.250,
+                   time_halfbandwidth_product=3,
+                   start_time=-0.5)
     c = Connectivity.from_multitaper(m)
 
     dims = ['time', 'frequency', 'neuron1', 'neuron2']
     coherence_magnitude = adjusted_coherence_magnitude(
-        spikes, SAMPLING_FREQUENCY, m, c)
-    coherence_difference = np.squeeze(np.diff(coherence_magnitude, axis=0))
+        ripple_locked_spikes.values, SAMPLING_FREQUENCY, m, c)
+    coherence_difference = coherence_magnitude - coherence_magnitude[0, :]
 
     data_vars = {
         'coherence_magnitude': (dims, coherence_magnitude),
-        'coherence_difference': (dims[1:], coherence_difference)
+        'coherence_difference': (dims, coherence_difference)
     }
     coords = {
         'time': _center_time(c.time),
@@ -279,7 +292,7 @@ def estimate_ripple_locked_spike_spike_coherence(
     data = xr.Dataset(data_vars, coords=coords)
 
     save_xarray(PROCESSED_DATA_DIR, epoch_key, data,
-                'ripple/spike_spike_coherence')
+                'all_ripples/spike_spike_coherence')
 
 
 def get_command_line_arguments():
@@ -320,38 +333,45 @@ def main():
                    stdout=PIPE, universal_newlines=True).stdout
     logging.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
-    # position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
-    # ripple_times = detect_epoch_ripples(
-    #     epoch_key, ANIMALS, SAMPLING_FREQUENCY, position_info)
-    # ripple_indicator = get_ripple_indicator(
-    #     epoch_key, ANIMALS, ripple_times)
-    # neuron_info = make_neuron_dataframe(ANIMALS).xs(
-    #     epoch_key, drop_level=False).query('numspikes > 0')
-    #
-    # position_info['task_by_turn'] = (
-    #     position_info.task + '_' + position_info.turn)
-    # replay_info, _, _ = decode_ripple_clusterless(
-    #     epoch_key, ANIMALS, ripple_times, position_info
-    #
-    # logging.info('Estimating ripple-locked spiking models...')
-    # estimate_ripple_locked_spiking(
-    #     epoch_key, ripple_times, replay_info, neuron_info)
-    # logging.info('Estimating theta spike-field coherence...')
-    # estimate_theta_spike_field_coherence(
-    #     epoch_key, neuron_info, position_info)
-    # logging.info('Estimating ripple-locked spike-spike coherence...')
-    # estimate_ripple_locked_spike_spike_coherence(
-    #     epoch_key, ripple_times, neuron_info)
-    # logging.info('Estimating non-ripple 1D spike models...')
-    # estimate_spike_task_1D_information(
-    #     epoch_key, ripple_indicator, neuron_info, position_info)
-    # logging.info('Estimating non-ripple 2D spike models...')
-    # estimate_2D_spike_task_information(
-    #     epoch_key, ripple_indicator, neuron_info, position_info)
-    # get_replay(epoch_key)
+    position_info = get_interpolated_position_dataframe(epoch_key, ANIMALS)
+    ripple_times = detect_epoch_ripples(
+        epoch_key, ANIMALS, SAMPLING_FREQUENCY, position_info)
+    replay_info, _, _ = decode_ripple_clusterless(
+        epoch_key, ANIMALS, ripple_times, position_info=position_info)
+    save_xarray(epoch_key, replay_info.to_xarray(), '/replay_info')
+
+    logging.info('Estimating ripple-locked LFP connectivity...')
+    estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info)
+
+    neuron_info = make_neuron_dataframe(ANIMALS).xs(
+        epoch_key, drop_level=False)
+    is_PFC_FS_interneuron = (
+        (neuron_info.meanrate > 17.0) & (neuron_info.spikewidth < 0.3))
+    is_CA1_FS_interneuron = (
+        (neuron_info.meanrate > 7.0) & (neuron_info.spikewidth < 0.3))
+    neuron_info = neuron_info.loc[
+        (neuron_info.area.isin(['PFC']) & ~is_PFC_FS_interneuron
+         & (neuron_info.numspikes > 0)) |
+        (neuron_info.area.isin(['CA1', 'iCA1']) & ~is_CA1_FS_interneuron
+         & (neuron_info.numspikes > 0))
+    ]
+    logging.info('Estimating ripple-locked spike-spike coherence...')
+    estimate_ripple_locked_spike_spike_coherence(
+        epoch_key, ripple_times, neuron_info)
+
+    logging.info('Estimating ripple-locked spiking models...')
+    estimate_ripple_locked_spiking(
+        epoch_key, ripple_times, replay_info, neuron_info)
+
+    logging.info('Replicating Jadhav 2016 analysis...')
     stats = (swr_stats(epoch_key, ANIMALS, SAMPLING_FREQUENCY)
              .reset_index().to_xarray())
     save_xarray(PROCESSED_DATA_DIR, epoch_key, stats, '/replicate/swr_stats')
+
+    logging.info('Exporting data to rasterVis...')
+    export_session_and_neuron_info(
+        epoch_key, PROCESSED_DATA_DIR, ripple_times, replay_info)
+
     logging.info('Finished Processing')
 
 
