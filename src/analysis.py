@@ -425,8 +425,8 @@ def detect_epoch_ripples(
         epoch_key, animals, sampling_frequency,
         position_info=None, brain_areas=_BRAIN_AREAS,
         minimum_duration=np.timedelta64(15, 'ms'),
-        zscore_threshold=2,
-        close_ripple_threshold=np.timedelta64(0, 's'),
+        zscore_threshold=3,
+        close_ripple_threshold=np.timedelta64(500, 'ms'),
         detector=Kay_ripple_detector):
     '''Returns a list of tuples containing the start and end times of
     ripples. Candidate ripples are computed via the ripple detection
