@@ -338,7 +338,8 @@ def main():
         epoch_key, ANIMALS, SAMPLING_FREQUENCY, position_info)
     replay_info, _, _ = decode_ripple_clusterless(
         epoch_key, ANIMALS, ripple_times, position_info=position_info)
-    save_xarray(epoch_key, replay_info.to_xarray(), '/replay_info')
+    save_xarray(PROCESSED_DATA_DIR, epoch_key, replay_info.to_xarray(),
+                '/replay_info')
 
     logging.info('Estimating ripple-locked LFP connectivity...')
     estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info)
