@@ -51,12 +51,15 @@ _2Hz_Res = dict(
     time_halfbandwidth_product=1,
 )
 
+_12Hz_Res = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.250,
+    time_window_step=0.250,
+    time_halfbandwidth_product=3,
+)
+
 MULTITAPER_PARAMETERS = {
-    '50Hz_Resolution': _50Hz_Res,
-    '20Hz_Resolution': _20Hz_Res,
-    '10Hz_Resolution': _10Hz_Res,
-    '4Hz_Resolution': _4Hz_Res,
-    '2Hz_Resolution': _2Hz_Res
+    '12Hz_Resolution': _12Hz_Res,
 }
 
 
