@@ -214,7 +214,7 @@ def connectivity_by_ripple_type(
 
 def ripple_triggered_connectivity(
     lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
-        FREQUENCY_BANDS, multitaper_parameter_name='',
+        frequency_bands, multitaper_parameter_name='',
         group_name='all_ripples'):
     n_lfps = lfps.shape[1]
     n_pairs = int(n_lfps * (n_lfps - 1) / 2)
