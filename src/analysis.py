@@ -19,6 +19,7 @@ from loren_frank_data_processing import (get_interpolated_position_dataframe,
                                          get_trial_time,
                                          make_tetrode_dataframe,
                                          reshape_to_segments, save_xarray)
+from loren_frank_data_processing.neurons import get_all_spike_indicators
 from replay_classification import ClusterlessDecoder, SortedSpikeDecoder
 from ripple_detection import Kay_ripple_detector
 from spectral_connectivity import Connectivity, Multitaper
@@ -868,10 +869,9 @@ def adjusted_coherence_magnitude(spikes, sampling_frequency, m, c):
                   adjustment_factor.swapaxes(-1, -2))
 
 
-def get_ripple_locked_spikes(neuron_key, ripple_times, animals,
+def get_ripple_locked_spikes(neuron_keys, ripple_times, animals,
                              sampling_frequency=1, window_offset=(-0.5, 0.5)):
-    spikes = (get_spike_indicator_dataframe(neuron_key, animals)
-              .rename('is_spike'))
+    spikes = get_all_spike_indicators(neuron_keys, animals)
     return reshape_to_segments(
         spikes, ripple_times, window_offset, sampling_frequency).fillna(0)
 
