@@ -108,7 +108,7 @@ def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
     results['all_ripples/over_time_CA1'] = xr.concat(
         [fit_ripple_over_time_with_other_neurons(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
-            neuron_info, ['iCA1'])
+            neuron_info, ['CA1'])
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
     logging.info('..over time model with PFC')
     results['all_ripples/over_time_PFC'] = xr.concat(
