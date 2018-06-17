@@ -3,7 +3,7 @@ from logging import getLogger
 import numpy as np
 import pandas as pd
 import xarray as xr
-from patsy import build_design_matrices, dmatrices, dmatrix
+from patsy import build_design_matrices, dmatrices
 from statsmodels.api import families
 
 from loren_frank_data_processing import (get_spike_indicator_dataframe,
@@ -168,18 +168,16 @@ def fit_task_by_turn(data, sampling_frequency, penalty=1E1):
                      ks_statistic, AIC))
 
 
-def fit_ripple_constant(ripple_locked_spikes, sampling_frequency,
-                        penalty=0):
-    trial_id = (ripple_locked_spikes.index
-                .get_level_values('ripple_number').values)
-    formula = 'is_spike ~ 1'
-    response, design_matrix = dmatrices(
-        formula, ripple_locked_spikes, return_type='dataframe')
-    is_spike = ripple_locked_spikes.values.squeeze()
+def fit_ripple_constant(neuron_key, ripple_locked_spikes, sampling_frequency,
+                        neuron_info, penalty=0):
+    neuron_id = neuron_info.loc[neuron_key].neuron_id
+    unique_time = np.unique(ripple_locked_spikes['time'].values)
+
+    trial_id = ripple_locked_spikes['ripple_number'].values
+    formula = f'{neuron_id} ~ 1 '
+    response, design_matrix = dmatrices(formula, ripple_locked_spikes)
 
     results = fit_glm(response, design_matrix, penalty)
-    time = ripple_locked_spikes.index.get_level_values('time')
-    unique_time = np.unique(time.total_seconds().values)
     predict_design_matrix = np.ones((unique_time.size, 1))
 
     coords = {'time': unique_time}
@@ -187,7 +185,7 @@ def fit_ripple_constant(ripple_locked_spikes, sampling_frequency,
 
     return summarize_fit(
         results.coefficients, predict_design_matrix,
-        sampling_frequency, coords, dims, design_matrix, is_spike,
+        sampling_frequency, coords, dims, design_matrix, response.squeeze(),
         trial_id, results.AIC)
 
 
@@ -299,7 +297,7 @@ def fit_1D_position_by_speed(data, sampling_frequency, penalty=1E1,
                            sampling_frequency).reshape(linear_distance.shape).T
     multiplicative_gain = get_gain(
         predict_design_matrix, results.coefficients
-        ).reshape(linear_distance.shape).T
+    ).reshape(linear_distance.shape).T
     coords = {
         'position': np.unique(linear_distance),
         'speed': np.unique(speed)
@@ -702,20 +700,18 @@ def fit_2D_position_by_speed_and_task(data, neuron_key, animals,
                      ks_statistic, AIC))
 
 
-def fit_ripple_over_time(ripple_locked_spikes, sampling_frequency,
-                         penalty=1E1, knot_spacing=0.050):
-    time = ripple_locked_spikes.index.get_level_values('time')
-    unique_time = np.unique(time.total_seconds().values)
-    trial_id = (ripple_locked_spikes.index
-                .get_level_values('ripple_number').values)
+def fit_ripple_over_time(neuron_key, ripple_locked_spikes, sampling_frequency,
+                         neuron_info, penalty=1E1, knot_spacing=0.050):
+    neuron_id = neuron_info.loc[neuron_key].neuron_id
+    unique_time = np.unique(ripple_locked_spikes['time'].values)
+
+    trial_id = ripple_locked_spikes['ripple_number'].values
 
     n_steps = (unique_time[-1] - unique_time[0]) // knot_spacing
     time_knots = unique_time[0] + np.arange(1, n_steps) * knot_spacing
-    formula = '1 + cr(time, knots=time_knots, constraints="center")'
-    design_matrix = dmatrix(
-        formula, dict(time=time.total_seconds().values),
-        return_type='dataframe')
-    is_spike = ripple_locked_spikes.values.squeeze()
+    formula = (f'{neuron_id} ~ 1 '
+               '+ cr(time, knots=time_knots, constraints="center")')
+    is_spike, design_matrix = dmatrices(formula, ripple_locked_spikes)
 
     results = fit_glm(is_spike, design_matrix, penalty)
     predict_design_matrix = build_design_matrices(
@@ -726,30 +722,27 @@ def fit_ripple_over_time(ripple_locked_spikes, sampling_frequency,
 
     return summarize_fit(
         results.coefficients, predict_design_matrix,
-        sampling_frequency, coords, dims, design_matrix, is_spike,
+        sampling_frequency, coords, dims, design_matrix, is_spike.squeeze(),
         trial_id, results.AIC)
 
 
-def fit_replay(ripple_locked_spikes, sampling_frequency,
-               replay_info, covariate, penalty=1E1, knot_spacing=0.050):
+def fit_replay(neuron_key, ripple_locked_spikes, sampling_frequency,
+               neuron_info, covariate, penalty=1E1, knot_spacing=0.050):
 
-    time = ripple_locked_spikes.unstack(level=0).index.total_seconds().values
+    neuron_id = neuron_info.loc[neuron_key].neuron_id
+    time = np.unique(ripple_locked_spikes['time'].values)
 
-    trial_id = (ripple_locked_spikes.index
-                .get_level_values('ripple_number').values)
+    trial_id = ripple_locked_spikes['ripple_number'].values
     n_steps = (time[-1] - time[0]) // knot_spacing
     time_knots = time[0] + np.arange(1, n_steps) * knot_spacing
 
-    data = (pd.merge(ripple_locked_spikes.reset_index(), replay_info,
-                     on='ripple_number')
-            .assign(time=lambda df: df.time.dt.total_seconds()))
-    formula = (f'is_spike ~ {covariate} * '
+    formula = (f'{neuron_id} ~ {covariate} * '
                'cr(time, knots=time_knots, constraints="center")')
 
-    is_spike, design_matrix = dmatrices(formula, data, return_type='dataframe')
+    is_spike, design_matrix = dmatrices(formula, ripple_locked_spikes)
     results = fit_glm(is_spike, design_matrix, penalty)
 
-    levels = data[covariate].unique()
+    levels = ripple_locked_spikes[covariate].unique()
     firing_rate = []
     multiplicative_gain = []
 
@@ -915,7 +908,7 @@ def fit_hippocampal_theta_by_1D_position(data, sampling_frequency,
         sampling_frequency).reshape(instantaneous_phase.shape).T
     multiplicative_gain = get_gain(
         predict_design_matrix, results.coefficients
-        ).reshape(instantaneous_phase.shape).T
+    ).reshape(instantaneous_phase.shape).T
     coords = {
         'phase': np.unique(instantaneous_phase),
         'position': np.unique(linear_distance),
