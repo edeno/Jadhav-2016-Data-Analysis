@@ -56,15 +56,16 @@ def estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info):
         # Compare all ripples
         ripple_triggered_connectivity(
             lfps, epoch_key, tetrode_info, ripple_times, parameters,
-            FREQUENCY_BANDS, multitaper_parameter_name=parameters_name)
+            SAMPLING_FREQUENCY, FREQUENCY_BANDS,
+            multitaper_parameter_name=parameters_name)
 
     # Compare different types of ripples
     for covariate in REPLAY_COVARIATES:
         for parameters_name, parameters in MULTITAPER_PARAMETERS.items():
             connectivity_by_ripple_type(
                 lfps, epoch_key, tetrode_info,
-                replay_info, covariate, parameters, FREQUENCY_BANDS,
-                multitaper_parameter_name=parameters_name)
+                replay_info, covariate, parameters, SAMPLING_FREQUENCY,
+                FREQUENCY_BANDS, multitaper_parameter_name=parameters_name)
 
 
 def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,

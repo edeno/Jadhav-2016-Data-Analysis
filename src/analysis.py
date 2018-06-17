@@ -187,7 +187,8 @@ def compare_spike_coherence(condition1, condition2, sampling_frequency,
 
 def connectivity_by_ripple_type(
     lfps, epoch_key, tetrode_info, ripple_info, ripple_covariate,
-        multitaper_params, FREQUENCY_BANDS, multitaper_parameter_name=''):
+    multitaper_params, sampling_frequency, frequency_bands,
+        multitaper_parameter_name=''):
     '''Computes the coherence at each level of a ripple covariate
     from the ripple info dataframe and the differences between those
     levels'''
@@ -205,7 +206,7 @@ def connectivity_by_ripple_type(
                 num_ripples=len(ripple_times)))
         ripple_triggered_connectivity(
             lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
-            FREQUENCY_BANDS,
+            sampling_frequency, frequency_bands,
             multitaper_parameter_name=multitaper_parameter_name,
             group_name='{covariate_name}/{level_name}'.format(
                 covariate_name=ripple_covariate,
@@ -214,12 +215,10 @@ def connectivity_by_ripple_type(
 
 def ripple_triggered_connectivity(
     lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
-        frequency_bands, multitaper_parameter_name='',
-        group_name='all_ripples'):
+    sampling_frequency, frequency_bands, multitaper_parameter_name='',
+        group_name='all_ripples', window_offset=(-0.5, 0.5)):
     n_lfps = lfps.shape[1]
     n_pairs = int(n_lfps * (n_lfps - 1) / 2)
-    params = deepcopy(multitaper_params)
-    window_of_interest = params.pop('window_of_interest')
 
     logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
@@ -227,8 +226,8 @@ def ripple_triggered_connectivity(
                     num_pairs=n_pairs))
 
     ripple_locked_lfps = reshape_to_segments(
-        lfps, ripple_times, window_offset=window_of_interest,
-        sampling_frequency=params['sampling_frequency'])
+        lfps, ripple_times, window_offset=window_offset,
+        sampling_frequency=sampling_frequency)
     ripple_locked_lfps = (ripple_locked_lfps.to_xarray().to_array()
                           .rename({'variable': 'tetrodes'})
                           .transpose('time', 'ripple_number', 'tetrodes')
@@ -238,10 +237,8 @@ def ripple_triggered_connectivity(
                           - ripple_locked_lfps.mean(['ripple_number']))
     start_time = ripple_locked_lfps.time.min().values / np.timedelta64(1, 's')
 
-    m = Multitaper(
-        ripple_locked_lfps.values,
-        **params,
-        start_time=start_time)
+    m = Multitaper(ripple_locked_lfps.values, **multitaper_params,
+                   start_time=start_time)
     c = Connectivity.from_multitaper(m)
 
     save_ERP(epoch_key, ripple_ERP, multitaper_parameter_name, group_name)
