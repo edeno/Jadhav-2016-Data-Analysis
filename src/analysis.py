@@ -2,7 +2,6 @@
 
 '''
 from copy import deepcopy
-from functools import partial
 from itertools import product
 from logging import getLogger
 
@@ -217,33 +216,32 @@ def ripple_triggered_connectivity(
     lfps, epoch_key, tetrode_info, ripple_times, multitaper_params,
         FREQUENCY_BANDS, multitaper_parameter_name='',
         group_name='all_ripples'):
-    n_lfps = len(lfps)
+    n_lfps = lfps.shape[1]
     n_pairs = int(n_lfps * (n_lfps - 1) / 2)
     params = deepcopy(multitaper_params)
     window_of_interest = params.pop('window_of_interest')
-    reshape_to_trials = partial(
-        reshape_to_segments, window_of_interest, params['sampling_frequency'],
-        concat_axis=1)
 
     logger.info('Computing ripple-triggered {multitaper_parameter_name} '
                 'for {num_pairs} pairs of electrodes'.format(
                     multitaper_parameter_name=multitaper_parameter_name,
                     num_pairs=n_pairs))
 
-    ripple_ERP = pd.concat({
-        tetrode_info.loc[lfp_name].tetrode_id: reshape_to_trials(
-            lfps[lfp_name], ripple_times).mean(axis=1)
-        for lfp_name in lfps}, axis=1)
-
-    ripple_locked_lfps = pd.Panel({
-        lfp_name: _subtract_event_related_potential(
-            reshape_to_trials(lfps[lfp_name], ripple_times))
-        for lfp_name in lfps}).dropna(axis=2)
+    ripple_locked_lfps = reshape_to_segments(
+        lfps, ripple_times, window_offset=window_of_interest,
+        sampling_frequency=params['sampling_frequency'])
+    ripple_locked_lfps = (ripple_locked_lfps.to_xarray().to_array()
+                          .rename({'variable': 'tetrodes'})
+                          .transpose('time', 'ripple_number', 'tetrodes')
+                          .dropna('ripple_number'))
+    ripple_ERP = ripple_locked_lfps.mean('ripple_number').to_dataset('ERP')
+    ripple_locked_lfps = (ripple_locked_lfps
+                          - ripple_locked_lfps.mean(['ripple_number']))
+    start_time = ripple_locked_lfps.time.min().values / np.timedelta64(1, 's')
 
     m = Multitaper(
-        np.rollaxis(ripple_locked_lfps.values, 0, 3),
+        ripple_locked_lfps.values,
         **params,
-        start_time=ripple_locked_lfps.major_axis.min())
+        start_time=start_time)
     c = Connectivity.from_multitaper(m)
 
     save_ERP(epoch_key, ripple_ERP, multitaper_parameter_name, group_name)
