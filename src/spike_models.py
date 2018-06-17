@@ -941,6 +941,61 @@ def fit_hippocampal_theta_by_1D_position(data, sampling_frequency,
                      ks_statistic, AIC))
 
 
+def fit_ripple_over_time_with_other_neurons(neuron_key, ripple_locked_spikes,
+                                            sampling_frequency, neuron_info,
+                                            brain_areas, n_lags=45,
+                                            penalty=1E1, knot_spacing=0.050):
+    time = ripple_locked_spikes['time']
+    trial_id = ripple_locked_spikes.ripple_number.values
+    unique_time = np.unique(time.values)
+    n_steps = (unique_time[-1] - unique_time[0]) // knot_spacing
+    time_knots = unique_time[0] + np.arange(1, n_steps) * knot_spacing
+    neuron_id = neuron_info.loc[neuron_key].neuron_id
+    formula = (
+        f'{neuron_id} ~ 1 + cr(time, knots=time_knots, constraints="center") '
+        f'+ lag({neuron_id}, trial_id=trial_id, n_lags=n_lags)')
+
+    other_neuron_ids = (neuron_info
+                        .loc[neuron_info.area.isin(brain_areas) &
+                             (neuron_info.neuron_id != neuron_id)]
+                        .neuron_id.tolist())
+
+    for other_neuron_id in other_neuron_ids:
+        formula += (f' + lag({other_neuron_id}, '
+                    'trial_id=trial_id, n_lags=n_lags)')
+
+    response, design_matrix = dmatrices(formula, ripple_locked_spikes)
+    results = fit_glm(response, design_matrix, penalty)
+
+    conditional_intensity = get_rate(design_matrix, results.coefficients)
+    ks_statistic = xr.DataArray(
+        TimeRescaling(conditional_intensity,
+                      response.squeeze()).ks_statistic(),
+        name='ks_statistic')
+    AIC = xr.DataArray(results.AIC, name='AIC')
+    baseline_firing_rate = xr.DataArray(np.squeeze(np.exp(
+        np.atleast_1d(results.coefficients)[0]) * sampling_frequency),
+        name='baseline_firing_rate')
+    term_names = design_matrix.design_info.term_names
+    try:
+        lag_coefficients = np.stack(
+            [results.coefficients[design_matrix.design_info.slice(name)]
+             for name in term_names[3:]], axis=1)
+        time_before_spike = (np.arange(-1, -(n_lags + 1), -1)
+                             / sampling_frequency)
+        coords = {
+            'time_before_spike': time_before_spike,
+            'neurons': other_neuron_ids
+        }
+        lag_coefficients = xr.DataArray(lag_coefficients,
+                                        dims=['time_before_spike', 'neurons'],
+                                        coords=coords, name='lag_coefficients')
+        return xr.merge(
+            (lag_coefficients, baseline_firing_rate, ks_statistic, AIC))
+    except ValueError:
+        return xr.merge((baseline_firing_rate, ks_statistic, AIC))
+
+
 def fit_glm(response, design_matrix, penalty=None):
     if penalty is not None:
         penalty = np.ones((design_matrix.shape[1],)) * penalty
