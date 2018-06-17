@@ -69,7 +69,8 @@ def estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info):
 
 
 def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
-                                   neuron_info, window_offset=(-0.500, 0.500)):
+                                   neuron_info, logging,
+                                   window_offset=(-0.500, 0.500)):
 
     ripple_locked_spikes = get_ripple_locked_spikes(
         neuron_info.index, ripple_times, ANIMALS, SAMPLING_FREQUENCY)
@@ -81,39 +82,47 @@ def estimate_ripple_locked_spiking(epoch_key, ripple_times, replay_info,
         ripple_locked_spikes, replay_info, on='ripple_number')
     results = {}
 
+    logging.info('..null model')
     results['all_ripples/constant'] = xr.concat(
         [fit_ripple_constant(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY, neuron_info)
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..over time model')
     results['all_ripples/over_time'] = xr.concat(
         [fit_ripple_over_time(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY, neuron_info)
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..replay model')
     results['all_ripples/replay_state'] = xr.concat(
         [fit_replay(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
             neuron_info, 'predicted_state')
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..over time model with autocorrelation')
     results['all_ripples/over_time_and_auto'] = xr.concat(
         [fit_ripple_over_time_with_other_neurons(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
             neuron_info, [])
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..over time model with CA1')
     results['all_ripples/over_time_CA1'] = xr.concat(
         [fit_ripple_over_time_with_other_neurons(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
             neuron_info, ['iCA1'])
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..over time model with PFC')
     results['all_ripples/over_time_PFC'] = xr.concat(
         [fit_ripple_over_time_with_other_neurons(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
             neuron_info, ['PFC'])
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+    logging.info('..over time model with iCA1')
     results['all_ripples/over_time_iCA1'] = xr.concat(
         [fit_ripple_over_time_with_other_neurons(
             neuron_key, ripple_locked_spikes, SAMPLING_FREQUENCY,
             neuron_info, ['iCA1'])
          for neuron_key in neuron_info.index], dim=neuron_info.neuron_id)
+
     for group_name, data in results.items():
         save_xarray(PROCESSED_DATA_DIR, epoch_key, data, group_name)
 
@@ -363,7 +372,7 @@ def main():
 
     logging.info('Estimating ripple-locked spiking models...')
     estimate_ripple_locked_spiking(
-        epoch_key, ripple_times, replay_info, neuron_info)
+        epoch_key, ripple_times, replay_info, neuron_info, logging)
 
     logging.info('Replicating Jadhav 2016 analysis...')
     stats = (swr_stats(epoch_key, ANIMALS, SAMPLING_FREQUENCY)
