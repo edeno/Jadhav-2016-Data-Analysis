@@ -983,10 +983,19 @@ def fit_ripple_over_time_with_other_neurons(neuron_key, ripple_locked_spikes,
         lag_coefficients = xr.DataArray(lag_coefficients,
                                         dims=['time_before_spike', 'neurons'],
                                         coords=coords, name='lag_coefficients')
-        return xr.merge(
-            (lag_coefficients, baseline_firing_rate, ks_statistic, AIC))
     except ValueError:
-        return xr.merge((baseline_firing_rate, ks_statistic, AIC))
+        lag_coefficients = np.full((n_lags, 1), np.nan)
+        time_before_spike = (np.arange(-1, -(n_lags + 1), -1)
+                             / sampling_frequency)
+        coords = {
+            'time_before_spike': time_before_spike,
+            'neurons': ['dummy']
+        }
+        lag_coefficients = xr.DataArray(lag_coefficients,
+                                        dims=['time_before_spike', 'neurons'],
+                                        coords=coords, name='lag_coefficients')
+    return xr.merge(
+        (lag_coefficients, baseline_firing_rate, ks_statistic, AIC))
 
 
 def fit_glm(response, design_matrix, penalty=None):
