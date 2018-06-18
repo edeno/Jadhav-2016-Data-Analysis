@@ -351,8 +351,8 @@ def main():
     save_xarray(PROCESSED_DATA_DIR, epoch_key, replay_info.to_xarray(),
                 '/replay_info')
 
-    logging.info('Estimating ripple-locked LFP connectivity...')
-    estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info)
+    # logging.info('Estimating ripple-locked LFP connectivity...')
+    # estimate_lfp_ripple_connectivity(epoch_key, ripple_times, replay_info)
 
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
@@ -366,9 +366,9 @@ def main():
         (neuron_info.area.isin(['CA1', 'iCA1']) & ~is_CA1_FS_interneuron
          & (neuron_info.numspikes > 0))
     ]
-    logging.info('Estimating ripple-locked spike-spike coherence...')
-    estimate_ripple_locked_spike_spike_coherence(
-        epoch_key, ripple_times, neuron_info)
+    # logging.info('Estimating ripple-locked spike-spike coherence...')
+    # estimate_ripple_locked_spike_spike_coherence(
+    #     epoch_key, ripple_times, neuron_info)
 
     logging.info('Estimating ripple-locked spiking models...')
     estimate_ripple_locked_spiking(
